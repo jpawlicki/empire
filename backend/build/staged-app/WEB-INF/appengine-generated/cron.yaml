@@ -1,0 +1,5 @@
+cron:
+- description: 'Check to see if any games need to advance.'
+  url: /entry/advanceworldpoll
+  schedule: every 15 minutes
+  timezone: UTC

@@ -1,0 +1,9 @@
+I like the idea of a long-term continuity in the game. This requires:
+ • The injection of new crises to maintain tension loops.
+ • Fragmentation of large nations or alliances.
+ • Support for drop-out replacements. (No login for 3 turns.)
+
+From the other side, it's easy to build a waiting-list of players. Each Friday,
+if the wait list is large enough, start a new game, inviting all the players in
+first-come first-serve order. Else, when there is a drop-out, the waitlisted
+players are notified and the first player to claim the slot takes over.

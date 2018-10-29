@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>HelloAppEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">helloworld</a> &gt; <a href="index.source.html" class="el_package">com.example.appengine.java8</a> &gt; <span class="el_source">HelloAppEngine.java</span></div><h1>HelloAppEngine.java</h1><pre class="source lang-java linenums">/**
+ * Copyright 2017 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.example.appengine.java8;
+
+// [START example]
+import com.google.appengine.api.utils.SystemProperty;
+
+import java.io.IOException;
+import java.util.Properties;
+
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+// With @WebServlet annotation the webapp/WEB-INF/web.xml is no longer required.
+@WebServlet(name = &quot;HelloAppEngine&quot;, value = &quot;/hello&quot;)
+<span class="fc" id="L32">public class HelloAppEngine extends HttpServlet {</span>
+
+  @Override
+  public void doGet(HttpServletRequest request, HttpServletResponse response)
+      throws IOException {
+<span class="fc" id="L37">    Properties properties = System.getProperties();</span>
+
+<span class="fc" id="L39">    response.setContentType(&quot;text/plain&quot;);</span>
+<span class="fc" id="L40">    response.getWriter().println(&quot;Hello App Engine - Standard using &quot;</span>
+<span class="fc" id="L41">            + SystemProperty.version.get() + &quot; Java &quot;</span>
+<span class="fc" id="L42">            + properties.get(&quot;java.specification.version&quot;));</span>
+<span class="fc" id="L43">  }</span>
+
+  public static String getInfo() {
+<span class="fc" id="L46">    return &quot;Version: &quot; + System.getProperty(&quot;java.version&quot;)</span>
+<span class="fc" id="L47">          + &quot; OS: &quot; + System.getProperty(&quot;os.name&quot;)</span>
+<span class="fc" id="L48">          + &quot; User: &quot; + System.getProperty(&quot;user.name&quot;);</span>
+  }
+
+}
+// [END example]
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.7.9.201702052155</span></div></body></html>

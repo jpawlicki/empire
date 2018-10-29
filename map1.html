@@ -1,0 +1,667 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Empire</title>
+		<script src="gamelib.js"></script>
+		<script src="geo.js"></script>
+		<script src="borders.js"></script>
+		<script src="geolib.js"></script>
+		<script src="report-link.js"></script>
+		<script src="kingdom-report.js"></script>
+		<script src="region-report.js"></script>
+		<script src="character-report.js"></script>
+		<script src="army-report.js"></script>
+		<script src="church-report.js"></script>
+		<script src="pirate-report.js"></script>
+		<script src="gothi-report.js"></script>
+		<script src="expandable-snippet.js"></script>
+		<script src="tooltip-element.js"></script>
+		<script src="formToJson.js"></script>
+		<script src="orders-pane.js"></script>
+		<script src="zip-div.js"></script>
+		<script src="international-report.js"></script>
+		<script>
+			g_data = {};
+			function getArg(p) {
+				var t = window.location.search;
+				var s = t.indexOf(p + "=");
+				if (s == -1) return undefined;
+				var e = t.indexOf("&", s);
+				if (e == -1) e = t.length;
+				return decodeURI(t.substring(s + p.length + 1, e));
+			}
+			let whoami = getArg("k");
+			let password = getArg("p");
+			let gameId = parseInt(getArg("g"));
+			if (isNaN(gameId)) gameId = parseInt(getArg("gid")); // A bug in the server sent out mails with gid=X, so just accept either for now.
+			let currentTurn = parseInt(getArg("t"));
+			if (password != undefined) history.replaceState({}, "", window.location.href.replace(/p=[^&]*/, "p=_"));
+			function regionClick(id) {
+				changeReport("region/" + g_data.regions[id].name);
+			}
+			function crosshair(href) {
+				let x = document.getElementById("crosshair");
+				x.setAttribute("x", -1000);
+				x.setAttribute("y", -1000);
+				if (href == undefined) return;
+				let ele = href.split("/");
+				if (ele[0] == "region") {
+					let i = -1;
+					for (let r = 0; r < g_data.regions.length; r++) if (g_data.regions[r].name == ele[1]) i = r;
+					let p = g_data.regions[i].getRandomPointInRegion(g_data.regions.slice(i + 1), .75);
+					x.setAttribute("x", p[0]-15);
+					x.setAttribute("y", p[1]-15);
+				} else if (ele[0] == "character") {
+					for (let c of g_data.characters) if (c.name == ele[1] && c.mapPoint != undefined) {
+						x.setAttribute("x", c.mapPoint[0]-15);
+						x.setAttribute("y", c.mapPoint[1]-15);
+					}
+				} else if (ele[0] == "army") {
+					for (let c of g_data.armies) if (c.id == parseInt(ele[1]) && c.mapPoint != undefined) {
+						x.setAttribute("x", c.mapPoint[0]-15);
+						x.setAttribute("y", c.mapPoint[1]-15);
+					}
+				}
+			}
+			let motions = {};
+			function updateMotions(plannedMotions) {
+				let change = false;
+				let movers = [];
+				for (let a of g_data.armies) movers.push(a);
+				for (let a of g_data.characters) if (a.location != -1) movers.push(a);
+				for (let a of movers) {
+					let k = a.id != undefined ? "a" + a.id : a.name;
+					if (motions[k] == undefined) motions[k] = {};
+					let m = motions[k];
+					for (let p of a.preparation) {
+						if (m["r" + p.to] == undefined) {
+							m["r" + p.to] = {
+								"sofar": p.amount,
+								"p": g_data.regions[p.to].getRandomPointInRegion(g_data.regions.slice(p.to + 1), .75),
+								"planned": false
+							};
+							change = true;
+						}
+					}
+					if (plannedMotions != undefined) {
+						for (let mm in m) {
+							let p = mm == "r" + plannedMotions[k];
+							if (p) {
+								if (!m[mm].planned) {
+									m[mm].planned = true;
+									change = true;
+								}
+							} else {
+								if (m[mm].planned) {
+									m[mm].planned = false;
+									change = true;
+								}
+							}
+						}
+						if (plannedMotions[k] != undefined) {
+							let mp = m["r" + plannedMotions[k]];
+							if (mp == undefined) {
+								m["r" + plannedMotions[k]] = {
+									"sofar": 0,
+									"p": g_data.regions[plannedMotions[k]].getRandomPointInRegion(g_data.regions.slice(plannedMotions[k] + 1), .75),
+									"planned": true
+								};
+								change = true;
+							}
+						}
+					}
+				}
+				if (change) {
+					let pm = document.getElementById("plannedMotions");
+					pm.innerHTML = "";
+					let movers = [];
+					for (let a of g_data.armies) movers.push(a);
+					for (let a of g_data.characters) if (a.location != -1) movers.push(a);
+					for (let a of movers) {
+						let k = a.id != undefined ? "a" + a.id : a.name;
+						if (motions[k] == undefined) continue;
+						for (m in motions[k]) {
+							if (!motions[k][m].planned && motions[k][m].sofar == 0) continue;
+							let s = document.createElementNS("http://www.w3.org/2000/svg", "path");
+							let midpoint = interpolate(a.mapPoint, motions[k][m].p, motions[k][m].sofar / travelCost(a.location, parseInt(m.replace("r", ""))));
+							s.setAttribute("d", "M" + a.mapPoint[0] + "," + a.mapPoint[1] + " L" + midpoint[0] + "," + midpoint[1]);
+							s.setAttribute("stroke", "#000");
+							s.setAttribute("stroke-width", "1");
+							pm.appendChild(s);
+							s = document.createElementNS("http://www.w3.org/2000/svg", "path");
+							s.setAttribute("d", "M" + midpoint[0] + "," + midpoint[1] + " L" + motions[k][m].p[0] + "," + motions[k][m].p[1]);
+							s.setAttribute("stroke", motions[k][m].planned ? "#fa8" : "#aaa");
+							s.setAttribute("stroke-width", "1");
+							s.setAttribute("marker-end", "url(#arrowHead" + (motions[k][m].planned ? "Planned" : "") + ")");
+							pm.appendChild(s);
+						}
+					}
+				}
+			}
+			function travelCost(a, b) {
+				for (let border of g_borders) {
+					if ((border.a == a && border.b == b) || (border.b == a && border.a == b)) return border.weight;
+				}
+				return -1;
+			}
+			function interpolate(a, b, amount) {
+				return [(1 - amount) * a[0] + amount * b[0], (1 - amount) * a[1] + amount * b[1]];
+			}
+
+			function changeReport(href, push=true) {
+				let ele = href.split("/");
+				if (push) history.pushState(href, ele[1]);
+				if (ele[0] == "region") {
+					document.getElementById("reports").innerHTML = `<region-report region="${ele[1]}"></region-report>`;
+					document.title = "Empire - " + ele[1];
+				} else if (ele[0] == "kingdom" && ele[1] != "Pirate") {
+					document.getElementById("reports").innerHTML = `<kingdom-report kingdom="${ele[1]}" ${ele[1] == whoami ? "notifications=\"true\"" : ""}></kingdom-report>`;
+					document.title = "Empire - " + ele[1];
+				} else if (ele[0] == "character") {
+					document.getElementById("reports").innerHTML = `<character-report character="${ele[1]}"></character-report>`;
+					document.title = "Empire - " + ele[1];
+				} else if (ele[0] == "army") {
+					document.getElementById("reports").innerHTML = `<army-report army="${ele[1]}"></army-report>`;
+					document.title = "Empire";
+				} else if (ele[0] == "church") {
+					document.getElementById("reports").innerHTML = `<church-report></church-report>`;
+					document.title = "Empire - Church";
+				} else if (ele[0] == "pirates" || ele[1] == "Pirate") {
+					document.getElementById("reports").innerHTML = `<pirate-report></pirate-report>`;
+					document.title = "Empire - Pirates";
+				} else if (ele[0] == "gothi") {
+					document.getElementById("reports").innerHTML = `<gothi-report></gothi-report>`;
+					document.title = "Empire - Gothi";
+				} else if (ele[0] == "international") {
+					document.getElementById("reports").innerHTML = `<international-report></international-report>`;
+					document.title = "Empire - International Relations";
+				}
+			}
+
+			window.onpopstate = function(event) {
+				changeReport(event.state, false);
+			}
+
+			let g_turndata = undefined;
+			window.onload = function() {
+				if (gameId == undefined) {
+					window.alert("The link you got to this page should have included a ?g=NUMBER parameter.");
+				} else if (password != undefined) {
+					startRequest();
+				} else {
+					document.getElementById("passwordBox").style.display = "flex";
+				}
+			}
+
+			function enterPassword() {
+				password = encodeURIComponent(document.getElementById("password_input").value);
+				whoami = document.getElementById("kingdom_input").value;
+				startRequest();
+			}
+
+			function startRequest() {
+				document.getElementById("password_submit").disabled = true;
+				let req = new XMLHttpRequest();
+				req.open("get", "https://empire-189013.appspot.com/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (!isNaN(currentTurn) ? "&t=" + currentTurn : ""), true);
+				//req.open("get",             "http://localhost:8080/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (!isNaN(currentTurn) ? "&t=" + currentTurn : ""), true);
+				req.onerror = function (e) {};
+				req.onload = function (ev) {
+					if (req.status != 200) {
+						window.alert("HTTP " + req.status + " when trying to load game data. Perhaps the password is incorrect.");
+						document.getElementById("passwordBox").style.display = "flex";
+						document.getElementById("password_submit").disabled = false;
+					} else {
+						document.getElementById("passwordBox").style.display = "none";
+						g_turndata = JSON.parse(req.response);
+						start();
+					}
+				};
+				req.send();
+			}
+
+			function start() {
+				// Data Computation
+				g_data.date = g_turndata.date;
+				g_data.regions = [];
+				g_data.rtc = g_turndata.rtc;
+				g_data.tivar = g_turndata.tivar;
+				for (let i = 0; i < g_regions.length; i++) {
+					g_data.regions.push(new Region(i, g_regions[i], g_turndata.regions[i], g_data.date));
+				}
+				g_data.kingdoms = {};
+				let ksort = [];
+				for (let k in g_turndata.kingdoms) if (g_turndata.kingdoms.hasOwnProperty(k)) ksort.push(k);
+				ksort.sort();
+				for (let k of ksort) {
+					g_data.kingdoms[k] = new Kingdom(k, g_turndata.kingdoms[k]);
+				}
+				g_data.characters = [];
+				for (let c of g_turndata.characters) {
+					g_data.characters.push(new Character(c));
+				}
+				g_data.armies = [];
+				for (let a of g_turndata.armies) {
+					g_data.armies.push(new Army(a));
+				}
+				g_data.communications = g_turndata.communications;
+				g_data.pirates = g_turndata.pirate;
+				g_data.harvests = g_turndata.harvests;
+
+				// Styleize
+				let style = `
+					.v_culture .eolsung { fill: #aaf; }
+					.v_culture .anpilayn { fill: #faa; }
+					.v_culture .hansa { fill: #fc4; }
+					.v_culture .tyrgaetan { fill: #aaa; }
+					.v_culture .tavian { fill: #a4c; }
+					.v_climate .green { fill: #afa;  }
+					.v_climate .seasonal { fill: #ff8; }
+					.v_climate .treacherous { fill: #f00; }
+					.v_religion .Iruhan_Sword_of_Truth { fill: #f00; }
+					.v_religion .Iruhan_Vessel_of_Faith { fill: #f80; }
+					.v_religion .Iruhan_Chalice_of_Compassion { fill: #f88; }
+					.v_religion .Iruhan_Tapestry_of_People { fill: #f08; }
+					.v_religion .Northern_Alyrja { fill: #00f; }
+					.v_religion .Northern_Rjinku { fill: #80f; }
+					.v_religion .Northern_Lyskr { fill: #08f; }
+					.v_religion .Northern_Syrjen { fill: #88f; }
+					.v_religion .Tavian_Flame_of_Kith { fill: #8f0; }
+					.v_religion .Tavian_River_of_Kuun { fill: #0f8; }
+				`;
+				for (let ki in g_turndata.kingdoms) if (g_turndata.kingdoms.hasOwnProperty(ki)) {
+					let k = g_turndata.kingdoms[ki];
+					style += ".v_political ." + ki.toLowerCase() + "{ fill: " + k.color_bg + "; stroke: transparent; }\n";
+					style += "#regionContents ." + ki.toLowerCase() + "{ fill: " + k.color_bg + "; stroke: " + k.color_fg + "; color: " + k.color_fg + "; }\n";
+					style += "#regionContents circle." + ki.toLowerCase() + "{ fill: " + k.color_fg + "; stroke: transparent; }\n";
+					style += "#regionContents line." + ki.toLowerCase() + "{ stroke: " + k.color_bg + "; }\n";
+				}
+				let maxpop = 0;
+				for (let r of g_data.regions) {
+					if (r.population > maxpop) maxpop = r.population;
+				}
+				for (let r of g_data.regions) {
+					style += ".v_population .pop" + Math.floor(r.population) + "{ fill: rgb(" + Math.floor(255 * r.population / maxpop) + ", 64, " + Math.floor(255 * (1 - r.population / maxpop)) + "); }\n";
+				}
+				for (let i = 0; i <= 100; i++) {
+					style += ".v_unrest .unrest" + i + "{ fill: rgb(255, " + ((100 - i) / 100 * 255) + ", " + ((100 - i) / 100 * 255) + "); }\n";
+				}
+				for (let i = 0; i <= 13; i++) {
+					style += ".v_food .food" + i + "{ fill: rgb(255, " + (i / 13 * 255) + ", " + (i / 13 * 255) + "); }\n";
+					style += ".v_harvest .harv" + i + "{ fill: rgb(255, " + (i / 13 * 255) + ", " + (i / 13 * 255) + "); }\n";
+				}
+				document.getElementById("computed_styles").innerHTML = style;
+
+				// Geoize
+				geoize(false);
+				let borderElement = document.getElementById("borders");
+				for (let b of g_borders) {
+					let pe = document.createElementNS("http://www.w3.org/2000/svg", "path");
+					let path = toPath(b.border);
+					if (b.weight > 1) path += toPath(parallel(b.border, 1.5));
+					if (b.weight > 2) path += toPath(parallel(b.border, -1.5));
+					pe.setAttribute("d", path);
+					pe.setAttribute("id", "borderpath_" + b.a + "_" + b.b);
+					borderElement.appendChild(pe);
+				}
+				for (let i = 0; i < g_turndata.regions.length; i++) {
+					let r = g_data.regions[i];
+					if (r.type == "land") {
+						let cname = r.kingdom.toLowerCase();
+						cname += " " + r.culture;
+						cname += " pop" + Math.floor(r.population);
+						cname += " " + r.climate;
+						cname += " " + r.religion.replace(/ /g, "_").replace("(", "").replace(")", "");
+						cname += " unrest" + Math.floor(100 * r.calcUnrest().v);
+						cname += " food" + Math.min(13, Math.floor(r.calcFoodWeeks().v));
+						cname += " harv" + Math.min(13, Math.floor(r.calcHarvestWeeks().v));
+						document.getElementById("region_" + i).setAttribute("class", cname);
+					}
+				}
+				let regionContents = [];
+				for (let r of g_data.regions) {
+					regionContents.push([]);
+				}
+				for (let c of g_data.characters) {
+					if (c.location != -1) regionContents[c.location].push({"t": "character", "obj": c});
+				}
+				for (let c of g_data.armies) {
+					if (c.location != -1) regionContents[c.location].push({"t": "army", "obj": c});
+				}
+				for (let i = 0; i < regionContents.length; i++) {
+					let bp = [];
+					for (let j of regionContents[i]) {
+						outer: for (let t = 0; t < 20; t++) {
+							let p = g_data.regions[i].getRandomPointInRegion(g_data.regions.slice(i + 1), .25);
+							for (let bbp of bp) {
+								if (t < 19 && length(minus(p, bbp)) < 15) continue outer;
+							}
+							j.obj.mapPoint = p;
+							bp.push(p);
+							if (j.t == "character") {
+								let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
+								pe.setAttribute("x", p[0] - 6);
+								pe.setAttribute("y", p[1] - 6);
+								pe.setAttribute("width", 12);
+								pe.setAttribute("height", 12);
+								pe.setAttribute("class", j.obj.kingdom);
+								pe.setAttribute("href", "#character");
+								pe.addEventListener('click', function() { changeReport("character/" + j.obj.name); });
+								document.getElementById("regionContents").appendChild(pe);
+							}	else {
+								let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
+								pe.setAttribute("x", p[0] - 6);
+								pe.setAttribute("y", p[1] - 6);
+								pe.setAttribute("width", 12);
+								pe.setAttribute("height", 12);
+								pe.setAttribute("class", j.obj.kingdom);
+								pe.setAttribute("href", j.obj.type == "army" ? "#army_" + j.obj.tags[0].toLowerCase().replace(/ .*/g, "") : "#navy");
+								let power = j.obj.calcStrength().v;
+								for (let pp = Math.floor(power / 5 - 1); pp >= 0; pp--) {
+									let r = parseInt(pp / 10) * 2.75 + 7.75;
+									let c2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+									c2.setAttribute("x1", p[0] + r * Math.sin(pp / 5 * Math.PI));
+									c2.setAttribute("y1", p[1] - r * Math.cos(pp / 5 * Math.PI));
+									c2.setAttribute("x2", p[0]);
+									c2.setAttribute("y2", p[1]);
+									c2.setAttribute("stroke", "inherit");
+									c2.setAttribute("stroke-width", "2");
+									c2.setAttribute("class", j.obj.kingdom);
+									document.getElementById("regionContents").appendChild(c2);
+									let c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+									c.setAttribute("cx", p[0] + r * Math.sin(pp / 5 * Math.PI));
+									c.setAttribute("cy", p[1] - r * Math.cos(pp / 5 * Math.PI));
+									c.setAttribute("r", 1);
+									c.setAttribute("fill", "inherit");
+									c.setAttribute("class", j.obj.kingdom);
+									document.getElementById("regionContents").appendChild(c);
+								}
+								pe.addEventListener('click', function() { changeReport("army/" + j.obj.id); });
+								document.getElementById("regionContents").appendChild(pe);
+							}
+							break;
+						}
+					}
+				}
+				document.getElementById("homekey").addEventListener("click", function() { changeReport("kingdom/" + whoami);});
+				document.getElementById("churchkey").addEventListener("click", function() { changeReport("church/home");});
+				document.getElementById("gothikey").addEventListener("click", function() { changeReport("gothi/home");});
+				document.getElementById("piratekey").addEventListener("click", function() { changeReport("pirates/home");});
+				document.getElementById("internationalkey").addEventListener("click", function() { changeReport("international/home");});
+				if (whoami != "(Observer)") {
+					let orders = document.createElement("orders-pane");
+					orders.setAttribute("kingdom", whoami);
+					document.getElementById("orders").appendChild(orders);
+					changeReport("kingdom/" + whoami);
+				} else {
+					let k = "";
+					for (let i in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(i)) k = i;
+					changeReport("kingdom/" + k);
+					document.querySelector("body").style.gridTemplateColumns = "20% 80%";
+				}
+			}
+
+			function changeClass(id, prefix, clas) {
+				var ccl = document.getElementById(id).className.baseVal.split(" ");
+				var ncl = "";
+				for (var i = 0; i < ccl.length; i++) {
+					if (!ccl[i].startsWith(prefix)) {
+						ncl += " " + ccl[i].trim();
+					}
+				}
+				ncl += " " + prefix + clas;
+				document.getElementById(id).className.baseVal = ncl.trim();
+			}
+
+			function zoom(amt) {
+				var svg = document.getElementById("svg");
+				var zoom = svg.style.zoom;
+				if (zoom == "") zoom = .75;
+				svg.style.zoom = parseFloat(zoom) * amt;
+			}
+		</script>
+		<link rel="stylesheet" type="text/css" href="map1.css"/>
+    <style id="computed_styles"></style>
+    <style>
+			html, body {
+				height: 100%;
+				width: 100%;
+				max-height: 100%;
+				background-color: #fff;
+				padding: 0;
+				margin: 0;
+			}
+			body {
+				display: grid;
+				grid-template-columns: 20% 55% 25%;
+				grid-template-rows: auto 1fr;
+			}
+			body > div {
+				max-width: 100%;
+				max-height: 100%;
+				overflow: auto;
+			}
+      text {
+        font-family: 'Niconne', cursive;
+			}
+			#reports {
+				grid-row-start: 2;
+				grid-row-end: 3;
+			}
+			#map {
+				grid-row-start: 2;
+				grid-column-start: 2;
+			}
+			#passwordBox {
+				grid-row-start: 1;
+				grid-column-start: 1;
+				grid-row-end: 3;
+				grid-column-end: 4;
+			}
+			#orders {
+				grid-row-start: 1;
+				grid-row-end: 3;
+				grid-column-start: 3;
+			}
+			#controls {
+				grid-row-start: 1;
+				grid-column-start: 2;
+			}
+			#views, #reports_links {
+				display: flex;
+				justify-content: space-around;
+				flex-wrap: wrap;
+			}
+			#views svg, #reports_links svg {
+				cursor: pointer;
+			}
+			#reports_links {
+				background-color: #333;
+			}
+			#reports_links path {
+				fill: #fff;
+			}
+      #svg {
+				width: 2000px;
+				zoom: 75%;
+      }
+			#canals {
+				stroke-dasharray: 3 3;
+				fill: transparent;
+				stroke: #aaaaff;
+				stroke-width: 1;
+			}
+			#regions path:hover, #sea_regions path:hover {
+				fill: #fc0;
+				transition: fill 0.3s;
+			}
+			#borders path {
+				stroke: #000;
+				stroke-width: 0.5;
+				fill: transparent;
+				pointer-events: none;
+			}
+			#regionContents line, #regionContents circle {
+				pointer-events: none;
+			}
+			#sea_regions path {
+				fill: url(#circlefill);
+			}
+			#plannedMotions {
+				pointer-events: none;
+			}
+			#passwordBox {
+				display: none;
+				background-color: #fff;
+				height: 100%;
+				width: 100%;
+				z-index: 1;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				font-family: sans-serif;
+				font-size: 120%;
+			}
+			table, input, select, button {
+				font-size: inherit;
+			}
+    </style>
+  </head>
+  <body>
+		<form id="passwordBox" action="javascript:enterPassword();">
+			<label>Nation:
+				<select id="kingdom_input" name="username" autocomplete="username">
+					<option>Aefoss</option>
+					<option>Doomstoll</option>
+					<option>Dumm</option>
+					<option>Ejymsyn</option>
+					<option>Fiskrbaer</option>
+					<option>Fulyn</option>
+					<option>Holmslatr</option>
+					<option>Hosshofn</option>
+					<option>Hrip</option>
+					<option>Isla</option>
+					<option>Mabe</option>
+					<option>Mestrhofn</option>
+					<option>Miycc</option>
+					<option>Muoem</option>
+					<option>Siylmae</option>
+					<option>Slail</option>
+					<option>Tavia</option>
+					<option>Telmymsyn</option>
+					<option>Tribes</option>
+					<option>Turujmi</option>
+					<option>Zemsim</option>
+					<option>(Observer)</option>
+				</select>
+			</label>
+			<label>Password: <input id="password_input" name="password" type="password" autocomplete="password"></input></label>
+			<button id="password_submit">Log In</button>
+		</form>
+		<div id="reports_links">
+			<svg id="homekey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" /></svg>
+			<svg id="churchkey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M11,2H13V4H15V6H13V9.4L22,13V15L20,14.2V22H14V17A2,2 0 0,0 12,15A2,2 0 0,0 10,17V22H4V14.2L2,15V13L11,9.4V6H9V4H11V2M6,20H8V15L7,14L6,15V20M16,20H18V15L17,14L16,15V20Z" /></svg>
+			<svg id="gothikey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M15,6.79C16.86,7.86 18,9.85 18,12C18,22 6,22 6,22C7.25,21.06 8.38,19.95 9.34,18.71C9.38,18.66 9.41,18.61 9.44,18.55C9.69,18.06 9.5,17.46 9,17.21C7.14,16.14 6,14.15 6,12C6,2 18,2 18,2C16.75,2.94 15.62,4.05 14.66,5.29C14.62,5.34 14.59,5.39 14.56,5.45C14.31,5.94 14.5,6.54 15,6.79M12,14A2,2 0 0,0 14,12A2,2 0 0,0 12,10A2,2 0 0,0 10,12A2,2 0 0,0 12,14Z" /></svg>
+			<svg id="piratekey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M8.2,12.1C7.9,12.3 7.7,12.7 7.8,13C7.8,13.7 8.5,14.2 9.1,14.2C9.7,14.2 10.3,13.7 10.3,13C9.7,12.6 9,12.3 8.2,12.1M22,11L23,7C23,7 21,7 18,5C15,3 15,1 12,1C9,1 9,3 6,5C3,7 1,7 1,7L2,11H2.1C2,11.3 2,11.7 2,12C2,15.5 3.8,18.6 6.5,20.4L6,21.3C12.4,25.4 18,21.3 18,21.3L17.5,20.4C20.2,18.6 22,15.5 22,12C22,11.7 22,11.3 22,11M11.3,4.5L9.9,3.1L10.6,2.4L12,3.8L13.4,2.4L14.1,3.1L12.7,4.5L14.1,5.9L13.4,6.6L12,5.2L10.6,6.6L9.9,5.9L11.3,4.5M9.3,8.5C10.3,8.2 11.3,8 12,8C14.2,8 17.9,9.6 19.8,10.4C19.9,10.7 19.9,11 19.9,11.3L9.3,8.5M13.6,19.1C12.9,19.5 12.2,19.8 11.4,19.9C10.9,19.5 10.9,18.7 11.4,18.3C11.8,17.9 12.7,17.7 13.2,18.2C13.5,18.3 13.6,18.8 13.6,19.1M20,13.4C19.5,15.5 18.2,17.4 16.5,18.6L15,16H9L7.5,18.6C5.4,17.2 4,14.8 4,12C4,11.5 4.1,11 4.2,10.5C4.7,10.3 5.3,10 6,9.7L13.1,11.6V14C13.1,14.5 13.5,15 14.1,15H16.1C16.6,15 17.1,14.6 17.1,14V12.6L20,13.4Z" /></svg>
+			<svg id="internationalkey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M17.36,2.64L15.95,4.06C17.26,5.37 18,7.14 18,9A7,7 0 0,1 11,16C9.15,16 7.37,15.26 6.06,13.95L4.64,15.36C6.08,16.8 7.97,17.71 10,17.93V20H6V22H16V20H12V17.94C16.55,17.43 20,13.58 20,9C20,6.62 19.05,4.33 17.36,2.64M11,3.5A5.5,5.5 0 0,0 5.5,9A5.5,5.5 0 0,0 11,14.5A5.5,5.5 0 0,0 16.5,9A5.5,5.5 0 0,0 11,3.5M11,5.5C12.94,5.5 14.5,7.07 14.5,9A3.5,3.5 0 0,1 11,12.5A3.5,3.5 0 0,1 7.5,9A3.5,3.5 0 0,1 11,5.5Z" /></svg>
+		</div>
+		<div id="reports"></div>
+		<div id="controls">
+			<div id="views">
+				<svg onclick="zoom(4.0/3);" style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="#000000" d="M15.5,14L20.5,19L19,20.5L14,15.5V14.71L13.73,14.43C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.43,13.73L14.71,14H15.5M9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14M12,10H10V12H9V10H7V9H9V7H10V9H12V10Z" /></svg>
+				<svg onclick="zoom(3.0/4);" style="width:24px;height:24px" viewBox="0 0 24 24"><path fill="#000000" d="M15.5,14H14.71L14.43,13.73C15.41,12.59 16,11.11 16,9.5A6.5,6.5 0 0,0 9.5,3A6.5,6.5 0 0,0 3,9.5A6.5,6.5 0 0,0 9.5,16C11.11,16 12.59,15.41 13.73,14.43L14,14.71V15.5L19,20.5L20.5,19L15.5,14M9.5,14C7,14 5,12 5,9.5C5,7 7,5 9.5,5C12,5 14,7 14,9.5C14,12 12,14 9.5,14M7,9H12V10H7V9Z" /></svg>
+				<label title="Political Map"     onclick="changeClass('regions', 'v_', 'political')" ><input type="radio" name="view" checked/><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M5,16L3,5L8.5,12L12,5L15.5,12L21,5L19,16H5M19,19A1,1 0 0,1 18,20H6A1,1 0 0,1 5,19V18H19V19Z" /></svg></label>
+				<label title="Cultural Map"      onclick="changeClass('regions', 'v_', 'culture')"   ><input type="radio" name="view"        /><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M20.71,4.63L19.37,3.29C19,2.9 18.35,2.9 17.96,3.29L9,12.25L11.75,15L20.71,6.04C21.1,5.65 21.1,5 20.71,4.63M7,14A3,3 0 0,0 4,17C4,18.31 2.84,19 2,19C2.92,20.22 4.5,21 6,21A4,4 0 0,0 10,17A3,3 0 0,0 7,14Z" /></svg></label>
+				<label title="Religious Map"     onclick="changeClass('regions', 'v_', 'religion')"  ><input type="radio" name="view"        /><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M11,2H13V4H15V6H13V9.4L22,13V15L20,14.2V22H14V17A2,2 0 0,0 12,15A2,2 0 0,0 10,17V22H4V14.2L2,15V13L11,9.4V6H9V4H11V2M6,20H8V15L7,14L6,15V20M16,20H18V15L17,14L16,15V20Z" /></svg></label>
+				<label title="Population Map"    onclick="changeClass('regions', 'v_', 'population')"><input type="radio" name="view"        /><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M16,13C15.71,13 15.38,13 15.03,13.05C16.19,13.89 17,15 17,16.5V19H23V16.5C23,14.17 18.33,13 16,13M8,13C5.67,13 1,14.17 1,16.5V19H15V16.5C15,14.17 10.33,13 8,13M8,11A3,3 0 0,0 11,8A3,3 0 0,0 8,5A3,3 0 0,0 5,8A3,3 0 0,0 8,11M16,11A3,3 0 0,0 19,8A3,3 0 0,0 16,5A3,3 0 0,0 13,8A3,3 0 0,0 16,11Z" /></svg></label>
+				<label title="Climate Map"       onclick="changeClass('regions', 'v_', 'climate')"   ><input type="radio" name="view"        /><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M20.79,13.95L18.46,14.57L16.46,13.44V10.56L18.46,9.43L20.79,10.05L21.31,8.12L19.54,7.65L20,5.88L18.07,5.36L17.45,7.69L15.45,8.82L13,7.38V5.12L14.71,3.41L13.29,2L12,3.29L10.71,2L9.29,3.41L11,5.12V7.38L8.5,8.82L6.5,7.69L5.92,5.36L4,5.88L4.47,7.65L2.7,8.12L3.22,10.05L5.55,9.43L7.55,10.56V13.45L5.55,14.58L3.22,13.96L2.7,15.89L4.47,16.36L4,18.12L5.93,18.64L6.55,16.31L8.55,15.18L11,16.62V18.88L9.29,20.59L10.71,22L12,20.71L13.29,22L14.7,20.59L13,18.88V16.62L15.5,15.17L17.5,16.3L18.12,18.63L20,18.12L19.53,16.35L21.3,15.88L20.79,13.95M9.5,10.56L12,9.11L14.5,10.56V13.44L12,14.89L9.5,13.44V10.56Z" /></svg></label>
+				<label title="Starvation Map"    onclick="changeClass('regions', 'v_', 'food')"      ><input type="radio" name="view"        /><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M7.33,18.33C6.5,17.17 6.5,15.83 6.5,14.5C8.17,15.5 9.83,16.5 10.67,17.67L11,18.23V15.95C9.5,15.05 8.08,14.13 7.33,13.08C6.5,11.92 6.5,10.58 6.5,9.25C8.17,10.25 9.83,11.25 10.67,12.42L11,13V10.7C9.5,9.8 8.08,8.88 7.33,7.83C6.5,6.67 6.5,5.33 6.5,4C8.17,5 9.83,6 10.67,7.17C10.77,7.31 10.86,7.46 10.94,7.62C10.77,7 10.66,6.42 10.65,5.82C10.64,4.31 11.3,2.76 11.96,1.21C12.65,2.69 13.34,4.18 13.35,5.69C13.36,6.32 13.25,6.96 13.07,7.59C13.15,7.45 13.23,7.31 13.33,7.17C14.17,6 15.83,5 17.5,4C17.5,5.33 17.5,6.67 16.67,7.83C15.92,8.88 14.5,9.8 13,10.7V13L13.33,12.42C14.17,11.25 15.83,10.25 17.5,9.25C17.5,10.58 17.5,11.92 16.67,13.08C15.92,14.13 14.5,15.05 13,15.95V18.23L13.33,17.67C14.17,16.5 15.83,15.5 17.5,14.5C17.5,15.83 17.5,17.17 16.67,18.33C15.92,19.38 14.5,20.3 13,21.2V23H11V21.2C9.5,20.3 8.08,19.38 7.33,18.33Z" /></svg></label>
+				<label title="Unrest Map"        onclick="changeClass('regions', 'v_', 'unrest')"    ><input type="radio" name="view"        /><svg style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12M22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2A10,10 0 0,1 22,12M15.5,8C16.3,8 17,8.7 17,9.5C17,10.3 16.3,11 15.5,11C14.7,11 14,10.3 14,9.5C14,8.7 14.7,8 15.5,8M10,9.5C10,10.3 9.3,11 8.5,11C7.7,11 7,10.3 7,9.5C7,8.7 7.7,8 8.5,8C9.3,8 10,8.7 10,9.5M12,14C13.75,14 15.29,14.72 16.19,15.81L14.77,17.23C14.32,16.5 13.25,16 12,16C10.75,16 9.68,16.5 9.23,17.23L7.81,15.81C8.71,14.72 10.25,14 12,14Z" /></svg></label>
+			</div>
+		</div>
+		<div id="map">
+			<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="-43 -5 1150 1250" id="svg" version="1.1">
+				<!-- Patterns -->
+				<symbol id="character" viewBox="0 0 24 24">
+					<path fill="inherit" stroke="inherit" stroke-width="inherit" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+				</symbol>
+				<symbol id="army_seafaring" viewBox="-3 -3 30 30">
+					<circle cx="12" cy="12" r="14" fill="inherit" stroke="inherit" stroke-width="1"></circle>
+					<path fill="currentColor" d="M6.2,2.44L18.1,14.34L20.22,12.22L21.63,13.63L19.16,16.1L22.34,19.28C22.73,19.67 22.73,20.3 22.34,20.69L21.63,21.4C21.24,21.79 20.61,21.79 20.22,21.4L17,18.23L14.56,20.7L13.15,19.29L15.27,17.17L3.37,5.27V2.44H6.2M15.89,10L20.63,5.26V2.44H17.8L13.06,7.18L15.89,10M10.94,15L8.11,12.13L5.9,14.34L3.78,12.22L2.37,13.63L4.84,16.1L1.66,19.29C1.27,19.68 1.27,20.31 1.66,20.7L2.37,21.41C2.76,21.8 3.39,21.8 3.78,21.41L7,18.23L9.44,20.7L10.85,19.29L8.73,17.17L10.94,15Z" />
+				</symbol>
+				<symbol id="army_steel" viewBox="-3 -3 30 30">
+					<rect x="-1" y="-1" width="26" height="26" fill="inherit" stroke="inherit" stroke-width="1"></rect>
+					<path fill="currentColor" d="M6.2,2.44L18.1,14.34L20.22,12.22L21.63,13.63L19.16,16.1L22.34,19.28C22.73,19.67 22.73,20.3 22.34,20.69L21.63,21.4C21.24,21.79 20.61,21.79 20.22,21.4L17,18.23L14.56,20.7L13.15,19.29L15.27,17.17L3.37,5.27V2.44H6.2M15.89,10L20.63,5.26V2.44H17.8L13.06,7.18L15.89,10M10.94,15L8.11,12.13L5.9,14.34L3.78,12.22L2.37,13.63L4.84,16.1L1.66,19.29C1.27,19.68 1.27,20.31 1.66,20.7L2.37,21.41C2.76,21.8 3.39,21.8 3.78,21.41L7,18.23L9.44,20.7L10.85,19.29L8.73,17.17L10.94,15Z" />
+				</symbol>
+				<symbol id="army_pillagers" viewBox="-3 -3 30 30">
+					<path fill="inherit" stroke="inherit" stroke-width="1" d="M-2,0L26,0L12,26Z"></path>
+					<path fill="currentColor" d="M6.2,2.44L18.1,14.34L20.22,12.22L21.63,13.63L19.16,16.1L22.34,19.28C22.73,19.67 22.73,20.3 22.34,20.69L21.63,21.4C21.24,21.79 20.61,21.79 20.22,21.4L17,18.23L14.56,20.7L13.15,19.29L15.27,17.17L3.37,5.27V2.44H6.2M15.89,10L20.63,5.26V2.44H17.8L13.06,7.18L15.89,10M10.94,15L8.11,12.13L5.9,14.34L3.78,12.22L2.37,13.63L4.84,16.1L1.66,19.29C1.27,19.68 1.27,20.31 1.66,20.7L2.37,21.41C2.76,21.8 3.39,21.8 3.78,21.41L7,18.23L9.44,20.7L10.85,19.29L8.73,17.17L10.94,15Z" />
+				</symbol>
+				<symbol id="army_weathered" viewBox="-3 -3 30 30">
+					<path fill="inherit" stroke="inherit" stroke-width="1" d="M2,-1L22,-1L27,25L-3,25Z"></path>
+					<path fill="currentColor" d="M6.2,2.44L18.1,14.34L20.22,12.22L21.63,13.63L19.16,16.1L22.34,19.28C22.73,19.67 22.73,20.3 22.34,20.69L21.63,21.4C21.24,21.79 20.61,21.79 20.22,21.4L17,18.23L14.56,20.7L13.15,19.29L15.27,17.17L3.37,5.27V2.44H6.2M15.89,10L20.63,5.26V2.44H17.8L13.06,7.18L15.89,10M10.94,15L8.11,12.13L5.9,14.34L3.78,12.22L2.37,13.63L4.84,16.1L1.66,19.29C1.27,19.68 1.27,20.31 1.66,20.7L2.37,21.41C2.76,21.8 3.39,21.8 3.78,21.41L7,18.23L9.44,20.7L10.85,19.29L8.73,17.17L10.94,15Z" />
+				</symbol>
+				<symbol id="army_riders" viewBox="-3 -3 30 30">
+					<path fill="inherit" stroke="inherit" stroke-width="1" d="M3,-1L27,-1L21,24L-3,25Z"></path>
+					<path fill="currentColor" d="M6.2,2.44L18.1,14.34L20.22,12.22L21.63,13.63L19.16,16.1L22.34,19.28C22.73,19.67 22.73,20.3 22.34,20.69L21.63,21.4C21.24,21.79 20.61,21.79 20.22,21.4L17,18.23L14.56,20.7L13.15,19.29L15.27,17.17L3.37,5.27V2.44H6.2M15.89,10L20.63,5.26V2.44H17.8L13.06,7.18L15.89,10M10.94,15L8.11,12.13L5.9,14.34L3.78,12.22L2.37,13.63L4.84,16.1L1.66,19.29C1.27,19.68 1.27,20.31 1.66,20.7L2.37,21.41C2.76,21.8 3.39,21.8 3.78,21.41L7,18.23L9.44,20.7L10.85,19.29L8.73,17.17L10.94,15Z" />
+				</symbol>
+				<symbol id="army_undead" viewBox="-3 -3 30 30">
+					<path fill="inherit" stroke="inherit" stroke-width="1" d="M-2,12L12,-2L29,12L12,29Z"></path>
+					<path fill="currentColor" d="M6.2,2.44L18.1,14.34L20.22,12.22L21.63,13.63L19.16,16.1L22.34,19.28C22.73,19.67 22.73,20.3 22.34,20.69L21.63,21.4C21.24,21.79 20.61,21.79 20.22,21.4L17,18.23L14.56,20.7L13.15,19.29L15.27,17.17L3.37,5.27V2.44H6.2M15.89,10L20.63,5.26V2.44H17.8L13.06,7.18L15.89,10M10.94,15L8.11,12.13L5.9,14.34L3.78,12.22L2.37,13.63L4.84,16.1L1.66,19.29C1.27,19.68 1.27,20.31 1.66,20.7L2.37,21.41C2.76,21.8 3.39,21.8 3.78,21.41L7,18.23L9.44,20.7L10.85,19.29L8.73,17.17L10.94,15Z" />
+				</symbol>
+				<symbol id="navy" viewBox="-3 -3 30 30">
+					<circle cx="12" cy="12" r="14" fill="inherit" stroke="inherit" stroke-width="1"></circle>
+					<path fill="currentColor" d="M12,2A3,3 0 0,0 9,5C9,6.27 9.8,7.4 11,7.83V10H8V12H11V18.92C9.16,18.63 7.53,17.57 6.53,16H8V14H3V19H5V17.3C6.58,19.61 9.2,21 12,21C14.8,21 17.42,19.61 19,17.31V19H21V14H16V16H17.46C16.46,17.56 14.83,18.63 13,18.92V12H16V10H13V7.82C14.2,7.4 15,6.27 15,5A3,3 0 0,0 12,2M12,4A1,1 0 0,1 13,5A1,1 0 0,1 12,6A1,1 0 0,1 11,5A1,1 0 0,1 12,4Z" />
+				</symbol>
+				<symbol id="crosshair_symbol" viewBox="0 0 20 20">
+					<path fill="transparent" stroke="#fff" stroke-width="2" d="M0,10L20,10 M10,0L10,20" />
+					<path fill="transparent" stroke="#000" stroke-width="1" d="M0,10L20,10 M10,0L10,20" />
+				</symbol>
+				<marker id="arrowHead" markerWidth="10" markerHeight="10" refX="0" refY="1.5" orient="auto" markerUnits="strokeWidth">
+					<path fill="#aaa" d="M0,0 L0,3 L6,1.5 z"/>
+				</marker>
+				<marker id="arrowHeadPlanned" markerWidth="10" markerHeight="10" refX="0" refY="1.5" orient="auto" markerUnits="strokeWidth">
+					<path fill="#fa8" d="M0,0 L0,3 L6,1.5 z"/>
+				</marker>
+				<pattern id="circlefill" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+					<rect width="48" height="48" fill="#ddddff"></rect>
+					<path d="M2 3 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+					<path d="M12 9 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+					<path d="M24 30 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+					<path d="M32 20 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+					<path d="M29 6 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+					<path d="M37 36 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+					<path d="M7 32 q 0 0, 1 1 t 2 -1 t 3 1" stroke="#ccf" fill="transparent"></path>
+				</pattern>
+				<g id="content">
+					<g id="regions" class="v_political">
+					</g>
+					<g id="sea_regions">
+					</g>
+					<g id="canals">
+						<path d="M195.80,115.02 L194.38,115.53 L193.08,114.77 L191.80,115.36 L190.40,115.22 L188.97,115.14 L187.79,115.93 L186.51,116.38 L185.17,116.59 L183.80,116.02 L182.38,116.44 L181.22,117.27 L179.85,117.64 L178.35,117.72 L177.09,118.54 L175.54,118.44 L174.45,117.33"></path>
+						<path d="M10.58,242.54 L11.33,244.31 L11.60,246.21 L11.41,248.24 L9.93,249.64 L10.07,251.60 L8.70,253.00 L7.33,254.30 L7.04,256.17 L7.76,258.00 L7.74,259.96 L8.89,261.50 L10.01,263.08 L9.80,264.98 L8.96,266.69 L9.03,268.71 L7.70,270.23"></path>
+						<path d="M45.20,1089.59 L41.98,1088.83 L39.18,1087.08 L37.36,1083.96 L33.78,1083.42 L33.10,1079.72 L29.81,1077.90 L31.25,1074.48 L29.73,1071.10 L26.80,1073.44 L23.07,1073.03 L19.90,1071.21 L16.27,1071.69 L14.91,1068.23 L14.34,1064.56 L11.67,1061.60 L7.70,1061.31"></path>
+						<path d="M72.32,847.24 L74.72,847.49 L76.61,845.98 L78.22,847.84 L80.67,847.85 L83.01,848.01 L85.32,847.60 L86.43,849.72 L88.39,851.09 L88.83,853.28 L89.73,855.32 L91.76,856.44 L92.80,858.51 L94.97,859.02 L97.16,859.41 L98.21,861.64 L100.59,862.25 L100.23,864.62 L100.84,866.94 L101.92,869.17 L104.14,870.30 L103.96,872.59 L103.06,874.70 L103.12,877.02 L104.14,879.10 L104.48,881.40 L104.50,883.72 L103.41,885.84 L103.40,888.22 L105.31,889.81 L107.54,890.91 L107.89,893.36 L108.67,895.71"></path>
+						<path d="M-2.10,231.00 L1.76,233.00 L3.71,236.91 L7.18,239.21 L10.27,241.99 L14.44,241.15 L18.23,239.20 L22.48,238.35 L26.65,239.52 L30.24,241.97 L34.51,241.25 L38.31,242.76 L41.33,245.52 L41.62,249.69 L43.57,253.39 L45.59,257.12 L49.24,259.27"></path>
+						<path d="M157.14,78.09 L156.70,82.33 L157.56,86.50 L156.47,90.72 L157.60,94.93 L160.89,98.37 L161.23,103.12 L166.10,103.37 L169.25,107.10 L172.65,110.00 L173.42,114.41 L175.25,118.58 L173.60,122.82 L177.05,125.07 L180.31,127.59 L183.79,130.10 L185.41,134.06"></path>
+						<path d="M948.78,844.36 L945.47,845.58 L943.45,848.47 L943.36,851.83 L943.42,855.20 L945.23,858.06 L946.78,861.06 L946.58,864.65 L944.13,867.28 L945.70,869.78 L947.45,872.17 L949.53,874.61 L949.23,877.80 L950.77,880.42 L953.06,882.41 L953.38,885.42 L954.55,888.21"></path>
+						<path d="M810.88,853.59 L810.79,848.28 L808.29,843.58 L809.65,838.49 L812.85,834.30 L817.16,832.06 L821.23,829.40 L825.86,827.53 L829.12,823.75 L829.50,819.11 L829.92,814.47 L831.60,809.91 L830.49,805.18 L827.85,801.12 L823.71,798.60 L823.45,793.46 L819.53,790.12"></path>
+						<path d="M629.70,1026.69 L631.98,1021.93 L636.82,1019.82 L642.10,1020.05 L646.22,1016.75 L651.05,1014.65 L656.22,1015.64 L661.00,1017.35 L665.20,1020.19 L668.44,1016.47 L672.72,1014.01 L677.58,1015.03 L682.46,1014.05 L684.93,1009.89 L689.45,1008.13 L693.93,1006.43 L696.63,1002.46"></path>
+						<path d="M30.20,1040.54 L31.67,1042.17 L33.72,1042.94 L35.85,1042.94 L37.98,1042.94 L40.20,1042.48 L42.47,1042.45 L44.06,1044.05 L45.65,1045.65 L47.97,1045.83 L49.65,1044.22 L51.55,1045.49 L53.80,1045.12 L56.08,1044.86 L57.79,1046.40 L59.70,1045.06 L61.93,1045.73"></path>
+						<path d="M267.35,387.37 L269.43,390.01 L269.69,393.37 L270.24,396.58 L269.82,399.81 L273.12,400.49 L275.61,402.77 L276.76,405.98 L279.58,407.91 L279.54,411.10 L281.25,413.79 L281.92,416.78 L283.01,419.65 L286.12,420.74 L287.87,423.53 L289.01,426.47 L291.00,428.91"></path>
+						<path d="M732.98,299.66 L731.67,296.22 L731.59,292.55 L733.50,289.34 L733.70,285.61 L737.80,285.70 L741.00,283.14 L741.84,279.31 L744.01,276.04 L745.21,272.53 L746.02,268.90 L749.15,266.79 L752.82,265.93 L754.14,262.81 L755.47,259.69 L754.09,256.16 L756.06,252.92"></path>
+					</g>
+					<g id="borders">
+					</g>
+					<g id="plannedMotions">
+					</g>
+					<g id="regionContents">
+					</g>
+					<use id="crosshair" x="-100" y="-100" width="30" height="30" href="#crosshair_symbol"></use>
+				</g>
+			</svg>
+		</div>
+		<div id="orders">
+		</div>
+	</body>
+</html>

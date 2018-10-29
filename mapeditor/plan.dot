@@ -1,0 +1,178 @@
+// Implementation Plan
+/*
+
+Upcoming Rules Changes:
+ * Armies with the raiders tag will not consume food.
+ * Conquest of a region will require having an "Always attack their armies/navies" disposition toward the current ruler of that region.
+	 * Should I reduce the noble unrest penalty associated with this?
+ * Rulers of hidden captive characters will not be told who the captor is?
+
+=======CRITICAL
+interstitials
+Check all TODOs.
+game status report (GM mail, turn number)
+
+=======PLANNED
+Eliminate passwords - e-mails for game start and game advance include kingdom and one-turn-use passwords in the URL, which is scrubbed via javascript
+E-mail GM on turn advance.
+Build player waitlist database.
+
+
+=======OPTIONAL
+Merge-lines, divisions planned movement arrows.
+Intrigue map overlay
+Pirate threat map overlay
+Kingdom report - trait tooltips
+Character Portraits?
+Kingdom customization: allow specifying a signature
+culture map is questionable - use flag icon?
+legend for map. Collapseable?
+
+GAME DATA MODEL:
+
+g_turndata = {
+	"date": 2
+	"regions": [
+		{
+			"population": 100000,
+			"kingdom": "Fiskrbaer",
+			"unrest_popular": 0.32,
+			"noble": {
+				"name": "Sir Iassac Newton",
+				"tags": ["Inspiring"],
+				"crisis": 
+					"type": "recession",
+					"deadline": 4,
+					"goal": 244
+				},
+				unrest": "0.22"
+			},
+			"constructions": [
+				{"type": "shipyard", "original_cost": 33},
+				{"type": "temple", "religion": "Northern (Alyrja)", "original_cost": 33}
+				{"type": "fortifications", "original_cost": 22},
+			],
+			"food": 765000,
+			"harvest": 7.91,
+		},
+	],
+	"kingdoms": {
+		"Fiskrbaer": {
+			"gold": 34.78,
+			"relationships": {
+				"Aefoss": {
+					"battle": "only_in_territory",
+					"refugees": "no",
+					"defend": "defensive_wars_only",
+					"tribute": .25,
+					"construct": "yes",
+				}
+			},
+			"gothi": {
+				"Alyrja": false,
+				"Syrjen": false,
+				"Rjinku": true,
+				"Lyskr": true,
+			},
+			"goodwill": -22,
+			"loyal_to_cult": false,
+			"court": [
+				{"name": "Nobli Noblus", "tags": ["Inspiring"]},
+			],
+		}
+	},
+	"communications": [
+		{
+			"from": "Fiskrbaer",
+			"signed": "Fiskrbaer", // Anonymous letters will say "Anonymous".
+			"to": ["Aefoss"],
+			"intercepted": ["Hosshofn"],
+			"text": "Hallbjorn, you are so cool.",
+			"post_date": 3,
+		},
+	],
+	"characters": [
+		{
+			"name": "Dudeman Examplar",
+			"kingdom": "Fiskrbaer",
+			"captor": "Aefoss", // "" if free.
+			"location": 123, // -1 if unknown.
+			"preparation": [
+				{"to": 124, "amount": 1},
+			],
+			"tags": ["Cardinal"],
+			"experience": {
+				"general": 22,
+				"admiral": 22,
+				"governor": 22,
+				"spy": 22,
+			},
+			"order_hint": "Travel to Fireskattr"
+		}
+	],
+	"armies": [ // Includes navies - doesn't include hidden forces.
+		"id": id,
+		"type": "army", // Or "navy"
+		"kingdom": "Fiskrbaer",
+		"size": 6050,
+		"tags": ["Steel", "Formations"],
+		"location": 123,
+		"preparation": [
+			{"to": 124, "amount": 1},
+		],
+		"orderhint": "Travel to Fireskattr"
+	],
+	"pirate": {
+		"threat": 1234.5,
+		"bribes": {
+			"Fiskrbaer": 0,
+			"Aefoss": 50,
+			"Hosshofn": -50,
+		},
+	}
+	"tivar": {
+		"warwinds": false,
+		"deluge": false,
+		"parch": true,
+		"veil": true,
+	},
+};
+
+ */
+
+digraph {
+	color_adjustment
+	faction_presets
+	region_images
+	kingdom_images
+	region_seasonality -> region_report_ui
+	basic_faction_selection -> map_populator
+	basic_faction_selection -> adv_faction_selection
+	server_data_store -> adv_faction_selection
+	game_data_model -> map_populator
+	game_data_model -> map_ui
+	game_data_model -> orders_ui
+	game_data_model -> region_report_ui
+	game_data_model -> character_report_ui
+	game_data_model -> army_report_ui
+	game_data_model -> global_report_ui
+	game_data_model -> communication_report_ui
+	game_data_model -> kingdom_report_ui
+	region_report_ui -> report_ui
+	character_report_ui -> report_ui
+	army_report_ui -> report_ui
+	kingdom_report_ui -> report_ui
+	global_report_ui -> report_ui
+	communication_report_ui -> report_ui
+	map_ui -> ui_integration
+	orders_ui -> ui_integration
+	rtc_ui -> ui_integration
+	report_ui -> ui_integration
+	ui_integration -> server_sync
+	server_sync -> server_datastore
+	server_sync -> server_endturn
+	server_datastore -> server_endturn
+	game_data_model -> turn_resolver
+	server_datastore -> turn_resolver
+	turn_resolver -> resolver_mailer
+}
