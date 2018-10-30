@@ -1079,6 +1079,9 @@ class OrdersPane extends HTMLElement {
 				if (a.type == "navy" && dest.type == "land" && g_data.regions[a.location].type == "land" && !g_data.tivar.deluge) {
 					warn += "(navies can only move between land regions during the Deluge)";
 				}
+				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND" && !g_data.tivar.deluge) {
+					warn += "(navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
+				}
 			} else if (o.value.startsWith("Merge into army")) {
 				let ot = undefined;
 				for (let aa of g_data.armies) if (aa.id == parseInt(o.value.replace("Merge into army ", ""))) ot = aa;
