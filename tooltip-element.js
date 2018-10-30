@@ -32,7 +32,7 @@ class TooltipElement extends HTMLElement {
 		shadow.innerHTML = style + "<slot></slot>";
 		var tooltipDiv = document.createElement("div");
 		tooltipDiv.setAttribute("id", "tooltip");
-		tooltipDiv.appendChild(document.createTextNode(this.getAttribute("tooltip")));
+		tooltipDiv.innerHTML = this.getAttribute("tooltip").replace(/\n/g, "<br/>");
 		shadow.appendChild(tooltipDiv);
 		this.addEventListener("click", function() {
 			this.expanded = !this.expanded;

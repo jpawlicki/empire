@@ -162,6 +162,11 @@ class RegionReport extends HTMLElement {
 			#content > #objects :nth-child(even) {
 				text-align: left;
 			}
+			#content > div.crisis {
+				display: flex;
+				justify-content: space-around;
+				font-size: 110%;
+			}
 			`;
 		shadow.appendChild(style);
 		let content = document.createElement("div");
@@ -257,6 +262,10 @@ let capitalize = function(s) {
 	return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+let capitalizeForce = function(s) {
+	return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+}
+
 let num = function(c, places = 0, scale = 1) {
 	return "<tooltip-element tooltip=\"" + c.v + " = " + c.explain() + "\">" + (Math.round(c.v * scale * Math.pow(10, places)) / Math.pow(10, places)) + "</tooltip-element>";
 }
@@ -306,54 +315,54 @@ let getNobleBlock = function(r) {
 	let crisis = "";
 	if (r.noble.crisis != undefined && r.noble.crisis.type != undefined && r.noble.crisis.type != "NONE") {
 		let crisisDescription = "";
-		if (r.noble.crisis.type == "recession") {
+		if (r.noble.crisis.type == "RECESSION") {
 			crisisDescription = r.noble.name + " is concerned with a future economic condition."
 			crisisDescription += "\nGoal: " + r.kingdom + " has a national treasury of at least 140 gold.";
 			crisisDescription += cd("Frugal", "Hoarding");
-		} else if (r.noble.crisis.type == "wedding") {
+		} else if (r.noble.crisis.type == "WEDDING") {
 			crisisDescription = r.noble.name + "'s child is getting married."
 			crisisDescription += "\nGoal: The ruler of " + r.kingdom + " is in the region.";
 			crisisDescription += cd("Loyal", "Snubbed");
-		} else if (r.noble.crisis.type == "banditry") {
+		} else if (r.noble.crisis.type == "BANDITRY") {
 			crisisDescription = r.noble.name + " is plagued by rampant banditry."
-			crisisDescription += "\nGoal: An army of " + r.kingdom + " at least " + Math.ceil(10 * r.calcMinConquestSize().v) / 10 + " strong must sweep the region.";
+			crisisDescription += "\nGoal: An army of " + r.kingdom + " at least " + Math.ceil(10 * r.calcMinConquestSize().v) / 10 + " strength must end the turn in the region.";
 			crisisDescription += cd("Policing", "Shady Connections");
-		} else if (r.noble.crisis.type == "unsafe border") {
+		} else if (r.noble.crisis.type == "BORDER") {
 			crisisDescription = r.noble.name + " is concerned about nearby enemies."
 			crisisDescription += "\nGoal: " + r.name + " has no neighboring enemy regions.";
 			crisisDescription += cd("Inspiring", "Untrusting");
-		} else if (r.noble.crisis.type == "ennui") {
+		} else if (r.noble.crisis.type == "ENNUI") {
 			crisisDescription = r.noble.name + " is bored with life."
 			crisisDescription += "\nGoal: " + r.kingdom + " throws a feast in the region.";
 			crisisDescription += cd("Generous", "Workaholic");
-		} else if (r.noble.crisis.type == "cultism") {
+		} else if (r.noble.crisis.type == "CULTISM") {
 			crisisDescription = r.noble.name + " is being woo'd by the Cult of the Witness."
 			crisisDescription += "\nGoal: A new temple is built in " + r.name + ".";
 			crisisDescription += cd("Pious", "Cultist");
-		} else if (r.noble.crisis.type == "overwhelmed") {
+		} else if (r.noble.crisis.type == "OVERWHELMED") {
 			crisisDescription = r.noble.name + " needs to be shown how to better govern the region."
 			crisisDescription += "\nGoal: A character loyal to " + r.kingdom + " performs the Govern action in " + r.name + ".";
 			crisisDescription += cd("Meticulous", "Wasteful");
-		} else if (r.noble.crisis.type == "uprising") {
+		} else if (r.noble.crisis.type == "UPRISING") {
 			crisisDescription = r.noble.name + " is facing a popular rebellion."
 			crisisDescription += "\nGoal: Popular unrest in " + r.name + " is 50% or less.";
 			crisisDescription += cd("Soothing", "Tyrannical");
-		} else if (r.noble.crisis.type == "starvation") {
+		} else if (r.noble.crisis.type == "STARVATION") {
 			crisisDescription = r.noble.name + " is starving alongside their people."
 			crisisDescription += "\nGoal: Starvation in " + r.name + " ceases.";
 			crisisDescription += cd("Rationing", "Desperate");
-		} else if (r.noble.crisis.type == "guild takeover") {
+		} else if (r.noble.crisis.type == "GUILD") {
 			crisisDescription = r.noble.name + " is losing power to the local guilds."
 			crisisDescription += "\nGoal: A new construction is built in " + r.name + ".";
 			crisisDescription += cd("Patronizing", "Broke");
 		}
 		crisisDescription += "\nDue at the end of week " + r.noble.crisis.deadline + ".";
-		crisis = `<tooltip-element tooltip="All nobles experience crises every six weeks. If resolved positively within six weeks, a crisis gives a positive trait to the noble and decreases noble unrest by 25 percentage points. If unresolved within the deadline, the noble gains a negative trait and 12 percentage points of unrest.">Crisis:</tooltip-element><tooltip-element id="crisis" tooltip="${crisisDescription}">${r.noble.crisis.type}</tooltip-element>`
+		crisis = `<tooltip-element tooltip="All nobles experience crises every six weeks. If resolved positively within six weeks, a crisis gives a positive trait to the noble and decreases noble unrest by 25 percentage points. If unresolved within the deadline, the noble gains a negative trait and 12 percentage points of unrest.">Crisis:</tooltip-element><tooltip-element id="crisis" tooltip="${crisisDescription}">${capitalizeForce(r.noble.crisis.type)}</tooltip-element>`
 	}
 	return `
 		<h1>Noble: ${r.noble.name}</h1>
+		<div class="crisis">${crisis}</div>
 		<div>
-			${crisis}
 			${traits}			
 		</div>
 	`;
