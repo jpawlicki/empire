@@ -1899,7 +1899,7 @@ final class World {
 					break;
 				case BANDITRY:
 					boolean armyPresent = false;
-					for (Army a : armies) if (a.type.equals("army") && a.calcStrength(this, leaders.get(a), inspires) > r.calcMinConquestStrength(this, false) && a.location == regions.indexOf(r) && a.kingdom.equals(r.kingdom)) armyPresent = true;
+					for (Army a : armies) if (a.type.equals("army") && a.calcStrength(this, leaders.get(a), inspires) > r.calcMinConquestStrength(this, true) && a.location == regions.indexOf(r) && a.kingdom.equals(r.kingdom)) armyPresent = true;
 					if (armyPresent) {
 						r.noble.tags.add("Policing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "With the aid of our troops, " + r.noble.name + " has eliminated the bandit threat from " + r.name + ", and has established a personal police to ensure the region remains secure."));
@@ -2457,10 +2457,13 @@ final class World {
 					break;
 			}
 			boolean success = power.get(perpetrator) > power.get(defender) || perpetrator.equals(defender);
+			boolean partialSuccess = success;
 			if (type == PlotType.CHURCH) {
 				success = success || (NationData.isFriendly(target, defender, World.this) && "praise".equals(action)) || (NationData.isEnemy(target, defender, World.this) && "denounce".equals(action));
+			} else if (type == PlotType.CHARACTER) {
+				for (Character cc : leaders) if (cc.name.equals(target)) partialSuccess = false;
 			}
-			String title = success ? "Successful Plot: " : "Failed Plot: ";
+			String title = success ? (partialSuccess ? "Successful Plot: " : "Partially Successful Plot: ") : "Failed Plot: ";
 			String details = "Our spies have become aware of " + (success ? "a successful" : "an unsuccessful") + " plot to ";
 			if (type == PlotType.REGION) {
 				if ("burn".equals(action)) {
@@ -2481,7 +2484,7 @@ final class World {
 				if (c != null && orders.get(c.kingdom) != null) {
 					order = "They were ordered to " + orders.get(c.kingdom).get("action_" + c.name.replace(" ", "_"));
 				}
-				if ("find".equals(action) || (c != null && leaders.contains(c))) {
+				if ("find".equals(action)) {
 					title += "Find " + target;
 					details += "locate " + target + (c != null ? ", a hero of " + c.kingdom : "") + ".";
 					if (success) {
@@ -2497,9 +2500,13 @@ final class World {
 						} else {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
 							if (perpetrator.equals(regions.get(targetRegion).kingdom)) {
-								details += " They were trespassing and arrested.";
-								c.captor = perpetrator; 
-								c.orderhint = "";
+								if (partialSuccess) {
+									details += " They were trespassing and arrested.";
+									c.captor = perpetrator; 
+									c.orderhint = "";
+								} else {
+									details += " They were leading armed forces and could not be arrested.";
+								}
 							} else {
 								details += " They were not trespassing and therefore left alone.";
 							}
@@ -2513,8 +2520,12 @@ final class World {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
 						} else {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							c.captor = perpetrator; 
-							c.orderhint = "";
+							if (partialSuccess) {
+								c.captor = perpetrator; 
+								c.orderhint = "";
+							} else {
+								details += " They were leading armed forces and could not be captured.";
+							}
 						}
 					}
 				} else if ("rescue".equals(action)) {
@@ -2538,10 +2549,14 @@ final class World {
 						if (c == null) {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
 						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							characters.remove(c);
-							if (c.tags.contains("Ruler")) {
-								kingdoms.get(c.kingdom).interstitials.add(new Interstitial(Interstitial.Type.RULER_DEATH));
+							if (partialSuccess) {
+								notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
+								characters.remove(c);
+								if (c.tags.contains("Ruler")) {
+									kingdoms.get(c.kingdom).interstitials.add(new Interstitial(Interstitial.Type.RULER_DEATH));
+								}
+							} else {
+								details += " They were leading armed forces and could not be assassinated.";
 							}
 						}
 					}
@@ -2765,6 +2780,11 @@ final class NationData {
 	String signingbonushint;
 	String password;
 	String email;
+	String accessToken;
+
+	void resetAccessToken() {
+		accessToken = Long.toString(new Random().nextLong(), Character.MAX_RADIX);
+	}
 
 	static boolean rulerValues(String kingdom, String value, World w) {
 		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.tags.contains("Ruler")) {
