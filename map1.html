@@ -203,7 +203,6 @@
 				document.getElementById("password_submit").disabled = true;
 				let req = new XMLHttpRequest();
 				req.open("get", "https://empire-189013.appspot.com/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (!isNaN(currentTurn) ? "&t=" + currentTurn : ""), true);
-				//req.open("get",             "http://localhost:8080/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (!isNaN(currentTurn) ? "&t=" + currentTurn : ""), true);
 				req.onerror = function (e) {};
 				req.onload = function (ev) {
 					if (req.status != 200) {

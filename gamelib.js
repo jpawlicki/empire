@@ -288,15 +288,21 @@ class Region {
 	}
 
 	calcMinConquestSize(includeUnrest = true) {
+		let mods = [];
+		if (this.noble != undefined && contains(this.noble.tags, "Loyal")) mods.push({"v": 1, "unit": "%", "why": "Loyal Noble"});
+		if (this.noble != undefined && contains(this.noble.tags, "Desperate")) mods.push({"v": -2, "unit": "%", "why": "Desperate Noble"});
+		if (contains(g_data.kingdoms[this.kingdom].tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
-		return new Calc("*", [
-			new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-			this.calcFortification(),
-			includeUnrest
-				? new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()])
-				: {"v": 1, "unit": "%", "why": "Base Opposition"},
-			{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
-		]);
+		return Calc.moddedNum(
+			new Calc("*", [
+				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
+				this.calcFortification(),
+				includeUnrest
+					? new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()])
+					: {"v": 1, "unit": "%", "why": "Base Opposition"},
+				{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
+			]),
+			mods);
 	}
 
 	getNeighbors() {
