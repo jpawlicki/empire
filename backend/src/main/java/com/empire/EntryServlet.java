@@ -330,16 +330,18 @@ public class EntryServlet extends HttpServlet {
 			if (r.password == null) return CheckPasswordResult.FAIL;
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
-			try {
-				byte[] passHash = BaseEncoding.base16().decode(Nation.NationGson.loadNation(r.kingdom, r.gameId, service).password);
-				if (Arrays.equals(attemptHash, passHash)) return CheckPasswordResult.PASS;
-			} catch (EntityNotFoundException e) {
-				// Do nothing.
-			}
+			// try {
+			// 	byte[] passHash = BaseEncoding.base16().decode(Nation.NationGson.loadNation(r.kingdom, r.gameId, service).password);
+			// 	if (Arrays.equals(attemptHash, passHash)) return CheckPasswordResult.PASS;
+			// } catch (EntityNotFoundException e) {
+			// 	// Do nothing.
+			// }
 			int date = r.turn != 0 ? r.turn : (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + r.gameId)).getProperty("date"))).longValue();
 			World w = World.load(r.gameId, date, service);
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
+			if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.kingdoms.get(r.kingdom).password))) return CheckPasswordResult.PASS;
+			// if (w.kingdoms.containsKey(r.kingdom) && w.kingdoms.get(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS;
 			if (!writeAccess && Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS;
 			return CheckPasswordResult.FAIL;
