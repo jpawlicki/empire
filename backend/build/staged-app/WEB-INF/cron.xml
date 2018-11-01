@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<cronentries>
-	<cron>
-		<url>/entry/advanceworldpoll</url>
-		<description>Check to see if any games need to advance.</description>
-		<schedule>every 15 minutes</schedule>
-	</cron>
-</cronentries>
