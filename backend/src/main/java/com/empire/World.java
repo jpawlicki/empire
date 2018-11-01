@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -425,7 +426,10 @@ final class World {
 	 * @return a map of e-mail notifications to send.
 	 */
 	public Map<String, String> advance(Map<String, Map<String, String>> orders) {
-		for (String k : kingdoms.keySet()) kingdoms.get(k).interstitials.clear();
+		for (String k : kingdoms.keySet()) {
+			kingdoms.get(k).interstitials.clear();
+			kingdoms.get(k).resetAccessToken();
+		}
 		notifications.clear();
 		rtc.clear();
 		// Update economy hints.
@@ -781,7 +785,7 @@ final class World {
 			Region region = regions.get(army.location);
 			if (action.startsWith("Patrol")) {
 				if (!army.type.equals("army")) continue;
-				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinConquestStrength(this, false)) {
+				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinPatrolStrength(this)) {
 					notifications.add(new Notification(army.kingdom, "Patrol Ineffective", "Army " + army.id + " is not strong enough to effectively patrol " + region.name + "."));
 					continue;
 				}
@@ -801,7 +805,7 @@ final class World {
 				}
 			} else if (action.startsWith("Raze ")) {
 				if (!army.type.equals("army")) continue;
-				if (army.calcStrength(this, leaders.get(army), inspires) < regions.get(army.location).calcMinConquestStrength(this, true) / 2) {
+				if (army.calcStrength(this, leaders.get(army), inspires) < regions.get(army.location).calcMinConquestStrength(this) / 2) {
 					notifications.add(new Notification(army.kingdom, "Razing Failed", "Army " + army.id + " is not powerful enough to raze constructions in " + region.name + "."));
 					continue;
 				}
@@ -881,7 +885,7 @@ final class World {
 				}
 				if (stopped) continue;
 				// Must be strong enough.
-				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinConquestStrength(this, true)) {
+				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinConquestStrength(this)) {
 					notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not strong enough to conquer " + region.name + "."));
 					continue;
 				}
@@ -931,7 +935,7 @@ final class World {
 				if (!army.type.equals("army")) continue;
 				if (region.noble == null) continue;
 				if (!region.kingdom.equals(army.kingdom)) continue;
-				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinConquestStrength(this, false)) {
+				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinPatrolStrength(this)) {
 					notifications.add(new Notification(army.kingdom, "Ousting Failed", "Army " + army.id + " is not strong enough to oust the nobility of " + region.name + "."));
 					continue;
 				}
@@ -1899,7 +1903,7 @@ final class World {
 					break;
 				case BANDITRY:
 					boolean armyPresent = false;
-					for (Army a : armies) if (a.type.equals("army") && a.calcStrength(this, leaders.get(a), inspires) > r.calcMinConquestStrength(this, true) && a.location == regions.indexOf(r) && a.kingdom.equals(r.kingdom)) armyPresent = true;
+					for (Army a : armies) if (a.type.equals("army") && a.calcStrength(this, leaders.get(a), inspires) > r.calcMinPatrolStrength(this) && a.location == regions.indexOf(r) && a.kingdom.equals(r.kingdom)) armyPresent = true;
 					if (armyPresent) {
 						r.noble.tags.add("Policing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "With the aid of our troops, " + r.noble.name + " has eliminated the bandit threat from " + r.name + ", and has established a personal police to ensure the region remains secure."));
@@ -2704,6 +2708,7 @@ final class World {
 		for (String k : kingdoms.keySet()) {
 			kingdoms.get(k).password = "";
 			kingdoms.get(k).email = "";
+			kingdoms.get(k).accessToken = "";
 		}
 		if ("(Observer)".equals(kingdom)) return;
 		// Filter out cult regions.
@@ -2783,7 +2788,7 @@ final class NationData {
 	String accessToken;
 
 	void resetAccessToken() {
-		accessToken = Long.toString(new Random().nextLong(), Character.MAX_RADIX);
+		accessToken = Long.toString(new SecureRandom().nextLong(), java.lang.Character.MAX_RADIX);
 	}
 
 	static boolean rulerValues(String kingdom, String value, World w) {
@@ -3162,14 +3167,17 @@ final class Region {
 		return Math.min(1, Math.max(0, unrest));
 	}
 
-	public double calcMinConquestStrength(World w, boolean includeUnrest) {
-		double base = Math.sqrt(population) * calcFortification() * 3 / 100;
-		if (includeUnrest) base *= 1 - calcUnrest(w);
+	public double calcMinConquestStrength(World w) {
+		double base = Math.sqrt(population) * calcFortification() * 3 / 100 * 1 - calcUnrest(w);
 		double mods = 1;
 		if (noble != null && noble.tags.contains("Loyal")) mods += 1;
 		if (noble != null && noble.tags.contains("Desperate")) mods -= 2;
 		if (w.kingdoms.get(kingdom).tags.contains("Stoic")) mods += .75;
 		return Math.max(0, base * mods);
+	}
+
+	public double calcMinPatrolStrength(World w) {
+		return Math.sqrt(population) * 3 / 100;
 	}
 
 	public double calcFortification() {

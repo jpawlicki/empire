@@ -58,7 +58,8 @@ class RegionReport extends HTMLElement {
 					${getNobleBlock(r)}
 					<h1><tooltip-element tooltip="Fortification measures how strong a region's defenses are. It depends on the number of fortification constructions constructed in the region.">Fortification:</tooltip-element> ${num(r.calcFortification(), 0, 100)}%</h1>
 					<div>
-						<tooltip-element tooltip="Regions can only be captured by armies strong enough to overthrow the local militia and government. The minimum conquerer strength is equal to the square root of (Population × 10 × Fortification × (100% - Unrest) × 3).">Conquest Threshold</tooltip-element><div>${num(r.calcMinConquestSize(), 1)}</div>
+						<tooltip-element tooltip="Regions can only be captured by armies strong enough to overthrow the local militia and government. The minimum conquerer strength is equal to the (square root of Population) × Fortification × (100% - Unrest) × 3%).">Conquest Threshold</tooltip-element><div>${num(r.calcMinConquestSize(), 1)}</div>
+						<tooltip-element tooltip="Regions can only be patrolled by armies strong enough to keep the population in check. The minimum patrol strength is equal to the (square root of Population) × 3%.">Patrol Threshold</tooltip-element><div>${num(r.calcMinPatrolSize(), 1)}</div>
 					</div>
 					<h1><tooltip-element tooltip="Each inhabitant of the region normally eats one measure of food each week. If there is insufficient food, 5% of the unfed population will die, 5% of the unfed population will emigrate (if possible), and popular unrest will dramatically increase.">Food:</tooltip-element> ${num(r.calcFoodWeeks(), 1)} Weeks</h1>
 					<div>
@@ -325,7 +326,7 @@ let getNobleBlock = function(r) {
 			crisisDescription += cd("Loyal", "Snubbed");
 		} else if (r.noble.crisis.type == "BANDITRY") {
 			crisisDescription = r.noble.name + " is plagued by rampant banditry."
-			crisisDescription += "\nGoal: An army of " + r.kingdom + " at least " + Math.ceil(10 * r.calcMinConquestSize().v) / 10 + " strength must end the turn in the region.";
+			crisisDescription += "\nGoal: An army of " + r.kingdom + " at least " + Math.ceil(10 * r.calcMinPatrolSize().v) / 10 + " strength must end the turn in the region.";
 			crisisDescription += cd("Policing", "Shady Connections");
 		} else if (r.noble.crisis.type == "BORDER") {
 			crisisDescription = r.noble.name + " is concerned about nearby enemies."

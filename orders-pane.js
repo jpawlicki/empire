@@ -812,7 +812,7 @@ class OrdersPane extends HTMLElement {
 		let opts = [];
 		if (unit.type == "army") {
 			if (r.type == "land") {
-				if (unit.calcStrength() > r.calcMinConquestSize()) {
+				if (unit.calcStrength() > r.calcMinPatrolSize()) {
 					opts.push("Patrol " + r.name);
 					opts.push("Stay in " + r.name);
 				} else {
@@ -1089,11 +1089,11 @@ class OrdersPane extends HTMLElement {
 			} else if (o.value.startsWith("Slay")) {
 				warn = "(will anger the Church of Iruhan)";
 			} else if (o.value.startsWith("Patrol")) {
-				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize(false).v) {
+				if (a.calcStrength().v < g_data.regions[a.location].calcPatrolSize().v) {
 					warn = "(army may be too small to patrol)";
 				}
 			} else if (o.value.startsWith("Oust")) {
-				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize(false).v) {
+				if (a.calcStrength().v < g_data.regions[a.location].calcPatrolSize().v) {
 					warn = "(army may be too small to oust)";
 				}
 			} else if (o.value.startsWith("Conquer")) {

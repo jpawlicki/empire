@@ -287,7 +287,7 @@ class Region {
 		return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]);
 	}
 
-	calcMinConquestSize(includeUnrest = true) {
+	calcMinConquestSize() {
 		let mods = [];
 		if (this.noble != undefined && contains(this.noble.tags, "Loyal")) mods.push({"v": 1, "unit": "%", "why": "Loyal Noble"});
 		if (this.noble != undefined && contains(this.noble.tags, "Desperate")) mods.push({"v": -2, "unit": "%", "why": "Desperate Noble"});
@@ -297,10 +297,19 @@ class Region {
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
 				this.calcFortification(),
-				includeUnrest
-					? new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()])
-					: {"v": 1, "unit": "%", "why": "Base Opposition"},
+				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()]),
 				{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
+			]),
+			mods);
+	}
+
+	calcMinPatrolSize() {
+		let mods = [];
+		// √(the population of the region) × 3%
+		return Calc.moddedNum(
+			new Calc("*", [
+				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
+				{"v": 3 / 100, "unit": "%", "why": "Base Patrol Factor"}
 			]),
 			mods);
 	}
