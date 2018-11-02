@@ -581,7 +581,8 @@ class OrdersPane extends HTMLElement {
 							let m = document.createElement("div");
 							msg.to.push(msg.from);
 							msg.to.sort();
-							m.innerHTML = "(" + msg.to.join(", ") + ") " + msg.from + ": " + msg.text;
+							m.innerHTML = "<b>(" + msg.to.join(", ") + ") " + msg.from + ": </b>" + msg.text;
+							m.style.background = "linear-gradient(90deg, #fff -50%, " + g_data.kingdoms[msg.from].color_bg + " 350%)";
 							d.appendChild(m);
 						}
 					}

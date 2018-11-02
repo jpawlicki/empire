@@ -2,13 +2,15 @@
 /*
 
 Upcoming Rules Changes:
- * Food consumption in a region is randomized by +/- 2% each turn.
+ * Armies no longer consume any food.
    * This is to workaround an issue where players could figure out the size of hidden armies by carefully tallying the food consumption in each region.
+	 * Army food consumption was also inconsistent between sea and land regions and caused confusion in regions with tiny populations (because the UI did not predict/communicate how much food would be eaten by the army, so people doing exact food transfers tended to under-guess by a couple thousand and have a hundred or so civilians starve to death.
  * Conquest of a region will require having an "Always attack their armies/navies" disposition toward the current ruler of that region.
    * This is to avoid a situation where you can pay tribute to a nation while simultaneously conquering their territories, or be "friendly" or "neutral" to a nation on the turn you backstab them.
 	 * Consequently, the noble unrest penalty for conquering a region paying tribute to you has been lowered to 6, to keep the overall unrest cost of conquering a tributary's regions at 10.
  * Rulers of hidden captive characters will not be told who the captor is?
    * In practice they tend to have a small list of possible culprits, so this doesn't change too much.
+ * The "Raiders" tag will no longer hide the army from the actual owner of the region the army occupies.
  * The "Policing" trait of nobles will now read "Pirates will not appear in this region. The noble contributes 8 gold each turn to bribe pirates not to appear in the nation overall." (It currently reads "Pirates will not appear in this region.")
    * Nobles reducing pirate probability in a specific region is a very small contribution to your national security overall, but the "banditry" crisis is very common due to how people tend to group up their armies. Making the effect more powerful will hopefully make it feel a little better when you successfully resolve a banditry crisis.
  * The "Pillagers (Pirate)" tag of pirate armies will now contribute +0.4 pirate threat per gold, rather than +1.
@@ -20,6 +22,9 @@ Upcoming Rules Changes:
  * Adding a state-only ideology: "Company". This state ideology is used if and only if a government controls no regions at all. The effects are: "+50% plot strength. Your armies and navies cost half as much to maintain".
    * In both games there are players approaching 0 held regions, at which point their state ideology is undefined by the current rules. This keeps such players interesting, and provides a bit of a catch-up mechanic as well. It is also an opportunity for alliances of nations to specialize their members - if they can trust each other!
 	 * I also imagine that this might unlock new play styles in future games, where players might start as companies and act entirely as mercenaries, with some option to spend money to hire soldiers out of the pirate pool or similar.
+ * The minimum conquest size of a region formula has been adjusted slightly so that fortification, unrest, and other mods to the minimum conquest size now stack additively, which is more consistent with other modifiers in the game.
+ * The minimum patrol size of a region now factors in regional unrest: happy regions are easier to patrol, solve banditry in, and oust nobles from; high-unrest regions are much harder.
+ * The death of a ruler will no longer cause a player to lose a turn - the heir will be chosen immediately.
 
 Long-Term Changes
  * Chalice of Compassion will cause -30% taxation income, rather than -30% recruitment.
