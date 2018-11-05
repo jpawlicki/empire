@@ -1,6 +1,10 @@
 // Implementation Plan
 /*
 
+Effective immediately:
+
+Effective starting during resolution of turn 11:
+
 Upcoming Rules Changes:
  * Armies no longer consume any food.
    * This is to workaround an issue where players could figure out the size of hidden armies by carefully tallying the food consumption in each region.
@@ -22,30 +26,40 @@ Upcoming Rules Changes:
  * Adding a state-only ideology: "Company". This state ideology is used if and only if a government controls no regions at all. The effects are: "+50% plot strength. Your armies and navies cost half as much to maintain".
    * In both games there are players approaching 0 held regions, at which point their state ideology is undefined by the current rules. This keeps such players interesting, and provides a bit of a catch-up mechanic as well. It is also an opportunity for alliances of nations to specialize their members - if they can trust each other!
 	 * I also imagine that this might unlock new play styles in future games, where players might start as companies and act entirely as mercenaries, with some option to spend money to hire soldiers out of the pirate pool or similar.
- * The minimum conquest size of a region formula has been adjusted slightly so that fortification, unrest, and other mods to the minimum conquest size now stack additively, which is more consistent with other modifiers in the game.
+ * The minimum conquest size of a region formula has been adjusted slightly so that fortification mods to the minimum conquest size now stack additively, which is more consistent with other modifiers in the game. (Unrest still applies multiplicatively to the base number.)
  * The minimum patrol size of a region now factors in regional unrest: happy regions are easier to patrol, solve banditry in, and oust nobles from; high-unrest regions are much harder.
  * The death of a ruler will no longer cause a player to lose a turn - the heir will be chosen immediately.
+   * This was simply a bad design choice.
+ * When armies merge, the prepared motion(s) of the smaller army will be lost.
+   * This prevents players from setting up single-soldier "highways" across difficult edges and fast-moving armies by repeated merges, which in turn makes army motion more predictable and terrain more important.
+ * Shipyards will not produce ships which would be captured.
+   * Since capture is evaluated before shipyard production, they would always produce ships for the current ruler (which would not be captured until the following turn) - the rules as written were inconsistent about this case and this solution makes more sense.
 
 Long-Term Changes
  * Chalice of Compassion will cause -30% taxation income, rather than -30% recruitment.
 		* The recruitment penalty means little to CoC-heavy nations - it doesn't affect their troop cap and can easily be overcome by the signing bonus mechanic. Changing CoC to affect overall economy makes it harder to play a CoC nation that is militarily secure, which encourages them to form better alliances rather than just turtle.
- * Signing bonus efficacy will be scaled down (cost twice as much for the same effect).
+ * Signing bonus efficacy will be scaled down (at low levels, cost at least twice as much for the same effect).
 		* Overall I think signing bonus is earning too much.
  * 10% increase in the global amount of food.
     * I need a better way to create inequality of distribution, too. A lot of the score profiles (religion, culture, etc) are good conflict generators but in these games I feel they've been overshadoweded a bit too much by the food issues.
+ * Undead armies cannot be merged into non-undead armies.
+ * Undead armies cannot be disbanded.
+ * Cult-aligned nations may choose (each turn) between their recruits being Undead versus their normal culture.
+ * Navies will gain cultural features (like armies currently have). The cultural features of a navy can be swapped to another culture by taking a "Change Crew" action taken in a friendly port of that culture. Captured navies will be less effective until such an action is taken.
 
 =======CRITICAL
-interstitials
-Check all TODOs.
 game status report (GM mail, turn number)
-
-=======PLANNED
 Eliminate passwords - e-mails for game start and game advance include kingdom and one-turn-use passwords in the URL, which is scrubbed via javascript
 E-mail GM on turn advance.
-Build player waitlist database.
-
-
-=======OPTIONAL
+Past turn viewer.
+Front-page of global news / battles / etc.
+Build player database.
+Per-unit history section detailing past locations, etc.
+Add some kind of spying action that reveals hidden units.
+Allow building without characters?
+Move HR/C/S blocks above the past correspondence block?
+orders pane should enforce tribute vs army attack restrictions
+clarify international display so that tribute more clearly implies friendship.
 Merge-lines, divisions planned movement arrows.
 Intrigue map overlay
 Pirate threat map overlay

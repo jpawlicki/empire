@@ -63,9 +63,11 @@
 					}
 				}
 			}
-			let motions = {};
+			let motionMapPointCache = {};
 			function updateMotions(plannedMotions) {
-				let change = false;
+				let pm = document.getElementById("plannedMotions");
+				pm.innerHTML = "";
+				let motions = {};
 				let movers = [];
 				for (let a of g_data.armies) movers.push(a);
 				for (let a of g_data.characters) if (a.location != -1) movers.push(a);
@@ -75,53 +77,50 @@
 					let m = motions[k];
 					for (let p of a.preparation) {
 						if (m["r" + p.to] == undefined) {
+							if (!motionMapPointCache.hasOwnProperty(k + "_r" + p.to)) motionMapPointCache[k + "_r" + p.to] = g_data.regions[p.to].getRandomPointInRegion(g_data.regions.slice(p.to + 1), .75);
 							m["r" + p.to] = {
 								"sofar": p.amount,
-								"p": g_data.regions[p.to].getRandomPointInRegion(g_data.regions.slice(p.to + 1), .75),
-								"planned": false
+								"p": motionMapPointCache[k + "_r" + p.to],
+								"planned": false,
+								"type": "travel"
 							};
-							change = true;
 						}
 					}
 					if (plannedMotions != undefined) {
-						for (let mm in m) {
-							let p = mm == "r" + plannedMotions[k];
-							if (p) {
-								if (!m[mm].planned) {
-									m[mm].planned = true;
-									change = true;
-								}
-							} else {
-								if (m[mm].planned) {
-									m[mm].planned = false;
-									change = true;
-								}
-							}
-						}
 						if (plannedMotions[k] != undefined) {
 							let mp = m["r" + plannedMotions[k]];
 							if (mp == undefined) {
-								m["r" + plannedMotions[k]] = {
-									"sofar": 0,
-									"p": g_data.regions[plannedMotions[k]].getRandomPointInRegion(g_data.regions.slice(plannedMotions[k] + 1), .75),
-									"planned": true
-								};
-								change = true;
+								if (plannedMotions[k].hasOwnProperty("id")) {
+									m["rmerge" + plannedMotions[k].id] = {
+										"sofar": 0,
+										"p": plannedMotions[k].mapPoint,
+										"planned": true,
+										"type": "merge"
+									};
+								} else {
+									if (!motionMapPointCache.hasOwnProperty(k + "_r" + plannedMotions[k])) motionMapPointCache[k + "_r" + plannedMotions[k]] = g_data.regions[plannedMotions[k]].getRandomPointInRegion(g_data.regions.slice(plannedMotions[k] + 1), .75);
+									m["r" + plannedMotions[k]] = {
+										"sofar": 0,
+										"p": motionMapPointCache[k + "_r" + plannedMotions[k]],
+										"planned": true,
+										"type": "travel"
+									};
+								}
+							} else {
+								m["r" + plannedMotions[k]].planned = true;
 							}
 						}
 					}
-				}
-				if (change) {
-					let pm = document.getElementById("plannedMotions");
-					pm.innerHTML = "";
-					let movers = [];
-					for (let a of g_data.armies) movers.push(a);
-					for (let a of g_data.characters) if (a.location != -1) movers.push(a);
-					for (let a of movers) {
-						let k = a.id != undefined ? "a" + a.id : a.name;
-						if (motions[k] == undefined) continue;
-						for (m in motions[k]) {
-							if (!motions[k][m].planned && motions[k][m].sofar == 0) continue;
+					for (m in motions[k]) {
+						if (!motions[k][m].planned && motions[k][m].sofar == 0) continue;
+						if (motions[k][m].type == "merge") {
+							let s = document.createElementNS("http://www.w3.org/2000/svg", "path");
+							s.setAttribute("d", "M" + a.mapPoint[0] + "," + a.mapPoint[1] + " L" + motions[k][m].p[0] + "," + motions[k][m].p[1]);
+							s.setAttribute("stroke", "#222");
+							s.setAttribute("stroke-width", ".8");
+							s.setAttribute("stroke-dasharray", "1 2");
+							pm.appendChild(s);
+						} else {
 							let s = document.createElementNS("http://www.w3.org/2000/svg", "path");
 							let midpoint = interpolate(a.mapPoint, motions[k][m].p, motions[k][m].sofar / travelCost(a.location, parseInt(m.replace("r", ""))));
 							s.setAttribute("d", "M" + a.mapPoint[0] + "," + a.mapPoint[1] + " L" + midpoint[0] + "," + midpoint[1]);
@@ -274,6 +273,9 @@
 					style += "#regionContents circle." + ki.toLowerCase() + "{ fill: " + k.color_fg + "; stroke: transparent; }\n";
 					style += "#regionContents line." + ki.toLowerCase() + "{ stroke: " + k.color_bg + "; }\n";
 				}
+				style += "#regionContents .pirate { fill: #000; stroke: #fff; color: #fff; }\n";
+				style += "#regionContents circle.pirate { fill: #fff; stroke: transparent; }\n";
+				style += "#regionContents line.pirate { stroke: #000; }\n";
 				let maxpop = 0;
 				for (let r of g_data.regions) {
 					if (r.population > maxpop) maxpop = r.population;

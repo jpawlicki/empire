@@ -1624,7 +1624,8 @@ final class World {
 					}
 					if (from == null || to == null) throw new RuntimeException("Can't find region " + fromName + " or " + toName);
 					if (from == to) continue;
-					double amount = Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000);
+					double amount = Math.max(0, Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000));
+					if (amount == 0) continue;
 					double cost = amount / 50000;
 					if (cost > kingdoms.get(k).gold) {
 						amount *= kingdoms.get(k).gold / cost;
@@ -3168,7 +3169,7 @@ final class Region {
 	}
 
 	public double calcMinConquestStrength(World w) {
-		double base = Math.sqrt(population) * calcFortification() * 3 / 100 * 1 - calcUnrest(w);
+		double base = Math.sqrt(population) * calcFortification() * 3 / 100 * (1 - calcUnrest(w));
 		double mods = 1;
 		if (noble != null && noble.tags.contains("Loyal")) mods += 1;
 		if (noble != null && noble.tags.contains("Desperate")) mods -= 2;

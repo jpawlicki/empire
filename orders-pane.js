@@ -1119,6 +1119,10 @@ class OrdersPane extends HTMLElement {
 					let dest = undefined;
 					for (let i = 0; i < g_data.regions.length; i++) if (g_data.regions[i].name == o.value.replace("Travel to ", "")) dest = i;
 					if (dest != undefined) amotions["a" + a.id] = dest;
+				} else if (o.value.startsWith("Merge into ")) {
+					let dest = undefined;
+					for (let i = 0; i < g_data.armies.length; i++) if (g_data.armies[i].id == parseInt(o.value.replace("Merge into ", "").replace("army ", "").replace("navy ",""))) dest = g_data.armies[i];
+					amotions["a" + a.id] = dest;
 				} else {
 					amotions["a" + a.id] = undefined;
 				}
