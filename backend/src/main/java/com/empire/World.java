@@ -437,62 +437,6 @@ final class World {
 			kingdoms.get(k).taxratehint = orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_tax", "100");
 			kingdoms.get(k).signingbonushint = orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_recruit_bonus", "0");
 		}
-		// Heirs are appointed.
-		{
-			HashSet<String> unruled = new HashSet<>();
-			for (String k : kingdoms.keySet()) {
-				unruled.add(k);
-			}
-			for (Character c : characters) if (c.tags.contains("Ruler")) unruled.remove(c.kingdom);
-			ArrayList<String> remove = new ArrayList<>();
-			for (String k : unruled) {
-				ArrayList<Character> cc = new ArrayList<Character>();
-				for (Character c : characters) if (c.kingdom.equals(k)) cc.add(c);
-				if (!cc.isEmpty()) {
-					Character c = cc.get((int)(Math.random() * cc.size()));
-					c.tags.add("Ruler");
-					notifyAll(k + " Succession", c.name + " has emerged as the new de facto ruler of " + k + ".");
-					remove.add(k);
-				}
-			}
-			for (String k : remove) unruled.remove(k);
-			for (String k : unruled) {
-				if (Math.random() < .65) {
-					notifyAll(k + " Succession Crisis", k + " is left without a clear ruler. Chaos within the nation escalates as armies turn to piracy. It is unclear how long it will take for the nation to find a new ruler.");
-					kingdoms.get(k).interstitials.add(new Interstitial(Interstitial.Type.SUCCESSION_CRISIS));
-					for (Army a : armies) if (a.kingdom.equals(k)) a.kingdom = "Pirate";
-				} else {
-					Character c = new Character();
-					c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(k).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
-					c.honorific = "Protector ";
-					c.kingdom = k;
-					c.tags.add("Ruler");
-					c.values.add("food");
-					c.values.add("prosperity");
-					if (Math.random() < 0.1) c.values.add("happiness");
-					if (Math.random() < 0.1) c.values.add("supremacy");
-					if (Math.random() < 0.1) c.values.add("conquest");
-					if (Math.random() < 0.1) c.values.add("glory");
-					if (Math.random() < 0.1) c.values.add("religion");
-					if (Math.random() < 0.1) c.values.add("ideology");
-					if (Math.random() < 0.1) c.values.add("security");
-					if (Math.random() < 0.1) c.values.add("riches");
-					if (Math.random() < 0.1) c.values.add("friendship");
-					if (Math.random() < 0.1) c.values.add("culture");
-					if (Math.random() < 0.1) c.values.add("unity");
-					c.experience.put("general", (int)(Math.random() * 10 + 1));
-					c.experience.put("admiral", (int)(Math.random() * 10 + 1));
-					c.experience.put("governor", (int)(Math.random() * 10 + 1));
-					c.experience.put("spy", (int)(Math.random() * 10 + 1));
-					List<Region> spawnRegions = new ArrayList<>();
-					for (Region r : regions) if (k.equals(r.kingdom)) spawnRegions.add(r);
-					if (spawnRegions.isEmpty()) spawnRegions = regions;
-					c.location = regions.indexOf(spawnRegions.get((int)(Math.random() * regions.size())));
-					characters.add(c);
-					notifyAll(k + " Succession Crisis Ends", c.name + " has emerged as the new de facto ruler of the greatly weakened " + k + ".");
-				}
-			}
-		}
 		// Letters are delivered.
 		for (String k : orders.keySet()) {
 			Map<String, String> kOrders = orders.get(k);
@@ -1140,6 +1084,9 @@ final class World {
 				}
 				notifyAll("Execution of " + c.name, notification);
 				characters.remove(c);
+				if (c.tags.contains("Ruler")) {
+					notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
+				}
 			} else if (action.startsWith("Set Free")) {
 				notifications.add(new Notification(c.kingdom, c.name + " Freed", c.name + "'s captors have released " + c.name + " from captivity."));
 				c.captor = "";
@@ -1662,6 +1609,7 @@ final class World {
 				if (a.tags.contains("Crafts-soldiers") && !orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, "").startsWith("Travel ")) {
 					mods -= 0.5;
 				}
+				if ("Company".equals(NationData.getStateReligion(a.kingdom, this))) mods -= 0.5;
 				if (kingdoms.get(a.kingdom).tags.contains("Rebellious") && kingdoms.get(a.kingdom).coreRegions.contains(a.location)) {
 					mods -= 0.5;
 				}
@@ -2250,6 +2198,55 @@ final class World {
 			for (String k : kingdoms.keySet()) score(k, "worldpeace", war ? -1 : 10);
 		}
 
+		// Heirs are appointed.
+		{
+			HashSet<String> unruled = new HashSet<>();
+			for (String k : kingdoms.keySet()) unruled.add(k);
+			for (Character c : characters) if (c.tags.contains("Ruler")) unruled.remove(c.kingdom);
+			ArrayList<String> remove = new ArrayList<>();
+			for (String k : unruled) {
+				ArrayList<Character> cc = new ArrayList<Character>();
+				for (Character c : characters) if (c.kingdom.equals(k)) cc.add(c);
+				if (!cc.isEmpty()) {
+					Character c = cc.get((int)(Math.random() * cc.size()));
+					c.tags.add("Ruler");
+					notifyAll(k + " Succession", c.name + " has emerged as the new de facto ruler of " + k + ".");
+					remove.add(k);
+				}
+			}
+			for (String k : remove) unruled.remove(k);
+			for (String k : unruled) {
+				Character c = new Character();
+				c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(k).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				c.honorific = "Protector ";
+				c.kingdom = k;
+				c.tags.add("Ruler");
+				c.values.add("food");
+				c.values.add("prosperity");
+				if (Math.random() < 0.1) c.values.add("happiness");
+				if (Math.random() < 0.1) c.values.add("supremacy");
+				if (Math.random() < 0.1) c.values.add("conquest");
+				if (Math.random() < 0.1) c.values.add("glory");
+				if (Math.random() < 0.1) c.values.add("religion");
+				if (Math.random() < 0.1) c.values.add("ideology");
+				if (Math.random() < 0.1) c.values.add("security");
+				if (Math.random() < 0.1) c.values.add("riches");
+				if (Math.random() < 0.1) c.values.add("friendship");
+				if (Math.random() < 0.1) c.values.add("culture");
+				if (Math.random() < 0.1) c.values.add("unity");
+				c.experience.put("general", (int)(Math.random() * 10 + 1));
+				c.experience.put("admiral", (int)(Math.random() * 10 + 1));
+				c.experience.put("governor", (int)(Math.random() * 10 + 1));
+				c.experience.put("spy", (int)(Math.random() * 10 + 1));
+				List<Region> spawnRegions = new ArrayList<>();
+				for (Region r : regions) if (k.equals(r.kingdom)) spawnRegions.add(r);
+				if (spawnRegions.isEmpty()) spawnRegions = regions;
+				c.location = regions.indexOf(spawnRegions.get((int)(Math.random() * regions.size())));
+				characters.add(c);
+				notifyAll(k + " Succession", c.name + " has emerged as the new de facto ruler of the greatly weakened " + k + ".");
+			}
+		}
+
 		// Date advances.
 		Season currentSeason = getSeason();
 		date++;
@@ -2558,7 +2555,7 @@ final class World {
 								notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
 								characters.remove(c);
 								if (c.tags.contains("Ruler")) {
-									kingdoms.get(c.kingdom).interstitials.add(new Interstitial(Interstitial.Type.RULER_DEATH));
+									notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
 								}
 							} else {
 								details += " They were leading armed forces and could not be assassinated.";
@@ -2830,7 +2827,7 @@ final class NationData {
 			if (!kingdom.equals(r.kingdom)) continue;
 			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.tags.contains("Pious") ? 3 : 1));
 		}
-		String max = "None";
+		String max = "Company";
 		double maxVal = 0;
 		for (String n : weights.keySet()) {
 			if (weights.get(n) > maxVal) {
@@ -3278,6 +3275,7 @@ final class Character {
 		if (boosted) power += 0.5;
 		power += calcLevel("spy") * 0.3;
 		if (NationData.getStateReligion(kingdom, w).equals("Northern (Lyskr)")) power += 1;
+		if (NationData.getStateReligion(kingdom, w).equals("Company")) power += .5;
 		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) power += inspires * .05;
 		if (!"".equals(captor)) power -= 0.5;
 		return power;

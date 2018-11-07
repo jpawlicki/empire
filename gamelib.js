@@ -531,7 +531,7 @@ class Kingdom {
 
 	calcStateReligion() {
 		let weights = this.calcStateReligionWeights();
-		let max = "";
+		let max = "Company";
 		for (let w in weights) {
 			if (!weights.hasOwnProperty(w)) continue;
 			if (max == "" || weights[w] > weights[max]) max = w;
@@ -614,6 +614,7 @@ class Character {
 		let mods = [];
 		mods.push({"v": 0.3 * this.calcLevel("spy"), "unit": "%", "why": "Experience"});
 		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Northern (Lyskr)") mods.push({"v": 1, "unit": "%", "why": "State Ideology (Lyskr)"});
+		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Company") mods.push({"v": .5, "unit": "%", "why": "State Ideology (Company)"});
 		return Calc.moddedNum({"v": 1, "unit": "power", "why": "Base Plot Power"}, mods);
 	}
 }
