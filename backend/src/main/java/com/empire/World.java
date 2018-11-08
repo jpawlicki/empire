@@ -426,6 +426,12 @@ final class World {
 	 * @return a map of e-mail notifications to send.
 	 */
 	public Map<String, String> advance(Map<String, Map<String, String>> orders) {
+		// Temporary: replace all Unpredictable tags with Unruly tags.
+		for (Army a : armies) if (a.tags.contains("Unpredictable")) {
+			a.tags.remove("Unpredictable");
+			a.tags.add("Unruly");
+		}
+		// End Temporary.
 		for (String k : kingdoms.keySet()) {
 			kingdoms.get(k).interstitials.clear();
 			kingdoms.get(k).resetAccessToken();
@@ -621,7 +627,6 @@ final class World {
 					double size = Math.min(a.size - 1, Double.parseDouble(kOrders.get(o.replace("parent", "size"))));
 					if (size < 0) continue;
 					a.size -= size;
-					int nextId = 0;
 					Army nu = new Army();
 					nu.id = getNewArmyId();
 					nu.type = a.type;
@@ -648,6 +653,28 @@ final class World {
 			}
 			for (String a : newOrders.keySet()) kOrders.put(a, newOrders.get(a));
 		}
+		for (Army a : armies) {
+			if (a.tags.contains("Unruly") && a.size >= 2000) {
+				a.size /= 2;
+				Army nu = new Army(); 
+				nu.id = getNewArmyId();
+				nu.type = a.type;
+				nu.size = a.size;
+				nu.kingdom = a.kingdom;
+				nu.location = a.location;
+				nu.preparation = new ArrayList<>();
+				nu.tags = new ArrayList<>(a.tags);
+				nu.composition = new HashMap<>();
+				for (String c : a.composition.keySet()) {
+					a.composition.put(c, a.composition.get(c) / 2);
+					nu.composition.put(c, a.composition.get(c) / 2);
+				}
+				for (Preparation p : a.preparation) {
+					nu.preparation.add(new Preparation(p));
+				}
+				armies.add(nu);
+			}
+		}
 		// Lead orders (mark leaders for movement and battle).
 		HashMap<Army, Character> leaders = new HashMap<>();
 		{
@@ -669,9 +696,13 @@ final class World {
 			for (Army a : leaders.keySet()) {
 				Character l = leaders.get(a);
 				leaders.get(a).addExperience(a.type.equals("army") ? "general" : "admiral", this);
+				leaders.get(a).leadingArmy = a.id;
 			}
 		}
+		HashMap<String, Double> pirateThreatSources = new HashMap<>();
 		// All merges.
+		HashMap<Army, Double> originalSizes = new HashMap<>();
+		for (Army a : armies) originalSizes.put(a, a.size);
 		for (String k : orders.keySet()) {
 			Map<String, String> kOrders = orders.get(k);
 			Map<Integer, Integer> alreadyMerged = new HashMap<>(); 
@@ -690,7 +721,9 @@ final class World {
 					if (src == target) continue;
 					if (target == null || src == null || target.location != src.location || !target.kingdom.equals(k) || !src.kingdom.equals(k) || !src.type.equals(target.type)) throw new RuntimeException("Cannot execute " + k + ": " + o + ": " + order);
 					if (!src.tags.equals(target.tags)) {
-						pirate.threat += src.size * 0.33 * (src.type.equals("army") ? 1.0 / 100 : 1);
+						double threatIncrease = src.size * 0.33 * (src.type.equals("army") ? 1.0 / 100 : 1);
+						pirate.threat += threatIncrease;
+						pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 						src.size *= .67;
 					}
 					alreadyMerged.put(sourceId, targetId);
@@ -700,6 +733,7 @@ final class World {
 				}
 			}
 		}
+		for (Army a : armies) if (a.size >= 2 * originalSizes.get(a)) a.preparation.clear();
 
 		// Intrigue operations resolved.
 		ArrayList<String> boosts = new ArrayList<>();
@@ -808,9 +842,13 @@ final class World {
 			} else if (action.startsWith("Disband")) {
 				if (region.type.equals("land")) {
 					region.population += army.size * .67;
-					pirate.threat += army.size * .33 / (army.type.equals("army") ? 100 : 1);
+					double threatIncrease = army.size * .33 / (army.type.equals("army") ? 100 : 1);
+					pirate.threat += threatIncrease; 
+					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 				} else {
-					pirate.threat += army.size / (army.type.equals("army") ? 100 : 1);
+					double threatIncrease = army.size / (army.type.equals("army") ? 100 : 1);
+					pirate.threat += threatIncrease; 
+					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 				}
 				armies.remove(army);
 			} else if (action.startsWith("Conquer")) {
@@ -831,6 +869,11 @@ final class World {
 				// Must be strong enough.
 				if (army.calcStrength(this, leaders.get(army), inspires) < region.calcMinConquestStrength(this)) {
 					notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not strong enough to conquer " + region.name + "."));
+					continue;
+				}
+				// Must attack.
+				if (kingdoms.get(army.kingdom).relationships.get(region.kingdom).battle != Relationship.War.ATTACK) {
+					notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not able to conquer " + region.name + " without attacking " + region.kingdom + "."));
 					continue;
 				}
 				String target = action.replace("Conquer for ", "");
@@ -893,7 +936,7 @@ final class World {
 		// Army travels.
 		for (Army army : armies) {
 			String action = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
-			if (army.tags.contains("Unpredictable")) {
+			if (army.tags.contains("Unpredictable") || army.tags.contains("Unruly")) {
 				List<Region> n = regions.get(army.location).getNeighbors(this);
 				ArrayList<Region> except = new ArrayList<>();
 				for (Region r : n) if (r.type.equals("water")) except.add(r);
@@ -1166,7 +1209,7 @@ final class World {
 				a.composition.put("Pirate", a.size);
 				a.orderhint = "";
 				a.tags.add("Pillagers (Pirate)");
-				a.tags.add("Unpredictable");
+				a.tags.add("Unruly");
 				armies.add(a);
 				break;
 			}
@@ -1296,6 +1339,7 @@ final class World {
 						a.kingdom = max.kingdom;
 						if (max.kingdom.equals("Pirate")) {
 							pirate.threat += a.size;
+							pirateThreatSources.put("Naval Captures", pirateThreatSources.getOrDefault("Naval Captures", 0.0) + a.size);
 							removals.add(a);
 						}
 					}
@@ -1328,6 +1372,7 @@ final class World {
 				if (r.noble != null && r.noble.tags.contains("Snubbed")) r.noble.unrest = Math.min(1, r.noble.unrest + .02);
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.kingdom) && NationData.isEnemy(k, r.kingdom, this) && kingdoms.get(k).previousTributes.contains(r.kingdom)) r.noble.unrest = Math.min(1, r.noble.unrest + .04);
 				if ("Iruhan (Chalice of Compassion)".equals(r.religion)) r.harvest *= 1.05;
+				if (r.noble != null && r.noble.tags.contains("Policing")) pirate.bribes.put(r.kingdom, pirate.bribes.getOrDefault(r.kingdom, 0.0) - 8);
 			}
 			// Syrjen unrest mods.
 			HashMap<Region, Double> popularUnrests = new HashMap<>();
@@ -1422,7 +1467,8 @@ final class World {
 				if (max != null && !NationData.isFriendly(max.kingdom, r.kingdom, this) && (max.tags.contains("Pillagers") || max.tags.contains("Pillagers (Pirate)"))) whoTaxes = max.kingdom;
 				double income = r.calcTaxIncome(this, governors.get(r), taxationRates.get(r.kingdom), foodConsumptionMod.containsKey(r));
 				if ("Pirate".equals(whoTaxes)) {
-					pirate.threat += income;
+					pirate.threat += income * 0.4;
+					pirateThreatSources.put("Pillaging " + r.kingdom, pirateThreatSources.getOrDefault("Pillaging " + r.kingdom, 0.0) + income * 0.4);
 				} else {
 					incomeSources.get(whoTaxes).incomeTax += income;
 				}
@@ -1625,7 +1671,9 @@ final class World {
 					for (Army a : armies) if (a.kingdom.equals(k)) {
 						double des = a.size * desertion;
 						a.size -= des;
-						pirate.threat += a.type.equals("navy") ? des : des / 100;
+						double threatIncrease = a.type.equals("navy") ? des : des / 100;
+						pirate.threat += threatIncrease;
+						pirateThreatSources.put("Desertion from " + a.kingdom, pirateThreatSources.getOrDefault("Desertion from " + a.kingdom, 0.0) + threatIncrease);
 					}
 					notifications.add(new Notification(k, "Desertion", Math.round(desertion * 100) + "% of our troops deserted due to lack of pay."));
 				} else {
@@ -1667,7 +1715,10 @@ final class World {
 					if ("shipyard".equals(c.type)) shipyards++;
 				}
 				if (shipyards > 0) {
-					buildShips(r.kingdom, i, shipyards * 2);
+					Army max = getMaxArmyInRegion(i, leaders, inspires);
+					if (max == null || !NationData.isEnemy(r.kingdom, max.kingdom, this)) {
+						buildShips(r.kingdom, i, shipyards * 2);
+					}
 				}
 			}
 			for (String k : kingdoms.keySet()) {
@@ -1741,7 +1792,6 @@ final class World {
 				Region r = regions.get(i);
 				if (r.type.equals("water")) continue;
 				double hungry = r.calcConsumption(this, foodConsumptionMod.getOrDefault(r, 1.0));
-				for (Army a : armies) if (a.location == i && a.type.equals("army")) hungry += a.size;
 				if (hungry <= r.food) {
 					r.food -= hungry;
 				} else {
@@ -2247,6 +2297,21 @@ final class World {
 			}
 		}
 
+		// Notify of pirate threat increase.
+		{
+			double totalIncrease = 0;
+			for (String k : pirateThreatSources.keySet()) {
+				totalIncrease += pirateThreatSources.get(k);
+			}
+			if (totalIncrease > 0) {
+				String sources = "";
+				for (String k : pirateThreatSources.keySet()) {
+					sources += "\n" + k + ": " + Math.round(pirateThreatSources.get(k) / totalIncrease * 100) + "%";
+				}
+				notifyAll("Pirate Threat", "Pirate Threat has increased by " + Math.round(totalIncrease * 100) + " pirates, a quarter of which appeared this week. The increase was driven by: " + sources);
+			}
+		}
+
 		// Date advances.
 		Season currentSeason = getSeason();
 		date++;
@@ -2668,7 +2733,7 @@ final class World {
 			if (isHiddenAlyrjaHelper(a.location, kingdom)) return false;
 		}
 		if (tivar.veil) return true;
-		if (!a.tags.contains("Raiders") || regions.get(a.location).kingdom == null || !NationData.isFriendly(a.kingdom, regions.get(a.location).kingdom, this)) return false;
+		if (!a.tags.contains("Raiders") || regions.get(a.location).kingdom == null || kingdom.equals(regions.get(a.location).kingdom) || !NationData.isFriendly(a.kingdom, regions.get(a.location).kingdom, this)) return false;
 		return true;
 	}
 
@@ -2679,6 +2744,11 @@ final class World {
 			if (isHiddenAlyrjaHelper(c.location, kingdom)) return false;
 		}
 		if (c.hidden) return true;
+		if (c.leadingArmy != -1) {
+			Army a = null;
+			for (Army i : armies) if (i.id == c.leadingArmy) a = i;
+			if (a != null && isHidden(a, kingdom)) return true;
+		}
 		if (tivar.veil) return true;
 		return false;
 	}
@@ -3166,16 +3236,19 @@ final class Region {
 	}
 
 	public double calcMinConquestStrength(World w) {
-		double base = Math.sqrt(population) * calcFortification() * 3 / 100 * (1 - calcUnrest(w));
+		double base = Math.sqrt(population) * 3 / 100 * (1 - calcUnrest(w));
 		double mods = 1;
 		if (noble != null && noble.tags.contains("Loyal")) mods += 1;
 		if (noble != null && noble.tags.contains("Desperate")) mods -= 2;
 		if (w.kingdoms.get(kingdom).tags.contains("Stoic")) mods += .75;
+		mods += calcFortification() - 1;
 		return Math.max(0, base * mods);
 	}
 
 	public double calcMinPatrolStrength(World w) {
-		return Math.sqrt(population) * 3 / 100;
+		double mods = 1;
+		mods += calcUnrest(w) * 2 - .7;
+		return Math.sqrt(population) * 3 / 100 * mods;
 	}
 
 	public double calcFortification() {
@@ -3259,6 +3332,7 @@ final class Character {
 	List<String> tags = new ArrayList<>();
 	Map<String, Integer> experience = new HashMap<>();
 	List<String> values = new ArrayList<>();
+	int leadingArmy = -1;
 	String orderhint = "";
 
 	public int calcLevel(String dimension) {

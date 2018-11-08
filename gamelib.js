@@ -292,11 +292,11 @@ class Region {
 		if (this.noble != undefined && contains(this.noble.tags, "Loyal")) mods.push({"v": 1, "unit": "%", "why": "Loyal Noble"});
 		if (this.noble != undefined && contains(this.noble.tags, "Desperate")) mods.push({"v": -2, "unit": "%", "why": "Desperate Noble"});
 		if (contains(g_data.kingdoms[this.kingdom].tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
+		mods.push({"v": this.calcFortification() - 1, "unit": "%", "why": "Fortification"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
 		return Calc.moddedNum(
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-				this.calcFortification(),
 				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()]),
 				{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
 			]),
@@ -305,6 +305,7 @@ class Region {
 
 	calcMinPatrolSize() {
 		let mods = [];
+		mods.push({"v": this.calcUnrest() * 2 - 0.7, "unit": "%", "why": "Unrest"});
 		// √(the population of the region) × 3%
 		return Calc.moddedNum(
 			new Calc("*", [
@@ -655,6 +656,9 @@ class Army {
 			let state = k.calcStateReligion();
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .25, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology matches state ideology"});
 			else if (state.startsWith("Iruhan")) mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology and Iruhan state religion"});
+		}
+		for (let c of g_data.characters) {
+			if (c.leadingArmy == this.id) mods.push({"v": c.calcLevel("general") * 0.2, "unit": "%", "why": "Led by " + c.name});
 		}
 		return Calc.moddedNum(base, mods);
 	}

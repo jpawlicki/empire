@@ -290,7 +290,7 @@ let getNobleBlock = function(r) {
 		"Soothing": "-2 percentage points of popular unrest each turn.",
 		"Meticulous": "+15% harvest yield.",
 		"Loyal": "The ruler's armies are 125% as strong in this region, and this region's minimum conquest strength is increased 100%.",
-		"Policing": "Pirates will not appear in this region.",
+		"Policing": "Pirates will not appear in this region. The noble pays 8 gold to bribe pirates not to appear in any region of this nation each turn.",
 		"Generous": "-20 percentage points of popular unrest on the turn of a harvest.",
 		"Pious": "The population of this region counts triple in determining national or global dominant ideologies.",
 		"Rationing": "Regional food consumption decreased by 20%.",
