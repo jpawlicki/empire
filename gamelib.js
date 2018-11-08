@@ -292,12 +292,12 @@ class Region {
 		if (this.noble != undefined && contains(this.noble.tags, "Loyal")) mods.push({"v": 1, "unit": "%", "why": "Loyal Noble"});
 		if (this.noble != undefined && contains(this.noble.tags, "Desperate")) mods.push({"v": -2, "unit": "%", "why": "Desperate Noble"});
 		if (contains(g_data.kingdoms[this.kingdom].tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
-		mods.push({"v": this.calcFortification() - 1, "unit": "%", "why": "Fortification"});
+		mods.push({"v": this.calcFortification().v - 1, "unit": "%", "why": "Fortification"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
 		return Calc.moddedNum(
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()]),
+				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest().v]),
 				{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
 			]),
 			mods);
@@ -305,7 +305,7 @@ class Region {
 
 	calcMinPatrolSize() {
 		let mods = [];
-		mods.push({"v": this.calcUnrest() * 2 - 0.7, "unit": "%", "why": "Unrest"});
+		mods.push({"v": this.calcUnrest().v * 2 - 0.7, "unit": "%", "why": "Unrest"});
 		// √(the population of the region) × 3%
 		return Calc.moddedNum(
 			new Calc("*", [
