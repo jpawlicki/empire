@@ -534,7 +534,7 @@ class Kingdom {
 		let max = "Company";
 		for (let w in weights) {
 			if (!weights.hasOwnProperty(w)) continue;
-			if (max == "" || weights[w] > weights[max]) max = w;
+			if (max == "Company" || weights[w] > weights[max]) max = w;
 		}
 		return max;
 	}
