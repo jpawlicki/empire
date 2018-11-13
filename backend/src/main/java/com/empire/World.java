@@ -2469,11 +2469,11 @@ final class World {
 			String details = "Our spies have become aware of " + (success ? "a successful" : "an unsuccessful") + " plot to ";
 			if (type == PlotType.REGION) {
 				if ("burn".equals(action)) {
-					title += "Burn Food in " + regions.get(targetRegion);
+					title += "Burn Food in " + regions.get(targetRegion).name;
 					details += "destroy " + Math.round(regions.get(targetRegion).food / 2000) + "k measures of food in " + regions.get(targetRegion).name;
 					if (success) regions.get(targetRegion).food /= 2;
 				} else if ("rebel".equals(action)) {
-					title += "Incite Rebellion in " + regions.get(targetRegion);
+					title += "Incite Rebellion in " + regions.get(targetRegion).name;
 					details += "incite popular unrest in " + regions.get(targetRegion).name;
 					if (success) regions.get(targetRegion).food /= 2;
 				} else {
