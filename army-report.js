@@ -14,6 +14,7 @@ class ArmyReport extends HTMLElement {
 			"Pathfinders": "This army (and any leader) move 3 edges per week when moving into a friendly region.",
 			"Pillagers (Pirate)": "While this army is the largest army in a region, it suppresses recruitment and diverts that region's taxes to pirate threat.",
 			"Unpredictable": "This army moves randomly into a neighboring land region.",
+			"Unruly": "If larger than 2000 soldiers, this army divides into two equal forces. This army (and any divisions) move randomly into a neighboring land region.",
 			"Higher Power": "This army does not require payment and does not inflict casualties on other armies with Higher Power.",
 			"Undead": "Any non-Undead soldiers who fall in battle with at least one Undead army rise from the dead and are distributed as soldiers evenly among participating Undead armies.",
 		};
