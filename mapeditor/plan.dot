@@ -52,6 +52,7 @@ Long-Term Changes (Not this game)
  * Higher Power armies cannot be disbanded.
  * Cult-aligned nations may choose (each turn) between their recruits being Undead versus their normal culture.
  * Navies will gain cultural features (like armies currently have). The cultural features of a navy can be swapped to another culture by taking a "Change Crew" action taken in a friendly port of that culture. Captured navies will be less effective until such an action is taken.
+ * "Follow Army X" order - moves to wherever X is moving, if possible; else moves toward them; if there is a follow cycle, resolve with largest army first.
 
 =======CRITICAL
 game status report (GM mail, turn number)

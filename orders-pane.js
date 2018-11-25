@@ -321,7 +321,9 @@ class OrdersPane extends HTMLElement {
 				whor.innerHTML = unit.name;
 				who.appendChild(whor);
 				if (unit.captor == kingdom.name) {
-					who.appendChild(document.createTextNode(" (Captive)"));
+					who.appendChild(document.createTextNode(" (Our Captive)"));
+				} else if (unit.captor != "") {
+					who.appendChild(document.createTextNode(" (Captive of " + unit.captor + ")"));
 				}
 				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/ /g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_armies"));
 			}

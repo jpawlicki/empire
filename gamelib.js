@@ -297,7 +297,7 @@ class Region {
 		return Calc.moddedNum(
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest().v]),
+				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()]),
 				{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
 			]),
 			mods);
@@ -601,6 +601,7 @@ class Character {
 		this.experience = dataEntry.experience;
 		this.orderhint = dataEntry.orderhint;
 		this.values = dataEntry.values;
+		this.leadingArmy = dataEntry.leading_army;
 	}
 
 	calcLevel(dimension) {
@@ -658,7 +659,7 @@ class Army {
 			else if (state.startsWith("Iruhan")) mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology and Iruhan state religion"});
 		}
 		for (let c of g_data.characters) {
-			if (c.leadingArmy == this.id) mods.push({"v": c.calcLevel("general") * 0.2, "unit": "%", "why": "Led by " + c.name});
+			if (c.leadingArmy == this.id) mods.push({"v": c.calcLevel(this.type == "army" ? "general" : "admiral") * 0.2, "unit": "%", "why": "Led by " + c.name});
 		}
 		return Calc.moddedNum(base, mods);
 	}
