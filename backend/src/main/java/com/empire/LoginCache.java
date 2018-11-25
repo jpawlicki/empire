@@ -42,7 +42,7 @@ final class LoginCache {
 		LoginKey nu = new LoginKey(email, gameId, date);
 		if (!recordedKeys.contains(nu)) {
 			recordedKeys.add(nu);
-			Entity e = new Entity("", nu.gameId + "_" + nu.date + "_" + nu.email);
+			Entity e = new Entity("Active", nu.gameId + "_" + nu.date + "_" + nu.email);
 			e.setProperty("login", true);
 			service.put(e);
 		}
