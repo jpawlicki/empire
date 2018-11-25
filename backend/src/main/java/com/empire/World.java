@@ -602,6 +602,7 @@ final class World {
 		// Default orderhints.
 		for (Character c : characters) {
 			c.orderhint = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_"), "");
+			c.leadingArmy = 0;
 		}
 		int inspires = 0;
 		// Inspire orders.
@@ -653,11 +654,12 @@ final class World {
 			}
 			for (String a : newOrders.keySet()) kOrders.put(a, newOrders.get(a));
 		}
+		ArrayList<Army> additions = new ArrayList<>();
 		for (Army a : armies) {
 			if (a.tags.contains("Unruly") && a.size >= 2000) {
 				a.size /= 2;
 				Army nu = new Army(); 
-				nu.id = getNewArmyId();
+				nu.id = getNewArmyId() + additions.size();
 				nu.type = a.type;
 				nu.size = a.size;
 				nu.kingdom = a.kingdom;
@@ -672,9 +674,10 @@ final class World {
 				for (Preparation p : a.preparation) {
 					nu.preparation.add(new Preparation(p));
 				}
-				armies.add(nu);
+				additions.add(nu);
 			}
 		}
+		armies.addAll(additions);
 		// Lead orders (mark leaders for movement and battle).
 		HashMap<Army, Character> leaders = new HashMap<>();
 		{
@@ -2348,7 +2351,7 @@ final class World {
 					email += "\n " + m.signed.replace("Signed, ", "");
 				}
 			}
-			email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.";
+			email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game and give your nation to a player on the wait list, reply \"RETIRE\" to this e-mail.\nIf you wish for the GM or AI to make move on your behalf this turn, reply \"AUTO\" to this e-mail.";
 			emails.put(kingdoms.get(kingdom).email, email);
 		}
 		return emails;
@@ -2540,7 +2543,7 @@ final class World {
 				} else if ("rebel".equals(action)) {
 					title += "Incite Rebellion in " + regions.get(targetRegion).name;
 					details += "incite popular unrest in " + regions.get(targetRegion).name;
-					if (success) regions.get(targetRegion).food /= 2;
+					if (success) regions.get(targetRegion).unrestPopular = Math.min(1, regions.get(targetRegion).unrestPopular + 0.4);
 				} else {
 					throw new RuntimeException("Unreocognized plot action: " + action);
 				}
@@ -3316,7 +3319,7 @@ final class Army {
 			else mods += .15;
 		}
 		if (type.equals("army") && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += inspires * .05;
-		if (leader != null && !"".equals(leader.captor)) mods += leader.calcLevel(type.equals("army") ? "general" : "admiral") * .2;
+		if (leader != null && "".equals(leader.captor)) mods += leader.calcLevel(type.equals("army") ? "general" : "admiral") * .2;
 		return strength * mods;
 	}
 }
