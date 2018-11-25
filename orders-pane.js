@@ -804,6 +804,9 @@ class OrdersPane extends HTMLElement {
 			op.syncDisabled = false;
 		};
 		req.send();
+		if (g_turndata.length - 1 != g_data.date) {
+			for (let e of shadow.querySelectorAll("input, select, button")) e.disabled = true;
+		}
 	}
 
 	getNewDivisionId() {

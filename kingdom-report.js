@@ -334,7 +334,7 @@ class KingdomReport extends HTMLElement {
 		};
 		let notes = shadow.getElementById("notifications");
 		let nList = [];
-		for (let n of g_turndata.notifications) if (n.who == kingdom.name) nList.push(n);
+		for (let n of g_data.notifications) if (n.who == kingdom.name) nList.push(n);
 		if (nList.length == 0) {
 			notes.style.display = "none";
 			shadow.getElementById("heading_notifications").style.display = "none";
