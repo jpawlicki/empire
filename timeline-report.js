@@ -21,7 +21,7 @@ class TimelineReport extends HTMLElement {
 				position: relative;
 			}
 			#abspos > div:first-child {		
-				background: url(${"images/international.jpg"}) no-repeat center center;
+				background: url(${"images/timeline_strip.jpg"}) no-repeat center center;
 				background-size: cover;
 				padding-top: .2em;
 				padding-bottom: .2em;
