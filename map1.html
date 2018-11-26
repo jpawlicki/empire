@@ -225,6 +225,8 @@
 			}
 
 			function start(date) {
+				// Reset used points
+				for (let r of g_pointCache) if (r != undefined) r.nextuse = 0;
 				// Data Computation
 				g_data = {};
 				g_data.date = g_turndata[date].date;

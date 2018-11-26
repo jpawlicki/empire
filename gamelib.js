@@ -127,6 +127,7 @@ class World {
 }
 
 // ============ REGION ============
+let g_pointCache = [];
 class Region {
 	constructor(id, constEntry, dataEntry, date) {
 		this.id =  id;
@@ -428,13 +429,18 @@ class Region {
 	}
 
 	getRandomPointInRegion(upperRegions, centrality = 0) {
+		if (g_pointCache[this.id] == undefined) g_pointCache[this.id] = {"points": [], "nextuse": 0};
+		let g = g_pointCache[this.id];
+		if (g.points.length - g.nextuse > 0) {
+			return g.points[g.nextuse++];
+		}
 		let rect = this.getBoundingRect();
 		rect[0] = rect[0] + centrality * rect[2] / 2;
 		rect[1] = rect[1] + centrality * rect[3] / 2;
 		rect[2] *= (1 - centrality);
 		rect[3] *= (1 - centrality);
 		let points = [];
-		outer: for (let i = 0; i < 100; i++) {
+		outer: for (let i = 0; i < 50; i++) {
 			let rp = [rect[0] + Math.random() * rect[2], rect[1] + Math.random() * rect[3]];
 			if (winding(rp, this.path) == 1) {
 				for (let r of upperRegions) {
@@ -450,8 +456,11 @@ class Region {
 			mean[0] += p[0] / points.length;
 			mean[1] += p[1] / points.length;
 		}
-		if (winding(mean, this.path) == 1) return mean;
-		return points[0];
+		let obp = points[0];
+		if (winding(mean, this.path) == 1) obp = mean;
+		g.points.push(obp);
+		g.nextuse++;
+		return obp;
 	}
 }
 
