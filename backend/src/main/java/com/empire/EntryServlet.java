@@ -185,7 +185,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			if (result == CheckPasswordResult.PASS_PLAYER) LoginCache.getSingleton().recordLogin(r.gameId, date, w.kingdoms.get(r.kingdom).email, service);
+			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.kingdoms.get(r.kingdom).email, service);
 			w.filter(r.kingdom);
 			return w.toString();
 		} catch (EntityNotFoundException e) {
