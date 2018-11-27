@@ -1672,6 +1672,7 @@ final class World {
 					incomeSources.get(k).spentSoldiers = kingdoms.get(k).gold;
 					kingdoms.get(k).gold = 0;
 					for (Army a : armies) if (a.kingdom.equals(k)) {
+						if (a.tags.contains("Higher Power")) continue;
 						double des = a.size * desertion;
 						a.size -= des;
 						double threatIncrease = a.type.equals("navy") ? des : des / 100;
