@@ -546,6 +546,9 @@ class OrdersPane extends HTMLElement {
 			if (k != kingdom.name && rules.location == rulerLocation)
 			colocatedRulers.push(rules);
 		}
+		function sanitize(s) {
+			return s.replace(/</g, "&lt").replace(/>/g, "&gt");
+		}
 		if (colocatedRulers.length > 0) {
 			let rtc = shadow.getElementById("nations_rtc");
 			rtc.innerHTML = "";
@@ -570,7 +573,7 @@ class OrdersPane extends HTMLElement {
 			let submit = document.createElement("button");
 			let checkForUpdate = function() {
 				let req = new XMLHttpRequest();
-				req.open("get", "https://empire-189013.appspot.com/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password, true);
+				req.open("get", "https://empire-189013.appspot.com/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 				req.onerror = function (e) {
 					window.alert("Failed to communicate with the server.");
 				};
@@ -583,7 +586,7 @@ class OrdersPane extends HTMLElement {
 							let m = document.createElement("div");
 							msg.to.push(msg.from);
 							msg.to.sort();
-							m.innerHTML = "<b>(" + msg.to.join(", ") + ") " + msg.from + ": </b>" + msg.text;
+							m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
 							m.style.background = "linear-gradient(90deg, #fff -50%, " + g_data.kingdoms[msg.from].color_bg + " 350%)";
 							d.appendChild(m);
 						}

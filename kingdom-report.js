@@ -253,7 +253,7 @@ class KingdomReport extends HTMLElement {
 			let lt = document.createElement("div");
 			lt.appendChild(document.createTextNode(line));
 			let snippet = document.createElement("expandable-snippet");
-			snippet.setAttribute("text", l.text);
+			snippet.setAttribute("text", l.text.replace(/</g, "&lt").replace(/>/g, "&gt"));
 			snippet.setAttribute("max-length", 64);
 			lt.appendChild(snippet);
 			letDiv.appendChild(lt);
