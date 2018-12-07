@@ -28,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -897,10 +898,10 @@ final class World {
 				}
 				if (kingdoms.get(region.kingdom).goodwill <= -75) kingdoms.get(army.kingdom).goodwill += 5;
 				notifyAll(region.name + " Conquered", "An army of " + army.kingdom + " has conquered " + region.name + " (a region of " + region.kingdom + ") and installed a government loyal to " + target + "." + nobleFate);
+				for (Region r : regions) if (r.noble != null && r.kingdom.equals(army.kingdom)) if (tributes.get(region.kingdom).contains(army.kingdom) && kingdoms.get(region.kingdom).previousTributes.contains(r.kingdom)) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
 				region.kingdom = target;
 				conqueredRegions.add(region);
 				army.orderhint = "";
-				for (Region r : regions) if (r.noble != null && r.kingdom.equals(army.kingdom)) for (String k : tributes.keySet()) if (tributes.get(k).contains(army.kingdom) && kingdoms.get(k).previousTributes.contains(r.kingdom)) r.noble.unrest = Math.min(1, r.noble.unrest + .1);
 			} else if (action.startsWith("Slay Civilians")) {
 				if (!army.type.equals("army")) continue;
 				// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.
@@ -994,6 +995,7 @@ final class World {
 		HashMap<Region, ArrayList<Character>> governors = new HashMap<>();
 		HashSet<Region> builds = new HashSet<>();
 		HashSet<Region> templeBuilds = new HashSet<>();
+		ArrayList<Character> removeCharacters = new ArrayList<>();
 		for (Character c : characters) {
 			String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_"), "");
 			Region region = regions.get(c.location);
@@ -1129,7 +1131,7 @@ final class World {
 					notification += " The inhabitants of " + c.captor + " celebrated the event with offerings to their ruler.";
 				}
 				notifyAll("Execution of " + c.name, notification);
-				characters.remove(c);
+				removeCharacters.add(c);
 				if (c.tags.contains("Ruler")) {
 					notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
 				}
@@ -1138,6 +1140,7 @@ final class World {
 				c.captor = "";
 			}
 		}
+		for (Character c : removeCharacters) characters.remove(c);
 		// Pirates in Alyrja regions are destroyed.
 		{
 			ArrayList<Army> remove = new ArrayList<>();
@@ -1606,8 +1609,12 @@ final class World {
 			HashMap<Region, Double> netFoodTransfers = new HashMap<>();
 			for (String k : orders.keySet()) {
 				Map<String, String> kOrders = orders.get(k);
+				TreeSet<Integer> transfers = new TreeSet<>();
 				for (String o : kOrders.keySet()) {
-					if (!o.startsWith("economy_amount_")) continue;
+					if (o.startsWith("economy_amount_")) transfers.add(new Integer(o.replace("economy_amount_", "")));
+				}
+				for (Integer i : transfers) {
+					String o = "economy_amount_" + i;
 					String fromName = kOrders.get(o.replace("amount", "from"));
 					String toName = kOrders.get(o.replace("amount", "to"));
 					toName = toName.substring(toName.indexOf(") ") + 2, toName.length());
@@ -1867,7 +1874,7 @@ final class World {
 				for (String k : wreckage.keySet()) {
 					String notification = "The terrible magical earthquakes triggered by the followers of Rjinku have taken their toll on our nation, destroying:";
 					for (String t : wreckage.get(k).keySet()) {
-						notification += "\n" + wreckage.get(k).get(t) + t + (t.endsWith("s") ? "" : "s");
+						notification += "\n" + wreckage.get(k).get(t) + " " + t + (t.endsWith("s") || wreckage.get(k).get(t) == 1 ? "" : "s");
 					}
 					notifications.add(new Notification(k, "Earthquakes", notification));
 				}
@@ -2117,7 +2124,7 @@ final class World {
 							notifications.add(new Notification(r.kingdom, "Noble Crisis (Starvation)", r.noble.name + " feels deeply for their subjects in " + r.name + " and has asked the nation to fix the starvation situation immediately."));
 							break;
 						case GUILD:
-							notifications.add(new Notification(r.kingdom, "Noble Crisis (Guild)", r.noble.name + " has notified us that the guilds forming in " + r.name + " are becoming economic powerhouses, threatening to cut out the nobility altogether. They request we an improvement in " + r.name + " as part of a plan to out-compete the guilds."));
+							notifications.add(new Notification(r.kingdom, "Noble Crisis (Guild)", r.noble.name + " has notified us that the guilds forming in " + r.name + " are becoming economic powerhouses, threatening to cut out the nobility altogether. They request we construct an improvement in " + r.name + " as part of a plan to out-compete the guilds."));
 							break;
 					}
 				}
@@ -2226,7 +2233,7 @@ final class World {
 					if (kWarships > warships) moreWarships++;
 					if (kSoldiers > soldiers) moreSoldiers++;
 				}
-				if (moreSoldiers == 0 && moreWarships == 0) score(k, "security", 5);
+				if (moreSoldiers == 0 || moreWarships == 0) score(k, "security", 5);
 				if (moreWarships >= 3 && moreSoldiers >= 3) score(k, "security", -1);
 			}
 			// Culture

@@ -283,6 +283,8 @@ class OrdersPane extends HTMLElement {
 							opts.push("Instate Noble (" + n.tags.join(", ") + ")");
 						}
 					}
+				}
+				if (r.type == "land") {
 					if (r.isCoastal()) opts.push("Build Shipyard");
 					opts.push("Build Fortifications");
 					for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
