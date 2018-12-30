@@ -60,7 +60,11 @@ final class World {
 
 	private static String loadJson(long gameId, int turn, DatastoreService service) throws EntityNotFoundException {
 		Entity e = service.get(KeyFactory.createKey(TYPE, gameId + "_" + turn));
-		return new String(((Text)e.getProperty("json")).getValue());
+		if (e.hasProperty("json")) {
+			return new String(((Text)e.getProperty("json")).getValue());
+		} else {
+			return Compressor.decompress(((Blob)e.getProperty("json_gzip")).getBytes());
+		}
 	}
 
 	public static World load(long gameId, int turn, DatastoreService service) throws EntityNotFoundException {
@@ -413,7 +417,7 @@ final class World {
 
 	public Entity toEntity(long gameId) {
 		Entity e = new Entity(TYPE, gameId + "_" + date);
-		e.setProperty("json", new Text(getGson().toJson(this)));
+		e.setProperty("json_gzip", new Blob(Compressor.compress(getGson().toJson(this))));
 		return e;
 	}
 
@@ -1309,7 +1313,7 @@ final class World {
 				ArrayList<Army> localUndeadArmies = new ArrayList<>();
 				for (Army a : localArmies) if (a.tags.contains("Undead") && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
 				if (localUndeadArmies.size() > 0) {
-					battleDetails += ", and " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult.";
+					battleDetails += ", and " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult";
 					double raised = dead / 2 / localUndeadArmies.size();
 					for (Army u : localUndeadArmies) {
 						u.size += raised;
@@ -2302,7 +2306,7 @@ final class World {
 				List<Region> spawnRegions = new ArrayList<>();
 				for (Region r : regions) if (k.equals(r.kingdom)) spawnRegions.add(r);
 				if (spawnRegions.isEmpty()) spawnRegions = regions;
-				c.location = regions.indexOf(spawnRegions.get((int)(Math.random() * regions.size())));
+				c.location = regions.indexOf(spawnRegions.get((int)(Math.random() * spawnRegions.size())));
 				characters.add(c);
 				notifyAll(k + " Succession", c.name + " has emerged as the new de facto ruler of the greatly weakened " + k + ".");
 			}
@@ -2518,6 +2522,10 @@ final class World {
 				case CHARACTER:
 					for (Character c : characters) if (c.name.equals(target)) {
 						defender = "".equals(c.captor) ? c.kingdom : c.captor;
+					}
+					if ("".equals(defender)) {
+						notifications.add(new Notification(perpetrator, "Plot Pre-empted", target + " was killed and therefore our plot could not be enacted."));
+						return;
 					}
 					break;
 				case REGION:

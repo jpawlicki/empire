@@ -2,7 +2,11 @@ package com.empire;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
+import com.google.appengine.api.datastore.KeyFactory;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 final class LoginCache {
 	private static final LoginCache singleton = new LoginCache();
@@ -46,5 +50,28 @@ final class LoginCache {
 			e.setProperty("login", true);
 			service.put(e);
 		}
+	}
+	synchronized List<Boolean> checkLogin(long gameId, int date, Iterable<String> emails, DatastoreService service) {
+		ArrayList<Boolean> result = new ArrayList<>();
+		for (String email : emails) {
+			LoginKey nu = new LoginKey(email, gameId, date);
+			if (recordedKeys.contains(nu)) {
+				result.add(true);
+			} else {
+				try {
+					service.get(KeyFactory.createKey("Active", gameId + "_" + date + "_" + email));
+					recordedKeys.add(nu);
+					result.add(true);
+				} catch (EntityNotFoundException e) {
+					result.add(false);
+				}
+			}
+		}
+		return result;
+	}
+	List<List<Boolean>> fetchLoginHistory(long gameId, int finalDate, List<String> emails, DatastoreService service) {
+		ArrayList<List<Boolean>> result = new ArrayList<>();
+		for (int i = 1; i <= finalDate; i++) result.add(checkLogin(gameId, i, emails, service));
+		return result;
 	}
 }

@@ -1,0 +1,46 @@
+<html>
+	<head>
+		<script>
+			function doChange(event) {
+				let pw = document.getElementById("gmPassword").value;
+				let gameId = parseInt(document.getElementById("gameId").value);
+				let nupw = document.getElementById("newPassword").value;
+				let kingdom = document.getElementById("kingdom").value;
+				let nuemail = document.getElementById("email").value;
+				
+				let req = new XMLHttpRequest();
+				req.open("post", "https://empire-189013.appspot.com/entry/changeplayer?gid=" + gameId + "&password=" + pw + "&k=" + kingdom, true);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					console.log(req.response);
+				};
+				req.send(JSON.stringify({
+					"email": nuemail,
+					"password": nupw
+				}));
+				event.preventDefault();
+			}
+		</script>
+		<style>
+			body {
+				font-family: sans-serif;
+			}
+			th, td {
+				text-align: center;
+				border-left: 1px solid #eee;
+			}
+		</style>
+	</head>
+	<body>
+		<form onsubmit="return doChange(event);">
+			<label>GM Password: <input id="gmPassword" type="password"/></label>
+			<label>Game ID: <input id="gameId" type="number"/></label>
+			<label>Kingdom: <input id="kingdom"/></label>
+			<label>New Email: <input id="email"/></label>
+			<label>New Password: <input id="newPassword" type="password"/></label>
+			<button>Engage!</button>
+		</form>
+	</body>
+</html>

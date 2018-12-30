@@ -86,6 +86,8 @@ public class EntryServlet extends HttpServlet {
 			json = getWorld(r);
 		} else if (req.getRequestURI().equals("/entry/advanceworldpoll")) {
 			json = getAdvancePoll();
+		} else if (req.getRequestURI().equals("/entry/activity")) {
+			json = getActivity(r);
 		} else {
 			resp.sendError(404, "No such path.");
 			return;
@@ -131,6 +133,10 @@ public class EntryServlet extends HttpServlet {
 			}
 		} else if (req.getRequestURI().equals("/entry/rtc")) {
 			if (!postRealTimeCommunication(r)) {
+				err = "Not allowed.";
+			}
+		} else if (req.getRequestURI().equals("/entry/changeplayer")) {
+			if (!postChangePlayer(r)) {
 				err = "Not allowed.";
 			}
 		} else {
@@ -190,6 +196,38 @@ public class EntryServlet extends HttpServlet {
 			return w.toString();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No such world.");
+			return null;
+		}
+	}
+
+	private String getActivity(Request r) {
+		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
+		if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
+		try {
+			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			HashMap<String, List<String>> nationEmails = new HashMap<>();
+			for (Map.Entry<String, NationData> kingdom : World.load(r.gameId, date, service).kingdoms.entrySet()) {
+				if (nationEmails.containsKey(kingdom.getValue().email)) {
+					nationEmails.get(kingdom.getValue().email).add(kingdom.getKey());
+				} else {
+					ArrayList<String> kingdoms = new ArrayList<>();
+					kingdoms.add(kingdom.getKey());
+					nationEmails.put(kingdom.getValue().email, kingdoms);
+				}
+			}
+			ArrayList<String> emails = new ArrayList<String>(nationEmails.keySet());
+			List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
+			List<Map<String, Boolean>> result = new ArrayList<>();
+			for (List<Boolean> turnActives : actives) {
+				HashMap<String, Boolean> turn = new HashMap<>();
+				for (int i = 0; i < emails.size(); i++) for (String nation : nationEmails.get(emails.get(i))) {
+					turn.put(nation, turnActives.get(i));
+				}
+				result.add(turn);
+			}
+			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
+		} catch (EntityNotFoundException e) {
+			log.log(Level.WARNING, "No such world.", e);
 			return null;
 		}
 	}
@@ -406,6 +444,35 @@ public class EntryServlet extends HttpServlet {
 			w.addRtc(r.body, r.kingdom);
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
+		} catch (EntityNotFoundException e) {
+			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
+		} finally {
+			if (txn.isActive()) {
+				txn.rollback();
+			}
+		}
+		return true;
+	}
+
+	private static final class ChangePlayerRequestBody {
+		public String email;
+		public String password;
+	}
+	private boolean postChangePlayer(Request r) {
+		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
+		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+		try {
+			if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return false;
+			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			World w = World.load(r.gameId, date, service);
+			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+			w.kingdoms.get(r.kingdom).email = body.email;
+			w.kingdoms.get(r.kingdom).password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + body.password).getBytes(StandardCharsets.UTF_8)));
+			service.put(w.toEntity(r.gameId));
+			txn.commit();
+		} catch (NoSuchAlgorithmException e) {
+			log.log(Level.SEVERE, "Hash error", e);
+			return false;
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
 		} finally {

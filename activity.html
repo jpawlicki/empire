@@ -1,0 +1,68 @@
+<html>
+	<head>
+		<script>
+			function fetchActivity(event) {
+				let pw = document.getElementById("gmPassword").value;
+				let gameId = parseInt(document.getElementById("gameId").value);
+				
+				let req = new XMLHttpRequest();
+				req.open("get", "https://empire-189013.appspot.com/entry/activity?gid=" + gameId + "&password=" + pw, true);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					console.log(req.response);
+					let a = document.getElementById("activity");
+					a.innerHTML = "";
+					let r = JSON.parse(req.response);
+					let kingdoms = [];
+					for (let k in r[0]) {
+						kingdoms.push(k);
+					}
+					kingdoms.sort();
+					let tr = document.createElement("tr");
+					for (let k of kingdoms) {
+						let th = document.createElement("th");
+						th.appendChild(document.createTextNode(k));
+						tr.appendChild(th);
+					}
+					a.appendChild(tr);
+					for (let row of r) {
+						tr = document.createElement("tr");
+						for (let k of kingdoms) {
+							let td = document.createElement("td");
+							if (row[k]) {
+								td.appendChild(document.createTextNode("T"));
+								td.setAttribute("class", "active");
+							}
+							tr.appendChild(td);
+						}
+						a.appendChild(tr);
+					}
+				};
+				req.send();
+				event.preventDefault();
+			}
+		</script>
+		<style>
+			body {
+				font-family: sans-serif;
+			}
+			th, td {
+				text-align: center;
+				border-left: 1px solid #eee;
+			}
+		</style>
+	</head>
+	<body>
+		<form onsubmit="return fetchActivity(event);">
+			<label>GM Password: <input id="gmPassword" type="password"/></label>
+			<label>Game ID: <input id="gameId" type="number"/></label>
+			<button>Fetch!</button>
+		</form>
+		<table>
+			<tbody id="activity">
+			</tbody>
+		</table>
+	</body>
+</html>
