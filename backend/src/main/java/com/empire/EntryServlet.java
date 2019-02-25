@@ -462,7 +462,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return false;
+			if (!checkPassword(r, service).passesWrite()) return false;
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);

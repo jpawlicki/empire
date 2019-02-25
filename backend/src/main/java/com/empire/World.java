@@ -1122,7 +1122,7 @@ final class World {
 			} else if (action.startsWith("Execute")) {
 				String notification = "The sovereign power " + c.captor + " has tried, convicted, and executed " + c.name + ".";
 				kingdoms.get(c.captor).goodwill -= 50;
-				if (region.kingdom.equals(c.captor)) notification += " " + c.name + " was not present at their trial.";
+				if (region.kingdom == null || region.kingdom.equals(c.captor)) notification += " " + c.name + " was not present at their trial.";
 				String[] flavor = new String[]{
 					c.name + "'s last words were loving reassurances to their family.",
 					c.name + "'s last words reaffirmed their loyalty to " + c.kingdom + " and condemned " + c.captor + ".",
