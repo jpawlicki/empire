@@ -90,7 +90,7 @@ final class World {
 			rr.type = r.land ? "land" : "water";
 			rr.name = r.name;
 			if (r.land) {
-				rr.unrestPopular = 0.1;
+				rr.unrestPopular = 0.12;
 				rr.harvest = w.harvests.get(0);
 			}
 			w.regions.add(rr);
@@ -130,10 +130,10 @@ final class World {
 			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) totalSharesGold += 2;
 			if ("Seafaring".equals(setup.trait1) || "Seafaring".equals(setup.trait2)) totalSharesNavy += 0.15;
 			if ("War-like".equals(setup.trait1) || "War-like".equals(setup.trait2)) totalSharesArmy += 0.15;
-			if ("food".equals(setup.bonus)) totalSharesFood++;
-			else if ("armies".equals(setup.bonus)) totalSharesArmy++;
-			else if ("navies".equals(setup.bonus)) totalSharesNavy++;
-			else if ("gold".equals(setup.bonus)) totalSharesGold++;
+			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
+			else if ("armies".equals(setup.bonus)) totalSharesArmy += 0.5;
+			else if ("navies".equals(setup.bonus)) totalSharesNavy += 0.5;
+			else if ("gold".equals(setup.bonus)) totalSharesGold += 0.5;
 		}
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
@@ -431,12 +431,6 @@ final class World {
 	 * @return a map of e-mail notifications to send.
 	 */
 	public Map<String, String> advance(Map<String, Map<String, String>> orders) {
-		// Temporary: replace all Unpredictable tags with Unruly tags.
-		for (Army a : armies) if (a.tags.contains("Unpredictable")) {
-			a.tags.remove("Unpredictable");
-			a.tags.add("Unruly");
-		}
-		// End Temporary.
 		for (String k : kingdoms.keySet()) {
 			kingdoms.get(k).interstitials.clear();
 			kingdoms.get(k).resetAccessToken();
@@ -659,30 +653,6 @@ final class World {
 			}
 			for (String a : newOrders.keySet()) kOrders.put(a, newOrders.get(a));
 		}
-		ArrayList<Army> additions = new ArrayList<>();
-		for (Army a : armies) {
-			if (a.tags.contains("Unruly") && a.size >= 2000) {
-				a.size /= 2;
-				Army nu = new Army(); 
-				nu.id = getNewArmyId() + additions.size();
-				nu.type = a.type;
-				nu.size = a.size;
-				nu.kingdom = a.kingdom;
-				nu.location = a.location;
-				nu.preparation = new ArrayList<>();
-				nu.tags = new ArrayList<>(a.tags);
-				nu.composition = new HashMap<>();
-				for (String c : a.composition.keySet()) {
-					a.composition.put(c, a.composition.get(c) / 2);
-					nu.composition.put(c, a.composition.get(c) / 2);
-				}
-				for (Preparation p : a.preparation) {
-					nu.preparation.add(new Preparation(p));
-				}
-				additions.add(nu);
-			}
-		}
-		armies.addAll(additions);
 		// Lead orders (mark leaders for movement and battle).
 		HashMap<Army, Character> leaders = new HashMap<>();
 		{
@@ -731,6 +701,7 @@ final class World {
 					if (!src.tags.equals(target.tags)) {
 						double threatIncrease = src.size * 0.33 * (src.type.equals("army") ? 1.0 / 100 : 1);
 						pirate.threat += threatIncrease;
+						pirate.bribes.put(src.kingdom, pirate.bribes.getOrDefault(src.kingdom, 0) + threatIncrease / 100);
 						pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 						src.size *= .67;
 					}
@@ -848,16 +819,16 @@ final class World {
 				army.kingdom = target;
 				army.orderhint = "";
 			} else if (action.startsWith("Disband")) {
+				double threatIncrease = 0;
 				if (region.type.equals("land")) {
 					region.population += army.size * .67;
-					double threatIncrease = army.size * .33 / (army.type.equals("army") ? 100 : 1);
-					pirate.threat += threatIncrease; 
-					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
+					threatIncrease = army.size * .33 / (army.type.equals("army") ? 100 : 1);
 				} else {
-					double threatIncrease = army.size / (army.type.equals("army") ? 100 : 1);
-					pirate.threat += threatIncrease; 
-					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
+					threatIncrease = army.size / (army.type.equals("army") ? 100 : 1);
 				}
+				pirate.threat += threatIncrease;
+				pirate.bribes.put(army.kingdom, pirate.bribes.getOrDefault(army.kingdom, 0) + threatIncrease / 100);
+				pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 				armies.remove(army);
 			} else if (action.startsWith("Conquer")) {
 				if (!army.type.equals("army")) continue;
@@ -944,7 +915,7 @@ final class World {
 		// Army travels.
 		for (Army army : armies) {
 			String action = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
-			if (army.tags.contains("Unpredictable") || army.tags.contains("Unruly")) {
+			if (army.tags.contains("Unpredictable")) {
 				List<Region> n = regions.get(army.location).getNeighbors(this);
 				ArrayList<Region> except = new ArrayList<>();
 				for (Region r : n) if (r.type.equals("water")) except.add(r);
@@ -1005,7 +976,10 @@ final class World {
 			Region region = regions.get(c.location);
 			c.hidden = action.startsWith("Hide in ");
 			if (action.startsWith("Hide in ") || action.startsWith("Travel to ")) {
-				if (c.hidden || !"".equals(c.captor)) c.addExperience("spy", this);
+				if (!"".equals(c.captor)) {
+					if (c.hidden) c.addExperience("spy", this);
+					else c.addExperience("*", this);
+				}
 				String destination = action.replace("Travel to ", "").replace("Hide in ", "");
 				if (region.name.equals(destination)) continue;
 				boolean isNeighbor = false;
@@ -1033,6 +1007,7 @@ final class World {
 					c.preparation.clear();
 				}
 			} else if (action.startsWith("Build ")) {
+				c.addExperience("governor", this);
 				double cost = 0;
 				double costMod = 1;
 				Construction ct = new Construction();
@@ -1089,10 +1064,6 @@ final class World {
 				} else {
 					notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
 				}
-			} else if (action.startsWith("Organize Feast")) {
-				if (!region.type.equals("land") || !region.kingdom.equals(c.kingdom)) continue;
-				foodConsumptionMod.put(region, foodConsumptionMod.getOrDefault(region, 1.0) + 1);
-				region.unrestPopular = Math.max(.1, region.unrestPopular - .2);
 			} else if (action.startsWith("Instate Noble")) {
 				if (!region.type.equals("land") || !region.kingdom.equals(c.kingdom) || region.noble != null) continue;
 				for (Noble n : kingdoms.get(c.kingdom).court) if (String.join(", ", n.tags).equals(action.replace("Instate Noble (", "").replace(")", ""))) {
@@ -1102,6 +1073,7 @@ final class World {
 					break;
 				}
 				c.orderhint = "";
+				c.addExperience("governor", this);
 			} else if (action.startsWith("Govern")) {
 				if (!region.type.equals("land") || !region.kingdom.equals(c.kingdom)) continue;
 				ArrayList<Character> gov = governors.getOrDefault(region, new ArrayList<Character>());
@@ -1203,29 +1175,39 @@ final class World {
 			}
 		}
 		// Add pirates and reduce threat.
-		double totalPirateThreat = 0;
-		for (Region r : regions) totalPirateThreat += r.calcPirateThreat(this);
-		totalPirateThreat *= Math.random();
-		for (int i = 0; i < regions.size(); i++) {
-			totalPirateThreat -= regions.get(i).calcPirateThreat(this);
-			if (totalPirateThreat < 0) {
-				Army a = new Army();
-				a.location = i;
-				a.type = "army";
-				a.size = pirate.threat *.25 * 100;
-				a.tags = new ArrayList<>();
-				a.id = getNewArmyId();
-				a.kingdom = "Pirate";
-				a.composition.put("Pirate", a.size);
-				a.orderhint = "";
-				a.tags.add("Pillagers (Pirate)");
-				a.tags.add("Unruly");
-				armies.add(a);
-				break;
+		{
+			double totalPirateThreat = 0;
+			double pirateArmies = pirate.threat * .25 * 100;
+			double pirateSpawned = 0;
+			pirate.threat *= .75;
+			List<String> pirateNotes = new ArrayList<>();
+			while (piratesSpawned < pirateArmies) {
+				for (Region r : regions) totalPirateThreat += r.calcPirateThreat(this);
+				totalPirateThreat *= Math.random();
+				for (int i = 0; i < regions.size(); i++) {
+					totalPirateThreat -= regions.get(i).calcPirateThreat(this);
+					if (totalPirateThreat < 0) {
+						Army a = new Army();
+						a.location = i;
+						a.type = "army";
+						a.size = Math.min(pirateArmies - piratesSpawned, 2000);
+						a.tags = new ArrayList<>();
+						a.id = getNewArmyId();
+						a.kingdom = "Pirate";
+						a.composition.put("Pirate", a.size);
+						a.orderhint = "";
+						a.tags.add("Pillagers (Pirate)");
+						a.tags.add("Unpredictable");
+						armies.add(a);
+						piratesSpawned += a.size;
+						pirateNotes.add(regions.get(i).name);
+						break;
+					}
+				}
 			}
+			for (String bribe : pirate.bribes.keySet()) pirate.bribes.put(bribe, pirate.bribes.get(bribe) * .75);
+			notifyAll(Math.ceiling(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(pirateNotes) + ".");
 		}
-		pirate.threat *= .75;
-		for (String bribe : pirate.bribes.keySet()) pirate.bribes.put(bribe, pirate.bribes.get(bribe) * .75);
 		// Battles take place.
 		HashSet<String> battlingNations = new HashSet<>();
 		{
@@ -1241,6 +1223,7 @@ final class World {
 				for (Army a : localArmies) totalArmyStrength += Math.pow(a.calcStrength(this, leaders.get(a), inspires), combatFactor);
 				HashMap<Army, Double> casualties = new HashMap<>();
 				HashMap<Army, Double> hansaImpressment = new HashMap<>();
+				HashMap<Army, Double> goldThefts = new HashMap<>();
 				for (Army a : localArmies) {
 					double enemyStrength = 0;
 					for (Army b : localArmies) {
@@ -1252,8 +1235,10 @@ final class World {
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
 					for (Army b : localArmies) {
-						if (NationData.isEnemy(a.kingdom, b.kingdom, this, region) && b.tags.contains("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * cf * b.calcStrength(this, leaders.get(b), inspires) / enemyStrength);
-						if (NationData.isEnemy(a.kingdom, b.kingdom, this, region) && kingdoms.get(a.kingdom) != null && kingdoms.get(b.kingdom) != null && kingdoms.get(a.kingdom).goodwill <= -75) kingdoms.get(b.kingdom).goodwill += a.size / 100 * cf * b.calcStrength(this, leaders.get(b), inspires) / enemyStrength;
+						double casualtyRateCaused = cf * b.calcStrength(this, leaders.get(b), inspires) / enemyStrength;
+						if (NationData.isEnemy(a.kingdom, b.kingdom, this, region) && b.tags.contains("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
+						if (NationData.isEnemy(a.kingdom, b.kingdom, this, region) && kingdoms.get(a.kingdom) != null && kingdoms.get(b.kingdom) != null && kingdoms.get(a.kingdom).goodwill <= -75) kingdoms.get(b.kingdom).goodwill += a.size / 100 * casualtyRateCaused;
+						goldThefts.put(b, goldThefts.getOrDefault(b, 0) + a.gold * casualtyRateCaused);
 					}
 				}
 				double dead = 0;
@@ -1276,6 +1261,9 @@ final class World {
 				for (Army h : hansaImpressment.keySet()) {
 					h.size += hansaImpressment.get(h);
 					dead -= hansaImpressment.get(h);
+				}
+				for (Army h : goldThefts.keySet()) {
+					h.gold += goldThefts.get(h);
 				}
 				String battleDetails = "During the fighting";
 				double foodWrecked = 1;
@@ -1377,7 +1365,8 @@ final class World {
 				if (r.kingdom != null) {
 					for (String k : tributes.get(r.kingdom)) if (kingdoms.get(k).tags.contains("Imperialistic")) unrestMod -= 0.01;
 				}
-				r.unrestPopular = Math.min(1, Math.max(.1, r.unrestPopular + unrestMod));
+				for (Construction c : constructions) if (c.type.equals("temple")) unrestMod -= 0.02;
+				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
 
 				if (r.noble != null && r.noble.tags.contains("Snubbed")) r.noble.unrest = Math.min(1, r.noble.unrest + .02);
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.kingdom) && NationData.isEnemy(k, r.kingdom, this) && kingdoms.get(k).previousTributes.contains(r.kingdom)) r.noble.unrest = Math.min(1, r.noble.unrest + .04);
@@ -1477,8 +1466,7 @@ final class World {
 				if (max != null && !NationData.isFriendly(max.kingdom, r.kingdom, this) && (max.tags.contains("Pillagers") || max.tags.contains("Pillagers (Pirate)"))) whoTaxes = max.kingdom;
 				double income = r.calcTaxIncome(this, governors.get(r), taxationRates.get(r.kingdom), foodConsumptionMod.containsKey(r));
 				if ("Pirate".equals(whoTaxes)) {
-					pirate.threat += income * 0.4;
-					pirateThreatSources.put("Pillaging " + r.kingdom, pirateThreatSources.getOrDefault("Pillaging " + r.kingdom, 0.0) + income * 0.4);
+					max.gold += income;
 				} else {
 					incomeSources.get(whoTaxes).incomeTax += income;
 				}
@@ -1604,9 +1592,9 @@ final class World {
 		for (String k : kingdoms.keySet()) {
 			double taxRate = taxationRates.get(k);
 			double unrest = 0;
-			if (taxRate <= 1) unrest = (-(1.25 - taxRate) / .25) / 100;
-			else unrest = ((taxRate - 1) / .25 * ((taxRate - 1) / .25 + 1) / 2) / 100;
-			for (Region r : regions) if (r.kingdom != null && r.kingdom.equals(k)) r.unrestPopular = Math.min(1, Math.max(.1, r.unrestPopular + unrest));
+			if (taxRate <= 1) unrest = (-(1.25 - taxRate) / .25) / 100 * 4;
+			else unrest = ((taxRate - 1) / .25 * ((taxRate - 1) / .25 + 1) / 2) / 100 * 4;
+			for (Region r : regions) if (r.kingdom != null && r.kingdom.equals(k)) r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrest));
 		}
 		// Food transfers take place.
 		{
@@ -1688,6 +1676,7 @@ final class World {
 						a.size -= des;
 						double threatIncrease = a.type.equals("navy") ? des : des / 100;
 						pirate.threat += threatIncrease;
+						pirate.bribes.put(a.kingdom, pirate.bribes.getOrDefault(a.kingdom, 0) + threatIncrease / 100);
 						pirateThreatSources.put("Desertion from " + a.kingdom, pirateThreatSources.getOrDefault("Desertion from " + a.kingdom, 0.0) + threatIncrease);
 					}
 					notifications.add(new Notification(k, "Desertion", Math.round(desertion * 100) + "% of our troops deserted due to lack of pay."));
@@ -1700,11 +1689,12 @@ final class World {
 		// Harvests reaped.
 		if (isHarvestTurn()) {
 			for (Region r : regions) if (r.type.equals("land")) {
+				double base = r.harvest * r.population;
 				double mods = 1;
 				double unrest = r.calcUnrest(this);
-				if (unrest > .5 && !kingdoms.get(r.kingdom).tags.contains("Stoic")) mods -= unrest - .5;
+				if (unrest > .5 && !kingdoms.get(r.kingdom).tags.contains("Stoic")) base *= 1.5 - unrest;
 				if (r.noble != null && r.noble.tags.contains("Meticulous")) mods += .15;
-				r.food += r.harvest * r.population * mods;
+				r.food += base * mods;
 				r.harvest = harvests.get(((date + 1) / 13) % 4);
 			}
 		}
@@ -2445,7 +2435,7 @@ final class World {
 				targetUnrestFactor = 0.2;
 				fromUnrestFactor = 0.2;
 			}
-			for (String k : kingdoms.keySet()) if (kingdoms.get(k).tags.contains("Ruined") && kingdoms.get(k).coreRegions.contains(regions.indexOf(target))) {
+			for (String k : kingdoms.keySet()) if (kingdoms.get(k).tags.contains("Ruined") && kingdoms.get(k).coreRegions.contains(regions.indexOf(target)) && !kingdoms.get(k).coreRegions.contains(regions.indexOf(from))) {
 				targetUnrestFactor = 0;
 				fromUnrestFactor = 0;
 			}
@@ -2547,7 +2537,7 @@ final class World {
 			if (type == PlotType.CHURCH) {
 				success = success || (NationData.isFriendly(target, defender, World.this) && "praise".equals(action)) || (NationData.isEnemy(target, defender, World.this) && "denounce".equals(action));
 			} else if (type == PlotType.CHARACTER) {
-				for (Character cc : leaders) if (cc.name.equals(target)) partialSuccess = false;
+				for (Character cc : leaders) if (cc.name.equals(target) && power.get(perpetrator) < power.get(defender) * 1.5) partialSuccess = false;
 			}
 			String title = success ? (partialSuccess ? "Successful Plot: " : "Partially Successful Plot: ") : "Failed Plot: ";
 			String details = "Our spies have become aware of " + (success ? "a successful" : "an unsuccessful") + " plot to ";
@@ -2591,7 +2581,7 @@ final class World {
 									c.captor = perpetrator; 
 									c.orderhint = "";
 								} else {
-									details += " They were leading armed forces and could not be arrested.";
+									details += " The soldiers they were leading saved them from arrest.";
 								}
 							} else {
 								details += " They were not trespassing and therefore left alone.";
@@ -2610,7 +2600,7 @@ final class World {
 								c.captor = perpetrator; 
 								c.orderhint = "";
 							} else {
-								details += " They were leading armed forces and could not be captured.";
+								details += " The soldiers they were leading saved them from captured.";
 							}
 						}
 					}
@@ -2642,7 +2632,7 @@ final class World {
 									notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
 								}
 							} else {
-								details += " They were leading armed forces and could not be assassinated.";
+								details += " The soldiers they were leading saved them from being killed.";
 							}
 						}
 					}
@@ -3061,7 +3051,7 @@ final class Region {
 			}
 		}
 		double unrest = calcUnrest(w);
-		if (unrest > .25) mods -= unrest - .25;
+		if (unrest > .25) base *= 1.25 - unrest;
 		if (noble != null && noble.tags.contains("Inspiring")) mods += .5;
 		if (noble != null && noble.tags.contains("Untrusting")) mods -= .35;
 		if (noble != null && noble.tags.contains("Tyrannical")) mods -= .5;
@@ -3098,7 +3088,7 @@ final class Region {
 		double mods = taxRate;
 		double unrest = calcUnrest(w);
 		NationData wKingdom = w.kingdoms.get(kingdom);
-		if (unrest > .25) mods -= unrest - .25;
+		if (unrest > .25) base *= 1.25 - unrest;
 		if (noble != null && noble.tags.contains("Frugal")) mods += .5;
 		if (noble != null && noble.tags.contains("Hoarding")) mods -= .35;
 		if (governors != null) {
@@ -3129,7 +3119,6 @@ final class Region {
 		}
 		if ("Iruhan (Tapestry of People)".equals(NationData.getStateReligion(kingdom, w))) mods += .03 * numUniqueIdeologies(kingdom, w);
 		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan") && "Iruhan (Tapestry of People)".equals(w.getDominantIruhanIdeology()) && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += .03 * numUniqueIdeologies(kingdom, w);
-		for (Construction c : constructions) if (c.type.equals("temple")) mods += 0.3;
 		return Math.max(0, base * mods);
 	}
 
@@ -3171,7 +3160,7 @@ final class Region {
 		if ("Iruhan (Vessel of Faith)".equals(max) && !religion.equals(max)) {
 			for (String k : w.kingdoms.keySet()) {
 				if (!"Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(k, w))) continue;
-				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(.1, r.unrestPopular - .05);
+				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular - .05);
 			}
 		}
 		religion = max;
@@ -3212,12 +3201,12 @@ final class Region {
 		for (final Character c : w.characters) {
 			Function<Node, Node> getPower = (Node n) -> {
 				Region r = n.location;
-				if (r.type.equals("water")) return new Node(n.power * .95, n.location);
+				if (r.type.equals("water")) return new Node(n.power * .9, n.location);
 				if (NationData.isFriendly(c.kingdom, r.kingdom, w)) {
 					if (r.religion.equals("Northern (Lyskr)")) return new Node(n.power, n.location);
-					return new Node(n.power * (1 - r.calcUnrest(w)), n.location);
+					return new Node(n.power * (.9 - r.calcUnrest(w) / 10), n.location);
 				}
-				return new Node(n.power * r.calcUnrest(w), n.location);
+				return new Node(n.power * (.8 + r.calcUnrest(w) / 10), n.location);
 			};
 			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
 				@Override
@@ -3313,6 +3302,7 @@ final class Army {
 	int id = -1;
 	String type = "";
 	double size;
+	double gold;
 	String kingdom = "";
 	int location = -1;
 	List<Preparation> preparation = new ArrayList<>();
@@ -3349,7 +3339,7 @@ final class Character {
 	boolean hidden = false;
 	List<Preparation> preparation = new ArrayList<>();
 	List<String> tags = new ArrayList<>();
-	Map<String, Integer> experience = new HashMap<>();
+	Map<String, Double> experience = new HashMap<>();
 	List<String> values = new ArrayList<>();
 	int leadingArmy = -1;
 	String orderhint = "";
@@ -3375,7 +3365,11 @@ final class Character {
 	}
 
 	public void addExperience(String dimension, World w) {
-		experience.put(dimension, experience.get(dimension) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? 2 : 1));
+		if ("*".equals(dimension)) {
+			for (String d : new String[]{"general", "admiral", "spy", "governor"}) experience.put(d, experience.get(d) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? .5 : .25));
+		} else {
+			experience.put(dimension, experience.get(dimension) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? 2 : 1));
+		}
 	}
 }
 

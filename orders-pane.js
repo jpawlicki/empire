@@ -277,7 +277,6 @@ class OrdersPane extends HTMLElement {
 				if (contains(unit.tags, "Cardinal") && g_data.regions[unit.location].name == "Sancta Civitate") opts.push("Inspire the Faithful");
 				if (r.kingdom == unit.kingdom) {
 					opts.push("Govern " + r.name);
-					opts.push("Organize Feast");
 					if (r.noble.name == undefined) {
 						for (let n of g_data.kingdoms[unit.kingdom].court) {
 							opts.push("Instate Noble (" + n.tags.join(", ") + ")");
@@ -456,12 +455,14 @@ class OrdersPane extends HTMLElement {
 						for (let c of g_data.characters) if (c.kingdom == k && c.location == -1) positionsKnown = false;
 						if (strengths[k] >= ourStrength) superior.push(k);
 						else if (!positionsKnown) unknown.push(k);
+						else if (strengths[k] * 1.5 * 1.5 < ourStrength) inferiorWithDoubleDefense.push(k);
 						else if (strengths[k] * 1.5 < ourStrength) inferiorWithDefense.push(k);
 						else if (strengths[k] < ourStrength) inferior.push(k);
 					}
 					unknown.sort();
 					inferior.sort();
 					inferiorWithDefense.sort();
+					inferiorWithDoubleDefense.sort();
 					superior.sort();
 					if (defender == kingdom.name) riskText += "<p>Our plot will obviously succeed, as we are the \"defenders\".</p>";
 					else if (plotTypeSel.value == "CHURCH"
@@ -470,7 +471,8 @@ class OrdersPane extends HTMLElement {
 					else if (contains(superior, defender)) riskText += "<p>Our plot will fail.</p>";
 					else if (contains(unknown, defender)) riskText += "<p>Our plot may succeed or fail.</p>";
 					else if (contains(inferior, defender)) riskText += "<p>Our plot will succeed unless " + defender + " spies devote this week to defense " + (plotTypeSel.value == "CHARCTER" ? " or the character leads an army or navy this turn" : "") + ".</p>";
-					else if (contains(inferiorWithDefense, defender)) riskText += "<p>Our plot will succeed" + (plotTypeSel.value == "CHARCTER" ? " unless the character leads an army or navy this turn" : "") + ".</p>";
+					else if (contains(inferiorWithDefense, defender)) riskText += "<p>Our plot will succeed" + (plotTypeSel.value == "CHARCTER" ? " the enemy devotes their spies to defense this week and the character leads an army or navy this turn" : "") + ".</p>";
+					else if (contains(inferiorWithDoubleDefense, defender)) riskText += "<p>Our plot will succeed.</p>";
 					if (superior.length > 0) riskText += "<p>" + superior.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will know of our involvement.</p>";
 					if (unknown.length > 0) riskText += "<p>" + unknown.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " may know of our involvement, depending on the location of their hidden characters.</p>";
 					if (inferior.length > 0) riskText += "<p>" + inferior.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will know of our involvement only if they devote their spies to discovering plots this week" + (superior.length == 0 ? " or if we are the only nation with greater plot strength than them" : "") + ".</p>";

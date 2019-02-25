@@ -218,9 +218,6 @@ class Region {
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(g_data.kingdoms[this.kingdom].core_regions, i)) conquests++;
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
-		let temples = 0;
-		for (let c of this.constructions) if (c.type == "temple") temples++;
-		if (temples > 0) mods.push({"v": temples * .3, "unit": "%", "why": temples + " temples in region"});
 		let numUniqueIdeologies = g_data.kingdoms[this.kingdom].calcNumUniqueIdeologies();
 		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if (g_data.kingdoms[this.kingdom].calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
@@ -365,12 +362,12 @@ class Region {
 			if (c.location == -1) continue;
 			let gp = function(power, loc) {
 				let r = g_data.regions[loc];
-				if (r.kingdom == undefined) return [power * .95, loc];
+				if (r.kingdom == undefined) return [power * .9, loc];
 				if (g_data.kingdoms[c.kingdom].calcRelationship(g_data.kingdoms[r.kingdom]) == "friendly") {
 					if (r.religion == "Northern (Lyskr)") return [power, loc];
-					return [power * (1 - r.calcUnrest().v), loc];
+					return [power * (.9 - r.calcUnrest().v / 10), loc];
 				}
-				return [power * r.calcUnrest().v, loc];
+				return [power * (.8 + r.calcUnrest().v / 10), loc];
 			}
 			let pq = new PriorityQueue((a, b) => (a[0] > b[0]));
 			let visited = {};
@@ -641,7 +638,8 @@ class Army {
 		this.location = dataEntry.location;
 		this.preparation = dataEntry.preparation;
 		this.tags = dataEntry.tags;
-		this.orderhint = dataEntry.orderhint
+		this.orderhint = dataEntry.orderhint;
+		this.gold = dataEntry.gold;
 	}
 
 	calcStrength() {

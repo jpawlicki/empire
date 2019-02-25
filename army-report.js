@@ -4,7 +4,7 @@ class ArmyReport extends HTMLElement {
 		let tagTooltips = {
 			"Steel": "+15% as strong.",
 			"Formations": "If the army would suffer between 45% and 90% casualties, it instead suffers 45% casualties.",
-			"Pillagers": "While this army is the largest army in an enemy or neutral region, it suppresses recruitment and diverts that region's taxes to this army's government.",
+			"Pillagers": "While this army is the largest army in an enemy or neutral region, it suppresses recruitment and hoards the region's taxes. When it enters a region controlled by the same ruler, that ruler will gain those taxes.",
 			"Raiders": "This army is hidden in friendly regions.",
 			"Seafaring": "+150% as strong in sea regions.",
 			"Impressment": "15% of casualties this army inflicts on enemies join this army instead of perishing.",
@@ -32,6 +32,7 @@ class ArmyReport extends HTMLElement {
 			<div id="content">
 				<h1>Strength: ${num(army.calcStrength(), 2)}</h1>
 				<div>Size: ${Math.floor(army.size)}</div>
+				<div>Hoarding: ${Math.floor(army.gold)} gold</div>
 				<h1>Tags</h1>
 				<div id="tags">
 				</div>
