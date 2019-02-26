@@ -76,6 +76,7 @@ class OrdersPane extends HTMLElement {
 				<div id="content_economy">
 					<h1>Economic Controls</h1>
 					<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
+					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="75" max="125" step="25" value="100"/></label>
 					<label>Recruit Signing Bonus: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
 					<div id="economy_consequences">
 					</div>
@@ -534,6 +535,14 @@ class OrdersPane extends HTMLElement {
 					<option value="0.33">Offer 33% of our income as tribute.</option>
 					<option value="0.5">Offer 50% of our income as tribute.</option>
 				</select>
+				<select name="rel_${k}_cede">
+					<option value="ACCEPT">Allow them to cede us regions.</option>
+					<option value="REFUSE">Refuse regions they cede.</option>
+				</select>
+				<select name="rel_${k}_fealty">
+					<option value="ACCEPT">Allow them to transfer us troops.</option>
+					<option value="REFUSE">Refuse troops they transfer to us.</option>
+				</select>
 			`;
 			kdiv.setAttribute("title", k);
 			kdiv.setAttribute("background", g_data.kingdoms[k].color_bg);
@@ -653,6 +662,7 @@ class OrdersPane extends HTMLElement {
 
 		// ECONOMY
 		let eTax = shadow.getElementById("economy_tax");
+		let eRation = shadow.getElementById("economy_ration");
 		let eBonus = shadow.getElementById("economy_recruit_bonus");
 		let economyConsequences = shadow.getElementById("economy_consequences");
 		let computeEconomyConsequences = function () {
@@ -664,15 +674,19 @@ class OrdersPane extends HTMLElement {
 			let happiness = 0;
 			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25;
 			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) / 2;
+			if (parseInt(eRation.value) == 75) happiness -= 15;
+			else if (parseInt(eRation.value) == 125) happiness += 10;
 			economyConsequences.innerHTML = "";
 			let baseRecruits = kingdom.calcRecruitment().v;
 			let baseTaxation = kingdom.calcTaxation().v;
 			let newRecruits = kingdom.calcRecruitment(recruitRate).v;
 			let newTaxation = kingdom.calcTaxation(taxRate).v;
+			let soldiers = 0;
+			for (let army of g_data.armies) if (army.kingdom == kingdom.name && !contains(army.tags, "Higher Power")) soldiers += army.size;
 			if (taxRate != 0) economyConsequences.innerHTML += "<p>" + ((taxRate > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income (~ " + (newTaxation > baseTaxation ? "+" : "") + Math.round(newTaxation - baseTaxation) + " gold)</p>";
 			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
 			if (recruitRate != 0) economyConsequences.innerHTML += "<p>" + ((recruitRate > 0 ? "+" : "") + Math.round(recruitRate * 100)) + "% Recruitment (~ " + (newRecruits > baseRecruits ? "+" : "") + Math.round(newRecruits - baseRecruits) + " recruits)</p>";
-			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 recruits signed (~ " + Math.round(parseInt(eBonus.value) * newRecruits / 100) + " gold total)</p>";
+			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (newRecruits + soldiers) / 100) + " gold total)</p>";
 		}
 		eTax.addEventListener("input", computeEconomyConsequences);	
 		eBonus.addEventListener("input", computeEconomyConsequences);
@@ -749,12 +763,15 @@ class OrdersPane extends HTMLElement {
 				if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
 				if (g_data.kingdoms[whoami].signingbonushint != undefined) shadow.querySelector("[name=economy_recruit_bonus]").value = g_data.kingdoms[whoami].signingbonushint;
 				shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));
+				if (g_data.kingdoms[whoami].rationhint != undefined) shadow.querySelector("[name=economy_rations]").value = g_data.kingdoms[whoami].rationhint;
 				for (let k in g_data.kingdoms) {
 					if (k == whoami) continue;
 					shadow.querySelector("[name=rel_" + k + "_attack]").value = g_data.kingdoms[whoami].relationships[k].battle;
 					shadow.querySelector("[name=rel_" + k + "_refugees]").value = g_data.kingdoms[whoami].relationships[k].refugees;
 					shadow.querySelector("[name=rel_" + k + "_construct]").value = g_data.kingdoms[whoami].relationships[k].construct;
 					shadow.querySelector("[name=rel_" + k + "_tribute]").value = g_data.kingdoms[whoami].relationships[k].tribute;
+					shadow.querySelector("[name=rel_" + k + "_cede]").value = g_data.kingdoms[whoami].relationships[k].cede;
+					shadow.querySelector("[name=rel_" + k + "_fealty]").value = g_data.kingdoms[whoami].relationships[k].fealty;
 				}
 				for (let gothi in g_data.kingdoms[whoami].gothi) {
 					if (g_data.kingdoms[whoami].gothi.hasOwnProperty(gothi) && g_data.kingdoms[whoami].gothi[gothi]) {
@@ -870,7 +887,7 @@ class OrdersPane extends HTMLElement {
 			}
 		}
 		for (let a of g_data.armies) {
-			if (a.kingdom == unit.kingdom && a.location == unit.location && a.type == unit.type && a != unit) opts.push("Merge into " + a.type + " " + a.id);
+			if (a.kingdom == unit.kingdom && a.location == unit.location && a.type == unit.type && a != unit && (contains(unit.tags, "Undead") == contains(a.tags, "Undead"))) opts.push("Merge into " + a.type + " " + a.id);
 		}
 		for (let k in g_data.kingdoms) {
 			if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;

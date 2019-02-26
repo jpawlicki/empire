@@ -160,7 +160,6 @@ class Region {
 		if (contains(this.noble.tags, "Tyrannical")) mods.push({"v": -.5, "unit": "%", "why": "Noble"});
 		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
 		if (this.religion == "Iruhan (Sword of Truth)") mods.push({"v": 1, "unit": "%", "why": "Sword of Truth ideology"});
-		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});
 		if (this.religion == "Iruhan (Tapestry of People)") {
 			let getTapestryBonus = false;
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
@@ -208,6 +207,7 @@ class Region {
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && g_data.kingdoms[r.kingdom].calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
 		if (this.religion == "Northern (Syrjen)") mods.push({"v": 1.25, "unit": "%", "why": "Worships Syrjen"});
+		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});
 		if (this.religion == "Iruhan (Tapestry of People)") {
 			let getTapestryBonus = false;
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
@@ -295,8 +295,8 @@ class Region {
 		return Calc.moddedNum(
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, this.calcUnrest()]),
-				{"v": 3 / 100, "unit": "%", "why": "Base Conquest Factor"}
+				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, new Calc("*", [this.calcUnrest(), {"v": 0.5, "unit": "%", "why": "Unrest Importance"}]),
+				{"v": 6 / 100, "unit": "%", "why": "Base Conquest Factor"}
 			]),
 			mods);
 	}
@@ -479,6 +479,7 @@ class Kingdom {
 		this.court = dataEntry.court;
 		this.taxratehint = dataEntry.taxratehint;
 		this.signingbonushint = dataEntry.signingbonushint;
+		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
 	}
 
@@ -621,8 +622,8 @@ class Character {
 	calcPlotPower() {
 		let mods = [];
 		mods.push({"v": 0.3 * this.calcLevel("spy"), "unit": "%", "why": "Experience"});
-		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Northern (Lyskr)") mods.push({"v": 1, "unit": "%", "why": "State Ideology (Lyskr)"});
-		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Company") mods.push({"v": .5, "unit": "%", "why": "State Ideology (Company)"});
+		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Northern (Lyskr)") mods.push({"v": .4, "unit": "%", "why": "State Ideology (Lyskr)"});
+		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Company") mods.push({"v": .2, "unit": "%", "why": "State Ideology (Company)"});
 		return Calc.moddedNum({"v": 1, "unit": "power", "why": "Base Plot Power"}, mods);
 	}
 }

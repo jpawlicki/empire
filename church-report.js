@@ -44,14 +44,14 @@ class ChurchReport extends HTMLElement {
 				</div>
 				<div class="striped">
 					<div></div><div>Changes Opinion By</div>
-					<div>Conquer Excommunicated Region</div><div>+5</div>
-					<div>Battle Excommunicated Ruler</div><div>+.01 per casualty inflicted</div>
+					<div>Battle Excommunicated Ruler</div><div>+.03 per casualty inflicted</div>
+					<div>Conquer Excommunicated Region</div><div>+15</div>
 					<div>Construct Temple (Iruhan, not VoF)</div><div>+15</div>
+					<div>Inspire with a Cardinal</div><div>+5</div>
 					<div>Forcibly Relocate Civilians</div><div>-.0002 per person</div>
 					<div>Construct Temple (non-Iruhan)</div><div>-20</div>
 					<div>Battle in Sancta Civitate</div><div>-40</div>
 					<div>Execute a Captive</div><div>-40</div>
-					<div>Cause Starvation (by Moving Food)</div><div>-1 per new 30000 starving person-weeks</div>
 					<div>Slay Civilians</div><div>-200</div>
 				</div>
 			</div>
