@@ -19,6 +19,7 @@ class OrdersPane extends HTMLElement {
 				<div id="tab_plots" class="tab_plots">plots</div>
 				<div id="tab_nations" class="tab_nations">nations</div>
 				<div id="tab_economy" class="tab_economy">economy</div>
+				<div id="tab_economy" class="tab_game">game</div>
 			</div>
 			<form id="form">
 				<table id="content_units">
@@ -95,6 +96,34 @@ class OrdersPane extends HTMLElement {
 						</tbody>
 						<tr><td colspan="3" id="economy_newbribe">Bribe Pirates</td></tr>
 					</table>
+				</div>
+				<div id="content_game">
+					<h1>Score</h1>
+					<div id="score_switches">
+						<label><input type="checkbox" id="score_food" name="score_food"></input>Food</label>
+						<label><input type="checkbox" id="score_prosperity" name="score_prosperity"></input>Prosperity</label>
+						<label><input type="checkbox" id="score_happiness" name="score_happiness"></input>Happiness</label>
+						<label><input type="checkbox" id="score_unity" name="score_unity"></input>Unity</label>
+						<label><input type="checkbox" id="score_riches" name="score_riches"></input>Riches</label>
+						<label><input type="checkbox" id="score_conquest" name="score_conquest"></input>Conquest</label>
+						<label><input type="checkbox" id="score_glory" name="score_glory"></input>Glory</label>
+						<label><input type="checkbox" id="score_supremacy" name="score_supremacy"></input>Supremacy</label>
+						<label><input type="checkbox" id="score_religion" name="score_religion"></input>Religion</label>
+						<label><input type="checkbox" id="score_security" name="score_security"></input>Security</label>
+						<label><input type="checkbox" id="score_culture" name="score_culture"></input>Culture</label>
+						<label><input type="checkbox" id="score_ideology" name="score_ideology"></input>Ideology</label>
+						<expandable-snippet text="Your score profiles can be changed on every 7th turn.">
+					</div>
+					<h1>Final Actions</h1>
+					<select id="final_action" name="final_action">
+						<option value="continue_ruling">Continue Ruling</option>
+						<option value="exodus">Exodus</option>
+						<option value="abdicate">Gracefully Abdicate</option>
+						<option value="last_stand">Last Stand</option>
+						<option value="salt_the_earth">Salt the Earth</option>
+					</select>
+					<expandable-snippet text="Final Actions are powerful actions that end the story of your nation and remove you from the game."></expandable-snippet>
+					<div id="final_action_details"></div>
 				</div>
 			</form>
 			<div id="clock">Week ${g_data.date} (${(g_data.date % 52 < 13 || g_data.date % 52 >= 39) ? "Winter" : "Summer"})</div>
@@ -739,6 +768,22 @@ class OrdersPane extends HTMLElement {
 		if (gothiVotes["Lyskr"].v == 0) shadow.getElementById("gothi_Lyskr").style.display = "none";
 		if (gothiVotes["Syrjen"].v == 0) shadow.getElementById("gothi_Syrjen").style.display = "none";
 
+		// GAME TAB
+		shadow.getElementById("final_action").addEventListener("change", () => {
+			let final_act_desc = {
+				"continue_ruling": "",
+				"salt_the_earth": "You lay waste to your own lands, decreasing their value to your enemies. All regions you control become treacherous, lose half their food, and become unruled. All your armies and navies become pirates. Your heroes are removed from the game. Your people overthrow you and you are removed from the game.",
+				"graceful_abdication": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your core regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
+				"exodus": "You gather those loyal to you and flee across the great sea to lands unknown. Your heroes are removed from the map and your regions become unruled. A fraction of population from your core regions goes with you, depending on your naval strength relative to your enemies. You depart from this region of the world, removing you from the game.",
+				"last_stand": "You inspire your troops to make a heroic final stand. Your armies and navies fight with +400% efficacy this turn, and then become pirates. Your regions become unruled and your heroes are removed from the game. You are either killed in battle or slip away to live out a quiet life far from politics, removing you from the game.",
+			};
+			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];
+		});
+		if (g_data.date % 7 != 0) for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
+		for (let value of g_data.kingdoms[whoami].getRuler().values) {
+			shadow.getElementById("score_" + value).checked = true;
+		}
+
 		// Load Old Orders
 		let req = new XMLHttpRequest();
 		req.open("get", "https://empire-189013.appspot.com/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
@@ -893,7 +938,7 @@ class OrdersPane extends HTMLElement {
 			if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;
 			opts.push("Transfer " + unit.type + " to " + k);
 		}
-		opts.push("Disband");
+		if (!contains(unit.tags, "Higher Power")) opts.push("Disband");
 		return opts;
 	};
 
