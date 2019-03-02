@@ -515,7 +515,7 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postSetup(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction();
+		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			Nation.NationGson.loadNation(r.kingdom, r.gameId, service);
 			return false; // We expect an EntityNotFoundException.
@@ -524,6 +524,7 @@ public class EntryServlet extends HttpServlet {
 				Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
 				nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 				service.put(nation.toEntity(r.kingdom, r.gameId));
+				service.put(new Player(nation.email, nation.password).toEntity());
 				txn.commit();
 			} catch (NoSuchAlgorithmException ee) {
 				log.log(Level.SEVERE, "postSetup Failure", ee);
