@@ -193,7 +193,7 @@ class OrdersPane extends HTMLElement {
 			input[type=text], input[type=number] {
 				width: 5em;
 			}
-			#content_economy label {
+			#content_economy label, #score_switches label {
 				width: 100%;
 			}
 			input[type=range] {
@@ -1156,13 +1156,13 @@ class OrdersPane extends HTMLElement {
 			if (o.value.startsWith("Travel to ")) {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
-				if (dest != undefined && (dest.type != "land" || g_data.kingdoms[dest.kingdom].calcRelationship(g_data.kingdoms[a.kingdom]) != "friendly") && !contains(a.tags, "Weathered") && (dest.climate == "treacherous" || (dest.climate == "seasonal" && (g_data.date % 52 < 13 || g_data.date % 52 >= 39)))) {
+				if (dest != undefined && (dest.type != "land" || dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].calcRelationship(g_data.kingdoms[a.kingdom]) != "friendly") && !contains(a.tags, "Weathered") && (dest.climate == "treacherous" || (dest.climate == "seasonal" && (g_data.date % 52 < 13 || g_data.date % 52 >= 39)))) {
 					warn = "(will suffer 25% attrition due to climate)";
 				}
 				if (a.type == "navy" && dest.type == "land" && g_data.regions[a.location].type == "land" && !g_data.tivar.deluge) {
 					warn += "(navies can only move between land regions during the Deluge)";
 				}
-				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND" && !g_data.tivar.deluge) {
+				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && !g_data.tivar.deluge) {
 					warn += "(navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
 			} else if (o.value.startsWith("Merge into army")) {
@@ -1183,7 +1183,7 @@ class OrdersPane extends HTMLElement {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
 					warn = "(army may be too small to conquer)";
 				}
-				if (g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
+				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
 					warn += "(conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
 			} else if (o.value.startsWith("Raze")) {

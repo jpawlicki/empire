@@ -10,6 +10,8 @@ class InternationalReport extends HTMLElement {
 					<option value="overall">Friendships / Enmities / Tributaries</option>
 					<option value="refugees">Refugees</option>
 					<option value="construction">Construction</option>
+					<option value="cede">Region Cedes</option>
+					<option value="fealty">Army Transfers</option>
 				</select>
 				<div id="legend">
 				</div>
@@ -96,6 +98,22 @@ class InternationalReport extends HTMLElement {
 					"PERMIT": {"color": "#0000ff", "text": "Permits Construction"}},
 				"rel": function(a, b) {
 					return g_data.kingdoms[a].relationships[b].construct;
+				},
+				"weights": {"PERMIT": 1},
+			},
+			"cede": {
+				"legend": {
+					"ACCEPT": {"color": "#0000ff", "text": "Accepts Region Cedes"}},
+				"rel": function(a, b) {
+					return g_data.kingdoms[a].relationships[b].cede;
+				},
+				"weights": {"ACCEPT": 1},
+			},
+			"fealty": {
+				"legend": {
+					"ACCEPT": {"color": "#0000ff", "text": "Accepts Army Transfers"}},
+				"rel": function(a, b) {
+					return g_data.kingdoms[a].relationships[b].fealty;
 				},
 				"weights": {"PERMIT": 1},
 			},

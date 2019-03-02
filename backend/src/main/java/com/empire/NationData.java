@@ -33,7 +33,6 @@ class NationData {
 		if (a.equals(b)) return true;
 		NationData aa = w.getNation(a);
 		NationData bb = w.getNation(b);
-				java.util.logging.Logger.getLogger("DEBUG").log(java.util.logging.Level.SEVERE, a + ", " + b);
 		return Relationship.War.DEFEND == aa.getRelationship(b).battle && Relationship.War.DEFEND == bb.getRelationship(a).battle;
 	}
 
