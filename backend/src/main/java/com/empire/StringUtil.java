@@ -7,7 +7,7 @@ public class StringUtil {
 		StringBuilder b = new StringBuilder();
 		for (int i = 0; i < in.size(); i++) {
 			if (i > 0 && in.size() > 2) b.append(", ");
-			if (i == in.size() - 1) b.append("and ");
+			if (i > 0 && i == in.size() - 1) b.append("and ");
 			b.append(in.get(i));
 		}
 		return b.toString();

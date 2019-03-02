@@ -6,33 +6,24 @@ import java.util.List;
 import java.util.Map;
 import java.security.SecureRandom;
 
-final class NationData {
-	HashMap<String, Double> score = new HashMap<>();
-	double gold;
-	Map<String, Relationship> relationships = new HashMap<>();
-	Map<String, Boolean> gothi = new HashMap<>();
-	double goodwill;
-	boolean loyalToCult;
-	List<Noble> court = new ArrayList<>();
-	String colorFg;
-	String colorBg;
-	String culture;
-	List<Integer> coreRegions = new ArrayList<>();
-	ArrayList<String> tags = new ArrayList<>();
-	ArrayList<String> previousTributes = new ArrayList<>();
-	String taxratehint;
-	String rationhint;
-	String signingbonushint;
-	String password;
-	String email;
-	String accessToken;
-
-	void resetAccessToken() {
-		accessToken = Long.toString(new SecureRandom().nextLong(), java.lang.Character.MAX_RADIX);
+class NationData {
+	public static final String PIRATE_NAME = "Pirate";
+	public static final String UNRULED_NAME = "Unruled";
+	public static final NationData UNRULED;
+	public static final NationData PIRATE;
+	static {
+		UNRULED = new NationData() {
+			@Override
+			Relationship getRelationship(String who) { return Relationship.NPC_RELATION; }
+		};
+		PIRATE = new NationData() {
+			@Override
+			Relationship getRelationship(String who) { return Relationship.NPC_RELATION; }
+		};
 	}
 
 	static boolean rulerValues(String kingdom, String value, World w) {
-		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.tags.contains("Ruler")) {
+		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.hasTag("Ruler")) {
 			return c.values.contains(value);
 		}
 		return false;
@@ -40,10 +31,10 @@ final class NationData {
 
 	static boolean isFriendly(String a, String b, World w) {
 		if (a.equals(b)) return true;
-		if (a.equals("Pirate") || b.equals("Pirate")) return false;
-		NationData aa = w.kingdoms.get(a);
-		NationData bb = w.kingdoms.get(b);
-		return Relationship.War.DEFEND == aa.relationships.get(b).battle && Relationship.War.DEFEND == bb.relationships.get(a).battle;
+		NationData aa = w.getNation(a);
+		NationData bb = w.getNation(b);
+				java.util.logging.Logger.getLogger("DEBUG").log(java.util.logging.Level.SEVERE, a + ", " + b);
+		return Relationship.War.DEFEND == aa.getRelationship(b).battle && Relationship.War.DEFEND == bb.getRelationship(a).battle;
 	}
 
 	static boolean isEnemy(String a, String b, World w) {
@@ -52,14 +43,13 @@ final class NationData {
 
 	static boolean isEnemy(String a, String b, World w, Region region) {
 		if (a.equals(b)) return false;
-		if (a.equals("Pirate") || b.equals("Pirate")) return true;
-		NationData aa = w.kingdoms.get(a);
-		NationData bb = w.kingdoms.get(b);
-		if (Relationship.War.ATTACK == aa.relationships.get(b).battle || Relationship.War.ATTACK == bb.relationships.get(a).battle) {
+		NationData aa = w.getNation(a);
+		NationData bb = w.getNation(b);
+		if (Relationship.War.ATTACK == aa.getRelationship(b).battle || Relationship.War.ATTACK == bb.getRelationship(a).battle) {
 			return true;
 		}
-		if (region != null && region.kingdom != null && region.kingdom.equals(a) && Relationship.War.NEUTRAL == aa.relationships.get(b).battle) return true;
-		if (region != null && region.kingdom != null && region.kingdom.equals(b) && Relationship.War.NEUTRAL == bb.relationships.get(a).battle) return true;
+		if (region != null && region.kingdom != null && region.kingdom.equals(a) && Relationship.War.NEUTRAL == aa.getRelationship(b).battle) return true;
+		if (region != null && region.kingdom != null && region.kingdom.equals(b) && Relationship.War.NEUTRAL == bb.getRelationship(a).battle) return true;
 		return false;
 	}
 
@@ -67,7 +57,7 @@ final class NationData {
 		HashMap<String, Double> weights = new HashMap<>();
 		for (Region r : w.regions) {
 			if (!kingdom.equals(r.kingdom)) continue;
-			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.tags.contains("Pious") ? 3 : 1));
+			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
 		}
 		String max = "Company";
 		double maxVal = 0;
@@ -78,6 +68,49 @@ final class NationData {
 			}
 		}
 		return max;
+	}
+
+	// Instance members.
+
+	HashMap<String, Double> score = new HashMap<>();
+	double gold;
+	private Map<String, Relationship> relationships = new HashMap<>();
+	Map<String, Boolean> gothi = new HashMap<>();
+	double goodwill;
+	boolean loyalToCult;
+	List<Noble> court = new ArrayList<>();
+	String colorFg;
+	String colorBg;
+	String culture;
+	List<Integer> coreRegions = new ArrayList<>();
+	private ArrayList<String> tags = new ArrayList<>();
+	ArrayList<String> previousTributes = new ArrayList<>();
+	String taxratehint = "100";
+	String rationhint = "100";
+	String signingbonushint = "0";
+	String password;
+	String email;
+	String accessToken;
+
+	void resetAccessToken() {
+		accessToken = Long.toString(new SecureRandom().nextLong(), java.lang.Character.MAX_RADIX);
+	}
+
+	Relationship getRelationship(String who) {
+		if (UNRULED_NAME.equals(who) || PIRATE_NAME.equals(who)) return Relationship.NPC_RELATION;
+		return relationships.get(who);
+	}
+
+	void setRelationship(String who, Relationship r) {
+		relationships.put(who, r);
+	}
+
+	boolean hasTag(String tag) {
+		return tags.contains(tag);
+	}
+
+	void addTag(String tag) {
+		tags.add(tag);
 	}
 }
 

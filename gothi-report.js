@@ -17,7 +17,7 @@ class GothiReport extends HTMLElement {
 			if (c.religion != undefined && c.religion.startsWith("Northern")) {
 				let ideology = c.religion.substring(c.religion.indexOf("(") + 1, c.religion.indexOf(")"));
 				votes[ideology].total++;
-				if (g_data.kingdoms[c.kingdom].gothi[ideology]) votes[ideology].v++;
+				if (c.kingdom != "Unruled" && g_data.kingdoms[c.kingdom].gothi[ideology]) votes[ideology].v++;
 			}
 		}
 		let votesText = [];

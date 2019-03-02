@@ -191,7 +191,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.kingdoms.get(r.kingdom).email, service);
+			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
 			w.filter(r.kingdom);
 			return w.toString();
 		} catch (EntityNotFoundException e) {
@@ -205,15 +205,12 @@ public class EntryServlet extends HttpServlet {
 		if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
 		try {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-			HashMap<String, List<String>> nationEmails = new HashMap<>();
-			for (Map.Entry<String, NationData> kingdom : World.load(r.gameId, date, service).kingdoms.entrySet()) {
-				if (nationEmails.containsKey(kingdom.getValue().email)) {
-					nationEmails.get(kingdom.getValue().email).add(kingdom.getKey());
-				} else {
-					ArrayList<String> kingdoms = new ArrayList<>();
-					kingdoms.add(kingdom.getKey());
-					nationEmails.put(kingdom.getValue().email, kingdoms);
-				}
+			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
+			World w = World.load(r.gameId, date, service);
+			for (String kingdom : w.getNationNames()) {
+				ArrayList<String> mails = nationEmails.getOrDefault(kingdom, new ArrayList<>());
+				mails.add(w.getNation(kingdom).email);
+				nationEmails.put(kingdom, mails);
 			}
 			ArrayList<String> emails = new ArrayList<String>(nationEmails.keySet());
 			List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
@@ -250,7 +247,7 @@ public class EntryServlet extends HttpServlet {
 					if (w.nextTurn < Instant.now().toEpochMilli()) {
 						HashSet<String> kingdoms = new HashSet<>();
 						HashMap<String, Map<String, String>> orders = new HashMap<>();
-						for (String kingdom : w.kingdoms.keySet()) {
+						for (String kingdom : w.getNationNames()) {
 							kingdoms.add(kingdom);
 							try {
 								orders.put(kingdom, Order.loadOrder(gameId, kingdom, w.date, service).getOrders());
@@ -289,7 +286,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			World	w = World.load(r.gameId, r.turn, service);
 			HashMap<String, Map<String, String>> orders = new HashMap<>();
-			for (String kingdom : w.kingdoms.keySet()) {
+			for (String kingdom : w.getNationNames()) {
 				kingdoms.add(kingdom);
 				try {
 					orders.put(kingdom, Order.loadOrder(r.gameId, kingdom, w.date, service).getOrders());
@@ -403,10 +400,9 @@ public class EntryServlet extends HttpServlet {
 			World w = World.load(r.gameId, date, service);
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
-			// if (w.kingdoms.containsKey(r.kingdom) && w.kingdoms.get(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
-			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.kingdoms.get(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
-			log.log(Level.INFO, "Loading player " + w.kingdoms.get(r.kingdom).email);
-			if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.kingdoms.get(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
+			// if (w.kingdoms.containsKey(r.kingdom) && w.getNation(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
+			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.getNation(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
+			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
 			return CheckPasswordResult.FAIL;
@@ -469,8 +465,8 @@ public class EntryServlet extends HttpServlet {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
-			w.kingdoms.get(r.kingdom).email = body.email;
-			w.kingdoms.get(r.kingdom).password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + body.password).getBytes(StandardCharsets.UTF_8)));
+			w.getNation(r.kingdom).email = body.email;
+			w.getNation(r.kingdom).password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + body.password).getBytes(StandardCharsets.UTF_8)));
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
 		} catch (NoSuchAlgorithmException e) {
@@ -495,8 +491,8 @@ public class EntryServlet extends HttpServlet {
 		try {
 			for (int i : gameIds) {
 				World w = World.load(i, 14, service);
-				for (String kingdom : w.kingdoms.keySet()) {
-					playerPasswords.put(w.kingdoms.get(kingdom).email, w.kingdoms.get(kingdom).password);
+				for (String kingdom : w.getNationNames()) {
+					playerPasswords.put(w.getNation(kingdom).email, w.getNation(kingdom).password);
 				}
 			}
 			txn.commit();

@@ -13,7 +13,7 @@ final class Character {
 	int location = -1;
 	boolean hidden = false;
 	List<Preparation> preparation = new ArrayList<>();
-	List<String> tags = new ArrayList<>();
+	private List<String> tags = new ArrayList<>();
 	Map<String, Double> experience = new HashMap<>();
 	List<String> values = new ArrayList<>();
 	int leadingArmy = -1;
@@ -41,10 +41,18 @@ final class Character {
 
 	public void addExperience(String dimension, World w) {
 		if ("*".equals(dimension)) {
-			for (String d : new String[]{"general", "admiral", "spy", "governor"}) experience.put(d, experience.get(d) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? .5 : .25));
+			for (String d : new String[]{"general", "admiral", "spy", "governor"}) experience.put(d, experience.get(d) + (w.getNation(kingdom).hasTag("Heroic") ? .5 : .25));
 		} else {
-			experience.put(dimension, experience.get(dimension) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? 2 : 1));
+			experience.put(dimension, experience.get(dimension) + (w.getNation(kingdom).hasTag("Heroic") ? 2 : 1));
 		}
+	}
+
+	public boolean hasTag(String tag) {
+		return tags.contains(tag);
+	}
+
+	void addTag(String tag) {
+		tags.add(tag);
 	}
 }
 

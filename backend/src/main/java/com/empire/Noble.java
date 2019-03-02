@@ -8,6 +8,14 @@ final class Noble {
 	List<String> tags = new ArrayList<>();
 	Crisis crisis;
 	double unrest;
+
+	public boolean hasTag(String tag) {
+		return tags.contains(tag);
+	}
+
+	void addTag(String tag) {
+		tags.add(tag);
+	}
 }
 
 final class Crisis {

@@ -204,7 +204,7 @@ class Region {
 		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
 		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
 		let neighborKuun = false;
-		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && g_data.kingdoms[r.kingdom].calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
+		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && g_data.kingdoms[r.kingdom].calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
 		if (this.religion == "Northern (Syrjen)") mods.push({"v": 1.25, "unit": "%", "why": "Worships Syrjen"});
 		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});

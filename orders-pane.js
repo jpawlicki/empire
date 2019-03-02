@@ -484,6 +484,7 @@ class OrdersPane extends HTMLElement {
 					let unknown = [];
 					let inferior = [];
 					let inferiorWithDefense = [];
+					let inferiorWithDoubleDefense = [];
 					let superior = [];
 					for (let k in strengths) if (strengths.hasOwnProperty(k)) {
 						if (k == kingdom.name) continue;
@@ -506,7 +507,7 @@ class OrdersPane extends HTMLElement {
 						|| (action == "denounce" && g_data.kingdoms[defender].calcRelationship(g_data.kingdoms[ptk.value]) == "enemy"))) riskText += "<p>Our plot will succeed, because the defenders will not oppose us.</p>";
 					else if (contains(superior, defender)) riskText += "<p>Our plot will fail.</p>";
 					else if (contains(unknown, defender)) riskText += "<p>Our plot may succeed or fail.</p>";
-					else if (contains(inferior, defender)) riskText += "<p>Our plot will succeed unless " + defender + " spies devote this week to defense " + (plotTypeSel.value == "CHARCTER" ? " or the character leads an army or navy this turn" : "") + ".</p>";
+					else if (contains(inferior, defender)) riskText += "<p>Our plot will succeed unless " + defender + " spies devote this week to defense" + (plotTypeSel.value == "CHARCTER" ? " or the character leads an army or navy this turn" : "") + ".</p>";
 					else if (contains(inferiorWithDefense, defender)) riskText += "<p>Our plot will succeed" + (plotTypeSel.value == "CHARCTER" ? " the enemy devotes their spies to defense this week and the character leads an army or navy this turn" : "") + ".</p>";
 					else if (contains(inferiorWithDoubleDefense, defender)) riskText += "<p>Our plot will succeed.</p>";
 					if (superior.length > 0) riskText += "<p>" + superior.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will know of our involvement.</p>";
@@ -707,8 +708,8 @@ class OrdersPane extends HTMLElement {
 			else if (parseInt(eBonus.value) == -2) recruitRate = -1;
 			else if (parseInt(eBonus.value) > 0) recruitRate = Math.log2(parseInt(eBonus.value)) * .5 + .5;
 			let happiness = 0;
-			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25;
-			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) / 2;
+			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
+			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
 			if (parseInt(eRation.value) == 75) happiness -= 15;
 			else if (parseInt(eRation.value) == 125) happiness += 10;
 			economyConsequences.innerHTML = "";
@@ -815,7 +816,7 @@ class OrdersPane extends HTMLElement {
 				if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
 				if (g_data.kingdoms[whoami].signingbonushint != undefined) shadow.querySelector("[name=economy_recruit_bonus]").value = g_data.kingdoms[whoami].signingbonushint;
 				shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));
-				if (g_data.kingdoms[whoami].rationhint != undefined) shadow.querySelector("[name=economy_rations]").value = g_data.kingdoms[whoami].rationhint;
+				if (g_data.kingdoms[whoami].rationhint != undefined) shadow.querySelector("[name=economy_ration]").value = g_data.kingdoms[whoami].rationhint;
 				for (let k in g_data.kingdoms) {
 					if (k == whoami) continue;
 					shadow.querySelector("[name=rel_" + k + "_attack]").value = g_data.kingdoms[whoami].relationships[k].battle;

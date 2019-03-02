@@ -79,7 +79,7 @@ final class Region {
 	public double calcRecruitment(World w, ArrayList<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population / 2000.0;
 		double mods = 1;
-		NationData wKingdom = w.kingdoms.get(kingdom);
+		NationData wKingdom = w.getNation(kingdom);
 		if (signingBonus == -1) mods -= 0.5;
 		else if (signingBonus == -2) mods -= 1;
 		else if (signingBonus >= 1) mods += (Math.log(signingBonus) / Math.log(2)) * .5 + .5;
@@ -90,9 +90,9 @@ final class Region {
 		}
 		double unrest = calcUnrest(w);
 		if (unrest > .25) base *= 1.25 - unrest;
-		if (noble != null && noble.tags.contains("Inspiring")) mods += .5;
-		if (noble != null && noble.tags.contains("Untrusting")) mods -= .35;
-		if (noble != null && noble.tags.contains("Tyrannical")) mods -= .5;
+		if (noble != null && noble.hasTag("Inspiring")) mods += .5;
+		if (noble != null && noble.hasTag("Untrusting")) mods -= .35;
+		if (noble != null && noble.hasTag("Tyrannical")) mods -= .5;
 		if (religion.equals("Northern (Rjinku)")) {
 			mods += 1;
 		} else if (religion.equals("Iruhan (Sword of Truth)")) {
@@ -104,10 +104,10 @@ final class Region {
 		} else if ("Tavian (River of Kuun)".equals(religion) && rationing == 1.25) {
 			mods += .5;
 		}
-		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.tags.contains("Pillagers")) mods -= .75;
-		if (wKingdom.tags.contains("Coast-Dwelling") && isCoastal(w)) mods += .12;
-		if (wKingdom.tags.contains("Patriotic")) mods += .15;
-		if (wKingdom.tags.contains("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag("Pillagers")) mods -= .75;
+		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
+		if (wKingdom.hasTag("Patriotic")) mods += .15;
+		if (wKingdom.hasTag("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * .05;
@@ -123,17 +123,17 @@ final class Region {
 		double base = population / 10000.0;
 		double mods = taxRate;
 		double unrest = calcUnrest(w);
-		NationData wKingdom = w.kingdoms.get(kingdom);
+		NationData wKingdom = w.getNation(kingdom);
 		if (unrest > .25) base *= 1.25 - unrest;
-		if (noble != null && noble.tags.contains("Frugal")) mods += .5;
-		if (noble != null && noble.tags.contains("Hoarding")) mods -= .35;
+		if (noble != null && noble.hasTag("Frugal")) mods += .5;
+		if (noble != null && noble.hasTag("Hoarding")) mods -= .35;
 		if (governors != null) {
 			for (Character c : governors) {
 				mods += c.calcLevel("governor") * .5 + 1;
 			}
 		}
-		if (wKingdom.tags.contains("Coast-Dwelling") && isCoastal(w)) mods += .12;
-		if (wKingdom.tags.contains("Mercantile")) mods += .15;
+		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
+		if (wKingdom.hasTag("Mercantile")) mods += .15;
 		boolean neighborKuun = false;
 		for (Region r : getNeighbors(w)) {
 			if (r.kingdom != null && !r.kingdom.equals(kingdom) && "Tavian (River of Kuun)".equals(NationData.getStateReligion(r.kingdom, w))) neighborKuun = true;
@@ -150,7 +150,7 @@ final class Region {
 		} else if (religion.equals("Iruhan (Chalice of Compassion)")) {
 			mods -= .3;
 		}
-		if (wKingdom.tags.contains("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		if (wKingdom.hasTag("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * .05;
@@ -163,8 +163,8 @@ final class Region {
 	public double calcConsumption(World w, double foodMod) {
 		double base = population;
 		double mods = foodMod;
-		if (noble != null && noble.tags.contains("Rationing")) mods -= .2;
-		if (noble != null && noble.tags.contains("Wasteful")) mods += .1;
+		if (noble != null && noble.hasTag("Rationing")) mods -= .2;
+		if (noble != null && noble.hasTag("Wasteful")) mods += .1;
 		if (NationData.getStateReligion(kingdom, w).equals("Iruhan (Chalice of Compassion)")) mods -= .15;
 		if (mods < 0) mods = 0;
 		return base * mods;
@@ -173,10 +173,10 @@ final class Region {
 	public double calcPirateThreat(World w) {
 		if ("water".equals(type)) return 0;
 		if ("Northern (Alyrja)".equals(religion)) return 0;
-		if (noble != null && noble.tags.contains("Policing")) return 0;
+		if (noble != null && noble.hasTag("Policing")) return 0;
 		double unrest = calcUnrest(w);
 		double mods = 1;
-		if (noble != null && noble.tags.contains("Shady Connections")) mods += 2;
+		if (noble != null && noble.hasTag("Shady Connections")) mods += 2;
 		if (noble != null) mods -= 0.5;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / 30) - 1;
 		return Math.max(0, unrest * mods);
@@ -196,13 +196,13 @@ final class Region {
 			}
 		}
 		if ("Iruhan (Vessel of Faith)".equals(max) && !religion.equals(max)) {
-			for (String k : w.kingdoms.keySet()) {
+			for (String k : w.getNationNames()) {
 				if (!"Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(k, w))) continue;
 				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular - .05);
 			}
 		}
 		if (!max.equals(religion)) {
-			for (String k : w.kingdoms.keySet()) {
+			for (String k : w.getNationNames()) {
 				String si = NationData.getStateReligion(k, w);
 				String sr = ideologyToReligion(si);
 				if (max.startsWith(sr)) w.score(k, "religion", 2);
@@ -234,7 +234,7 @@ final class Region {
 
 	public Map<String, Double> calcPlotPowers(World w, List<String> boosts, int inspires) {
 		HashMap<String, Double> powers = new HashMap<>();
-		for (String kingdom : w.kingdoms.keySet()) {
+		for (String kingdom : w.getNationNames()) {
 			powers.put(kingdom, 0.0);
 		}
 		final class Node {
@@ -283,7 +283,7 @@ final class Region {
 	public double calcUnrest(World w) {
 		double unrest = unrestPopular;
 		if (religion.contains("Iruhan") && !religion.contains("Vessel of Faith")) {
-			unrest = Math.max(unrest, -w.kingdoms.get(kingdom).goodwill / 100);
+			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill / 100);
 		}
 		if (noble != null && noble.name != "" && !"".equals(noble.name)) {
 			unrest = Math.max(noble.unrest, unrest);
@@ -294,9 +294,9 @@ final class Region {
 	public double calcMinConquestStrength(World w) {
 		double base = Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 		double mods = 1;
-		if (noble != null && noble.tags.contains("Loyal")) mods += 1;
-		if (noble != null && noble.tags.contains("Desperate")) mods -= 2;
-		if (w.kingdoms.get(kingdom).tags.contains("Stoic")) mods += .75;
+		if (noble != null && noble.hasTag("Loyal")) mods += 1;
+		if (noble != null && noble.hasTag("Desperate")) mods -= 2;
+		if (w.getNation(kingdom).hasTag("Stoic")) mods += .75;
 		mods += calcFortification() - 1;
 		return Math.max(0, base * mods);
 	}

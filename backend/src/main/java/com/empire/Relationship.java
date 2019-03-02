@@ -1,12 +1,33 @@
 package com.empire;
 
 final class Relationship {
+	public static final Relationship NPC_RELATION = new Relationship();
+	static {
+		NPC_RELATION.battle = Relationship.War.ATTACK;
+		NPC_RELATION.refugees = Relationship.Refugees.ACCEPT;
+		NPC_RELATION.construct = Relationship.Construct.FORBID;
+		NPC_RELATION.cede = Relationship.Cede.REFUSE;
+		NPC_RELATION.fealty = Relationship.Fealty.REFUSE;
+	}
+
 	War battle;
 	Refugees refugees;
 	double tribute;
 	Construct construct;
 	Cede cede;
 	Fealty fealty;
+
+	Relationship() {
+	}
+
+	Relationship(Relationship copy) {
+		battle = copy.battle;
+		refugees = copy.refugees;
+		tribute = copy.tribute;
+		construct = copy.construct;
+		cede = copy.cede;
+		fealty = copy.fealty;
+	}
 
 	public String diff(Relationship old, String me, String them) {
 		String result = "";
