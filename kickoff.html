@@ -3,6 +3,7 @@
 		<script>
 			function postForm() {
 				let pw = document.getElementById("gmPassword").value;
+				let pw2 = document.getElementById("obsPassword").value;
 				let nations = document.getElementById("nations").value.split("\n").map(x => x.trim()).filter(x => x.length > 0);
 				let gameId = parseInt(document.getElementById("gameId").value);
 				
@@ -17,6 +18,7 @@
 				};
 				req.send(JSON.stringify({
 					"gm_password": pw,
+					"obs_password": pw2,
 					"kingdoms": nations
 				}));
 				return false;
@@ -26,6 +28,7 @@
 	<body>
 		<form onsubmit="return postForm();">
 			<label>GM Password: <input id="gmPassword" type="password"/></label>
+			<label>Observer Password: <input id="obsPassword" type="password"/></label>
 			<label>
 				Newline-Separated List of Nations:
 				<textarea id="nations">
@@ -68,21 +71,6 @@
 		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=11" method="POST"><button>Advance Game 0 turn 11</button></form>
 		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=12" method="POST"><button>Advance Game 0 turn 12</button></form>
 		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=13&skipmail=t" method="POST"><button>Advance Game 0 turn 13</button></form>
-		<hr/>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=1&skipmail=t" method="POST"><button>Advance Game 2 turn 1</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=2" method="POST"><button>Advance Game 2 turn 2</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=3" method="POST"><button>Advance Game 2 turn 3</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=4&skipmail=t" method="POST"><button>Advance Game 2 turn 4</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=5" method="POST"><button>Advance Game 2 turn 5</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=9&skipmail=t" method="POST"><button>Advance Game 2 turn 9</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=2&t=13&skipmail=t" method="POST"><button>Advance Game 2 turn 13</button></form>
-		<hr/>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=3&t=1&skipmail=t" method="POST"><button>Advance Game 3 turn 1</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=3&t=2" method="POST"><button>Advance Game 3 turn 2</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=3&t=3" method="POST"><button>Advance Game 3 turn 3</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=3&t=4&skipmail=t" method="POST"><button>Advance Game 3 turn 4</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=3&t=5" method="POST"><button>Advance Game 3 turn 5</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=3&t=9&skipmail=t" method="POST"><button>Advance Game 3 turn 9</button></form>
 		<hr/>
 		<form action="http://empire-189013.appspot.com/entry/migrate?gid=3" method="POST"><button>migrate()</button></form>
 	</body>

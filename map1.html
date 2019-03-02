@@ -155,7 +155,7 @@
 				if (ele[0] == "region") {
 					document.getElementById("reports").innerHTML = `<region-report region="${ele[1]}"></region-report>`;
 					document.title = "Empire - " + ele[1];
-				} else if (ele[0] == "kingdom" && ele[1] != "Pirate") {
+				} else if (ele[0] == "kingdom" && ele[1] != "Pirate" && ele[1] != "Unruled") {
 					document.getElementById("reports").innerHTML = `<kingdom-report kingdom="${ele[1]}" ${ele[1] == whoami ? "notifications=\"true\"" : ""}></kingdom-report>`;
 					document.title = "Empire - " + ele[1];
 				} else if (ele[0] == "character") {
@@ -170,6 +170,9 @@
 				} else if (ele[0] == "pirates" || ele[1] == "Pirate") {
 					document.getElementById("reports").innerHTML = `<pirate-report></pirate-report>`;
 					document.title = "Empire - Pirates";
+				} else if (ele[1] == "Unruled") {
+					document.getElementById("reports").innerHTML = `Unruled regions or armies are not associated with any ruler.`;
+					document.title = "Empire - Unruled";
 				} else if (ele[0] == "gothi") {
 					document.getElementById("reports").innerHTML = `<gothi-report></gothi-report>`;
 					document.title = "Empire - Gothi";
@@ -276,6 +279,7 @@
 					.v_religion .Northern_Syrjen { fill: #88f; }
 					.v_religion .Tavian_Flame_of_Kith { fill: #8f0; }
 					.v_religion .Tavian_River_of_Kuun { fill: #0f8; }
+				  .v_political .unruled { fill: #ddd; }
 				`;
 				for (let ki in g_turndata[date].kingdoms) if (g_turndata[date].kingdoms.hasOwnProperty(ki)) {
 					let k = g_turndata[date].kingdoms[ki];

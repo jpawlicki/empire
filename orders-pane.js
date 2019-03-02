@@ -19,7 +19,7 @@ class OrdersPane extends HTMLElement {
 				<div id="tab_plots" class="tab_plots">plots</div>
 				<div id="tab_nations" class="tab_nations">nations</div>
 				<div id="tab_economy" class="tab_economy">economy</div>
-				<div id="tab_economy" class="tab_game">game</div>
+				<div id="tab_game" class="tab_game">game</div>
 			</div>
 			<form id="form">
 				<table id="content_units">
@@ -115,6 +115,7 @@ class OrdersPane extends HTMLElement {
 						<expandable-snippet text="Your score profiles can be changed on every 7th turn.">
 					</div>
 					<h1>Final Actions</h1>
+					<expandable-snippet text="Final Actions are powerful actions that end the story of your nation and remove you from the game."></expandable-snippet>
 					<select id="final_action" name="final_action">
 						<option value="continue_ruling">Continue Ruling</option>
 						<option value="exodus">Exodus</option>
@@ -122,7 +123,6 @@ class OrdersPane extends HTMLElement {
 						<option value="last_stand">Last Stand</option>
 						<option value="salt_the_earth">Salt the Earth</option>
 					</select>
-					<expandable-snippet text="Final Actions are powerful actions that end the story of your nation and remove you from the game."></expandable-snippet>
 					<div id="final_action_details"></div>
 				</div>
 			</form>
@@ -174,6 +174,11 @@ class OrdersPane extends HTMLElement {
 			}
 			.tab_economy {
 				border-bottom: 3px solid green;
+				border-left: 1.5px solid white;
+				border-right: 1.5px solid white;
+			}
+			.tab_game {
+				border-bottom: 3px solid grey;
 				border-left: 1.5px solid white;
 				border-right: 1.5px solid white;
 			}
@@ -265,10 +270,10 @@ class OrdersPane extends HTMLElement {
 		content.innerHTML = html;
 		shadow.appendChild(content);
 		let form = shadow.getElementById("form");
-		for (let t of ["units", "plots", "nations", "economy"]) shadow.getElementById("content_" + t).style.display = "none";
+		for (let t of ["units", "plots", "nations", "economy", "game"]) shadow.getElementById("content_" + t).style.display = "none";
 		let changeTab = function (tab) {
 			shadow.getElementById("tabs").className = "tab_" + tab;
-			for (let t of ["units", "plots", "nations", "economy"]) {
+			for (let t of ["units", "plots", "nations", "economy", "game"]) {
 				shadow.getElementById("content_" + t).style.display = "none";
 				shadow.getElementById("tab_" + t).style.paddingBottom = "0.5em";
 				shadow.getElementById("tab_" + t).style.color = "#777";
@@ -283,6 +288,7 @@ class OrdersPane extends HTMLElement {
 		shadow.getElementById("tab_plots").addEventListener("click", ()=>(changeTab("plots")));
 		shadow.getElementById("tab_nations").addEventListener("click", ()=>(changeTab("nations")));
 		shadow.getElementById("tab_economy").addEventListener("click", ()=>(changeTab("economy")));
+		shadow.getElementById("tab_game").addEventListener("click", ()=>(changeTab("game")));
 		let addRow = function(ele, link, div, selec, before = undefined) {
 			let r = document.createElement("tr");
 			let t = document.createElement("td");
@@ -718,6 +724,7 @@ class OrdersPane extends HTMLElement {
 			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (newRecruits + soldiers) / 100) + " gold total)</p>";
 		}
 		eTax.addEventListener("input", computeEconomyConsequences);	
+		eRation.addEventListener("input", computeEconomyConsequences);	
 		eBonus.addEventListener("input", computeEconomyConsequences);
 		computeEconomyConsequences();
 		let op = this;
@@ -773,7 +780,7 @@ class OrdersPane extends HTMLElement {
 			let final_act_desc = {
 				"continue_ruling": "",
 				"salt_the_earth": "You lay waste to your own lands, decreasing their value to your enemies. All regions you control become treacherous, lose half their food, and become unruled. All your armies and navies become pirates. Your heroes are removed from the game. Your people overthrow you and you are removed from the game.",
-				"graceful_abdication": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your core regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
+				"abdicate": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your core regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
 				"exodus": "You gather those loyal to you and flee across the great sea to lands unknown. Your heroes are removed from the map and your regions become unruled. A fraction of population from your core regions goes with you, depending on your naval strength relative to your enemies. You depart from this region of the world, removing you from the game.",
 				"last_stand": "You inspire your troops to make a heroic final stand. Your armies and navies fight with +400% efficacy this turn, and then become pirates. Your regions become unruled and your heroes are removed from the game. You are either killed in battle or slip away to live out a quiet life far from politics, removing you from the game.",
 			};

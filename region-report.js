@@ -278,7 +278,7 @@ let getNobleUnrestBlock = function(r) {
 
 let getClericalUnrestBlock = function(r) {
 	if (r.religion.indexOf("Iruhan") < 0 || r.religion.indexOf("Vessel of Faith") >= 0) return "";
-	let clericalUnrest = Math.min(1, Math.max(0, -g_data.kingdoms[r.kingdom].goodwill / 100));
+	let clericalUnrest = r.kingdom == "Unruled" ? 0 : Math.min(1, Math.max(0, -g_data.kingdoms[r.kingdom].goodwill / 100));
 	return `<tooltip-element id="clerical_unrest" tooltip="Clerical unrest is caused by the Church of Iruhan's wrath toward a ruler. It can be decreased by fighting excommunicated nations, building temples to Iruhan (but not Vessel of Faith temples), or removed entirely from this region by converting the region to a different religion or the Vessel of Faith ideology.">Clerical Unrest:</tooltip-element><div>${Math.round(clericalUnrest * 100)}%</div>`;
 }
 

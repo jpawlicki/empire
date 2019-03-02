@@ -17,6 +17,7 @@ import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
+import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,11 +76,18 @@ final class World {
 		return getGson().fromJson(json, World.class);
 	}
 
-	public static World startNew(String gmPasswordHash, Map<String, Nation.NationGson> nationSetup) {
+	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) {
 		World w = new World();
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
-		// TODO: ObserverPassHash, Schedule, NextTurn
+		w.obsPasswordHash = obsPasswordHash;
+		w.turnSchedule.days = new ArrayList<>();
+		w.turnSchedule.days.add(DayOfWeek.MONDAY);
+		w.turnSchedule.days.add(DayOfWeek.WEDNESDAY);
+		w.turnSchedule.days.add(DayOfWeek.FRIDAY);
+		w.turnSchedule.time = 150;
+		w.turnSchedule.locale = "America/Los_Angeles";
+		w.nextTurn = w.turnSchedule.getNextTime();
 		w.regions = new ArrayList<>();
 		w.harvests = WorldConstantData.harvests;
 		w.pirate.threat = 4;
@@ -140,6 +148,7 @@ final class World {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			NationData nation = new NationData();
 			WorldConstantData.Kingdom con = WorldConstantData.kingdoms.get(kingdom);
+			nation.email = setup.email;
 			nation.colorFg = con.colorFg;
 			nation.colorBg = con.colorBg;
 			nation.culture = con.culture;
@@ -160,6 +169,8 @@ final class World {
 				r.refugees = Relationship.Refugees.ACCEPT;
 				r.tribute = 0;
 				r.construct = Relationship.Construct.FORBID;
+				r.cede = Relationship.Cede.ACCEPT;
+				r.fealty = Relationship.Fealty.REFUSE;
 				nation.relationships.put(k2, r);
 			}
 			double sharesGold = 1;
@@ -194,10 +205,13 @@ final class World {
 			unownedRegions++;
 		}
 		for (Region r : w.regions) {
-			r.kingdom = "None";
-			r.population = totalPopulation / unownedRegions / totalSharesPopulation * unruledNations / 2.0;
-			r.unrestPopular = Math.random() * .3 + .1;
-			r.food = totalFood / unownedRegions / totalSharesPopulation * unruledNations / 2.0;
+			if ("water".equals(r.type)) continue;
+			if (r.kingdom == null) {
+				r.kingdom = "Unruled";
+				r.population = totalPopulation / unownedRegions / totalSharesPopulation * unruledNations / 2.0;
+				r.unrestPopular = Math.random() * .3 + .1;
+				r.food = totalFood / unownedRegions / totalSharesPopulation * unruledNations / 2.0;
+			}
 		}
 		// Un-own rebellious regions.
 		HashSet<String> rebelliousNations = new HashSet<>();
@@ -343,18 +357,39 @@ final class World {
 		for (Region r : w.regions) {
 			if ("water".equals(r.type)) continue;
 			if (r.kingdom == null) throw new RuntimeException(r.name + " is still unowned!");
-			r.religion = nationSetup.get(r.kingdom).dominantIdeology;
+			if ("Unruled".equals(r.kingdom)) {
+				ArrayList<String> possibilities = new ArrayList<>();
+				if ("tavian".equals(r.culture)) {
+					possibilities.add("Tavian (Flame of Kith)");
+					possibilities.add("Tavian (River of Kuun)");
+				} else if ("eolsung".equals(r.culture) || "tyrgaetan".equals(r.culture)) {
+					possibilities.add("Northern (Alyrja)");
+					possibilities.add("Northern (Rjinku)");
+					possibilities.add("Northern (Syrjen)");
+					possibilities.add("Northern (Lyskr)");
+				} else {
+					possibilities.add("Iruhan (Sword of Truth)");
+					possibilities.add("Iruhan (Tapestry of Peoples)");
+					possibilities.add("Iruhan (Chalice of Compassion)");
+					possibilities.add("Iruhan (Vessel of Faith)");
+				}
+				r.religion = possibilities.get((int)(Math.random() * possibilities.size()));
+			} else {
+				r.religion = nationSetup.get(r.kingdom).dominantIdeology;
+			}
 		}
 		// Place shipyards. Want ~315 total (200?), split among all nations.
 		int shipyardsPerNation = (int)(Math.ceil(200.0 / nationSetup.keySet().size()));
 		for (String kingdom : nationSetup.keySet()) {
 			ArrayList<Region> regions = new ArrayList<>();
 			for (Region r : w.regions) if (kingdom.equals(r.kingdom) && r.isCoastal(w)) regions.add(r);
-			for (int i = 0; i < shipyardsPerNation; i++) {
-				Construction c = new Construction();
-				c.type = "shipyard";
-				c.originalCost = 40;
-				regions.get((int)(Math.random() * regions.size())).constructions.add(c);
+			if (!regions.isEmpty()) {
+				for (int i = 0; i < shipyardsPerNation; i++) {
+					Construction c = new Construction();
+					c.type = "shipyard";
+					c.originalCost = 40;
+					regions.get((int)(Math.random() * regions.size())).constructions.add(c);
+				}
 			}
 		}
 		// Add characters, incl Cardinals
@@ -362,6 +397,7 @@ final class World {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			ArrayList<Integer> regions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom)) regions.add(i);
+			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());
 			ArrayList<Character> characters = new ArrayList<>();
 			for (int i = 0; i < (setup.dominantIdeology.startsWith("Iruhan") && !setup.dominantIdeology.contains("Vessel of Faith") ? 5 : 4); i++) {
 				Character c = new Character();
@@ -438,7 +474,6 @@ final class World {
 	 */
 	public Map<String, String> advance(Map<String, Map<String, String>> orders) {
 		for (String k : kingdoms.keySet()) {
-			kingdoms.get(k).interstitials.clear();
 			kingdoms.get(k).resetAccessToken();
 			if (!orders.containsKey(k)) {
 				// AI: Snythesize orders from hints.
@@ -452,6 +487,16 @@ final class World {
 				for (Army a : armies) {
 					if (k.equals(a.kingdom) && null != a.orderhint && !"".equals(a.orderhint)) aiOrders.put("action_army_" + a.id, a.orderhint);
 				}
+				for (String kk : kingdoms.keySet()) {
+					if (k.equals(kk)) continue;
+					aiOrders.put("rel_" + kk + "_attack", kingdoms.get(k).relationships.get(kk).battle.toString());
+					aiOrders.put("rel_" + kk + "_tribute", Double.toString(kingdoms.get(k).relationships.get(kk).tribute));
+					aiOrders.put("rel_" + kk + "_cede", kingdoms.get(k).relationships.get(kk).cede.toString());
+					aiOrders.put("rel_" + kk + "_refugees", kingdoms.get(k).relationships.get(kk).refugees.toString());
+					aiOrders.put("rel_" + kk + "_fealty", kingdoms.get(k).relationships.get(kk).fealty.toString());
+					aiOrders.put("rel_" + kk + "_construct", kingdoms.get(k).relationships.get(kk).construct.toString());
+				}
+				aiOrders.put("plot_type", "defend");
 				orders.put(k, aiOrders);
 			}
 		}
@@ -2514,7 +2559,7 @@ final class World {
 					email += "\n " + m.signed.replace("Signed, ", "");
 				}
 			}
-			email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game and give your nation to a player on the wait list, reply \"RETIRE\" to this e-mail.\nIf you wish for the GM or AI to make move on your behalf this turn, reply \"AUTO\" to this e-mail.";
+			email += "\n\nYou can issue your orders at https://pawlicki.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game and give your nation to a player on the wait list, reply \"RETIRE\" to this e-mail.\nIf you wish for the GM or AI to make move on your behalf this turn, reply \"AUTO\" to this e-mail.";
 			emails.put(kingdoms.get(kingdom).email, email);
 		}
 		return emails;
@@ -3012,578 +3057,6 @@ final class World {
 	}
 }
 
-final class NationData {
-	HashMap<String, Double> score = new HashMap<>();
-	double gold;
-	Map<String, Relationship> relationships = new HashMap<>();
-	Map<String, Boolean> gothi = new HashMap<>();
-	double goodwill;
-	boolean loyalToCult;
-	List<Noble> court = new ArrayList<>();
-	String colorFg;
-	String colorBg;
-	String culture;
-	List<Integer> coreRegions = new ArrayList<>();
-	ArrayList<String> tags = new ArrayList<>();
-	ArrayList<Interstitial> interstitials = new ArrayList<>();
-	ArrayList<String> previousTributes = new ArrayList<>();
-	String taxratehint;
-	String rationhint;
-	String signingbonushint;
-	String password;
-	String email;
-	String accessToken;
-
-	void resetAccessToken() {
-		accessToken = Long.toString(new SecureRandom().nextLong(), java.lang.Character.MAX_RADIX);
-	}
-
-	static boolean rulerValues(String kingdom, String value, World w) {
-		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.tags.contains("Ruler")) {
-			return c.values.contains(value);
-		}
-		return false;
-	}
-
-	static boolean isFriendly(String a, String b, World w) {
-		if (a.equals(b)) return true;
-		if (a.equals("Pirate") || b.equals("Pirate")) return false;
-		NationData aa = w.kingdoms.get(a);
-		NationData bb = w.kingdoms.get(b);
-		return Relationship.War.DEFEND == aa.relationships.get(b).battle && Relationship.War.DEFEND == bb.relationships.get(a).battle;
-	}
-
-	static boolean isEnemy(String a, String b, World w) {
-		return isEnemy(a, b, w, null);
-	}
-
-	static boolean isEnemy(String a, String b, World w, Region region) {
-		if (a.equals(b)) return false;
-		if (a.equals("Pirate") || b.equals("Pirate")) return true;
-		NationData aa = w.kingdoms.get(a);
-		NationData bb = w.kingdoms.get(b);
-		if (Relationship.War.ATTACK == aa.relationships.get(b).battle || Relationship.War.ATTACK == bb.relationships.get(a).battle) {
-			return true;
-		}
-		if (region != null && region.kingdom != null && region.kingdom.equals(a) && Relationship.War.NEUTRAL == aa.relationships.get(b).battle) return true;
-		if (region != null && region.kingdom != null && region.kingdom.equals(b) && Relationship.War.NEUTRAL == bb.relationships.get(a).battle) return true;
-		return false;
-	}
-
-	static String getStateReligion(String kingdom, World w) {
-		HashMap<String, Double> weights = new HashMap<>();
-		for (Region r : w.regions) {
-			if (!kingdom.equals(r.kingdom)) continue;
-			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.tags.contains("Pious") ? 3 : 1));
-		}
-		String max = "Company";
-		double maxVal = 0;
-		for (String n : weights.keySet()) {
-			if (weights.get(n) > maxVal) {
-				maxVal = weights.get(n);
-				max = n;
-			}
-		}
-		return max;
-	}
-}
-
-final class Relationship {
-	War battle;
-	Refugees refugees;
-	double tribute;
-	Construct construct;
-	Cede cede;
-	Fealty fealty;
-
-	public String diff(Relationship old, String me, String them) {
-		String result = "";
-		if (!battle.equals(old.battle)) result += " " + battle.summarize(me, them);
-		if (!refugees.equals(old.refugees)) result += " " + refugees.summarize(me, them);
-		if (!construct.equals(old.construct)) result += " " + construct.summarize(me, them);
-		if (tribute != old.tribute) result += " " + me + " will pay " + Math.round(tribute * 100) + "% of their income to " + them;
-		return result;
-	}
-
-	static enum War {
-		ATTACK("%US% will attack %THEM% soldiers on sight."),
-		NEUTRAL("%US% will attack %THEM% soldiers only while they trespass in %US%."),
-		DEFEND("%US% will never attack %THEM% soldiers.");
-		private final String summary;
-		private War(String summary) {
-			this.summary = summary;
-		}
-		public String summarize(String us, String them) {
-			return summary.replaceAll("%US%", us).replaceAll("%THEM%", them);
-		}
-	}
-
-	static enum Refugees {
-		ACCEPT("%US% will accept %THEM% refugees."),
-		REFUSE("%US% will turn away %THEM% refugees.");
-		private final String summary;
-		private Refugees(String summary) {
-			this.summary = summary;
-		}
-		public String summarize(String us, String them) {
-			return summary.replaceAll("%US%", us).replaceAll("%THEM%", them);
-		}
-	}
-
-	static enum Construct {
-		PERMIT("%US% will permit %THEM% to construct within %US%."),
-		FORBID("%US% will not permit %THEM% to construct within %US%.");
-		private final String summary;
-		private Construct(String summary) {
-			this.summary = summary;
-		}
-		public String summarize(String us, String them) {
-			return summary.replaceAll("%US%", us).replaceAll("%THEM%", them);
-		}
-	}
-
-	static enum Cede {
-		ACCEPT("%US% will accept regions ceded from %THEM%."),
-		REFUSE("%US% will refuse regions ceded from %THEM%.");
-		private final String summary;
-		private Cede(String summary) {
-			this.summary = summary;
-		}
-		public String summarize(String us, String them) {
-			return summary.replaceAll("%US%", us).replaceAll("%THEM%", them);
-		}
-	}
-
-	static enum Fealty {
-		ACCEPT("%US% will accept soldiers transferred from %THEM%."),
-		REFUSE("%US% will refuse soldiers transferred from %THEM%.");
-		private final String summary;
-		private Fealty(String summary) {
-			this.summary = summary;
-		}
-		public String summarize(String us, String them) {
-			return summary.replaceAll("%US%", us).replaceAll("%THEM%", them);
-		}
-	}
-}
-
-final class Region {
-	String name;
-	String type; // "land" or "water" // TODO: can make this into an enum with @SerializedName
-	String culture;
-	String climate;
-	double population;
-	String kingdom;
-	String religion;
-	double unrestPopular;
-	Noble noble;
-	List<Construction> constructions = new ArrayList<>();
-	double food;
-	double harvest;
-	boolean gotCultFood;
-
-	public boolean canFoodTransferTo(World w, Region target) {
-		HashSet<Region> legals = new HashSet<>();
-		ArrayList<Region> stack = new ArrayList<>();
-		stack.add(this);
-		legals.add(this);
-		for (Region n : getNeighbors(w)) {
-			if (n.type.equals("water")) stack.add(n);
-			legals.add(n);
-		}
-		while (!stack.isEmpty()) {
-			Region r = stack.remove(stack.size() - 1);
-			for (Region n : r.getNeighbors(w)) {
-				if (n.type.equals("water") && !legals.contains(n)) stack.add(n);
-				legals.add(n);
-			}
-		}
-		return legals.contains(target);
-	}
-
-	public ArrayList<String> getArmyTags() {
-		ArrayList<String> t = new ArrayList<>();
-		switch (culture) {
-			case "anpilayn":
-				t.add("Steel");
-				t.add("Formations");
-				break;
-			case "eolsung":
-				t.add("Pillagers");
-				t.add("Raiders");
-				break;
-			case "hansa":
-				t.add("Seafaring");
-				t.add("Impressment");
-				break;
-			case "tyrgaetan":
-				t.add("Weathered");
-				t.add("Pathfinders");
-				break;
-			case "tavian":
-				t.add("Riders");
-				t.add("Crafts-soldiers");
-				break;
-		}
-		return t;
-	}
-
-	private static int numUniqueIdeologies(String kingdom, World w) {
-		HashSet<String> ideologies = new HashSet<>();
-		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
-		return ideologies.size();
-	}
-
-	public double calcRecruitment(World w, ArrayList<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
-		double base = population / 2000.0;
-		double mods = 1;
-		NationData wKingdom = w.kingdoms.get(kingdom);
-		if (signingBonus == -1) mods -= 0.5;
-		else if (signingBonus == -2) mods -= 1;
-		else if (signingBonus >= 1) mods += (Math.log(signingBonus) / Math.log(2)) * .5 + .5;
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcLevel("governor") * .5 + 1;
-			}
-		}
-		double unrest = calcUnrest(w);
-		if (unrest > .25) base *= 1.25 - unrest;
-		if (noble != null && noble.tags.contains("Inspiring")) mods += .5;
-		if (noble != null && noble.tags.contains("Untrusting")) mods -= .35;
-		if (noble != null && noble.tags.contains("Tyrannical")) mods -= .5;
-		if (religion.equals("Northern (Rjinku)")) {
-			mods += 1;
-		} else if (religion.equals("Iruhan (Sword of Truth)")) {
-			mods += 1;
-		} else if (religion.equals("Iruhan (Tapestry of People)")) {
-			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion.equals(religion))) getTapestryBonus = true;
-			if (getTapestryBonus) mods += .5;
-		} else if ("Tavian (River of Kuun)".equals(religion) && rationing == 1.25) {
-			mods += .5;
-		}
-		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.tags.contains("Pillagers")) mods -= .75;
-		if (wKingdom.tags.contains("Coast-Dwelling") && isCoastal(w)) mods += .12;
-		if (wKingdom.tags.contains("Patriotic")) mods += .15;
-		if (wKingdom.tags.contains("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
-			int conquests = 0;
-			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
-			mods += conquests * .05;
-		}
-		if ("Northern (Rjinku)".equals(NationData.getStateReligion(kingdom, w)) && rulerBattled) mods += .5;
-		if ("Iruhan (Tapestry of People)".equals(NationData.getStateReligion(kingdom, w))) mods += .03 * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan") && "Iruhan (Tapestry of People)".equals(w.getDominantIruhanIdeology()) && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += .03 * numUniqueIdeologies(kingdom, w);
-		return Math.max(0, base * mods);
-	}
-
-
-	public double calcTaxIncome(World w, ArrayList<Character> governors, double taxRate, double rationing) {
-		double base = population / 10000.0;
-		double mods = taxRate;
-		double unrest = calcUnrest(w);
-		NationData wKingdom = w.kingdoms.get(kingdom);
-		if (unrest > .25) base *= 1.25 - unrest;
-		if (noble != null && noble.tags.contains("Frugal")) mods += .5;
-		if (noble != null && noble.tags.contains("Hoarding")) mods -= .35;
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcLevel("governor") * .5 + 1;
-			}
-		}
-		if (wKingdom.tags.contains("Coast-Dwelling") && isCoastal(w)) mods += .12;
-		if (wKingdom.tags.contains("Mercantile")) mods += .15;
-		boolean neighborKuun = false;
-		for (Region r : getNeighbors(w)) {
-			if (r.kingdom != null && !r.kingdom.equals(kingdom) && "Tavian (River of Kuun)".equals(NationData.getStateReligion(r.kingdom, w))) neighborKuun = true;
-		}
-		if (neighborKuun) mods += 0.5;
-		if (religion.equals("Northern (Syrjen)")) {
-			mods += 1.25;
-		} else if (religion.equals("Iruhan (Tapestry of People)")) {
-			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion.equals(religion))) getTapestryBonus = true;
-			if (getTapestryBonus) mods += .5;
-		} else if ("Tavian (River of Kuun)".equals(religion) && rationing == 1.25) {
-			mods += .5;
-		} else if (religion.equals("Iruhan (Chalice of Compassion)")) {
-			mods -= .3;
-		}
-		if (wKingdom.tags.contains("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
-			int conquests = 0;
-			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
-			mods += conquests * .05;
-		}
-		if ("Iruhan (Tapestry of People)".equals(NationData.getStateReligion(kingdom, w))) mods += .03 * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan") && "Iruhan (Tapestry of People)".equals(w.getDominantIruhanIdeology()) && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += .03 * numUniqueIdeologies(kingdom, w);
-		return Math.max(0, base * mods);
-	}
-
-	public double calcConsumption(World w, double foodMod) {
-		double base = population;
-		double mods = foodMod;
-		if (noble != null && noble.tags.contains("Rationing")) mods -= .2;
-		if (noble != null && noble.tags.contains("Wasteful")) mods += .1;
-		if (NationData.getStateReligion(kingdom, w).equals("Iruhan (Chalice of Compassion)")) mods -= .15;
-		if (mods < 0) mods = 0;
-		return base * mods;
-	}
-
-	public double calcPirateThreat(World w) {
-		if ("water".equals(type)) return 0;
-		if ("Northern (Alyrja)".equals(religion)) return 0;
-		if (noble != null && noble.tags.contains("Policing")) return 0;
-		double unrest = calcUnrest(w);
-		double mods = 1;
-		if (noble != null && noble.tags.contains("Shady Connections")) mods += 2;
-		if (noble != null) mods -= 0.5;
-		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / 30) - 1;
-		return Math.max(0, unrest * mods);
-	}
-
-	public void setReligion(String bias, World w) {
-		HashMap<String, Integer> ideologies = new HashMap<>();
-		for (Construction c : constructions) {
-			if (c.type.equals("temple")) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
-		}
-		int maxV = ideologies.getOrDefault(bias, -1);
-		String max = bias == null ? religion : bias;
-		for (String r : ideologies.keySet()) {
-			if (ideologies.get(r) > maxV) {
-				maxV = ideologies.get(r);
-				max = r;
-			}
-		}
-		if ("Iruhan (Vessel of Faith)".equals(max) && !religion.equals(max)) {
-			for (String k : w.kingdoms.keySet()) {
-				if (!"Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(k, w))) continue;
-				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular - .05);
-			}
-		}
-		if (!max.equals(religion)) {
-			for (String k : w.kingdoms.keySet()) {
-				String si = NationData.getStateReligion(k, w);
-				String sr = ideologyToReligion(si);
-				if (max.startsWith(sr)) w.score(k, "religion", 2);
-				if (religion.startsWith(sr)) w.score(k, "religion", -2);
-				if (max.equals(si)) w.score(k, "ideology", 3);
-				if (religion.equals(si)) w.score(k, "ideology", -3);
-			}
-		}
-		religion = max;
-	}
-
-	public List<Region> getNeighbors(World w) {
-		int id = w.regions.indexOf(this);
-		ArrayList<Region> neighbors = new ArrayList<>();
-		for (WorldConstantData.Border b : WorldConstantData.borders) {
-			if (b.a == id) neighbors.add(w.regions.get(b.b));
-			else if (b.b == id) neighbors.add(w.regions.get(b.a));
-		}
-		return neighbors;
-	}
-
-	public boolean isCoastal(World w) {
-		if (type == "water") return false;
-		for (Region r : getNeighbors(w)) {
-			if (r.type == "water") return true;
-		}
-		return false;
-	}
-
-	public Map<String, Double> calcPlotPowers(World w, List<String> boosts, int inspires) {
-		HashMap<String, Double> powers = new HashMap<>();
-		for (String kingdom : w.kingdoms.keySet()) {
-			powers.put(kingdom, 0.0);
-		}
-		final class Node {
-			public final double power;
-			public final Region location;
-			public Node(double power, Region location) {
-				this.power = power;
-				this.location = location;
-			}
-		}
-
-		for (final Character c : w.characters) {
-			Function<Node, Node> getPower = (Node n) -> {
-				Region r = n.location;
-				if (r.type.equals("water")) return new Node(n.power * .9, n.location);
-				if (NationData.isFriendly(c.kingdom, r.kingdom, w)) {
-					if (r.religion.equals("Northern (Lyskr)")) return new Node(n.power, n.location);
-					return new Node(n.power * (.9 - r.calcUnrest(w) / 10), n.location);
-				}
-				return new Node(n.power * (.8 + r.calcUnrest(w) / 10), n.location);
-			};
-			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
-				@Override
-				public int compare(Node a, Node b) {
-					return a.power > b.power ? -1 : a.power < b.power ? 1 : 0;
-				}
-			});
-			HashSet<Region> visited = new HashSet<>();
-			pq.add(getPower.apply(new Node(c.calcPlotPower(w, boosts.contains(c.kingdom), inspires), w.regions.get(c.location))));
-			while (!pq.isEmpty()) {
-				Node n = pq.poll();
-				if (visited.contains(n.location)) continue;
-				visited.add(n.location);
-				if (n.location == this) {
-					powers.put(c.kingdom, Math.max(powers.get(c.kingdom), n.power));
-					break;
-				}
-				for (Region r : n.location.getNeighbors(w)) {
-					if (!visited.contains(r)) pq.add(getPower.apply(new Node(n.power, r)));
-				}
-			}
-		}
-		return powers;
-	}
-
-	public double calcUnrest(World w) {
-		double unrest = unrestPopular;
-		if (religion.contains("Iruhan") && !religion.contains("Vessel of Faith")) {
-			unrest = Math.max(unrest, -w.kingdoms.get(kingdom).goodwill / 100);
-		}
-		if (noble != null && noble.name != "" && !"".equals(noble.name)) {
-			unrest = Math.max(noble.unrest, unrest);
-		}
-		return Math.min(1, Math.max(0, unrest));
-	}
-
-	public double calcMinConquestStrength(World w) {
-		double base = Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
-		double mods = 1;
-		if (noble != null && noble.tags.contains("Loyal")) mods += 1;
-		if (noble != null && noble.tags.contains("Desperate")) mods -= 2;
-		if (w.kingdoms.get(kingdom).tags.contains("Stoic")) mods += .75;
-		mods += calcFortification() - 1;
-		return Math.max(0, base * mods);
-	}
-
-	public double calcMinPatrolStrength(World w) {
-		double mods = 1;
-		mods += calcUnrest(w) * 2 - .7;
-		return Math.sqrt(population) * 3 / 100 * mods;
-	}
-
-	public double calcFortification() {
-		double fort = 1;
-		for (Construction c : constructions) if (c.type.equals("fortifications")) fort += .15;
-		return Math.min(5, fort);
-	}
-
-	private static String ideologyToReligion(String ideology) {
-		return ideology.substring(0, ideology.indexOf("(") - 1);
-	}
-}
-
-final class Noble {
-	String name;
-	List<String> tags = new ArrayList<>();
-	Crisis crisis;
-	double unrest;
-}
-
-final class Crisis {
-	Type type;
-	int deadline;
-
-	static enum Type {
-		NONE,
-		WEDDING,
-		RECESSION,
-		BANDITRY,
-		BORDER,
-		ENNUI,
-		CULTISM,
-		OVERWHELMED,
-		UPRISING,
-		STARVATION,
-		GUILD
-	}
-}
-
-final class Construction {
-	String type;
-	String religion; // Only for type == "temple".
-	double originalCost;
-}
-
-final class Army {
-	int id = -1;
-	String type = "";
-	double size;
-	double gold;
-	String kingdom = "";
-	int location = -1;
-	List<Preparation> preparation = new ArrayList<>();
-	List<String> tags = new ArrayList<>();
-	Map<String, Double> composition = new HashMap<>();
-	String orderhint = "";
-
-	public double calcStrength(World w, Character leader, int inspires, boolean lastStand) {
-		double strength = size * (type.equals("army") ? 1 / 100.0 : 1);
-		double mods = 1;
-		Region r = w.regions.get(location);
-		if (tags.contains("Steel")) mods += .15;
-		if (tags.contains("Seafaring") && r.type.equals("water")) mods += 1.5;
-		if (type.equals("army") && !"Pirate".equals(kingdom) && w.kingdoms.get(kingdom).tags.contains("Disciplined")) mods += .1;
-		if (type.equals("army") && r.type.equals("land") && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
-		if (type.equals("army") && r.noble != null && r.noble.tags.contains("Loyal") && r.kingdom.equals(kingdom)) mods += .25;
-		if (type.equals("army") && "Iruhan (Sword of Truth)".equals(w.getDominantIruhanIdeology())) {
-			String sr = NationData.getStateReligion(kingdom, w);
-			if ("Iruhan (Sword of Truth)".equals(sr)) mods += .25;
-			else mods += .15;
-		}
-		if (lastStand) mods += 4;
-		if (type.equals("army") && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += inspires * .05;
-		if (leader != null && "".equals(leader.captor)) mods += leader.calcLevel(type.equals("army") ? "general" : "admiral") * .2;
-		return strength * mods;
-	}
-}
-
-final class Character {
-	String name = "";
-	String kingdom = "";
-	String captor = "";
-	String honorific = "";
-	int location = -1;
-	boolean hidden = false;
-	List<Preparation> preparation = new ArrayList<>();
-	List<String> tags = new ArrayList<>();
-	Map<String, Double> experience = new HashMap<>();
-	List<String> values = new ArrayList<>();
-	int leadingArmy = -1;
-	String orderhint = "";
-
-	public int calcLevel(String dimension) {
-		double xp = experience.get(dimension);
-		if (xp >= 24) return 5;
-		else if (xp >= 15) return 4;
-		else if (xp >= 8) return 3;
-		else if (xp >= 3) return 2;
-		else return 1;
-	}
-
-	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = 1;
-		if (boosted) power += 0.5;
-		power += calcLevel("spy") * 0.3;
-		if (NationData.getStateReligion(kingdom, w).equals("Northern (Lyskr)")) power += .4;
-		if (NationData.getStateReligion(kingdom, w).equals("Company")) power += .2;
-		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) power += inspires * .05;
-		if (!"".equals(captor)) power -= 0.5;
-		return power;
-	}
-
-	public void addExperience(String dimension, World w) {
-		if ("*".equals(dimension)) {
-			for (String d : new String[]{"general", "admiral", "spy", "governor"}) experience.put(d, experience.get(d) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? .5 : .25));
-		} else {
-			experience.put(dimension, experience.get(dimension) + (w.kingdoms.get(kingdom).tags.contains("Heroic") ? 2 : 1));
-		}
-	}
-}
-
 final class Preparation {
 	int to = -1;
 	int amount = -1;
@@ -3632,16 +3105,4 @@ final class Message {
 	String from;
 	List<String> to;
 	String text;
-}
-
-final class Interstitial {
-	public final Type type;
-	public Interstitial(Type type) {
-		this.type = type;
-	}
-
-	static enum Type {
-		RULER_DEATH,
-		SUCCESSION_CRISIS;
-	}
 }

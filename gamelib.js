@@ -165,16 +165,16 @@ class Region {
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
 		}
-		if (contains(g_data.kingdoms[this.kingdom].tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
-		if (contains(g_data.kingdoms[this.kingdom].tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
-		if (contains(g_data.kingdoms[this.kingdom].tags, "War-like") && contains(g_data.kingdoms[this.kingdom].core_regions, this.id)) {
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "War-like") && contains(g_data.kingdoms[this.kingdom].core_regions, this.id)) {
 			let conquests = 0;
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(g_data.kingdoms[this.kingdom].core_regions, i)) conquests++;
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
-		let numUniqueIdeologies = g_data.kingdoms[this.kingdom].calcNumUniqueIdeologies();
-		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
-		if (g_data.kingdoms[this.kingdom].calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
+		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : g_data.kingdoms[this.kingdom].calcNumUniqueIdeologies();
+		if ("Unruled" != this.kingdom && g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
+		if ("Unruled" != this.kingdom && g_data.kingdoms[this.kingdom].calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
 		return Calc.moddedNum(base, mods);
 	}
@@ -185,7 +185,7 @@ class Region {
 		if (this.noble.unrest != undefined) {
 			unrests.push({"v": this.noble.unrest, "unit": "% disapproval", "why": "Noble Unrest"});
 		}
-		let wrath = Math.min(1, Math.max(0, -g_data.kingdoms[this.kingdom].goodwill / 100.0));
+		let wrath = this.kingdom == "Unruled" ? 0 : Math.min(1, Math.max(0, -g_data.kingdoms[this.kingdom].goodwill / 100.0));
 		if (this.religion == "Iruhan (Sword of Truth)" || this.religion == "Iruhan (Chalice of Compassion)" || this.religion == "Iruhan (Tapestry of People)") {
 			unrests.push({"v": wrath, "unit": "% disapproval", "why": "Church Wrath"});
 		}
@@ -201,8 +201,8 @@ class Region {
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		if (contains(this.noble.tags, "Frugal")) mods.push({"v": .5, "unit": "%", "why": "Noble"});
 		if (contains(this.noble.tags, "Hoarding")) mods.push({"v": -.35, "unit": "%", "why": "Noble"});
-		if (contains(g_data.kingdoms[this.kingdom].tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
-		if (contains(g_data.kingdoms[this.kingdom].tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && g_data.kingdoms[r.kingdom].calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
@@ -213,14 +213,14 @@ class Region {
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
 		}
-		if (contains(g_data.kingdoms[this.kingdom].tags, "War-like") && contains(g_data.kingdoms[this.kingdom].core_regions, this.id)) {
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "War-like") && contains(g_data.kingdoms[this.kingdom].core_regions, this.id)) {
 			let conquests = 0;
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(g_data.kingdoms[this.kingdom].core_regions, i)) conquests++;
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
-		let numUniqueIdeologies = g_data.kingdoms[this.kingdom].calcNumUniqueIdeologies();
-		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
-		if (g_data.kingdoms[this.kingdom].calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
+		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : g_data.kingdoms[this.kingdom].calcNumUniqueIdeologies();
+		if ("Unruled" != this.kingdom && g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
+		if ("Unruled" != this.kingdom && g_data.kingdoms[this.kingdom].calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
 		return Calc.moddedNum(base, mods);
 	}
@@ -263,7 +263,7 @@ class Region {
 		let mods = [];
 		if (contains(this.noble.tags, "Rationing")) mods.push({"v": -.2, "unit": "%", "why": "Noble"});
 		if (contains(this.noble.tags, "Wasteful")) mods.push({"v": .1, "unit": "%", "why": "Noble"});
-		if (g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Chalice of Compassion)") mods.push({"v": -.15, "unit": "%", "why": "Chalice of Compassion state ideology"});
+		if (this.kingdom != "Unruled" && g_data.kingdoms[this.kingdom].calcStateReligion() == "Iruhan (Chalice of Compassion)") mods.push({"v": -.15, "unit": "%", "why": "Chalice of Compassion state ideology"});
 		return Calc.moddedNum(
 			new Calc("*", [{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 1, "unit": " measures / citizen", "why": "Base Consumption Rate"}]),
@@ -289,13 +289,13 @@ class Region {
 		let mods = [];
 		if (this.noble != undefined && contains(this.noble.tags, "Loyal")) mods.push({"v": 1, "unit": "%", "why": "Loyal Noble"});
 		if (this.noble != undefined && contains(this.noble.tags, "Desperate")) mods.push({"v": -2, "unit": "%", "why": "Desperate Noble"});
-		if (contains(g_data.kingdoms[this.kingdom].tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
+		if ("Unruled" != this.kingdom && contains(g_data.kingdoms[this.kingdom].tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
 		mods.push({"v": this.calcFortification().v - 1, "unit": "%", "why": "Fortification"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
 		return Calc.moddedNum(
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, new Calc("*", [this.calcUnrest(), {"v": 0.5, "unit": "%", "why": "Unrest Importance"}]),
+				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, new Calc("*", [this.calcUnrest(), {"v": 0.5, "unit": "%", "why": "Unrest Importance"}])]),
 				{"v": 6 / 100, "unit": "%", "why": "Base Conquest Factor"}
 			]),
 			mods);
@@ -362,7 +362,7 @@ class Region {
 			if (c.location == -1) continue;
 			let gp = function(power, loc) {
 				let r = g_data.regions[loc];
-				if (r.kingdom == undefined) return [power * .9, loc];
+				if (r.kingdom == undefined || "Unruled" == r.kingdom) return [power * .9, loc];
 				if (g_data.kingdoms[c.kingdom].calcRelationship(g_data.kingdoms[r.kingdom]) == "friendly") {
 					if (r.religion == "Northern (Lyskr)") return [power, loc];
 					return [power * (.9 - r.calcUnrest().v / 10), loc];

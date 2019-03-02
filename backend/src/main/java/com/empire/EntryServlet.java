@@ -331,8 +331,10 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		StartWorldGson s = StartWorldGson.fromJson(r.body);
 		String passHash;
+		String obsPassHash;
 		try {
 			passHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.gmPassword).getBytes(StandardCharsets.UTF_8)));
+			obsPassHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.obsPassword).getBytes(StandardCharsets.UTF_8)));
 		} catch (NoSuchAlgorithmException e) {
 			log.log(Level.SEVERE, "Hash error", e);
 			return false;
@@ -351,7 +353,7 @@ public class EntryServlet extends HttpServlet {
 					// Nation is not in the game.
 				}
 			}
-			World w = World.startNew(passHash, nations);
+			World w = World.startNew(passHash, obsPassHash, nations);
 			service.put(w.toEntity(r.gameId));
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
 			g.setProperty("date", 1);
@@ -401,8 +403,9 @@ public class EntryServlet extends HttpServlet {
 			World w = World.load(r.gameId, date, service);
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
-			if (w.kingdoms.containsKey(r.kingdom) && w.kingdoms.get(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
-			if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.kingdoms.get(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
+			// if (w.kingdoms.containsKey(r.kingdom) && w.kingdoms.get(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
+			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.kingdoms.get(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
+			log.log(Level.INFO, "Loading player " + w.kingdoms.get(r.kingdom).email);
 			if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.kingdoms.get(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
