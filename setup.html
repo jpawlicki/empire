@@ -43,6 +43,14 @@
 
 				// Geoize
 				geoize(false);
+				{
+					let kingdoms = [];
+					for (let r of g_regions) {
+						if (r.core != -1 && r.core != undefined) {
+							g_gamestate.kingdoms[r.core].core_regions.push(r.id);
+						}
+					}
+				}
 				var images = {};
 				for (let k of g_gamestate.kingdoms) {
 					images[k.name] = new Image();
@@ -82,6 +90,7 @@
 			#body {
 				display: flex;
 				justify-content: space-around;
+				align-items: center;
 			}
 			#body > div {
 				max-width: 100%;
@@ -106,7 +115,6 @@
 			#body > .icons {
 				columns: 2;
 				width: 20%;
-				height: 100%;
 				overflow: visible;
 			}
 			.icons img {
@@ -203,19 +211,17 @@
 		<div id="body">
 			<div class="icons">
 				<img class="" name="aefoss" src="images/heraldry/aefoss.png"/>
-				<img class="" name="doomstoll" src="images/heraldry/doomstoll.png"/>
-				<img class="" name="dumm" src="images/heraldry/dumm.png"/>
-				<img class="" name="ejymsyn" src="images/heraldry/ejymsyn.png"/>
 				<img class="" name="fiskrbaer" src="images/heraldry/fiskrbaer.png"/>
-				<img class="" name="fulyn" src="images/heraldry/fulyn.png"/>
-				<img class="" name="holmslatr" src="images/heraldry/holmslatr.png"/>
 				<img class="" name="hosshofn" src="images/heraldry/hosshofn.png"/>
-				<img class="" name="hrip" src="images/heraldry/hrip.png"/>
+				<img class="" name="tavia" src="images/heraldry/tavia.png"/>
 				<img class="" name="isla" src="images/heraldry/isla.png"/>
-				<img class="" name="mabe" src="images/heraldry/mabe.png"/>
+				<img class="" name="doomstoll" src="images/heraldry/doomstoll.png"/>
+				<img class="" name="tribes" src="images/heraldry/tribes.png"/>
+				<img class="" name="holmslatr" src="images/heraldry/holmslatr.png"/>
+				<img class="" name="ejymsyn" src="images/heraldry/ejymsyn.png"/>
 			</div>
 			<div id="map">
-				<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="-43 -5 1150 1250" id="svg" version="1.1">
+				<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" id="svg" version="1.1">
 					<!-- Patterns -->
 					<g id="content">
 						<g id="regions" class="v_political">
@@ -230,15 +236,14 @@
 				</svg>
 			</div>
 			<div class="icons">
-				<img class="" name="mestrhofn" src="images/heraldry/mestrhofn.png"/>
+				<img class="" name="dumm" src="images/heraldry/dumm.png"/>
+				<img class="" name="fulyn" src="images/heraldry/fulyn.png"/>
+				<img class="" name="mabe" src="images/heraldry/mabe.png"/>
 				<img class="" name="miycc" src="images/heraldry/miycc.png"/>
 				<img class="" name="muoem" src="images/heraldry/muoem.png"/>
 				<img class="" name="siylmae" src="images/heraldry/siylmae.png"/>
 				<img class="" name="slail" src="images/heraldry/slail.png"/>
-				<img class="" name="tavia" src="images/heraldry/tavia.png"/>
 				<img class="" name="telmymsyn" src="images/heraldry/telmymsyn.png"/>
-				<img class="" name="tribes" src="images/heraldry/tribes.png"/>
-				<img class="" name="turujmi" src="images/heraldry/turujmi.png"/>
 				<img class="" name="zemsim" src="images/heraldry/zemsim.png"/>
 			</div>
 		</div>
@@ -297,7 +302,7 @@
 					<div id="warning"></div>
 				</form>
 			</div>
-			<h1>Selection Confirmed</h1>
+			<h1>Selection Confirmed - You will be e-mailed when all players are ready.</h1>
 		</div>
 		<script>
 			let selected = "";
@@ -375,15 +380,6 @@
 					"title": "Jarl",
 					"bonus": "navies",
 				},
-				"hrip": {
-					"culture": "eolsung",
-					"description": "Hrip is a bountiful land of stunning fjords, icy waters, and snow-capped mountains. Her people live in relative peace with each other, while their brightly-colored Shoreguard stand vigilant against enemies from afar.",
-					"traits": ["Coast-Dwelling", "Patriotic"],
-					"score": ["food", "prosperity", "security"],
-					"religion": "Syrjen",
-					"title": "Jarl",
-					"bonus": "food",
-				},
 				"isla": {
 					"culture": "tyrgaetan",
 					"description": "The youngest nation of the world, Isla is a large landmass that was forcibly split from the continent by the horrific consequences of overuse of magic. Its storm-wracked shores and sheltered interior have protected it from aggression in the generation since its sundering, but its people have not been complacent or idle, and now stand ready to rejoin the world and force their will upon it.",
@@ -401,15 +397,6 @@
 					"religion": "Sword of Truth",
 					"title": "King",
 					"bonus": "armies",
-				},
-				"mestrhofn": {
-					"culture": "eolsung",
-					"description": "Mestrhofn is an egalitarian land whose people seek to learn from the best of all others. Her mist-shrouded coves and grottos are known the world over, and painters and skalds journey to the nation just to witness the beauty.",
-					"traits": ["Republican", "Industrial"],
-					"score": ["food", "prosperity", "happiness", "friendship"],
-					"religion": "Syrjen",
-					"title": "Prime Minister",
-					"bonus": "gold",
 				},
 				"miycc": {
 					"culture": "hansa",
@@ -474,15 +461,6 @@
 					"title": "Chieftain",
 					"bonus": "armies",
 				},
-				"turujmi": {
-					"culture": "anpilayn",
-					"description": "There is a saying that each man born in Turujmi is born an explorer, and indeed the people of this nation (regardless of gender) seem fascinated with understanding their world. Though largely peaceful, they are still more than capable of war.",
-					"traits": ["Coast-Dwelling", "Seafaring"],
-					"score": ["food", "prosperity"],
-					"religion": "Chalice of Compassion",
-					"title": "King",
-					"bonus": "navies",
-				},
 				"zemsim": {
 					"culture": "anpilayn",
 					"description": "Deep in the south, Zemsim is a land of wild jungles, ancient mystics, and dangerous subterfuge. Topographically dominated by Sion, the holy mountain upon which Iruhan ascended into Godhood, Zemsim’s many rivers make it a prosperous place. The majority of its inhabitants were converted to the worship of Iruhan long ago, but in some places, deep in the jungle, the old ways still live, and the drums of doom beat...",
@@ -508,7 +486,7 @@
 				"tyrgaetan": "Tyrgaetan culture is broadly characterized by mysticism, nomadism, and strong family groups, but also by poor literacy, technological backwardness, and sparse population. Tyrgaetan armies are mostly clan or family units, who excel at crossing friendly terrain quickly and operating even in the harshest climates.",
 			};
 			let ideologyDescriptions = {
-				"Iruhan (Chalice of Compassion)": "Your people broadly believe that all life is precious. They are ecological and both produce more food during harvests and consume less food each week, but also produce fewer soldiers.",
+				"Iruhan (Chalice of Compassion)": "Your people broadly believe that all life is precious. They are ecological and both produce more food during harvests and consume less food each week, but also produce less tax.",
 				"Iruhan (Sword of Truth)": "Your people broadly believe that other religions are dangerous. They produce far more soldiers and will automatically destroy some fortifications in adjacent enemy regions.",
 				"Iruhan (Tapestry of People)": "Your people broadly believe that all points of view are valuable. They engage in greater economic activity when bordering regions with different cultures, religions, or ideologies, and produce more per unique ideology within your own borders.",
 				"Iruhan (Vessel of Faith)": "Your people broadly believe that God (Iruhan) has a personal relationship with them. They are generally happier and reject the authority of the Church of Iruhan, making you largely immune to the effects of a negative relationship with the Church. They become happier whenever a region is converted to this ideology.",

@@ -1058,7 +1058,7 @@ final class World {
 		for (Army army : armies) {
 			String action = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
 			if (army.hasTag("Unpredictable")) {
-				List<Region> n = regions.get(army.location).getNeighbors(this);
+				List<Region> n = new ArrayList<>(regions.get(army.location).getNeighbors(this));
 				ArrayList<Region> except = new ArrayList<>();
 				for (Region r : n) if (r.type.equals("water")) except.add(r);
 				for (Region r : except) n.remove(r);
@@ -2002,7 +2002,7 @@ final class World {
 				for (Army a : armies) {
 					Region r = regions.get(a.location);
 					if (r.type.equals("water")) {
-						List<Region> n = r.getNeighbors(this);
+						List<Region> n = new ArrayList<>(r.getNeighbors(this));
 						Region d = n.get((int)(Math.random() * n.size()));
 						a.location = regions.indexOf(d);
 						if (getAttrition(a, d)) a.size *= .75;
@@ -2018,7 +2018,7 @@ final class World {
 					Region r = regions.get(c.location);
 					if (r.type.equals("water")) {
 						moved.add(c);
-						List<Region> n = r.getNeighbors(this);
+						List<Region> n = new ArrayList<>(r.getNeighbors(this));
 						c.location = regions.indexOf(n.get((int)(Math.random() * n.size())));
 					}
 				}

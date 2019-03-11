@@ -333,12 +333,15 @@ class Region {
 	}
 
 	getNeighbors() {
-		let n = [];
+		let n = new Set();
 		for (var b of g_borders) {
-			if (b.a == this.id) n.push(g_data.regions[b.b]);
-			else if (b.b == this.id) n.push(g_data.regions[b.a]);
+			if (b.a == this.id) n.add(g_data.regions[b.b]);
+			else if (b.b == this.id) n.add(g_data.regions[b.a]);
 		}
-		return n;
+		let nn = [];
+		for (let r of n) nn.push(r);
+		nn.sort((a, b) => a.name.localeCompare(b.name));
+		return nn;
 	}
 	
 	isCoastal() {
@@ -428,55 +431,85 @@ class Region {
 	}
 
 
-	getBoundingRect() {
-		let minx = 9999999;
-		let miny = 9999999;
-		let maxx = -9999999;
-		let maxy = -9999999;
-		for (let p of this.path) {
-			for (let i of p) {
-				if (i[0] > maxx) maxx = i[0];
-				if (i[1] > maxy) maxy = i[1];
-				if (i[0] < minx) minx = i[0];
-				if (i[1] < miny) miny = i[1];
+	getRandomPointInRegion(centrality = 0) {
+		function winding(point, polygon) {
+			function isLeft(v1, v2, t) {
+				return (v2.x - v1.x) * (t.y - v1.y) - (t.x - v1.x) * (v2.y - v1.y);
 			}
+			function minus(v1, v2) {
+				return [v1.x - v2.x, v1.y - v2.y];
+			}
+			function cross(v1, v2) {
+				return v1.x * v2.y - v1.y * v2.x;
+			}
+			function dot(v1, v2) {
+				return v1.x * v2.x + v1.y * v2.y;
+			}
+			function length(v) {
+				return Math.sqrt(v.x * v.x + v.y * v.y);
+			}
+			let wn = 0;
+			for (let poly of polygon) {
+				for (let i = 0; i < poly.length; i++) {
+					let p = poly[i];
+					let pn = poly[(i + 1) % poly.length];
+					let pToPoint = minus(point, p);
+					let pToPn = minus(pn, p);
+					let dotp = dot(pToPoint, pToPn);
+					let maxL = length(pToPn);
+					if (maxL == 0) continue;
+					maxL *= maxL;
+					let crs = cross(pToPoint, pToPn);
+					if (crs < 0.001 && crs > -0.001 && dotp >= 0 && dotp <= maxL) {
+						return 0;
+					}
+					// Otherwise, this is not on the boundary, use the normal winding rule.
+					if (p.y <= point.y) {
+						if (pn.y > point.y && isLeft(p, pn, point) > 0) wn++;
+					} else {
+						if (pn.y <= point.y && isLeft(p, pn, point) < 0) wn--;
+					}
+				}
+			}
+			if (wn < 0) wn = -wn;
+			return (wn % 2) == 1 ? 1 : -1;
 		}
-		return [minx, miny, maxx - minx, maxy - miny];
-	}
-
-	getRandomPointInRegion(upperRegions, centrality = 0) {
-		if (g_pointCache[this.id] == undefined) g_pointCache[this.id] = {"points": [], "nextuse": 0};
-		let g = g_pointCache[this.id];
-		if (g.points.length - g.nextuse > 0) {
-			return g.points[g.nextuse++];
+		function getBoundingRect(path) {
+			let minx = 9999999;
+			let miny = 9999999;
+			let maxx = -9999999;
+			let maxy = -9999999;
+			for (let p of path) {
+				for (let i of p) {
+					if (i.x > maxx) maxx = i.x;
+					if (i.y > maxy) maxy = i.y;
+					if (i.x < minx) minx = i.x;
+					if (i.y < miny) miny = i.y;
+				}
+			}
+			return [minx, miny, maxx - minx, maxy - miny];
 		}
-		let rect = this.getBoundingRect();
+		let rect = getBoundingRect(this.path);
 		rect[0] = rect[0] + centrality * rect[2] / 2;
 		rect[1] = rect[1] + centrality * rect[3] / 2;
 		rect[2] *= (1 - centrality);
 		rect[3] *= (1 - centrality);
 		let points = [];
-		outer: for (let i = 0; i < 50; i++) {
-			let rp = [rect[0] + Math.random() * rect[2], rect[1] + Math.random() * rect[3]];
+		outer: for (let i = 0; i < 100; i++) {
+			let rp = {x: rect[0] + Math.random() * rect[2], y: rect[1] + Math.random() * rect[3]};
 			if (winding(rp, this.path) == 1) {
-				for (let r of upperRegions) {
-					if (winding(rp, r.path) == 1) continue outer;
-				}
 				points.push(rp);
-				if (points.length > 3) break;
+				if (points.length > 6) break;
 			}
 		}
-		if (points.length == 0) return [0, 0];
-		let mean = [0, 0];
+		if (points.length == 0) return {x: 0,  y: 0};
+		let mean = {x: 0,  y: 0};
 		for (let p of points) {
-			mean[0] += p[0] / points.length;
-			mean[1] += p[1] / points.length;
+			mean.x += p.x / points.length;
+			mean.y += p.y / points.length;
 		}
-		let obp = points[0];
-		if (winding(mean, this.path) == 1) obp = mean;
-		g.points.push(obp);
-		g.nextuse++;
-		return obp;
+		if (winding(mean, this.path) == 1) return mean;
+		else return points[0];
 	}
 }
 

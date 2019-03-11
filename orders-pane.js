@@ -78,7 +78,7 @@ class OrdersPane extends HTMLElement {
 					<h1>Economic Controls</h1>
 					<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
 					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="75" max="125" step="25" value="100"/></label>
-					<label>Recruit Signing Bonus: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
+					<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
 					<div id="economy_consequences">
 					</div>
 					<expandable-snippet text="Recruit signing bonuses will automatically scale down in the event we cannot pay the signing bonuses."></expandable-snippet>
@@ -710,19 +710,21 @@ class OrdersPane extends HTMLElement {
 			let happiness = 0;
 			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
 			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
-			if (parseInt(eRation.value) == 75) happiness -= 15;
-			else if (parseInt(eRation.value) == 125) happiness += 10;
+			if (parseInt(eRation.value) == 75) happiness += 15;
+			else if (parseInt(eRation.value) == 125) happiness -= 10;
 			economyConsequences.innerHTML = "";
 			let baseRecruits = kingdom.calcRecruitment().v;
 			let baseTaxation = kingdom.calcTaxation().v;
 			let newRecruits = kingdom.calcRecruitment(recruitRate).v;
 			let newTaxation = kingdom.calcTaxation(taxRate).v;
 			let soldiers = 0;
+			let consumptionRate = parseInt(eRation.value) - 100;
 			for (let army of g_data.armies) if (army.kingdom == kingdom.name && !contains(army.tags, "Higher Power")) soldiers += army.size;
 			if (taxRate != 0) economyConsequences.innerHTML += "<p>" + ((taxRate > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income (~ " + (newTaxation > baseTaxation ? "+" : "") + Math.round(newTaxation - baseTaxation) + " gold)</p>";
 			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
 			if (recruitRate != 0) economyConsequences.innerHTML += "<p>" + ((recruitRate > 0 ? "+" : "") + Math.round(recruitRate * 100)) + "% Recruitment (~ " + (newRecruits > baseRecruits ? "+" : "") + Math.round(newRecruits - baseRecruits) + " recruits)</p>";
 			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (newRecruits + soldiers) / 100) + " gold total)</p>";
+			if (consumptionRate != 0) economyConsequences.innerHTML += "<p>Regions consume " + (consumptionRate > 0 ? "+" : "") + consumptionRate + "% food.</p>";
 		}
 		eTax.addEventListener("input", computeEconomyConsequences);	
 		eRation.addEventListener("input", computeEconomyConsequences);	

@@ -1,0 +1,477 @@
+<html>
+	<head>
+		<style>
+			html, body {
+				height: 100%;
+				padding: 0;
+				margin: 0;
+			}
+			body {
+				display: grid;
+				grid-template-columns: 1;
+				grid-template-rows: 2;
+				height: 100%;
+			}
+			#map {
+				overflow: auto;
+			}
+		</style>
+		<script src="rhill-voronoi-core.js"></script>
+		<script>
+			let width = 1000;
+			let height = 1000;
+			let colors = [
+				"#728cff", // Aefoss
+				"#fe9933", // Doomstoll
+				"#f259f2", // Dumm 
+				"#7f00f2", // Ejymsyn
+				"#d80066", // Fiskrbaer
+				"#8c7f72", // Fulyn
+				"#fe9999", // Holmslatr
+				"#003f00", // Hosshofn
+				//"#99e5ff", // Hrip
+				"#007f7f", // Isla
+				"#005999", // Mabe
+				//"#f2e5ff", // Mestrhofn
+				"#33cca5", // Miycc
+				"#590026", // Muoem
+				"#f2f2d8", // Siylmae
+				"#000059", // Slail
+				"#593300", // Tavia
+				"#d83300", // Telmymsyn
+				"#7fff0c", // Tribes
+				//"#b2a50c", // Turujmi
+				"#268c0c" // Zemsim
+			];
+			let players = colors.length;
+			let data = {};
+			function paint() {
+				let svg = document.getElementById("svg");
+				svg.innerHTML = "";
+				for (let r of data.regions) {
+					let line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+					line.setAttribute("id", "r_" + r.id);
+					line.setAttribute("d", shapeToPath(getRegionShape(r.id)));
+					line.setAttribute("fill-rule", "evenodd");
+					line.setAttribute("fill", r.type == "water" ? "#aaf" : r.core != -1 ? colors[r.core] : "#aaa");
+					line.addEventListener("click", () => regionClick(r.id));
+					document.getElementById("svg").appendChild(line);
+					let text = "";
+					if (!r.hasOwnProperty("name") || r.name == "") text += "?";
+					if (r.climate == "seasonal") text += "S";
+					if (r.climate == "treacherous") text += "T";
+					if (text != "") {
+						let t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+						t.appendChild(document.createTextNode(text));
+						let tp = getRandomPointInRegion(r.id);
+						t.setAttribute("x", tp.x);
+						t.setAttribute("y", tp.y);
+						document.getElementById("svg").appendChild(t);
+					}
+				}
+				for (let b of data.borders) {
+					let line = document.createElementNS("http://www.w3.org/2000/svg", "path");
+					line.setAttribute("d", "M" + b.path.map(p => p.x + "," + p.y).join("L"));
+					line.setAttribute("stroke", "#000");
+					line.setAttribute("stroke-width", Math.pow(2, b.w) - 1);
+					line.setAttribute("fill", "transparent");
+					document.getElementById("svg").appendChild(line);
+				}
+			}
+			let lastClick = -1;
+			function regionClick(regionId) {
+				let r = data.regions[regionId];
+				let mode = document.querySelector("input[name=\"mode\"]:checked").value;
+				if (mode == "sea") {
+					r.type = r.type == "land" ? "water" : "land";
+					r.core = -1;
+				} else if (mode == "core") {
+					if (r.type != "water") {
+						r.core = (r.core + 2) % (players + 1) - 1;
+					}
+				} else if (mode == "border") {
+					if (lastClick != -1) {
+						for (let b of data.borders) {
+							if ((b.a == lastClick && b.b == regionId) || (b.a == regionId && b.b == lastClick)) {
+								b.w = b.w % 3 + 1;
+							}
+						}
+					}
+				} else if (mode == "merge") {
+					if (lastClick != -1 && lastClick != regionId) {
+						for (let b of data.borders) {
+							if (b.a == lastClick) b.a = regionId;
+							if (b.b == lastClick) b.b = regionId;
+							if (b.b == regionId || b.a == regionId) b.w = 1;
+						}
+						data.borders = data.borders.filter(b => b.a != b.b);
+					}
+				} else if (mode == "climate") {
+					if (r.climate == "green") r.climate = "seasonal";
+					else if (r.climate == "seasonal") r.climate = "treacherous";
+					else r.climate = "green";
+				} else if (mode == "metadata") {
+					r.name = window.prompt("Name?", r.hasOwnProperty("name") ? r.name : "");
+
+				}
+				if (lastClick != -1) lastClick = -1;
+				else lastClick = regionId;
+				paint();
+			}
+			function getRandomPointInRegion(regionId, centrality = 0) {
+				function winding(point, polygon) {
+					function isLeft(v1, v2, t) {
+						return (v2.x - v1.x) * (t.y - v1.y) - (t.x - v1.x) * (v2.y - v1.y);
+					}
+					function minus(v1, v2) {
+						return [v1.x - v2.x, v1.y - v2.y];
+					}
+					function cross(v1, v2) {
+						return v1.x * v2.y - v1.y * v2.x;
+					}
+					function dot(v1, v2) {
+						return v1.x * v2.x + v1.y * v2.y;
+					}
+					function length(v) {
+						return Math.sqrt(v.x * v.x + v.y * v.y);
+					}
+					let wn = 0;
+					for (let poly of polygon) {
+						for (let i = 0; i < poly.length; i++) {
+							let p = poly[i];
+							let pn = poly[(i + 1) % poly.length];
+							let pToPoint = minus(point, p);
+							let pToPn = minus(pn, p);
+							let dotp = dot(pToPoint, pToPn);
+							let maxL = length(pToPn);
+							if (maxL == 0) continue;
+							maxL *= maxL;
+							let crs = cross(pToPoint, pToPn);
+							if (crs < 0.001 && crs > -0.001 && dotp >= 0 && dotp <= maxL) {
+								return 0;
+							}
+							// Otherwise, this is not on the boundary, use the normal winding rule.
+							if (p.y <= point.y) {
+								if (pn.y > point.y && isLeft(p, pn, point) > 0) wn++;
+							} else {
+								if (pn.y <= point.y && isLeft(p, pn, point) < 0) wn--;
+							}
+						}
+					}
+					if (wn < 0) wn = -wn;
+					return (wn % 2) == 1 ? 1 : -1;
+				}
+				function getBoundingRect() {
+					let minx = 9999999;
+					let miny = 9999999;
+					let maxx = -9999999;
+					let maxy = -9999999;
+					for (let p of getRegionShape(regionId)) {
+						for (let i of p) {
+							if (i.x > maxx) maxx = i.x;
+							if (i.y > maxy) maxy = i.y;
+							if (i.x < minx) minx = i.x;
+							if (i.y < miny) miny = i.y;
+						}
+					}
+					return [minx, miny, maxx - minx, maxy - miny];
+				}
+				let rect = getBoundingRect();
+				let path = getRegionShape(regionId);
+				rect[0] = rect[0] + centrality * rect[2] / 2;
+				rect[1] = rect[1] + centrality * rect[3] / 2;
+				rect[2] *= (1 - centrality);
+				rect[3] *= (1 - centrality);
+				let points = [];
+				outer: for (let i = 0; i < 100; i++) {
+					let rp = {x: rect[0] + Math.random() * rect[2], y: rect[1] + Math.random() * rect[3]};
+					if (winding(rp, path) == 1) {
+						points.push(rp);
+						if (points.length > 6) break;
+					}
+				}
+				if (points.length == 0) return {x: 0,  y: 0};
+				let mean = {x: 0,  y: 0};
+				for (let p of points) {
+					mean.x += p.x / points.length;
+					mean.y += p.y / points.length;
+				}
+				if (winding(mean, path) == 1) return mean;
+				else return points[0];
+			}
+			function getRegionShape(regionId) {
+				let points = [];
+				function eq(p, r) {
+					return r.x == p.x && r.y == p.y;
+				}
+				function add(p) {
+					for (let r of points) if (eq(p, r)) return;
+					points.push(p);
+				}
+				function toNextPoint(point, points, path) {
+					for (let b of data.borders) {
+						if (b.a != regionId && b.b != regionId) continue;
+						let candidate = null;
+						let reverseDirection = false;
+						if (eq(point, b.path[0])) {
+							candidate = b.path[b.path.length - 1];
+						} else if (eq(point, b.path[b.path.length - 1])) {
+							candidate = b.path[0];
+							reverseDirection = true;
+						}
+						if (candidate == null) continue; // No point of this border is on this shape.
+						let index = -1;
+						for (let i = 0; i < points.length; i++) if (eq(candidate, points[i])) index = i;
+						if (index == -1) continue; // Other point of this border is not on this shape.
+						points.splice(index, 1);
+						if (reverseDirection) for (let i = b.path.length - 2; i >= 1; i--) path.push(b.path[i]);
+						else for (let i = 1; i < b.path.length - 1; i++) path.push(b.path[i]);
+						return candidate;
+					}
+					return null;
+				}
+				for (let b of data.borders) if (b.a == regionId || b.b == regionId) {
+					add(b.path[0]);
+					add(b.path[b.path.length - 1]);
+				}
+				let paths = [];
+				while (points.length > 0) {
+					let path = [];
+					let point = points.pop();
+					let zpoint = point;
+					while (point != null) {
+						path.push(point);
+						// Pick a point, look for borders.
+						let nextpoint = toNextPoint(point, points, path);
+						if (nextpoint == null) { // Close to the zpoint.
+							toNextPoint(point, [zpoint], path);
+						}
+						point = nextpoint;
+					}
+					paths.push(path);
+				}
+				return paths;
+			}
+			function shapeToPath(shapes) {
+				return shapes.map(p => "M" + p.map(pp => pp.x + "," + pp.y).join("L") + "Z").join("");
+			}
+			function dist(v) {
+				return Math.pow(v.x * v.x + v.y * v.y, .5);
+			}
+			function newMap() {
+				data = {
+					regions: [],
+					borders: [],
+				};
+				let siteCount = parseInt(window.prompt("Sites?"));
+				function newVoronoi() {
+					let sites = [];
+					function randAndPush() {
+						for (let i = 0; i < siteCount; i++) {
+							sites.push({x: Math.random() * width, y: Math.random() * height});
+						}
+						for (let i = 0; i < 50; i++) pushSites(sites);
+					}
+					function hexAndJostle() {
+						let n = Math.floor(Math.pow(siteCount, .5));
+						let xs = width / n + 1;
+						let ys = height / n + 1;
+						for (let i = 0; i < n; i++) {
+							for (let j = 0; j < n; j++) {
+								let x = (j + .5) * xs;
+								let y = (i + .5) * ys + j % 2 * .5 * ys;
+								x += (Math.random() - .5) * xs / 2;
+								y += (Math.random() - 1) * ys / 2;
+								sites.push({x: x, y: y});
+							}
+						}
+					}
+					hexAndJostle();
+					let boundingBox = {xl: -10, xr: 1010, yt: -10, yb: 1010};
+					let voronoi = new Voronoi();
+					let result = voronoi.compute(sites, boundingBox);
+					for (let i = 0; i < result.cells.length; i++) {
+						let c = result.cells[i];
+						let r = {
+						  id: i,
+							type: "land",
+							climate: "green",
+							core: -1
+						}
+						data.regions.push(r);
+						for (let e of c.halfedges) {
+							let o = e.edge.lSite == c.site ? e.edge.rSite : e.edge.lSite;
+							if (o != undefined && o.voronoiId < c.site.voronoiId) continue;
+							data.borders.push({
+								a: c.site.voronoiId,
+								b: o == undefined ? undefined : o.voronoiId,
+								w: 1,
+								path: [e.getStartpoint(), e.getEndpoint()]
+							});
+						}
+					}
+				}
+				function pushSites(sites) {
+					function toroidVector(j, k) {
+						let vec = {x: k.x - j.x, y: k.y - j.y};
+						if (vec.x > width / 2) vec.x = vec.x - width;
+						if (vec.x < -width / 2) vec.x = vec.x + width;
+						if (vec.y > height / 2) vec.y = vec.y- height;
+						if (vec.y < -height / 2) vec.y = vec.y + height;
+						return vec;
+					}
+					for (let j of sites) {
+						let netforce = {x: 0, y: 0};
+						for (let k of sites) {
+							if (j == k) continue;
+							let v = toroidVector(j, k);
+							let d = dist(v);
+							netforce.x -= v.x / d / d;
+							netforce.y -= v.y / d / d;
+						}
+						j.x = (width + j.x + netforce.x * 15) % width;
+						j.y = (height + j.y + netforce.y * 15) % height;
+					}
+				}
+				newVoronoi();
+				paint();
+			}
+			function loadData() {
+				let fp = document.createElement("input");
+				fp.setAttribute("type", "file");
+				fp.addEventListener("change", (e) => {
+					let r = new FileReader();
+					r.addEventListener("load", () => {
+						data = JSON.parse(r.result);
+						for (let b of data.borders) {
+							if (b.hasOwnProperty("p1")) {
+								b.path = [b.p1, b.p2];
+								b.p1 = undefined;
+								b.p2 = undefined;
+							}
+						}
+						paint();
+					});
+					r.readAsText(e.target.files[0]);
+				});
+				fp.click();
+			}
+			function saveData() {
+				// Eliminate merged-out regions.
+				{
+					let deadRegions = new Set();
+					for (let i = 0; i < data.regions.length; i++) deadRegions.add(i);
+					for (let b of data.borders) {
+						deadRegions.delete(b.a);
+						deadRegions.delete(b.b);
+					}
+					deadRegions = Array.from(deadRegions).sort((a, b)=>b-a);
+					for (let n of deadRegions) {
+						for (let i = n + 1; i < data.regions.length; i++) data.regions[i].id--;
+						for (let b of data.borders) {
+							if (b.a > n) b.a--;
+							if (b.b != undefined && b.b > n) b.b--;
+						}
+						data.regions.splice(n, 1);
+					}
+				}
+				// Reduce precision of border points.
+				for (let b of data.borders) {
+					for (let p of b.path) {
+						p.x = Math.round(p.x * 100) / 100;
+						p.y = Math.round(p.y * 100) / 100;
+					}
+				}
+				paint();
+				window.open(URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/octet-stream"})));
+			}
+			function finalizeBorders() {
+				function minus(v1, v2) {
+					return {x: v1.x - v2.x, y: v1.y - v2.y};
+				}
+				function eq(p, r) {
+					return r.x == p.x && r.y == p.y;
+				}
+				// Collapse naval borders.
+				for (let r of data.regions) {
+					if (r.type != "water") continue;
+					for (let rr of data.regions) {
+						if (rr.type != "water") continue;
+						let borders = [];
+						for (let j = 0; j < data.borders.length; j++) {
+							let b = data.borders[j];
+							if (!(b.a == r.id && b.b == rr.id) && !(b.b == r.id && b.a == rr.id)) continue;
+							for (let i = data.borders.length - 1; i >= 0; i--) {
+								let bb = data.borders[i];
+								if (bb == b) continue;
+								if (!(bb.a == r.id && bb.b == rr.id) && !(bb.b == r.id && bb.a == rr.id)) continue;
+								if (eq(bb.path[0], b.path[0])) {
+									b.path[0] = bb.path[bb.path.length - 1];
+									data.borders.splice(i, 1);
+									if (i < j) j--;
+									i = data.borders.length - 1;
+								} else if (eq(bb.path[bb.path.length - 1], b.path[0])) {
+									b.path[0] = bb.path[0];
+									data.borders.splice(i, 1);
+									if (i < j) j--;
+									i = data.borders.length - 1;
+								} else if (eq(bb.path[0], b.path[b.path.length - 1])) {
+									b.path[b.path.length - 1] = bb.path[bb.path.length - 1];
+									data.borders.splice(i, 1);
+									if (i < j) j--;
+									i = data.borders.length - 1;
+								} else if (eq(bb.path[bb.path.length - 1], b.path[b.path.length - 1])) {
+									b.path[b.path.length - 1] = bb.path[0];
+									data.borders.splice(i, 1);
+									if (i < j) j--;
+									i = data.borders.length - 1;
+								}
+							}
+						}
+					}
+				}
+				// Fractalize all other borders.
+				function fractalize(a, b) {
+					let vec = minus(a, b);
+					let dista = dist(vec);
+					if (dista < 5) return [a, b];
+					let tmp = vec.x;
+					vec.x = vec.y;
+					vec.y = -tmp;
+					let midpoint = {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
+					let jostle = Math.random() - 0.5;
+					midpoint.x += jostle * vec.x * .55;
+					midpoint.y += jostle * vec.y * .55;
+					midpoint.x = Math.round(midpoint.x);
+					midpoint.y = Math.round(midpoint.y);
+					let leftseq = fractalize(a, midpoint);
+					let rightseq = fractalize(midpoint, b);
+					rightseq.shift();
+					return leftseq.concat(rightseq);
+				}
+				for (let b of data.borders) {
+					if (b.b == undefined) continue;
+					if (data.regions[b.a].type == "water" && data.regions[b.b].type == "water") continue;
+					b.path = fractalize(b.path[0], b.path[b.path.length - 1]);
+				}
+				paint();
+			}
+		</script>
+	</head>
+	<body>
+		<div id="map"><svg id="svg" viewBox="-10 -10 1020 1020"></svg></div>
+		<div>
+			<button onclick="newMap()">New</button>
+			<button onclick="loadData()">Load Data</button>
+			<button onclick="saveData()">Save Data</button>
+			<button onclick="finalizeBorders()">Finalize Borders</button>
+			<label><input type="radio" name="mode" value="sea">Set Types (Land / Sea)</label>
+			<label><input type="radio" name="mode" value="merge">Merge Cells</label>
+			<label><input type="radio" name="mode" value="border">Set Border Size (1/2/3)</label>
+			<label><input type="radio" name="mode" value="climate">Set Climate (Green / Seasonal / Treacherous)</label>
+			<label><input type="radio" name="mode" value="core">Set Core Region (1/2/3/4/5/6/7/8...)</label>
+			<label><input type="radio" name="mode" value="metadata">Set Region Metadata (Name, Image)</label>
+			<label style="display:none"><input type="radio" name="mode" value="none" checked></label>
+		</div>
+	</body>
+</html>

@@ -1,13 +1,14 @@
 package com.empire;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.PriorityQueue;
-import java.util.Comparator;
+import java.util.Set;
+import java.util.function.Function;
 
 final class Region {
 	String name;
@@ -214,9 +215,9 @@ final class Region {
 		religion = max;
 	}
 
-	public List<Region> getNeighbors(World w) {
+	public Set<Region> getNeighbors(World w) {
 		int id = w.regions.indexOf(this);
-		ArrayList<Region> neighbors = new ArrayList<>();
+		Set<Region> neighbors = new HashSet<>();
 		for (WorldConstantData.Border b : WorldConstantData.borders) {
 			if (b.a == id) neighbors.add(w.regions.get(b.b));
 			else if (b.b == id) neighbors.add(w.regions.get(b.a));
