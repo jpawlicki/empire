@@ -362,7 +362,7 @@ class OrdersPane extends HTMLElement {
 				} else if (unit.captor != "") {
 					who.appendChild(document.createTextNode(" (Captive of " + unit.captor + ")"));
 				}
-				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/ /g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_armies"));
+				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_armies"));
 			}
 		}
 		for (let unit of g_data.armies) {
@@ -808,7 +808,7 @@ class OrdersPane extends HTMLElement {
 					if (c.orderhint == "" || c.orderhint == undefined) continue;
 					if (c.captor == "" && c.kingdom != whoami) continue;
 					else if (c.captor != "" && c.captor != whoami) continue;
-					shadow.querySelector("[name=action_" + c.name.replace(/ /g, "_") + "]").value = c.orderhint;
+					shadow.querySelector("[name=action_" + c.name.replace(/[ ']/g, "_") + "]").value = c.orderhint;
 				}
 				for (let c of g_data.armies) {
 					if (c.orderhint == "" || c.orderhint == undefined) continue;
@@ -1005,7 +1005,7 @@ class OrdersPane extends HTMLElement {
 			tr.appendChild(td);
 			child.parentNode.insertBefore(tr, child.nextSibling);
 			for (let c of g_data.characters) if (c.location == entity.location && c.captor == "") {
-				for (let n of shadow.querySelectorAll("select[name=action_" + c.name.replace(/ /g, "_"))) {
+				for (let n of shadow.querySelectorAll("select[name=action_" + c.name.replace(/[ ']/g, "_"))) {
 					let o = document.createElement("option");
 					o.innerHTML = "Lead division " + id;
 					o.setAttribute("value", o.innerHTML);
@@ -1216,7 +1216,7 @@ class OrdersPane extends HTMLElement {
 			}
 		}
 		for (let a of g_data.characters) {
-			let o = shadow.querySelector("select[name=action_" + a.name.replace(/ /g, "_") + "]");
+			let o = shadow.querySelector("select[name=action_" + a.name.replace(/[ ']/g, "_") + "]");
 			if (o != undefined) {
 				if (o.value.startsWith("Travel to ") || o.value.startsWith("Hide in ")) {
 					let dest = undefined;

@@ -180,8 +180,8 @@ final class World {
 			if ("Rebellious".equals(setup.trait1) || "Rebellious".equals(setup.trait2)) sharesGold += 5;
 			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) sharesPopulation -= 0.5;
 			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) sharesGold += 2;
-			if ("food".equals(setup.bonus)) sharesFood++;
-			else if ("gold".equals(setup.bonus)) sharesGold++;
+			if ("food".equals(setup.bonus)) sharesFood += 0.5;
+			else if ("gold".equals(setup.bonus)) sharesGold += 0.5;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
 			double food = totalFood * sharesFood / totalSharesFood;
 			nation.gold = totalGold * sharesGold / totalSharesGold;
@@ -313,8 +313,8 @@ final class World {
 			if ("Rebellious".equals(setup.trait1) || "Rebellious".equals(setup.trait2)) sharesArmy += 0.5;
 			if ("Seafaring".equals(setup.trait1) || "Seafaring".equals(setup.trait2)) sharesNavy += 0.15;
 			if ("War-like".equals(setup.trait1) || "War-like".equals(setup.trait2)) sharesArmy += 0.15;
-			if ("armies".equals(setup.bonus)) sharesArmy++;
-			else if ("navies".equals(setup.bonus)) sharesNavy++;
+			if ("armies".equals(setup.bonus)) sharesArmy += 0.5;
+			else if ("navies".equals(setup.bonus)) sharesNavy += 0.5;
 			double armies = totalArmy * sharesArmy / totalSharesArmy;
 			double navies = totalNavy * sharesNavy / totalSharesNavy;
 			int numRegions = 0;
@@ -493,7 +493,7 @@ final class World {
 				aiOrders.put("economy_ration", getNation(k).rationhint);
 				aiOrders.put("economy_recruit_bonus", getNation(k).signingbonushint);
 				for (Character c : characters) {
-					if (k.equals(c.kingdom) && null != c.orderhint && !"".equals(c.orderhint)) aiOrders.put("action_" + c.name.replace(" ", "_"), c.orderhint);
+					if (k.equals(c.kingdom) && null != c.orderhint && !"".equals(c.orderhint)) aiOrders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), c.orderhint);
 				}
 				for (Army a : armies) {
 					if (k.equals(a.kingdom) && null != a.orderhint && !"".equals(a.orderhint)) aiOrders.put("action_army_" + a.id, a.orderhint);
@@ -715,13 +715,13 @@ final class World {
 		}
 		// Default orderhints.
 		for (Character c : characters) {
-			c.orderhint = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_"), "");
+			c.orderhint = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 			c.leadingArmy = 0;
 		}
 		int inspires = 0;
 		// Inspire orders.
 		for (Character c : characters) {
-			String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_"), "");
+			String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 			Region region = regions.get(c.location);
 			if (!"".equals(c.captor)) continue; // inspire can't be done by captives.
 			if (action.equals("Inspire the Faithful") && "Sancta Civitate".equals(region.name)) {
@@ -775,7 +775,7 @@ final class World {
 		HashMap<Army, Character> leaders = new HashMap<>();
 		{
 			for (Character c : characters) {
-				String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_"), "");
+				String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
 				if (!"".equals(c.captor)) continue; // lead cannot be done by captives.
 				if (action.startsWith("Lead ")) {
@@ -1113,7 +1113,7 @@ final class World {
 		HashSet<Region> templeBuilds = new HashSet<>();
 		ArrayList<Character> removeCharacters = new ArrayList<>();
 		for (Character c : characters) {
-			String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_"), "");
+			String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 			Region region = regions.get(c.location);
 			c.hidden = action.startsWith("Hide in ");
 			if (action.startsWith("Stay in ")) {
@@ -2803,7 +2803,7 @@ final class World {
 				for (Character cc : characters) if (cc.name.equals(target)) c = cc;
 				String order = "";
 				if (c != null && orders.get(c.kingdom) != null) {
-					order = "They were ordered to " + orders.get(c.kingdom).get("action_" + c.name.replace(" ", "_"));
+					order = "They were ordered to " + orders.get(c.kingdom).get("action_" + c.name.replace(" ", "_").replace("'", "_"));
 				}
 				if ("find".equals(action)) {
 					title += "Find " + target;

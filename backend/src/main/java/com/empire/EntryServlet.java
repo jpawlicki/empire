@@ -483,27 +483,17 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	// TODO: remove
-	private boolean migrate(Request r) {
-		final int[] gameIds = new int[]{2, 3};
-		final HashMap<String, String> playerPasswords = new HashMap<>();
+	private boolean migrate(Request rr) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			for (int i : gameIds) {
-				World w = World.load(i, 14, service);
-				for (String kingdom : w.getNationNames()) {
-					playerPasswords.put(w.getNation(kingdom).email, w.getNation(kingdom).password);
-				}
-			}
+			World w = World.load(4, 1, service);
+			Region gw = w.regions.get(80);
+			if (gw.name.equals("Goldwood")) gw.name = "Five Gates";
+			service.put(w.toEntity(4));
 			txn.commit();
-			for (String email : playerPasswords.keySet()) {
-				txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-				Player p = new Player(email, playerPasswords.get(email));
-				service.put(p.toEntity());
-				txn.commit();
-			}
 		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
+			log.log(Level.INFO, "Not found!", e);
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();

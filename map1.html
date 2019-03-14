@@ -338,7 +338,7 @@
 						cname += " " + r.culture;
 						cname += " pop" + Math.floor(r.population);
 						cname += " " + r.climate;
-						cname += " " + r.religion.replace(/ /g, "_").replace("(", "").replace(")", "");
+						cname += " " + r.religion.replace(/[ ']/g, "_").replace("(", "").replace(")", "");
 						cname += " unrest" + Math.floor(100 * r.calcUnrest().v);
 						cname += " food" + Math.min(13 + (13 - ((g_data.date + 52 - 12) % 13)) % 13, Math.floor(r.calcFoodWeeks().v));
 						cname += " harv" + Math.min(13, Math.floor(r.calcHarvestWeeks().v));
