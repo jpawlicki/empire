@@ -576,7 +576,7 @@ final class World {
 				double totalTribute = 0;
 				for (String kk : kingdoms.keySet()) {
 					if (kk.equals(k)) continue;
-					totalTribute += Math.max(0, Math.min(1, Double.parseDouble(kOrders.get("rel_" + kk + "_tribute"))));
+					totalTribute += Math.max(0, Math.min(1, Double.parseDouble(kOrders.getOrDefault("rel_" + kk + "_tribute", "0"))));
 				}
 				if (totalTribute < 1) totalTribute = 1;
 				for (String kk : kingdoms.keySet()) {
@@ -1015,6 +1015,8 @@ final class World {
 				}
 				if (getNation(region.kingdom).goodwill <= -75) getNation(army.kingdom).goodwill += 15;
 				notifyAll(region.name + " Conquered", "An army of " + army.kingdom + " has conquered " + region.name + " (a region of " + region.kingdom + ") and installed a government loyal to " + target + "." + nobleFate);
+				score(target, "conquest", 4);
+				score(region.kingdom, "conquest", -5);
 				for (Region r : regions) if (r.noble != null && r.kingdom.equals(army.kingdom)) if (tributes.getOrDefault(region.kingdom, new ArrayList<>()).contains(army.kingdom) && getNation(region.kingdom).previousTributes.contains(r.kingdom)) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
 				region.kingdom = target;
 				conqueredRegions.add(region);
@@ -1113,13 +1115,14 @@ final class World {
 		HashSet<Region> templeBuilds = new HashSet<>();
 		ArrayList<Character> removeCharacters = new ArrayList<>();
 		for (Character c : characters) {
+			if (!"".equals(c.captor)) c.addExperience("spy", this);
 			String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 			Region region = regions.get(c.location);
 			c.hidden = action.startsWith("Hide in ");
 			if (action.startsWith("Stay in ")) {
-				c.addExperience("*", this);
+				if ("".equals(c.captor)) c.addExperience("*", this);
 			} else if (action.startsWith("Hide in ") || action.startsWith("Travel to ")) {
-				if (!"".equals(c.captor)) {
+				if ("".equals(c.captor)) {
 					if (c.hidden) c.addExperience("spy", this);
 					else c.addExperience("*", this);
 				}
@@ -2351,12 +2354,14 @@ final class World {
 				String c = getNation(k).culture;
 				for (String kk : kingdoms.keySet()) {
 					if (!c.equals(getNation(kk).culture)) continue;
+					boolean attacking = false;
 					for (String kkk : kingdoms.keySet()) {
 						if (!c.equals(getNation(kkk).culture)) continue;
 						if (kk.equals(kkk)) continue;
-						if (getNation(kk).getRelationship(kkk).battle == Relationship.War.ATTACK) score(k, "unity", -2);
-						else score(k, "unity", 1);
+						if (getNation(kk).getRelationship(kkk).battle == Relationship.War.ATTACK) attacking = true;
 					}
+					if (attacking) score(k, "unity", -2);
+					else score(k, "unity", 1);
 				}
 			}
 			// Glory
@@ -2590,7 +2595,7 @@ final class World {
 					email += "\n " + m.signed.replace("Signed, ", "");
 				}
 			}
-			email += "\n\nYou can issue your orders at https://pawlicki.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game and give your nation to a player on the wait list, reply \"RETIRE\" to this e-mail.\nIf you wish for the GM or AI to make move on your behalf this turn, reply \"AUTO\" to this e-mail.";
+			email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game and give your nation to a player on the wait list, reply \"RETIRE\" to this e-mail.\nIf you wish for the GM or AI to make move on your behalf this turn, reply \"AUTO\" to this e-mail.";
 			emails.put(getNation(kingdom).email, email);
 		}
 		return emails;

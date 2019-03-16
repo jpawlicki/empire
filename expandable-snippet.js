@@ -12,19 +12,22 @@ class ExpandableSnippet extends HTMLElement {
 	connectedCallback() {
 		var shadow = this.attachShadow({mode: "open"});
 		var maxlength = this.hasAttribute("max-length") ? this.getAttribute("max-length") : -1;
-		var text = this.getAttribute("text");
-		var style = "<style>:host { display: block; margin-left: 0.7em; " + (maxlength >= 0 && text.length > maxlength ? "cursor: pointer;" : "") + "color: #777; font-size: 75%; }</style>";
+		var style = "<style>:host { display: block; margin-left: 0.7em; " + (maxlength >= 0 && this.getAttribute("text").length > maxlength - 3 ? "cursor: pointer;" : "") + "color: #777; font-size: 75%; }</style>";
 		var showNewlines = this.getAttribute("show-newlines");
-		if (maxlength >= 0 && text.length > maxlength) text = text.substring(0, maxlength) + "...";
-		if (showNewlines) text = text.replace(/\n/g, "<br/>");
-		shadow.innerHTML = style + text;
+		shadow.innerHTML = style + this.getText(this.getAttribute("text"), showNewlines, maxlength, false);
 		this.addEventListener("click", function() {
 			this.expanded = !this.expanded;
-			var text = this.getAttribute("text");
-			if (!this.expanded && maxlength >= 0 && text.length > maxlength) text = text.substring(0, maxlength) + "...";
-			if (this.expanded || showNewlines) text = text.replace(/\n/g, "<br/>");
+			var text = this.getText(this.getAttribute("text"), showNewlines, maxlength, this.expanded);
 			shadow.innerHTML = style + text;
 		});
+	}
+	getText(text, showNewlines, maxlength, expanded) {
+		if (!expanded && maxlength >= 0 && text.length > maxlength - 3) text = text.substring(0, maxlength) + "...";
+		if (expanded || showNewlines) text = text.replace(/\n/g, "<br/>");
+		let preCount = 0;
+		text = text.replace(/%ascii%/g, t => preCount++ % 2 == 0 ? "<pre>" : "</pre>");
+		if (preCount % 2 == 1) text += "</pre>";
+		return text;
 	}
 }
 customElements.define("expandable-snippet", ExpandableSnippet);

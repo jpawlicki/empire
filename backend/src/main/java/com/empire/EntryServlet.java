@@ -487,9 +487,8 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			World w = World.load(4, 1, service);
-			Region gw = w.regions.get(80);
-			if (gw.name.equals("Goldwood")) gw.name = "Five Gates";
+			World w = World.load(4, 2, service);
+			// Manipulate World in some way.
 			service.put(w.toEntity(4));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
