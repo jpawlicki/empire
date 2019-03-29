@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -207,18 +208,13 @@ public class EntryServlet extends HttpServlet {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
 			World w = World.load(r.gameId, date, service);
-			for (String kingdom : w.getNationNames()) {
-				ArrayList<String> mails = nationEmails.getOrDefault(kingdom, new ArrayList<>());
-				mails.add(w.getNation(kingdom).email);
-				nationEmails.put(kingdom, mails);
-			}
-			ArrayList<String> emails = new ArrayList<String>(nationEmails.keySet());
+			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
 			List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
 			List<Map<String, Boolean>> result = new ArrayList<>();
 			for (List<Boolean> turnActives : actives) {
 				HashMap<String, Boolean> turn = new HashMap<>();
-				for (int i = 0; i < emails.size(); i++) for (String nation : nationEmails.get(emails.get(i))) {
-					turn.put(nation, turnActives.get(i));
+				for (int i = 0; i < emails.size(); i++) {
+					turn.put(emails.get(i), turnActives.get(i));
 				}
 				result.add(turn);
 			}
@@ -465,13 +461,11 @@ public class EntryServlet extends HttpServlet {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+			Player p = Player.loadPlayer(body.email, service);
 			w.getNation(r.kingdom).email = body.email;
-			w.getNation(r.kingdom).password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + body.password).getBytes(StandardCharsets.UTF_8)));
+			w.getNation(r.kingdom).password = p.passHash;
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
-		} catch (NoSuchAlgorithmException e) {
-			log.log(Level.SEVERE, "Hash error", e);
-			return false;
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
 		} finally {
@@ -487,8 +481,9 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			World w = World.load(4, 2, service);
+			World w = World.load(4, 7, service);
 			// Manipulate World in some way.
+			w.getNation("Hosshofn").gold += 287;
 			service.put(w.toEntity(4));
 			txn.commit();
 		} catch (EntityNotFoundException e) {

@@ -4,7 +4,6 @@
 			function doChange(event) {
 				let pw = document.getElementById("gmPassword").value;
 				let gameId = parseInt(document.getElementById("gameId").value);
-				let nupw = document.getElementById("newPassword").value;
 				let kingdom = document.getElementById("kingdom").value;
 				let nuemail = document.getElementById("email").value;
 				
@@ -18,7 +17,7 @@
 				};
 				req.send(JSON.stringify({
 					"email": nuemail,
-					"password": nupw
+					"password": ""
 				}));
 				event.preventDefault();
 			}
@@ -39,7 +38,6 @@
 			<label>Game ID: <input id="gameId" type="number"/></label>
 			<label>Kingdom: <input id="kingdom"/></label>
 			<label>New Email: <input id="email"/></label>
-			<label>New Password: <input id="newPassword" type="password"/></label>
 			<button>Engage!</button>
 		</form>
 	</body>

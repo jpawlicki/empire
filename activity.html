@@ -23,7 +23,7 @@
 					let tr = document.createElement("tr");
 					for (let k of kingdoms) {
 						let th = document.createElement("th");
-						th.appendChild(document.createTextNode(k));
+						th.appendChild(document.createTextNode(k.replace(/@.*/, "")));
 						tr.appendChild(th);
 					}
 					a.appendChild(tr);

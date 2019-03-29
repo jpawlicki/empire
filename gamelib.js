@@ -714,7 +714,7 @@ class Army {
 			}
 		}
 		if (this.type == "army" && r.noble != undefined && r.noble.tags != undefined && contains(r.noble.tags, "Loyal") && r.kingdom == this.kingdom) mods.push({"v": .25, "unit": "%", "why": "Loyal noble"});
-		if (this.type == "army" && World.calcGlobalIdeology() == "Iruhan (Sword of Truth)") {
+		if (this.type == "army" && k != undefined && World.calcGlobalIdeology() == "Iruhan (Sword of Truth)") {
 			let state = k.calcStateReligion();
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .25, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology matches state ideology"});
 			else if (state.startsWith("Iruhan")) mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology and Iruhan state religion"});

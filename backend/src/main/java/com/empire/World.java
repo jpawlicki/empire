@@ -784,9 +784,12 @@ final class World {
 					Army target = null;
 					for (Army aa : armies) if (aa.id == targetId) target = aa;
 					if (target == null) continue; // ???
-					if (!target.kingdom.equals(c.kingdom) || c.location != target.location) throw new RuntimeException();
+					if (!target.kingdom.equals(c.kingdom) || c.location != target.location) continue;
 					String d = target.type.equals("army") ? "general" : "admiral";
-					if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < c.calcLevel(d)) leaders.put(target, c);
+					if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < c.calcLevel(d)) {
+						Character prev = leaders.put(target, c);
+						if (prev != null) prev.orderhint = "";
+					}
 				}
 			}
 			for (Army a : leaders.keySet()) {
@@ -1191,10 +1194,10 @@ final class World {
 						region.setReligion(ct.religion, this);
 						if (!"Iruhan (Vessel of Faith)".equals(r) && "Iruhan (Vessel of Faith)".equals(region.religion)) {
 							for (String kingdom : kingdoms.keySet()) if ("Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(kingdom, this))) {
-								for (Region rr : regions) if (kingdom.equals(rr.kingdom)) rr.unrestPopular = Math.max(0.1, rr.unrestPopular - .1);
+								for (Region rr : regions) if (kingdom.equals(rr.kingdom)) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
 							}
 						}
-						if (getNation(c.kingdom).hasTag("Mystical")) region.unrestPopular = Math.max(0.1, region.unrestPopular - .1);
+						if (getNation(c.kingdom).hasTag("Mystical")) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
 						if (!ct.religion.startsWith("Iruhan")) getNation(c.kingdom).goodwill -= 20;
 						else if (!ct.religion.equals("Iruhan (Vessel of Faith)")) getNation(c.kingdom).goodwill += 15;
 					}
@@ -1382,9 +1385,10 @@ final class World {
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
 					for (Army b : localArmies) {
-						double casualtyRateCaused = cf * b.calcStrength(this, leaders.get(b), inspires, lastStands.contains(b.kingdom)) / enemyStrength;
-						if (NationData.isEnemy(a.kingdom, b.kingdom, this, region) && b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
-						if (NationData.isEnemy(a.kingdom, b.kingdom, this, region) && getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill <= -75) getNation(b.kingdom).goodwill += 3 * a.size / 100 * casualtyRateCaused;
+						if (!NationData.isEnemy(a.kingdom, b.kingdom, this, region) || (a.hasTag("Higher Power") && b.hasTag("Higher Power"))) continue;
+						double casualtyRateCaused = cf * Math.pow(b.calcStrength(this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
+						if (b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
+						if (getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill <= -75) getNation(b.kingdom).goodwill += 3 * a.size / 100 * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
 					}
 				}
@@ -1761,7 +1765,6 @@ final class World {
 		}
 		// Food transfers take place.
 		{
-			HashMap<Region, Double> netFoodTransfers = new HashMap<>();
 			for (String k : orders.keySet()) {
 				Map<String, String> kOrders = orders.get(k);
 				TreeSet<Integer> transfers = new TreeSet<>();
@@ -1782,6 +1785,10 @@ final class World {
 					}
 					if (from == null || to == null) throw new RuntimeException("Can't find region " + fromName + " or " + toName);
 					if (from == to) continue;
+					if (!k.equals(from.kingdom)) {
+						notifications.add(new Notification(from.kingdom, "Food Transfer from " + from.name + " Failed", "We lost control of the region before the food could be transferred from it!"));
+						continue;
+					}
 					double amount = Math.max(0, Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000));
 					if (amount == 0) continue;
 					double cost = amount / 50000;
@@ -1791,8 +1798,6 @@ final class World {
 					}
 					if (!from.canFoodTransferTo(this, to)) throw new RuntimeException("Can't transfer food from " + fromName + " to " + toName);
 					notifications.add(new Notification(to.kingdom, "Food Transfer to " + to.name, Math.round(amount / 1000) + "k measures of food were transferred from " + from.name + " to " + to.name));
-					netFoodTransfers.put(from, netFoodTransfers.getOrDefault(from, 0.0) - amount);
-					netFoodTransfers.put(to, netFoodTransfers.getOrDefault(to, 0.0) + amount);
 					getNation(k).gold -= cost;
 					incomeSources.getOrDefault(k, new Budget()).spentFoodTransfers += cost;
 					from.food -= amount;
@@ -2280,7 +2285,7 @@ final class World {
 							notifications.add(new Notification(r.kingdom, "Noble Crisis (Unsafe Border)", r.noble.name + ", the noble ruling " + r.name + ", has become deeply concerned with the neighboring enemy region, and requests that you deal with the situation one way or another."));
 							break;
 						case ENNUI:
-							notifications.add(new Notification(r.kingdom, "Noble Crisis (Ennui)", r.noble.name + " has lost the luster of life and sinks into deep depressions. Organize a feast in " + r.name + " to show them what life is truly about."));
+							notifications.add(new Notification(r.kingdom, "Noble Crisis (Ennui)", r.noble.name + " has lost the luster of life and sinks into deep depressions. Implement generous rationing to show them the joy in life."));
 							break;
 						case CULTISM:
 							notifications.add(new Notification(r.kingdom, "Noble Crisis (Cultism)", r.noble.name + " has written you, warning that the Cult is especially active in " + r.name + " and is gradually taking power there. They suggest that construction of a temple might turn the people back toward a safer religion."));
@@ -2321,6 +2326,8 @@ final class World {
 
 		// Remaining score profiles
 		{
+			// Prosperity
+			for (String k : kingdoms.keySet()) score(k, "prosperity", 1);
 			// Happiness
 			for (String k : kingdoms.keySet()) {
 				double below25 = 0;
@@ -2370,10 +2377,10 @@ final class World {
 				double peace = 0;
 				for (Army a : armies) if (a.kingdom.equals(k)) {
 					if (battlingArmies.contains(a)) battles += a.size * (a.type.equals("navy") ? 100 : 1);
-					else peace += a.size * (a.type.equals("navy") ? 100 : 1);
+					else peace += a.size * (a.type.equals("navy") ? 50 : 1);
 				}
 				double frac = battles / (battles + peace);
-				score(k, "glory", frac >= .66 ? 1 : frac < .33 ? -1 : 0);
+				score(k, "glory", frac >= .30 ? 1 : -1);
 			}
 			// Supremacy
 			for (String k : kingdoms.keySet()) {

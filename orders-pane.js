@@ -507,8 +507,8 @@ class OrdersPane extends HTMLElement {
 						|| (action == "denounce" && g_data.kingdoms[defender].calcRelationship(g_data.kingdoms[ptk.value]) == "enemy"))) riskText += "<p>Our plot will succeed, because the defenders will not oppose us.</p>";
 					else if (contains(superior, defender)) riskText += "<p>Our plot will fail.</p>";
 					else if (contains(unknown, defender)) riskText += "<p>Our plot may succeed or fail.</p>";
-					else if (contains(inferior, defender)) riskText += "<p>Our plot will succeed unless " + defender + " spies devote this week to defense" + (plotTypeSel.value == "CHARCTER" ? " or the character leads an army or navy this turn" : "") + ".</p>";
-					else if (contains(inferiorWithDefense, defender)) riskText += "<p>Our plot will succeed" + (plotTypeSel.value == "CHARCTER" ? " the enemy devotes their spies to defense this week and the character leads an army or navy this turn" : "") + ".</p>";
+					else if (contains(inferior, defender)) riskText += "<p>Our plot will succeed unless " + defender + " spies devote this week to defense" + (plotTypeSel.value == "CHARACTER" ? " or the character leads an army or navy this turn" : "") + ".</p>";
+					else if (contains(inferiorWithDefense, defender)) riskText += "<p>Our plot will succeed" + (plotTypeSel.value == "CHARACTER" ? " unless the enemy devotes their spies to defense this week and the character leads an army or navy this turn" : "") + ".</p>";
 					else if (contains(inferiorWithDoubleDefense, defender)) riskText += "<p>Our plot will succeed.</p>";
 					if (superior.length > 0) riskText += "<p>" + superior.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will know of our involvement.</p>";
 					if (unknown.length > 0) riskText += "<p>" + unknown.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " may know of our involvement, depending on the location of their hidden characters.</p>";

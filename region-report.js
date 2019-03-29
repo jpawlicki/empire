@@ -51,7 +51,7 @@ class RegionReport extends HTMLElement {
 					</div>
 					<h1><tooltip-element tooltip="Regional unrest affects a region's recruitment, taxation, and harvest, as well as how difficult it is to capture. Regional unrest is equal to the highest of popular unrest, noble unrest (if a noble rules the region), and clerical unrest (for most Iruhan-following regions).">Unrest</tooltip-element>: ${num(r.calcUnrest(), 0, 100)}%</h1>
 					<div>
-						<tooltip-element tooltip="Popular unrest is increased by high taxes, local battles, starvation, and forcible relocation or refugees. It can be lowered by lowering taxes or holding feasts. Popular unrest cannot decrease below 10%.">Popular Unrest:</tooltip-element><div>${Math.round(r.unrest_popular * 100)}%</div>
+						<tooltip-element tooltip="Popular unrest is increased by high taxes, local battles, starvation, and forcible relocation or refugees. It can be lowered by lowering taxes or more generous rationing.">Popular Unrest:</tooltip-element><div>${Math.round(r.unrest_popular * 100)}%</div>
 						${getNobleUnrestBlock(r)}
 						${getClericalUnrestBlock(r)}
 					</div>
