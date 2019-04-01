@@ -53,12 +53,12 @@ class NationData {
 	}
 
 	static String getStateReligion(String kingdom, World w) {
-		HashMap<String, Double> weights = new HashMap<>();
+		HashMap<Ideology, Double> weights = new HashMap<>();
 		for (Region r : w.regions) {
 			if (!kingdom.equals(r.kingdom)) continue;
 			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
 		}
-		String max = "Company";
+		String max = Ideology.COMPANY;
 		double maxVal = 0;
 		for (String n : weights.keySet()) {
 			if (weights.get(n) > maxVal) {

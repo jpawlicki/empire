@@ -17,7 +17,7 @@ final class Region {
 	String climate;
 	double population;
 	String kingdom;
-	String religion;
+	Ideology religion;
 	double unrestPopular;
 	Noble noble;
 	List<Construction> constructions = new ArrayList<>();
@@ -72,7 +72,7 @@ final class Region {
 	}
 
 	private static int numUniqueIdeologies(String kingdom, World w) {
-		HashSet<String> ideologies = new HashSet<>();
+		HashSet<Ideology> ideologies = new HashSet<>();
 		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
 		return ideologies.size();
 	}
@@ -94,15 +94,15 @@ final class Region {
 		if (noble != null && noble.hasTag("Inspiring")) mods += .5;
 		if (noble != null && noble.hasTag("Untrusting")) mods -= .35;
 		if (noble != null && noble.hasTag("Tyrannical")) mods -= .5;
-		if (religion.equals("Northern (Rjinku)")) {
+		if (religion == Ideology.RJINKU) {
 			mods += 1;
-		} else if (religion.equals("Iruhan (Sword of Truth)")) {
+		} else if (religion == Ideology.SWORD_OF_TRUTH) {
 			mods += 1;
-		} else if (religion.equals("Iruhan (Tapestry of People)")) {
+		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion.equals(religion))) getTapestryBonus = true;
+			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion == religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += .5;
-		} else if ("Tavian (River of Kuun)".equals(religion) && rationing == 1.25) {
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= 1.25) {
 			mods += .5;
 		}
 		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag("Pillagers")) mods -= .75;
@@ -140,15 +140,15 @@ final class Region {
 			if (r.kingdom != null && !r.kingdom.equals(kingdom) && "Tavian (River of Kuun)".equals(NationData.getStateReligion(r.kingdom, w))) neighborKuun = true;
 		}
 		if (neighborKuun) mods += 0.5;
-		if (religion.equals("Northern (Syrjen)")) {
+		if (religion == Ideology.SYRJEN) {
 			mods += 1.25;
-		} else if (religion.equals("Iruhan (Tapestry of People)")) {
+		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion.equals(religion))) getTapestryBonus = true;
+			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion == religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += .5;
-		} else if ("Tavian (River of Kuun)".equals(religion) && rationing == 1.25) {
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == 1.25) {
 			mods += .5;
-		} else if (religion.equals("Iruhan (Chalice of Compassion)")) {
+		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
 			mods -= .3;
 		}
 		if (wKingdom.hasTag("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
@@ -173,7 +173,7 @@ final class Region {
 
 	public double calcPirateThreat(World w) {
 		if ("water".equals(type)) return 0;
-		if ("Northern (Alyrja)".equals(religion)) return 0;
+		if (religion == Ideology.ALYRJA) return 0;
 		if (noble != null && noble.hasTag("Policing")) return 0;
 		double unrest = calcUnrest(w);
 		double mods = 1;
@@ -183,33 +183,32 @@ final class Region {
 		return Math.max(0, unrest * mods);
 	}
 
-	public void setReligion(String bias, World w) {
-		HashMap<String, Integer> ideologies = new HashMap<>();
+	public void setReligion(Ideology bias, World w) {
+		HashMap<Ideology, Integer> ideologies = new HashMap<>();
 		for (Construction c : constructions) {
 			if (c.type.equals("temple")) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
 		int maxV = ideologies.getOrDefault(bias, -1);
-		String max = bias == null ? religion : bias;
+		Ideology max = bias == null ? religion : bias;
 		for (String r : ideologies.keySet()) {
 			if (ideologies.get(r) > maxV) {
 				maxV = ideologies.get(r);
 				max = r;
 			}
 		}
-		if ("Iruhan (Vessel of Faith)".equals(max) && !religion.equals(max)) {
+		if (Ideology.VESSEL_OF_FAITH == max && religion != max) {
 			for (String k : w.getNationNames()) {
-				if (!"Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(k, w))) continue;
+				if (Ideology.VESSEL_OF_FAITH != NationData.getStateReligion(k, w)) continue;
 				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular - .05);
 			}
 		}
-		if (!max.equals(religion)) {
+		if (max != religion) {
 			for (String k : w.getNationNames()) {
-				String si = NationData.getStateReligion(k, w);
-				String sr = ideologyToReligion(si);
-				if (max.startsWith(sr)) w.score(k, "religion", 2);
-				if (religion.startsWith(sr)) w.score(k, "religion", -2);
-				if (max.equals(si)) w.score(k, "ideology", 3);
-				if (religion.equals(si)) w.score(k, "ideology", -3);
+				Ideology si = NationData.getStateReligion(k, w);
+				if (max.religion == si.religion) w.score(k, "religion", 2);
+				if (religion.religion == si.religion) w.score(k, "religion", -2);
+				if (max == si) w.score(k, "ideology", 3);
+				if (religion == si) w.score(k, "ideology", -3);
 			}
 		}
 		religion = max;
@@ -252,7 +251,7 @@ final class Region {
 				Region r = n.location;
 				if (r.type.equals("water")) return new Node(n.power * .9, n.location);
 				if (NationData.isFriendly(c.kingdom, r.kingdom, w)) {
-					if (r.religion.equals("Northern (Lyskr)")) return new Node(n.power, n.location);
+					if (r.religion == Ideology.LYSKR) return new Node(n.power, n.location);
 					return new Node(n.power * (.9 - r.calcUnrest(w) / 10), n.location);
 				}
 				return new Node(n.power * (.8 + r.calcUnrest(w) / 10), n.location);
@@ -283,7 +282,7 @@ final class Region {
 
 	public double calcUnrest(World w) {
 		double unrest = unrestPopular;
-		if (religion.contains("Iruhan") && !religion.contains("Vessel of Faith")) {
+		if (religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH) {
 			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill / 100);
 		}
 		if (noble != null && noble.name != "" && !"".equals(noble.name)) {
@@ -321,7 +320,7 @@ final class Region {
 
 final class Construction {
 	String type;
-	String religion; // Only for type == "temple".
+	Ideology religion; // Only for type == "temple".
 	double originalCost;
 }
 

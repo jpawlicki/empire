@@ -483,6 +483,10 @@ public class EntryServlet extends HttpServlet {
 		try {
 			World w = World.load(4, 7, service);
 			// Manipulate World in some way.
+			w.getNation("Hosshofn").gold -= 287;
+			service.put(w.toEntity(4));
+			w = World.load(4, 8, service);
+			// Manipulate World in some way.
 			w.getNation("Hosshofn").gold += 287;
 			service.put(w.toEntity(4));
 			txn.commit();

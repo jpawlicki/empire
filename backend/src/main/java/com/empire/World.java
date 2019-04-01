@@ -358,21 +358,7 @@ final class World {
 			if ("water".equals(r.type)) continue;
 			if (r.kingdom == null) throw new RuntimeException(r.name + " is still unowned!");
 			if ("Unruled".equals(r.kingdom)) {
-				ArrayList<String> possibilities = new ArrayList<>();
-				if ("tavian".equals(r.culture)) {
-					possibilities.add("Tavian (Flame of Kith)");
-					possibilities.add("Tavian (River of Kuun)");
-				} else if ("eolsung".equals(r.culture) || "tyrgaetan".equals(r.culture)) {
-					possibilities.add("Northern (Alyrja)");
-					possibilities.add("Northern (Rjinku)");
-					possibilities.add("Northern (Syrjen)");
-					possibilities.add("Northern (Lyskr)");
-				} else {
-					possibilities.add("Iruhan (Sword of Truth)");
-					possibilities.add("Iruhan (Tapestry of Peoples)");
-					possibilities.add("Iruhan (Chalice of Compassion)");
-					possibilities.add("Iruhan (Vessel of Faith)");
-				}
+				ArrayList<String> possibilities = Ideology.getIdeologiesByReligion(r.culture.religion);
 				r.religion = possibilities.get((int)(Math.random() * possibilities.size()));
 			} else {
 				r.religion = nationSetup.get(r.kingdom).dominantIdeology;
@@ -669,7 +655,7 @@ final class World {
 				}
 				for (Region r : regions) {
 					if (r.religion == null) continue;
-					if (r.religion.equals("Northern (" + g + ")")) {
+					if (r.religion.toString().toLowerCase().equals(g.toLowerCase())) {
 						votesTotal++;
 						if (getNation(r.kingdom).gothi.getOrDefault(g, false)) votes++;
 					}
@@ -1157,61 +1143,65 @@ final class World {
 				}
 			} else if (action.startsWith("Build ")) {
 				c.addExperience("governor", this);
-				double cost = 0;
-				double costMod = 1;
-				Construction ct = new Construction();
-				if (action.contains("Shipyard")) {
-					ct.type = "shipyard";
-					cost = 80;
-				} else if (action.contains("Temple")) {
-					ct.type = "temple";
-					ct.religion = ideologyToReligion(action.replace("Build Temple (", "").replace(")", ""));
-					cost = 30;
-					if (getNation(c.kingdom).hasTag("Mystical")) costMod -= .5;
-					if (getNation(c.kingdom).hasTag("Evangelical") && !region.religion.equals(NationData.getStateReligion(c.kingdom, this))) costMod -= 1;
-					if (ct.religion.contains("Iruhan") && !region.religion.contains("Iruhan") && getDominantIruhanIdeology().equals("Iruhan (Vessel of Faith)")) costMod -= 1;
-					if (region.religion.equals("Iruhan (Tapestry of People)")) {
-						boolean templeBonus = true;
-						for (Region r : region.getNeighbors(this)) if (r.type.equals("land") && (!r.religion.equals(region.religion) || !r.culture.equals(region.culture))) templeBonus = false;
-						if (templeBonus) costMod -= 1;
-					}
-				} else if (action.contains("Fortifications")) {
-					ct.type = "fortifications";
-					cost = 20;
-					if (region.religion.equals("Tavian (Flame of Kith)")) costMod -= 1;
-				}
-				if (getNation(c.kingdom).hasTag("Industrial")) costMod -= .25;
-				if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
-				if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
-				cost *= Math.max(0, costMod);
-				ct.originalCost = cost;
-				if (cost <= getNation(c.kingdom).gold) {
-					getNation(c.kingdom).gold -= cost;
-					incomeSources.getOrDefault(c.kingdom, new Budget()).spentConstruction += cost;
-					region.constructions.add(ct);
-					if (ct.type.equals("temple")) {
-						String r = region.religion;
-						region.setReligion(ct.religion, this);
-						if (!"Iruhan (Vessel of Faith)".equals(r) && "Iruhan (Vessel of Faith)".equals(region.religion)) {
-							for (String kingdom : kingdoms.keySet()) if ("Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(kingdom, this))) {
-								for (Region rr : regions) if (kingdom.equals(rr.kingdom)) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
-							}
-						}
-						if (getNation(c.kingdom).hasTag("Mystical")) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
-						if (!ct.religion.startsWith("Iruhan")) getNation(c.kingdom).goodwill -= 20;
-						else if (!ct.religion.equals("Iruhan (Vessel of Faith)")) getNation(c.kingdom).goodwill += 15;
-					}
-					if (ct.type.equals("shipyard") && getNation(c.kingdom).hasTag("Ship-Building")) buildShips(c.kingdom, c.location, 10);
-					builds.add(region);
-					if (ct.type.equals("temple")) templeBuilds.add(region);
-					if (ct.type.equals("fortifications") && getNation(c.kingdom).hasTag("Defensive")) {
-						Construction c2 = new Construction();
-						c2.type = "fortifications";
-						c2.originalCost = 0;
-						region.constructions.add(c2);
-					}
+				if (!c.kingdom.equals(region.kingdom) && getNation(region.kingdom).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
+					notifications.add(new Notification(c.kingdom, "Construction Failed", region.kingdom + " does not permit us to build in " + region.name + "."));
 				} else {
-					notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
+					double cost = 0;
+					double costMod = 1;
+					Construction ct = new Construction();
+					if (action.contains("Shipyard")) {
+						ct.type = "shipyard";
+						cost = 80;
+					} else if (action.contains("Temple")) {
+						ct.type = "temple";
+						ct.religion = ideologyToReligion(action.replace("Build Temple (", "").replace(")", ""));
+						cost = 30;
+						if (getNation(c.kingdom).hasTag("Mystical")) costMod -= .5;
+						if (getNation(c.kingdom).hasTag("Evangelical") && !region.religion.equals(NationData.getStateReligion(c.kingdom, this))) costMod -= 1;
+						if (ct.religion.contains("Iruhan") && !region.religion.contains("Iruhan") && getDominantIruhanIdeology().equals("Iruhan (Vessel of Faith)")) costMod -= 1;
+						if (region.religion.equals("Iruhan (Tapestry of People)")) {
+							boolean templeBonus = true;
+							for (Region r : region.getNeighbors(this)) if (r.type.equals("land") && (!r.religion.equals(region.religion) || !r.culture.equals(region.culture))) templeBonus = false;
+							if (templeBonus) costMod -= 1;
+						}
+					} else if (action.contains("Fortifications")) {
+						ct.type = "fortifications";
+						cost = 20;
+						if (region.religion.equals("Tavian (Flame of Kith)")) costMod -= 1;
+					}
+					if (getNation(c.kingdom).hasTag("Industrial")) costMod -= .25;
+					if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
+					if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
+					cost *= Math.max(0, costMod);
+					ct.originalCost = cost;
+					if (cost <= getNation(c.kingdom).gold) {
+						getNation(c.kingdom).gold -= cost;
+						incomeSources.getOrDefault(c.kingdom, new Budget()).spentConstruction += cost;
+						region.constructions.add(ct);
+						if (ct.type.equals("temple")) {
+							String r = region.religion;
+							region.setReligion(ct.religion, this);
+							if (!"Iruhan (Vessel of Faith)".equals(r) && "Iruhan (Vessel of Faith)".equals(region.religion)) {
+								for (String kingdom : kingdoms.keySet()) if ("Iruhan (Vessel of Faith)".equals(NationData.getStateReligion(kingdom, this))) {
+									for (Region rr : regions) if (kingdom.equals(rr.kingdom)) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
+								}
+							}
+							if (getNation(c.kingdom).hasTag("Mystical")) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
+							if (!ct.religion.startsWith("Iruhan")) getNation(c.kingdom).goodwill -= 20;
+							else if (!ct.religion.equals("Iruhan (Vessel of Faith)")) getNation(c.kingdom).goodwill += 15;
+						}
+						if (ct.type.equals("shipyard") && getNation(c.kingdom).hasTag("Ship-Building")) buildShips(c.kingdom, c.location, 10);
+						builds.add(region);
+						if (ct.type.equals("temple")) templeBuilds.add(region);
+						if (ct.type.equals("fortifications") && getNation(c.kingdom).hasTag("Defensive")) {
+							Construction c2 = new Construction();
+							c2.type = "fortifications";
+							c2.originalCost = 0;
+							region.constructions.add(c2);
+						}
+					} else {
+						notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
+					}
 				}
 			} else if (action.startsWith("Instate Noble")) {
 				if (!region.type.equals("land") || !region.kingdom.equals(c.kingdom) || region.noble != null) continue;
@@ -1387,7 +1377,7 @@ final class World {
 					for (Army b : localArmies) {
 						if (!NationData.isEnemy(a.kingdom, b.kingdom, this, region) || (a.hasTag("Higher Power") && b.hasTag("Higher Power"))) continue;
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
-						if (b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
+						if ("army".equals(a.type) && b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
 						if (getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill <= -75) getNation(b.kingdom).goodwill += 3 * a.size / 100 * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
 					}
@@ -1552,7 +1542,7 @@ final class World {
 			}
 			// Sword of Truth destruction
 			for (String k : kingdoms.keySet()) {
-				if (!NationData.getStateReligion(k, this).equals("Iruhan (Sword of Truth")) continue;
+				if (!NationData.getStateReligion(k, this).equals("Iruhan (Sword of Truth)")) continue;
 				HashSet<Region> neighboringEnemies = new HashSet<>();
 				for (Region r : regions) if (k.equals(r.kingdom)) for (Region n : r.getNeighbors(this)) if (NationData.isEnemy(k, n.kingdom, this)) neighboringEnemies.add(n);
 				for (Region n : neighboringEnemies) {
@@ -1560,6 +1550,8 @@ final class World {
 					for (Construction c : n.constructions) {
 						if (c.type.equals("fortification")) {
 							n.constructions.remove(c);
+							notifications.add(new Notification(n.kingdom, "Sabotage in " + n.name, k + " saboteurs have destroyed a fortification in " + n.name + ", claiming it was the will of Iruhan."));
+							notifications.add(new Notification(k, "Friendly sabotage in " + n.name, "Civilian saboteurs loyal to us have destroyed a fortification in " + n.name + ", a region of " + n.kingdom + ", claiming it was the will of Iruhan."));
 							break;
 						}
 					}
@@ -1786,7 +1778,7 @@ final class World {
 					if (from == null || to == null) throw new RuntimeException("Can't find region " + fromName + " or " + toName);
 					if (from == to) continue;
 					if (!k.equals(from.kingdom)) {
-						notifications.add(new Notification(from.kingdom, "Food Transfer from " + from.name + " Failed", "We lost control of the region before the food could be transferred from it!"));
+						notifications.add(new Notification(k, "Food Transfer from " + from.name + " Failed", "We lost control of the region before the food could be transferred from it!"));
 						continue;
 					}
 					double amount = Math.max(0, Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000));
@@ -1919,9 +1911,9 @@ final class World {
 					}
 					ArrayList<String> tags = r.getArmyTags();
 					Army merge = null;
-					for (Army a : armies) {
+					outer: for (Army a : armies) {
 						if (a.location == i && a.type.equals("army") && a.kingdom.equals(k)) {
-							for (String t : tags) if (!a.hasTag(t)) continue;
+							for (String t : tags) if (!a.hasTag(t)) continue outer;
 							merge = a;
 							break;
 						}
