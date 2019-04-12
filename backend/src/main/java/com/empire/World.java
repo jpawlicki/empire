@@ -854,11 +854,11 @@ final class World {
 		for (Army army : armies) {
 			if (army.hasTag("Higher Power")) {
 				// If they are adjacent to a special region, move into it, regardless of other orders.
-				String originalOrder = orders.get(army.kingdom).getOrDefault("action_army_" + army.id, "");
+				String originalOrder = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
 				for (Region r : regions.get(army.location).getNeighbors(this)) {
 					if (cultRegions.contains(regions.indexOf(r))) orders.get(army.kingdom).put("action_army_" + army.id, "Travel to " + r.name);
 				}
-				if (!orders.get(army.kingdom).get("action_army_" + army.id).equals(originalOrder)) notifications.add(new Notification(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!"));
+				if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifications.add(new Notification(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!"));
 			}
 			if (abdications.contains(army.kingdom)) {
 				if (army.hasTag("Higher Power")) {
@@ -1401,8 +1401,12 @@ final class World {
 					double cf = casualties.get(c);
 					double lost = cf * c.size;
 					if (!c.hasTag("Undead")) dead += lost;
-					if (cf >= 1) armies.remove(c);
-					else c.size -= c.size * cf;
+					if (cf >= 1) {
+						armies.remove(c);
+					} else {
+						c.size -= c.size * cf;
+						c.gold -= c.gold * cf;
+					}
 					for (String s : c.composition.keySet()) {
 						c.composition.put(s, c.composition.get(s) * (1 - cf));
 					}
@@ -1554,7 +1558,7 @@ final class World {
 			for (String k : kingdoms.keySet()) {
 				if (!NationData.getStateReligion(k, this).equals("Iruhan (Sword of Truth")) continue;
 				HashSet<Region> neighboringEnemies = new HashSet<>();
-				for (Region r : regions) if (k.equals(r.kingdom)) for (Region n : r.getNeighbors(this)) if (NationData.isEnemy(k, n.kingdom, this)) neighboringEnemies.add(n);
+				for (Region r : regions) if (k.equals(r.kingdom)) for (Region n : r.getNeighbors(this)) if (n.kingdom != null && NationData.isEnemy(k, n.kingdom, this)) neighboringEnemies.add(n);
 				for (Region n : neighboringEnemies) {
 					if (Math.random() < 0.5) continue;
 					for (Construction c : n.constructions) {
@@ -1709,9 +1713,17 @@ final class World {
 				}
 				for (Integer i : cardinalCount.keySet()) {
 					if (3 * cardinalCount.get(i).size() >= 2 * totalCardinals) {
-						Character t = cardinalCount.get(i).get((int)(Math.random() * cardinalCount.get(i).size()));
-						t.addTag("Tiecel");
-						notifyAll("Tiecel Elected", "The Cardinals of the Church of Iruhan have elected " + t.name + " as Tiecel. Consequently, " + t.kingdom + " is expected to play a much larger role in the Church than they have in the past.");
+						// Find the present Cardinal with the greatest favor.
+						double maxFavor = Double.MIN_VALUE;
+						Character max = null;
+						for (Character t : cardinalCount.get(i)) {
+							if (getNation(t.kingdom).goodwill > maxFavor) {
+								max = t;
+								maxFavor = getNation(t.kingdom).goodwill;
+							}
+						}
+						max.addTag("Tiecel");
+						notifyAll("Tiecel Elected", "The Cardinals of the Church of Iruhan have elected " + max.name + " as Tiecel. Consequently, " + max.kingdom + " is expected to play a much larger role in the Church than they have in the past.");
 					}
 				}
 			}
@@ -1919,9 +1931,9 @@ final class World {
 					}
 					ArrayList<String> tags = r.getArmyTags();
 					Army merge = null;
-					for (Army a : armies) {
+					outer: for (Army a : armies) {
 						if (a.location == i && a.type.equals("army") && a.kingdom.equals(k)) {
-							for (String t : tags) if (!a.hasTag(t)) continue;
+							for (String t : tags) if (!a.hasTag(t)) continue outer;
 							merge = a;
 							break;
 						}
