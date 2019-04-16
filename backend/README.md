@@ -1,7 +1,5 @@
-HelloWorld for App Engine Standard (Java 8)
+Empire Backend for App Engine Standard (Java 8)
 ============================
-
-This sample demonstrates how to deploy an application on Google App Engine.
 
 See the [Google App Engine standard environment documentation][ae-docs] for more
 detailed instructions.
@@ -10,8 +8,7 @@ detailed instructions.
 
 
 * [Java 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
-* [Maven](https://maven.apache.org/download.cgi) (at least 3.5)
-* [Gradle](https://gradle.org/gradle-download/) (optional)
+* [Gradle](https://gradle.org/gradle-download/)
 * [Google Cloud SDK](https://cloud.google.com/sdk/) (aka gcloud)
 
 ## Setup
@@ -24,25 +21,10 @@ detailed instructions.
 
     gcloud app create
 
-## Maven
-### Running locally
-
-    mvn appengine:run
-
-To use vist: http://localhost:8080/
-
-### Deploying
-
-    mvn appengine:deploy
-
-To use vist:  https://YOUR-PROJECT-ID.appspot.com
-
 ## Gradle
 ### Running locally
 
     gradle appengineRun
-
-If you do not have gradle installed, you can run using `./gradlew appengineRun`.
 
 To use vist: http://localhost:8080/
 
@@ -50,15 +32,9 @@ To use vist: http://localhost:8080/
 
     gradle appengineDeploy
 
-If you do not have gradle installed, you can deploy using `./gradlew appengineDeploy`.
-
 To use vist:  https://YOUR-PROJECT-ID.appspot.com
 
 ## Testing
-
-    mvn verify
-
- or
 
     gradle test
 
