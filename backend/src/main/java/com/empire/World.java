@@ -1457,7 +1457,7 @@ final class World {
 				ArrayList<Army> localUndeadArmies = new ArrayList<>();
 				for (Army a : localArmies) if (a.hasTag("Undead") && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
 				if (localUndeadArmies.size() > 0) {
-					battleDetails += ", and " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult";
+					battleDetails += ", " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult";
 					double raised = dead / 2 / localUndeadArmies.size();
 					for (Army u : localUndeadArmies) {
 						u.size += raised;
