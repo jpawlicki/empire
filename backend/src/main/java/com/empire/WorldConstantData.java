@@ -13,10 +13,10 @@ class WorldConstantData {
 	static class Kingdom {
 		public final String colorBg;
 		public final String colorFg;
-		public final String culture;
+		public final Culture culture;
 		public final int[] coreRegions;
 
-		public Kingdom(String colorFg, String colorBg, String culture, int... coreRegions) {
+		public Kingdom(String colorFg, String colorBg, Culture culture, int... coreRegions) {
 			this.colorBg = colorBg;
 			this.colorFg = colorFg;
 			this.culture = culture;
@@ -55,18 +55,18 @@ class WorldConstantData {
 
 	static final HashMap<String, List<String>> names = new HashMap<>();
 
-	static String getRandomName(String culture, Gender gender) {
+	static String getRandomName(Culture culture, Gender gender) {
 		String g = gender == Gender.MAN ? "_m" : "_f";
 		switch (culture) {
-			case "eolsung":
+			case EOLSUNG:
 				return pick(names.get("eolsung" + g)) + " " + (Math.random() < 0.4 ? pick(names.get("eolsung_m")) : pick(names.get("eolsung_f"))) + (gender == Gender.MAN ? "son" : "dottr");
-			case "tyrgaetan":
+			case TYRGAETAN:
 				return pick(names.get("eolsung" + g)) + " " + pick(Arrays.asList(new String[]{"Alyrja", "Dagmyns", "Audityrs", "Thyrru", "Rjinku", "Syrjen", "Herja", "Lyskrs"})) + (Math.random() < 0.5 ? "ki" : "kun");
-			case "tavian":
+			case TAVIAN:
 				return pick(names.get("tavian" + g));
-			case "hansa":
+			case HANSA:
 				return pick(names.get("hansa" + g)) + " of " + pick(Arrays.asList(new String[]{"Windswine", "Sprayskimmer", "Farsight", "Cutlass", "Whitesail", "Elegant", "Prancer", "Dancer", "Vixen", "Comet", "Stargazer", "Starchaser", "Sunblinder", "Sunchaser", "Defiance", "Ridicule", "Interpid", "Seaswallow", "Hawkclaw", "Deathbringer", "Interceptor", "Wildsail", "Breezecoaster", "Shoalhugger", "Truthsayer", "Wavereaver", "Wavecutter", "Proudprow", "Proudsail", "Dauntless", "Milkysea", "Wakerunner", "Wakewing", "Wavetreader", "Forgotten", "Ancient", "Guardian", "Lostrudder", "Greensails", "Horizon", "Suntreader", "Moonglider", "Moonwalker", "Skyrunner", "Solitary", "Tidehunter", "Eversail", "Tiderocker", "Downwind", "Whirlwind", "Zephyr", "Cloudchaser"}));
-			case "anpilayn":
+			case ANPILAYN:
 				return pick(names.get("anpilayn1" + g)) + " " + pick(names.get("anpilayn2")) + " " + pick(names.get("anpilayn3" + g));
 		}
 		throw new RuntimeException("Unrecognized culture: " + culture);
@@ -77,24 +77,24 @@ class WorldConstantData {
 	}
 
 	static {
-		kingdoms.put("Aefoss", new Kingdom("#ffffff", "#288ce5", "eolsung", 36, 37, 38, 43, 48, 50));
-		kingdoms.put("Doomstoll", new Kingdom("#000000", "#feb300", "eolsung", 16, 22, 25, 31, 40, 42));
-		kingdoms.put("Dumm", new Kingdom("#000000", "#e00059", "anpilayn", 41, 46, 47, 51, 54, 57));
-		kingdoms.put("Ejymsyn", new Kingdom("#ffffff", "#644c66", "tavian", 76, 81, 83, 85, 92, 98));
-		kingdoms.put("Fiskrbaer", new Kingdom("#ffffff", "#008c59", "eolsung", 12, 18, 23, 28, 32, 35));
-		kingdoms.put("Fulyn", new Kingdom("#ffffff", "#003e00", "anpilayn", 60, 63, 65, 70, 71, 72));
-		kingdoms.put("Holmslatr", new Kingdom("#000000", "#543eff", "eolsung", 24, 29, 33, 39, 44, 49));
-		kingdoms.put("Hosshofn", new Kingdom("#ffffff", "#006672", "eolsung", 17, 20, 21, 26, 27, 34));
-		kingdoms.put("Isla", new Kingdom("#ffffff", "#007f7f", "tyrgaetan", 8, 9, 10, 15, 19, 30));
-		kingdoms.put("Mabe", new Kingdom("#000000", "#fcffbf", "hansa", 78, 84, 95, 104, 105, 111));
-		kingdoms.put("Miycc", new Kingdom("#000000", "#d04c00", "hansa", 67, 77, 89, 101, 106, 117));
-		kingdoms.put("Muoem", new Kingdom("#000000", "#00d800", "anpilayn", 52, 55, 58, 61, 64, 68));
-		kingdoms.put("Siylmae", new Kingdom("#ffffff", "#000059", "anpilayn", 66, 69, 73, 75, 80, 86));
-		kingdoms.put("Slail", new Kingdom("#000000", "#bc7fcc", "anpilayn", 110, 112, 113, 119, 120, 121));
-		kingdoms.put("Tavia", new Kingdom("#000000", "#9a8c72", "tavian", 108, 109, 114, 115, 116, 118));
-		kingdoms.put("Telmymsyn", new Kingdom("#ffffff", "#6b0000", "anpilayn", 87, 94, 96, 99, 100, 107));
-		kingdoms.put("Tribes", new Kingdom("#000000", "#d9d9e5", "tyrgaetan", 0, 1, 2, 3, 4, 5, 6, 13, 14));
-		kingdoms.put("Zemsim", new Kingdom("#ffffff", "#684c00", "anpilayn", 79, 82, 88, 90, 93, 97));
+		kingdoms.put("Aefoss", new Kingdom("#ffffff", "#288ce5", Culture.EOLSUNG, 36, 37, 38, 43, 48, 50));
+		kingdoms.put("Doomstoll", new Kingdom("#000000", "#feb300", Culture.EOLSUNG, 16, 22, 25, 31, 40, 42));
+		kingdoms.put("Dumm", new Kingdom("#000000", "#e00059", Culture.ANPILAYN, 41, 46, 47, 51, 54, 57));
+		kingdoms.put("Ejymsyn", new Kingdom("#ffffff", "#644c66", Culture.TAVIAN, 76, 81, 83, 85, 92, 98));
+		kingdoms.put("Fiskrbaer", new Kingdom("#ffffff", "#008c59", Culture.EOLSUNG, 12, 18, 23, 28, 32, 35));
+		kingdoms.put("Fulyn", new Kingdom("#ffffff", "#003e00", Culture.ANPILAYN, 60, 63, 65, 70, 71, 72));
+		kingdoms.put("Holmslatr", new Kingdom("#000000", "#543eff", Culture.EOLSUNG, 24, 29, 33, 39, 44, 49));
+		kingdoms.put("Hosshofn", new Kingdom("#ffffff", "#006672", Culture.EOLSUNG, 17, 20, 21, 26, 27, 34));
+		kingdoms.put("Isla", new Kingdom("#ffffff", "#007f7f", Culture.TYRGAETAN, 8, 9, 10, 15, 19, 30));
+		kingdoms.put("Mabe", new Kingdom("#000000", "#fcffbf", Culture.HANSA, 78, 84, 95, 104, 105, 111));
+		kingdoms.put("Miycc", new Kingdom("#000000", "#d04c00", Culture.HANSA, 67, 77, 89, 101, 106, 117));
+		kingdoms.put("Muoem", new Kingdom("#000000", "#00d800", Culture.ANPILAYN, 52, 55, 58, 61, 64, 68));
+		kingdoms.put("Siylmae", new Kingdom("#ffffff", "#000059", Culture.ANPILAYN, 66, 69, 73, 75, 80, 86));
+		kingdoms.put("Slail", new Kingdom("#000000", "#bc7fcc", Culture.ANPILAYN, 110, 112, 113, 119, 120, 121));
+		kingdoms.put("Tavia", new Kingdom("#000000", "#9a8c72", Culture.TAVIAN, 108, 109, 114, 115, 116, 118));
+		kingdoms.put("Telmymsyn", new Kingdom("#ffffff", "#6b0000", Culture.ANPILAYN, 87, 94, 96, 99, 100, 107));
+		kingdoms.put("Tribes", new Kingdom("#000000", "#d9d9e5", Culture.TYRGAETAN, 0, 1, 2, 3, 4, 5, 6, 13, 14));
+		kingdoms.put("Zemsim", new Kingdom("#ffffff", "#684c00", Culture.ANPILAYN, 79, 82, 88, 90, 93, 97));
 		regions.add(new Region("Crumble", true, "treacherous"));
 		regions.add(new Region("Grind", true, "treacherous"));
 		regions.add(new Region("Dread", true, "treacherous"));

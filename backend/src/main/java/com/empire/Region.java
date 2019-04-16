@@ -13,7 +13,7 @@ import java.util.function.Function;
 final class Region {
 	String name;
 	String type; // "land" or "water" // TODO: can make this into an enum with @SerializedName
-	String culture;
+	Culture culture;
 	String climate;
 	double population;
 	String kingdom;
@@ -47,23 +47,23 @@ final class Region {
 	public ArrayList<String> getArmyTags() {
 		ArrayList<String> t = new ArrayList<>();
 		switch (culture) {
-			case "anpilayn":
+			case ANPILAYN:
 				t.add("Steel");
 				t.add("Formations");
 				break;
-			case "eolsung":
+			case EOLSUNG:
 				t.add("Pillagers");
 				t.add("Raiders");
 				break;
-			case "hansa":
+			case HANSA:
 				t.add("Seafaring");
 				t.add("Impressment");
 				break;
-			case "tyrgaetan":
+			case TYRGAETAN:
 				t.add("Weathered");
 				t.add("Pathfinders");
 				break;
-			case "tavian":
+			case TAVIAN:
 				t.add("Riders");
 				t.add("Crafts-soldiers");
 				break;
@@ -100,7 +100,7 @@ final class Region {
 			mods += 1;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion == religion)) getTapestryBonus = true;
+			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += .5;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= 1.25) {
 			mods += .5;
@@ -113,9 +113,9 @@ final class Region {
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * .05;
 		}
-		if ("Northern (Rjinku)".equals(NationData.getStateReligion(kingdom, w)) && rulerBattled) mods += .5;
-		if ("Iruhan (Tapestry of People)".equals(NationData.getStateReligion(kingdom, w))) mods += .03 * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan") && "Iruhan (Tapestry of People)".equals(w.getDominantIruhanIdeology()) && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += .03 * numUniqueIdeologies(kingdom, w);
+		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w) && rulerBattled) mods += .5;
+		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += .03 * numUniqueIdeologies(kingdom, w);
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += .03 * numUniqueIdeologies(kingdom, w);
 		return Math.max(0, base * mods);
 	}
 
@@ -137,14 +137,14 @@ final class Region {
 		if (wKingdom.hasTag("Mercantile")) mods += .15;
 		boolean neighborKuun = false;
 		for (Region r : getNeighbors(w)) {
-			if (r.kingdom != null && !r.kingdom.equals(kingdom) && "Tavian (River of Kuun)".equals(NationData.getStateReligion(r.kingdom, w))) neighborKuun = true;
+			if (r.kingdom != null && !r.kingdom.equals(kingdom) && Ideology.RIVER_OF_KUUN == NationData.getStateReligion(r.kingdom, w)) neighborKuun = true;
 		}
 		if (neighborKuun) mods += 0.5;
 		if (religion == Ideology.SYRJEN) {
 			mods += 1.25;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (!r.culture.equals(culture) || !r.religion == religion)) getTapestryBonus = true;
+			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += .5;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == 1.25) {
 			mods += .5;
@@ -156,8 +156,8 @@ final class Region {
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * .05;
 		}
-		if ("Iruhan (Tapestry of People)".equals(NationData.getStateReligion(kingdom, w))) mods += .03 * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan") && "Iruhan (Tapestry of People)".equals(w.getDominantIruhanIdeology()) && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += .03 * numUniqueIdeologies(kingdom, w);
+		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += .03 * numUniqueIdeologies(kingdom, w);
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += .03 * numUniqueIdeologies(kingdom, w);
 		return Math.max(0, base * mods);
 	}
 
@@ -166,7 +166,7 @@ final class Region {
 		double mods = foodMod;
 		if (noble != null && noble.hasTag("Rationing")) mods -= .2;
 		if (noble != null && noble.hasTag("Wasteful")) mods += .1;
-		if (NationData.getStateReligion(kingdom, w).equals("Iruhan (Chalice of Compassion)")) mods -= .15;
+		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods -= .15;
 		if (mods < 0) mods = 0;
 		return base * mods;
 	}
@@ -190,7 +190,7 @@ final class Region {
 		}
 		int maxV = ideologies.getOrDefault(bias, -1);
 		Ideology max = bias == null ? religion : bias;
-		for (String r : ideologies.keySet()) {
+		for (Ideology r : ideologies.keySet()) {
 			if (ideologies.get(r) > maxV) {
 				maxV = ideologies.get(r);
 				max = r;
@@ -311,11 +311,6 @@ final class Region {
 		double fort = 1;
 		for (Construction c : constructions) if (c.type.equals("fortifications")) fort += .15;
 		return Math.min(5, fort);
-	}
-
-	private static String ideologyToReligion(String ideology) {
-		if ("Company".equals(ideology)) return ideology;
-		return ideology.substring(0, ideology.indexOf("(") - 1);
 	}
 }
 

@@ -52,15 +52,15 @@ class NationData {
 		return false;
 	}
 
-	static String getStateReligion(String kingdom, World w) {
+	static Ideology getStateReligion(String kingdom, World w) {
 		HashMap<Ideology, Double> weights = new HashMap<>();
 		for (Region r : w.regions) {
 			if (!kingdom.equals(r.kingdom)) continue;
 			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
 		}
-		String max = Ideology.COMPANY;
+		Ideology max = Ideology.COMPANY;
 		double maxVal = 0;
-		for (String n : weights.keySet()) {
+		for (Ideology n : weights.keySet()) {
 			if (weights.get(n) > maxVal) {
 				maxVal = weights.get(n);
 				max = n;
@@ -80,7 +80,7 @@ class NationData {
 	List<Noble> court = new ArrayList<>();
 	String colorFg;
 	String colorBg;
-	String culture;
+	Culture culture;
 	List<Integer> coreRegions = new ArrayList<>();
 	private ArrayList<String> tags = new ArrayList<>();
 	ArrayList<String> previousTributes = new ArrayList<>();

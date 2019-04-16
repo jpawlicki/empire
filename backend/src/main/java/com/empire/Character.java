@@ -32,9 +32,9 @@ final class Character {
 		double power = 1;
 		if (boosted) power += 0.5;
 		power += calcLevel("spy") * 0.3;
-		if (NationData.getStateReligion(kingdom, w).equals("Northern (Lyskr)")) power += .4;
-		if (NationData.getStateReligion(kingdom, w).equals("Company")) power += .2;
-		if (NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) power += inspires * .05;
+		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += .4;
+		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += .2;
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * .05;
 		if (!"".equals(captor)) power -= 0.5;
 		return power;
 	}

@@ -26,13 +26,13 @@ final class Army {
 		if (type.equals("army") && !"Pirate".equals(kingdom) && w.getNation(kingdom).hasTag("Disciplined")) mods += .1;
 		if (type.equals("army") && r.type.equals("land") && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
 		if (type.equals("army") && r.noble != null && r.noble.hasTag("Loyal") && r.kingdom.equals(kingdom)) mods += .25;
-		if ("Iruhan (Sword of Truth)".equals(w.getDominantIruhanIdeology())) {
-			String sr = NationData.getStateReligion(kingdom, w);
-			if ("Iruhan (Sword of Truth)".equals(sr)) mods += .25;
-			else if (sr.startsWith("Iruhan")) mods += .15;
+		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
+			Ideology sr = NationData.getStateReligion(kingdom, w);
+			if (Ideology.SWORD_OF_TRUTH == sr) mods += .25;
+			else if (sr.religion == Religion.IRUHAN) mods += .15;
 		}
 		if (lastStand) mods += 4;
-		if (type.equals("army") && NationData.getStateReligion(kingdom, w).startsWith("Iruhan")) mods += inspires * .05;
+		if (type.equals("army") && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * .05;
 		if (leader != null && "".equals(leader.captor)) mods += leader.calcLevel(type.equals("army") ? "general" : "admiral") * .2;
 		return strength * mods;
 	}

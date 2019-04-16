@@ -40,7 +40,7 @@ class Nation {
 		public String worldpeace = "";
 		public String trait1 = "";
 		public String trait2 = "";
-		public String dominantIdeology = "";
+		public Ideology dominantIdeology;
 		public String bonus = "";
 		public String email = "";
 		public String password = "";
