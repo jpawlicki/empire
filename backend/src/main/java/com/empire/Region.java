@@ -314,6 +314,7 @@ final class Region {
 	}
 
 	private static String ideologyToReligion(String ideology) {
+		if ("Company".equals(ideology)) return ideology;
 		return ideology.substring(0, ideology.indexOf("(") - 1);
 	}
 }

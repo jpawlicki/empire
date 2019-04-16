@@ -54,5 +54,9 @@ final class Character {
 	void addTag(String tag) {
 		tags.add(tag);
 	}
+
+	void removeTag(String tag) {
+		tags.remove(tag);
+	}
 }
 
