@@ -31,9 +31,9 @@ final class Army {
 		double mods = 1;
 		Region r = w.regions.get(location);
 		if (hasTag("Steel")) mods += .15;
-		if (hasTag("Seafaring") && r.type.equals("water")) mods += 1.5;
+		if (hasTag("Seafaring") && r.isSea()) mods += 1.5;
 		if (isArmy() && !"Pirate".equals(kingdom) && w.getNation(kingdom).hasTag("Disciplined")) mods += .1;
-		if (isArmy() && r.type.equals("land") && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
+		if (isArmy() && r.isLand() && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
 		if (isArmy() && r.noble != null && r.noble.hasTag("Loyal") && r.kingdom.equals(kingdom)) mods += .25;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);

@@ -96,7 +96,7 @@ final class World {
 		for (WorldConstantData.Region r : WorldConstantData.regions) {
 			Region rr = new Region();
 			rr.climate = r.climate;
-			rr.type = r.land ? "land" : "water";
+			rr.type = r.land ? Region.Type.LAND : Region.Type.WATER;
 			rr.name = r.name;
 			if (r.land) {
 				rr.unrestPopular = 0.12;
@@ -111,7 +111,7 @@ final class World {
 		}
 		while (w.cultRegions.size() < 10) {
 			int rid = (int)(Math.random() * w.regions.size());
-			while (w.regions.get(rid).type.equals("water") || w.cultRegions.contains(rid)) rid = (int)(Math.random() * w.regions.size());
+			while (w.regions.get(rid).isSea() || w.cultRegions.contains(rid)) rid = (int)(Math.random() * w.regions.size());
 			w.cultRegions.add(rid);
 		}
 		double totalPopulation = 21000000;
@@ -200,12 +200,12 @@ final class World {
 		// Give unowned regions population and such.
 		int unownedRegions = 0;
 		for (Region r : w.regions) {
-			if ("water".equals(r.type)) continue;
+			if (r.isSea()) continue;
 			if (r.kingdom != null) continue;
 			unownedRegions++;
 		}
 		for (Region r : w.regions) {
-			if ("water".equals(r.type)) continue;
+			if (r.isSea()) continue;
 			if (r.kingdom == null) {
 				r.kingdom = "Unruled";
 				r.population = totalPopulation / unownedRegions / totalSharesPopulation * unruledNations / 2.0;
@@ -263,7 +263,7 @@ final class World {
 		// Allocate unowned regions between non-rebellious nations.
 		int numUnownedRegions = 0;
 		for (Region r : w.regions) {
-			if ("water".equals(r.type)) continue;
+			if (r.isSea()) continue;
 			if (r.kingdom != null) continue;
 			numUnownedRegions++;
 		}
@@ -276,7 +276,7 @@ final class World {
 				Region b = w.regions.get(bo.b);
 				if ((a.kingdom == null && b.kingdom == null) || (a.kingdom != null && b.kingdom != null)) continue;
 				if (rebelliousNations.contains(a.kingdom) || rebelliousNations.contains(b.kingdom)) continue;
-				if (!"land".equals(a.type) || !"land".equals(b.type)) continue;
+				if (!a.isLand() || !b.isLand()) continue;
 				totalWeight += 1.0 / bo.size;
 				borders.add(bo);
 			}
@@ -296,7 +296,7 @@ final class World {
 			} else {
 				// If there are no borders, give the first unowned land region to a random non-rebellious kingdom.
 				for (Region r : w.regions) {
-					if ("water".equals(r.type)) continue;
+					if (r.isSea()) continue;
 					if (r.kingdom != null) continue;
 					while (r.kingdom == null || rebelliousNations.contains(r.kingdom)) r.kingdom = new ArrayList<String>(w.getNationNames()).get((int)(Math.random() * w.kingdoms.size()));
 					break;
@@ -321,7 +321,7 @@ final class World {
 			int numSeaBorders = 0;
 			for (Region r : w.regions) if (kingdom.equals(r.kingdom)) numRegions++;
 			for (Region r : w.regions) {
-				if (r.type == "water") for (Region rr : r.getNeighbors(w)) if (kingdom.equals(rr.kingdom)) numSeaBorders++;
+				if (r.isSea()) for (Region rr : r.getNeighbors(w)) if (kingdom.equals(rr.kingdom)) numSeaBorders++;
 			}
 			for (Region r : w.regions) {
 				if (kingdom.equals(r.kingdom)) {
@@ -335,7 +335,7 @@ final class World {
 					army.composition.put("r_" + army.location, army.size);
 					army.orderhint = "";
 					w.armies.add(army);
-				} else if (r.type == "water") {
+				} else if (r.isSea()) {
 					int borderCount = 0;
 					for (Region rr : r.getNeighbors(w)) if (kingdom.equals(rr.kingdom)) borderCount++;
 					if (borderCount > 0) {
@@ -355,7 +355,7 @@ final class World {
 		}
 		// Set religions for all regions to new owners.
 		for (Region r : w.regions) {
-			if ("water".equals(r.type)) continue;
+			if (r.isSea()) continue;
 			if (r.kingdom == null) throw new RuntimeException(r.name + " is still unowned!");
 			if ("Unruled".equals(r.kingdom)) {
 				List<Ideology> possibilities = Ideology.getIdeologiesByReligion(r.culture.religion);
@@ -954,7 +954,7 @@ final class World {
 			} else if (action.startsWith("Disband")) {
 				if (army.hasTag("Higher Power")) continue;
 				double threatIncrease = 0;
-				if (region.type.equals("land")) {
+				if (region.isLand()) {
 					addPopulation(region, army.size * .67);
 					threatIncrease = army.size * .33 / (army.isArmy() ? 100 : 1);
 				} else {
@@ -966,7 +966,7 @@ final class World {
 				armies.remove(army);
 			} else if (action.startsWith("Conquer")) {
 				if (!army.isArmy()) continue;
-				if (!region.type.equals("land")) continue;
+				if (!region.isLand()) continue;
 				if (army.kingdom.equals(region.kingdom)) continue;
 				if (conqueredRegions.contains(region)) continue;
 				// Must be strongest in region (not counting other armies of the same ruler).
@@ -1051,7 +1051,7 @@ final class World {
 			if (army.hasTag("Unpredictable")) {
 				List<Region> n = new ArrayList<>(regions.get(army.location).getNeighbors(this));
 				ArrayList<Region> except = new ArrayList<>();
-				for (Region r : n) if (r.type.equals("water")) except.add(r);
+				for (Region r : n) if (r.isSea()) except.add(r);
 				for (Region r : except) n.remove(r);
 				if (!n.isEmpty()) action = "Travel to " + n.get((int)(Math.random() * n.size())).name;
 			}
@@ -1065,7 +1065,7 @@ final class World {
 			for (int i = 0; i < regions.size(); i++) {
 				if (regions.get(i).name.equals(destination)) toId = i;
 			}
-			if (!tivar.deluge && army.isNavy() && region.type.equals("land") && regions.get(toId).type.equals("land")) continue;
+			if (!tivar.deluge && army.isNavy() && region.isLand() && regions.get(toId).isLand()) continue;
 			int crossing = -1;
 			for (WorldConstantData.Border b : WorldConstantData.borders) if ((b.a == army.location && b.b == toId) || (b.b == army.location && b.a == toId)) crossing = b.size;
 			Preparation prep = null;
@@ -1161,7 +1161,7 @@ final class World {
 						if (ct.religion.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
 						if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
 							boolean templeBonus = true;
-							for (Region r : region.getNeighbors(this)) if (r.type.equals("land") && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
+							for (Region r : region.getNeighbors(this)) if (r.isLand() && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
 							if (templeBonus) costMod -= 1;
 						}
 					} else if (action.contains("Fortifications")) {
@@ -1204,7 +1204,7 @@ final class World {
 					}
 				}
 			} else if (action.startsWith("Instate Noble")) {
-				if (!region.type.equals("land") || !region.kingdom.equals(c.kingdom) || region.noble != null) continue;
+				if (!region.isLand() || !region.kingdom.equals(c.kingdom) || region.noble != null) continue;
 				for (Noble n : getNation(c.kingdom).court) if (String.join(", ", n.tags).equals(action.replace("Instate Noble (", "").replace(")", ""))) {
 					getNation(c.kingdom).court.remove(n);
 					region.noble = n;
@@ -1214,7 +1214,7 @@ final class World {
 				c.orderhint = "";
 				c.addExperience("governor", this);
 			} else if (action.startsWith("Govern")) {
-				if (!region.type.equals("land") || !region.kingdom.equals(c.kingdom)) continue;
+				if (!region.isLand() || !region.kingdom.equals(c.kingdom)) continue;
 				ArrayList<Character> gov = governors.getOrDefault(region, new ArrayList<Character>());
 				gov.add(c);
 				governors.put(region, gov);
@@ -1355,7 +1355,7 @@ final class World {
 				Region region = regions.get(i);
 				ArrayList<Army> localArmies = new ArrayList<>();
 				for (Army a : armies) if (a.location == i) {
-					if ("navy".equals(a.type) && "land".equals(region.type) && !tivar.deluge) continue;
+					if (a.isNavy() && region.isLand() && !tivar.deluge) continue;
 					localArmies.add(a);
 				}
 				double combatFactor = Math.random() * .3 + 1.7;
@@ -1416,7 +1416,7 @@ final class World {
 				double cropsWrecked = 1;
 				double popKilled = 1;
 				double unrest = 0;
-				if (region.type.equals("land")) {
+				if (region.isLand()) {
 					for (int p = 1000; p < dead; p += 1000) {
 						if (Math.random() < 1 / 4.0) {
 							// Nothing happens.	
@@ -1475,7 +1475,7 @@ final class World {
 			ArrayList<Army> removals = new ArrayList<>();
 			for (int i = 0; i < regions.size(); i++) {
 				Region region = regions.get(i);
-				if (region.type.equals("water")) continue;
+				if (region.isSea()) continue;
 				for (Army a : armies) if (a.location == i && a.isNavy()) {
 					Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
 					if (max != null && NationData.isEnemy(a.kingdom, max.kingdom, this)) {
@@ -1506,7 +1506,7 @@ final class World {
 		for (String k : kingdoms.keySet()) rationing.put(k, Double.parseDouble(orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_ration", "100")) / 100);
 		{
 			// Most unrest mods.
-			for (Region r : regions) if (r.type.equals("land")) {
+			for (Region r : regions) if (r.isLand()) {
 				double unrestMod = 0;
 				double ration = rationing.getOrDefault(r.kingdom, 1.0);
 				if (ration < 0.9) unrestMod += .15;
@@ -1536,7 +1536,7 @@ final class World {
 			}
 			// Syrjen unrest mods.
 			HashMap<Region, Double> popularUnrests = new HashMap<>();
-			for (Region r : regions) if (r.type.equals("land")) popularUnrests.put(r, r.unrestPopular);
+			for (Region r : regions) if (r.isLand()) popularUnrests.put(r, r.unrestPopular);
 			for (Region r : regions) if (Ideology.SYRJEN == r.religion) {
 				double maxNeighborUnrest = 0;
 				for (Region n : r.getNeighbors(this)) if (popularUnrests.getOrDefault(n, 0.1) > maxNeighborUnrest) maxNeighborUnrest = popularUnrests.getOrDefault(n, 0.1);
@@ -1623,7 +1623,7 @@ final class World {
 		for (String k : kingdoms.keySet()) taxationRates.put(k, Double.parseDouble(orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_tax", "100")) / 100);
 		for (int i = 0; i < regions.size(); i++) {
 			Region r = regions.get(i);
-			if (r.type.equals("land")) {
+			if (r.isLand()) {
 				String whoTaxes = r.kingdom;
 				double income = r.calcTaxIncome(this, governors.get(r), taxationRates.getOrDefault(r.kingdom, 1.0), rationing.getOrDefault(r.kingdom, 1.0));
 				Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
@@ -1725,7 +1725,7 @@ final class World {
 			double churchIncome = 200 + inspires * 20;
 			HashMap<String, Double> foodBalance = new HashMap<>();
 			for (Region r : regions) {
-				if (r.type.equals("water")) continue;
+				if (r.isSea()) continue;
 				double balance = r.calcConsumption(this, 1) * turnsUntilHarvest() - r.food;
 				foodBalance.put(r.kingdom, foodBalance.getOrDefault(r.kingdom, 0.0) + balance);
 			}
@@ -1783,7 +1783,7 @@ final class World {
 					Region from = null;
 					Region to = null;
 					for (Region r : regions) {
-						if (r.type.equals("water")) continue;
+						if (r.isSea()) continue;
 						if (r.name.equals(fromName)) from = r;
 						if (r.name.equals(toName)) to = r;
 					}
@@ -1853,7 +1853,7 @@ final class World {
 		}
 		// Harvests reaped.
 		if (isHarvestTurn()) {
-			for (Region r : regions) if (r.type.equals("land")) {
+			for (Region r : regions) if (r.isLand()) {
 				double base = r.harvest * r.population;
 				double mods = 1;
 				double unrest = r.calcUnrest(this);
@@ -1867,7 +1867,7 @@ final class World {
 		{
 			for (int i = 0; i < regions.size(); i++) {
 				Region r = regions.get(i);
-				if (!"land".equals(r.type)) continue;
+				if (!r.isLand()) continue;
 				if (r.noble != null) continue;
 				String c = orders.getOrDefault(r.kingdom, new HashMap<String, String>()).getOrDefault("nations_cede_" + i, "(Nobody)");
 				if (kingdoms.containsKey(c)) {
@@ -1913,7 +1913,7 @@ final class World {
 				}
 				for (int i = 0; i < regions.size(); i++) {
 					Region r = regions.get(i);
-					if (r.type.equals("water")) continue;
+					if (r.isSea()) continue;
 					if (!r.kingdom.equals(k)) continue;
 					double recruits = r.calcRecruitment(this, governors.get(r), signingBonus, battlingNations.contains(r.kingdom), rationing.getOrDefault(r.kingdom, 1.0), getMaxArmyInRegion(regions.indexOf(r), leaders, inspires, lastStands));
 					if (recruits <= 0) continue;
@@ -1979,7 +1979,7 @@ final class World {
 			HashMap<Region, Double> starvation = new HashMap<>();
 			for (int i = 0; i < regions.size(); i++) {
 				Region r = regions.get(i);
-				if (r.type.equals("water")) continue;
+				if (r.isSea()) continue;
 				double hungry = r.calcConsumption(this, rationing.getOrDefault(r.kingdom, 1.0));
 				if (hungry <= r.food) {
 					r.food -= hungry;
@@ -2013,7 +2013,7 @@ final class World {
 				HashSet<Character> moved = new HashSet<>();
 				for (Army a : armies) {
 					Region r = regions.get(a.location);
-					if (r.type.equals("water")) {
+					if (r.isSea()) {
 						List<Region> n = new ArrayList<>(r.getNeighbors(this));
 						Region d = n.get((int)(Math.random() * n.size()));
 						a.location = regions.indexOf(d);
@@ -2028,7 +2028,7 @@ final class World {
 				for (Character c : characters) {
 					if (moved.contains(c)) continue;
 					Region r = regions.get(c.location);
-					if (r.type.equals("water")) {
+					if (r.isSea()) {
 						moved.add(c);
 						List<Region> n = new ArrayList<>(r.getNeighbors(this));
 						c.location = regions.indexOf(n.get((int)(Math.random() * n.size())));
@@ -2521,7 +2521,7 @@ final class World {
 				if ("exodus".equals(final_action)) {
 					double navalStrength = 0;
 					double enemyNavalStrength = 1;
-					for (Army a : armies) if ("navy".equals(a.type)) {
+					for (Army a : armies) if (a.isNavy()) {
 						double strength = a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom));
 						if (NationData.isFriendly(a.kingdom, k, this)) navalStrength += strength;
 						if (NationData.isEnemy(a.kingdom, k, this)) enemyNavalStrength += strength;
@@ -2628,9 +2628,9 @@ final class World {
 
 	private boolean getAttrition(Army army, Region region) {
 		if (army.hasTag("Weathered")) return false;
-		if (region.type.equals("land") && NationData.isFriendly(region.kingdom, army.kingdom, this)) return false;
+		if (region.isLand() && NationData.isFriendly(region.kingdom, army.kingdom, this)) return false;
 		if (region.climate.equals("treacherous") || (region.climate.equals("seasonal") && getSeason() == Season.WINTER)) return true;
-		if (region.type.equals("land") && tivar.deluge) return true;
+		if (region.isLand() && tivar.deluge) return true;
 		if (region.type.equals("sea") && tivar.warwinds) return true;
 		if ("Pirate".equals(army.kingdom) && region.kingdom != null && getNation(region.kingdom).hasTag("Disciplined")) return true;
 		return false;
@@ -2685,7 +2685,7 @@ final class World {
 		amount = Math.min(amount, from.population - 1);
 		if (amount <= 0) return;
 		if (to == null) {
-			for (Region r : from.getNeighbors(this)) if (r.type.equals("land") && (r.food > 0 || !foodOnly) && (r.kingdom.equals(from.kingdom) || getNation(r.kingdom).getRelationship(from.kingdom).refugees == Relationship.Refugees.ACCEPT)) destinations.add(r);
+			for (Region r : from.getNeighbors(this)) if (r.isLand() && (r.food > 0 || !foodOnly) && (r.kingdom.equals(from.kingdom) || getNation(r.kingdom).getRelationship(from.kingdom).refugees == Relationship.Refugees.ACCEPT)) destinations.add(r);
 		} else {
 			destinations.add(to);
 		}

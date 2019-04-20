@@ -1,5 +1,6 @@
 package com.empire;
 
+import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -11,8 +12,14 @@ import java.util.Set;
 import java.util.function.Function;
 
 final class Region {
+	static enum Type {
+		@SerializedName("land")
+		LAND,
+		@SerializedName("water")
+		WATER
+	}
 	String name;
-	String type; // "land" or "water" // TODO: can make this into an enum with @SerializedName
+	Type type;
 	Culture culture;
 	String climate;
 	double population;
@@ -31,13 +38,13 @@ final class Region {
 		stack.add(this);
 		legals.add(this);
 		for (Region n : getNeighbors(w)) {
-			if (n.type.equals("water")) stack.add(n);
+			if (n.isSea()) stack.add(n);
 			legals.add(n);
 		}
 		while (!stack.isEmpty()) {
 			Region r = stack.remove(stack.size() - 1);
 			for (Region n : r.getNeighbors(w)) {
-				if (n.type.equals("water") && !legals.contains(n)) stack.add(n);
+				if (n.isSea() && !legals.contains(n)) stack.add(n);
 				legals.add(n);
 			}
 		}
@@ -100,7 +107,7 @@ final class Region {
 			mods += 1;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
+			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += .5;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= 1.25) {
 			mods += .5;
@@ -144,7 +151,7 @@ final class Region {
 			mods += 1.25;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.type.equals("land") && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
+			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += .5;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == 1.25) {
 			mods += .5;
@@ -172,7 +179,7 @@ final class Region {
 	}
 
 	public double calcPirateThreat(World w) {
-		if ("water".equals(type)) return 0;
+		if (isSea()) return 0;
 		if (religion == Ideology.ALYRJA) return 0;
 		if (noble != null && noble.hasTag("Policing")) return 0;
 		double unrest = calcUnrest(w);
@@ -225,9 +232,9 @@ final class Region {
 	}
 
 	public boolean isCoastal(World w) {
-		if (type == "water") return false;
+		if (isSea()) return false;
 		for (Region r : getNeighbors(w)) {
-			if (r.type == "water") return true;
+			if (r.isSea()) return true;
 		}
 		return false;
 	}
@@ -249,7 +256,7 @@ final class Region {
 		for (final Character c : w.characters) {
 			Function<Node, Node> getPower = (Node n) -> {
 				Region r = n.location;
-				if (r.type.equals("water")) return new Node(n.power * .9, n.location);
+				if (r.isSea()) return new Node(n.power * .9, n.location);
 				if (NationData.isFriendly(c.kingdom, r.kingdom, w)) {
 					if (r.religion == Ideology.LYSKR) return new Node(n.power, n.location);
 					return new Node(n.power * (.9 - r.calcUnrest(w) / 10), n.location);
@@ -311,6 +318,14 @@ final class Region {
 		double fort = 1;
 		for (Construction c : constructions) if (c.type.equals("fortifications")) fort += .15;
 		return Math.min(5, fort);
+	}
+
+	public boolean isLand() {
+		return type == Type.LAND;
+	}
+
+	public boolean isSea() {
+		return type == Type.WATER;
 	}
 }
 
