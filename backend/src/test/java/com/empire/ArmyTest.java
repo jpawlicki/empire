@@ -7,7 +7,7 @@ public class ArmyTest {
   @Test
   public void calcStrength_basic() {
 		Army a = new Army();
-		a.type = "army";
+		a.type = Army.Type.ARMY;
 		a.size = 100;
 		a.kingdom = "k1";
 		a.location = 0;
@@ -20,7 +20,7 @@ public class ArmyTest {
 		// For a non-religious nation, inspires don't do anything.
 		{
 			Army a = new Army();
-			a.type = "army";
+			a.type = Army.Type.ARMY;
 			a.size = 100;
 			a.kingdom = "k1";
 			a.location = 0;
@@ -29,7 +29,7 @@ public class ArmyTest {
 		// For an Iruhan-aligned nation, inspires do.
 		{
 			Army a = new Army();
-			a.type = "army";
+			a.type = Army.Type.ARMY;
 			a.size = 100;
 			a.kingdom = "k1";
 			a.location = 0;
@@ -47,7 +47,7 @@ public class ArmyTest {
 		// Last-standing quintuples strength.
 		{
 			Army a = new Army();
-			a.type = "army";
+			a.type = Army.Type.ARMY;
 			a.size = 100;
 			a.kingdom = "k1";
 			a.location = 0;

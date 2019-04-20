@@ -326,7 +326,7 @@ final class World {
 			for (Region r : w.regions) {
 				if (kingdom.equals(r.kingdom)) {
 					Army army = new Army();
-					army.type = "army";
+					army.type = Army.Type.ARMY;
 					army.size = armies / numRegions;
 					army.tags = r.getArmyTags();
 					army.location = w.regions.indexOf(r);
@@ -341,7 +341,7 @@ final class World {
 					if (borderCount > 0) {
 						// Place navy.
 						Army army = new Army();
-						army.type = "navy";
+						army.type = Army.Type.NAVY;
 						army.size = navies * borderCount / numSeaBorders;
 						army.tags = new ArrayList<>();
 						army.location = w.regions.indexOf(r);
@@ -771,7 +771,7 @@ final class World {
 					for (Army aa : armies) if (aa.id == targetId) target = aa;
 					if (target == null) continue; // ???
 					if (!target.kingdom.equals(c.kingdom) || c.location != target.location) continue;
-					String d = target.type.equals("army") ? "general" : "admiral";
+					String d = target.isArmy() ? "general" : "admiral";
 					if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < c.calcLevel(d)) {
 						Character prev = leaders.put(target, c);
 						if (prev != null) prev.orderhint = "";
@@ -780,7 +780,7 @@ final class World {
 			}
 			for (Army a : leaders.keySet()) {
 				Character l = leaders.get(a);
-				leaders.get(a).addExperience(a.type.equals("army") ? "general" : "admiral", this);
+				leaders.get(a).addExperience(a.isArmy() ? "general" : "admiral", this);
 				leaders.get(a).leadingArmy = a.id;
 			}
 		}
@@ -807,7 +807,7 @@ final class World {
 					if (target == null || src == null || target.location != src.location || !target.kingdom.equals(k) || !src.kingdom.equals(k) || !src.type.equals(target.type)) throw new RuntimeException("Cannot execute " + k + ": " + o + ": " + order);
 					if (src.hasTag("Undead") != target.hasTag("Undead")) continue;
 					if (!src.tags.equals(target.tags)) {
-						double threatIncrease = src.size * 0.33 * (src.type.equals("army") ? 1.0 / 100 : 1);
+						double threatIncrease = src.size * 0.33 * (src.isArmy() ? 1.0 / 100 : 1);
 						pirate.threat += threatIncrease;
 						pirate.bribes.put(src.kingdom, pirate.bribes.getOrDefault(src.kingdom, 0.0) + threatIncrease / 100);
 						pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
@@ -869,7 +869,7 @@ final class World {
 			String action = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).get("action_army_" + army.id);
 			Region region = regions.get(army.location);
 			if (action.startsWith("Patrol")) {
-				if (!army.type.equals("army")) continue;
+				if (!army.isArmy()) continue;
 				if (army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < region.calcMinPatrolStrength(this)) {
 					notifications.add(new Notification(army.kingdom, "Patrol Ineffective", "Army " + army.id + " is not strong enough to effectively patrol " + region.name + "."));
 					continue;
@@ -880,7 +880,7 @@ final class World {
 						who.add(c.name + " (" + c.kingdom + ")" + ("".equals(c.captor) ? "" : " (captive of " + c.captor + ")"));
 						if (NationData.isEnemy(c.kingdom, army.kingdom, this) && "".equals(c.captor)) {
 							boolean guard = false;
-							for (Army a : armies) if (a.type.equals("army") && a.location == c.location && NationData.isFriendly(a.kingdom, c.kingdom, this)) guard = true;
+							for (Army a : armies) if (a.isArmy() && a.location == c.location && NationData.isFriendly(a.kingdom, c.kingdom, this)) guard = true;
 							if (!guard) {
 								c.captor = army.kingdom;
 								notifications.add(new Notification(c.kingdom, c.name + " Captured", c.name + " was captured by a patrolling army."));
@@ -889,7 +889,7 @@ final class World {
 					}
 				}
 			} else if (action.startsWith("Raze ")) {
-				if (!army.type.equals("army")) continue;
+				if (!army.isArmy()) continue;
 				if (army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < regions.get(army.location).calcMinConquestStrength(this) / 2) {
 					notifications.add(new Notification(army.kingdom, "Razing Failed", "Army " + army.id + " is not powerful enough to raze constructions in " + region.name + "."));
 					continue;
@@ -914,11 +914,11 @@ final class World {
 				notifications.add(new Notification(army.kingdom, "Razing in " + region.name, "Our army looted and razed a " + target + ", carrying off assets worth " + Math.round(bestRaze.originalCost / 2) + " gold."));
 				if (!region.kingdom.equals(army.kingdom)) notifications.add(new Notification(region.kingdom, "Razing in " + region.name, "An army of " + army.kingdom + " looted a " + target + ", then burned it to the ground."));
 			} else if (action.startsWith("Force civilians to ")) {
-				if (!army.type.equals("army")) continue;
+				if (!army.isArmy()) continue;
 				// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.
 				boolean stopped = false;
 				for (Army a : armies) {
-					if (a.type.equals("army") && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
+					if (a.isArmy() && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
 						stopped = true;
 						notifications.add(new Notification(army.kingdom, "Forced Relocation Failed", "Army " + army.id + " was prevented from forcibly relocating the population of " + region.name + " by other armies present in the region."));
 						break;
@@ -944,11 +944,11 @@ final class World {
 				String target = action.substring("Transfer army to ".length(), action.length());
 				if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
 				if (getNation(target).getRelationship(army.kingdom).fealty == Relationship.Fealty.ACCEPT) {
-					notifications.add(new Notification(target, "Soldiers From " + army.kingdom, army.kingdom + " has transferred " + army.size + " " + (army.type.equals("army") ? "soldiers" : "warships") + " in " + region.name + " to our control."));
+					notifications.add(new Notification(target, "Soldiers From " + army.kingdom, army.kingdom + " has transferred " + army.size + " " + (army.isArmy() ? "soldiers" : "warships") + " in " + region.name + " to our control."));
 					army.kingdom = target;
 					army.orderhint = "";
 				} else {
-					notifications.add(new Notification(target, "Soldiers From " + army.kingdom, army.kingdom + " has attempted to transfer " + (int) Math.round(army.size) + " " + (army.type.equals("army") ? "soldiers" : "warships") + " in " + region.name + " to our control, but we refused to accept them."));
+					notifications.add(new Notification(target, "Soldiers From " + army.kingdom, army.kingdom + " has attempted to transfer " + (int) Math.round(army.size) + " " + (army.isArmy() ? "soldiers" : "warships") + " in " + region.name + " to our control, but we refused to accept them."));
 					notifications.add(new Notification(army.kingdom, "Soldiers To " + target, target + " has refused to accept responsibility for our soldiers."));
 				}
 			} else if (action.startsWith("Disband")) {
@@ -956,23 +956,23 @@ final class World {
 				double threatIncrease = 0;
 				if (region.type.equals("land")) {
 					addPopulation(region, army.size * .67);
-					threatIncrease = army.size * .33 / (army.type.equals("army") ? 100 : 1);
+					threatIncrease = army.size * .33 / (army.isArmy() ? 100 : 1);
 				} else {
-					threatIncrease = army.size / (army.type.equals("army") ? 100 : 1);
+					threatIncrease = army.size / (army.isArmy() ? 100 : 1);
 				}
 				pirate.threat += threatIncrease;
 				pirate.bribes.put(army.kingdom, pirate.bribes.getOrDefault(army.kingdom, 0.0) + threatIncrease / 100);
 				pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 				armies.remove(army);
 			} else if (action.startsWith("Conquer")) {
-				if (!army.type.equals("army")) continue;
+				if (!army.isArmy()) continue;
 				if (!region.type.equals("land")) continue;
 				if (army.kingdom.equals(region.kingdom)) continue;
 				if (conqueredRegions.contains(region)) continue;
 				// Must be strongest in region (not counting other armies of the same ruler).
 				boolean stopped = false;
 				for (Army a : armies) {
-					if (a.type.equals("army") && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
+					if (a.isArmy() && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
 						stopped = true;
 						notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not the strongest army in " + region.name + " and cannot conquer it."));
 						break;
@@ -1011,11 +1011,11 @@ final class World {
 				conqueredRegions.add(region);
 				army.orderhint = "";
 			} else if (action.startsWith("Slay Civilians")) {
-				if (!army.type.equals("army")) continue;
+				if (!army.isArmy()) continue;
 				// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.
 				boolean stopped = false;
 				for (Army a : armies) {
-					if (a.type.equals("army") && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(army.kingdom)) > army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
+					if (a.isArmy() && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(army.kingdom)) > army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
 						stopped = true;
 						notifications.add(new Notification(army.kingdom, "Forced Relocation Failed", "Army " + army.id + " was prevented from forcibly relocating the population of " + region.name + " by other armies present in the region."));
 						break;
@@ -1031,7 +1031,7 @@ final class World {
 				if (refugees > 0) sendRefugees(region, null, refugees, true, null, false);
 				for (Region r : regions) if (r.kingdom != null && r.kingdom.equals(army.kingdom) && r.noble != null) r.noble.unrest = Math.min(1, r.noble.unrest + .2);
 			} else if (action.startsWith("Oust ")) {
-				if (!army.type.equals("army")) continue;
+				if (!army.isArmy()) continue;
 				if (region.noble == null) continue;
 				if (!region.kingdom.equals(army.kingdom)) continue;
 				if (army.calcStrength(this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < region.calcMinPatrolStrength(this)) {
@@ -1065,7 +1065,7 @@ final class World {
 			for (int i = 0; i < regions.size(); i++) {
 				if (regions.get(i).name.equals(destination)) toId = i;
 			}
-			if (!tivar.deluge && army.type.equals("navy") && region.type.equals("land") && regions.get(toId).type.equals("land")) continue;
+			if (!tivar.deluge && army.isNavy() && region.type.equals("land") && regions.get(toId).type.equals("land")) continue;
 			int crossing = -1;
 			for (WorldConstantData.Border b : WorldConstantData.borders) if ((b.a == army.location && b.b == toId) || (b.b == army.location && b.a == toId)) crossing = b.size;
 			Preparation prep = null;
@@ -1286,7 +1286,7 @@ final class World {
 					int spawnRegion = kRegions.get((int)(Math.random() * kRegions.size()));
 					Army a = new Army();
 					a.location = spawnRegion;
-					a.type = "army";
+					a.type = Army.Type.ARMY;
 					a.size = 5000;
 					a.tags = new ArrayList<>();
 					a.id = getNewArmyId();
@@ -1328,7 +1328,7 @@ final class World {
 					if (totalPirateThreat < 0) {
 						Army a = new Army();
 						a.location = i;
-						a.type = "army";
+						a.type = Army.Type.ARMY;
 						a.size = Math.min(pirateArmies - piratesSpawned, 2000);
 						a.tags = new ArrayList<>();
 						a.id = getNewArmyId();
@@ -1377,7 +1377,7 @@ final class World {
 					for (Army b : localArmies) {
 						if (!NationData.isEnemy(a.kingdom, b.kingdom, this, region) || (a.hasTag("Higher Power") && b.hasTag("Higher Power"))) continue;
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
-						if ("army".equals(a.type) && b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
+						if (a.isArmy() && b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
 						if (getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill <= -75) getNation(b.kingdom).goodwill += 3 * a.size / 100 * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
 					}
@@ -1462,8 +1462,8 @@ final class World {
 					for (String k : localKingdoms) {
 						String armySummary = "";
 						for (Army a : localArmies) if (casualties.containsKey(a)) {
-							if (isHidden(a, k)) armySummary += "\n" + (a.type.equals("navy") ? "A navy" : "An army") + " of an unknown nation suffered " + Math.round(casualties.get(a) * 100) + "% losses.";
-							else armySummary += "\n" + (a.type.equals("navy") ? "A navy" : "An army") + " of " + a.kingdom + " suffered " + Math.round(casualties.get(a) * 100) + "% losses.";
+							if (isHidden(a, k)) armySummary += "\n" + (a.isNavy() ? "A navy" : "An army") + " of an unknown nation suffered " + Math.round(casualties.get(a) * 100) + "% losses.";
+							else armySummary += "\n" + (a.isNavy() ? "A navy" : "An army") + " of " + a.kingdom + " suffered " + Math.round(casualties.get(a) * 100) + "% losses.";
 						}
 						notifications.add(new Notification(k, "Battle in " + region.name, "Over a week of fighting in " + region.name + ":" + armySummary + "\n" + battleDetails));
 					}
@@ -1476,7 +1476,7 @@ final class World {
 			for (int i = 0; i < regions.size(); i++) {
 				Region region = regions.get(i);
 				if (region.type.equals("water")) continue;
-				for (Army a : armies) if (a.location == i && a.type.equals("navy")) {
+				for (Army a : armies) if (a.location == i && a.isNavy()) {
 					Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
 					if (max != null && NationData.isEnemy(a.kingdom, max.kingdom, this)) {
 						notifications.add(new Notification(a.kingdom, "Fleet Captured", "Our fleet of " + Math.round(a.size) + " warships in " + region.name + " was seized by " + max.kingdom + "."));
@@ -1635,7 +1635,7 @@ final class World {
 			} else {
 				// Get navy powers, 20 gold to biggest, 10 to runner-up; if tie; split 30 between all tied
 				ArrayList<Army> localNavies = new ArrayList<>();
-				for (Army a : armies) if (a.location == i && a.type.equals("navy")) localNavies.add(a);
+				for (Army a : armies) if (a.location == i && a.isNavy()) localNavies.add(a);
 				sortByStrength(localNavies, leaders, inspires, lastStands);
 				if (localNavies.isEmpty()) continue;
 				ArrayList<Army> toRemove = new ArrayList<>();
@@ -1817,7 +1817,7 @@ final class World {
 				if (a.hasTag("Higher Power")) continue;
 				double cost = a.size;
 				double mods = 1;
-				if (a.type.equals("army")) cost *= 1.0 / 100;
+				if (a.isArmy()) cost *= 1.0 / 100;
 				else cost *= 1 / 3.0;
 				if (a.hasTag("Crafts-soldiers") && !orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, "").startsWith("Travel ")) {
 					mods -= 0.5;
@@ -1839,7 +1839,7 @@ final class World {
 						if (a.hasTag("Higher Power")) continue;
 						double des = a.size * desertion;
 						a.size -= des;
-						double threatIncrease = a.type.equals("navy") ? des : des / 100;
+						double threatIncrease = a.isNavy() ? des : des / 100;
 						pirate.threat += threatIncrease;
 						pirate.bribes.put(a.kingdom, pirate.bribes.getOrDefault(a.kingdom, 0.0) + threatIncrease / 100);
 						pirateThreatSources.put("Desertion from " + a.kingdom, pirateThreatSources.getOrDefault("Desertion from " + a.kingdom, 0.0) + threatIncrease);
@@ -1924,7 +1924,7 @@ final class World {
 					ArrayList<String> tags = r.getArmyTags();
 					Army merge = null;
 					outer: for (Army a : armies) {
-						if (a.location == i && a.type.equals("army") && a.kingdom.equals(k)) {
+						if (a.location == i && a.isArmy() && a.kingdom.equals(k)) {
 							for (String t : tags) if (!a.hasTag(t)) continue outer;
 							merge = a;
 							break;
@@ -1934,7 +1934,7 @@ final class World {
 						merge.size += recruits;
 					} else {
 						Army army = new Army();
-						army.type = "army";
+						army.type = Army.Type.ARMY;
 						army.size = recruits;
 						army.tags = tags;
 						army.location = i;
@@ -2093,7 +2093,7 @@ final class World {
 					break;
 				case BANDITRY:
 					boolean armyPresent = false;
-					for (Army a : armies) if (a.type.equals("army") && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > r.calcMinPatrolStrength(this) && a.location == regions.indexOf(r) && a.kingdom.equals(r.kingdom)) armyPresent = true;
+					for (Army a : armies) if (a.isArmy() && a.calcStrength(this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > r.calcMinPatrolStrength(this) && a.location == regions.indexOf(r) && a.kingdom.equals(r.kingdom)) armyPresent = true;
 					if (armyPresent) {
 						r.noble.addTag("Policing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "With the aid of our troops, " + r.noble.name + " has eliminated the bandit threat from " + r.name + ", and has established a personal police to ensure the region remains secure."));
@@ -2254,7 +2254,7 @@ final class World {
 					}
 				}
 				double troopsInRegion = 0;
-				for (Army a : armies) if (a.type.equals("army") && a.kingdom.equals(r.kingdom) && a.location == regions.indexOf(r)) troopsInRegion += a.size;
+				for (Army a : armies) if (a.isArmy() && a.kingdom.equals(r.kingdom) && a.location == regions.indexOf(r)) troopsInRegion += a.size;
 				boolean unsafeBorder = false;
 				for (Region n : r.getNeighbors(this)) if (n.kingdom != null && NationData.isEnemy(r.kingdom, n.kingdom, this)) unsafeBorder = true;
 				if (!r.noble.hasTag("Frugal") && !r.noble.hasTag("Hoarding") && getNation(r.kingdom).gold < 20) possibleCrises.add(Crisis.Type.RECESSION);
@@ -2380,8 +2380,8 @@ final class World {
 				double battles = 0;
 				double peace = 0;
 				for (Army a : armies) if (a.kingdom.equals(k)) {
-					if (battlingArmies.contains(a)) battles += a.size * (a.type.equals("navy") ? 100 : 1);
-					else peace += a.size * (a.type.equals("navy") ? 50 : 1);
+					if (battlingArmies.contains(a)) battles += a.size * (a.isNavy() ? 100 : 1);
+					else peace += a.size * (a.isNavy() ? 50 : 1);
 				}
 				double frac = battles / (battles + peace);
 				score(k, "glory", frac >= .30 ? 1 : -1);
@@ -2410,14 +2410,14 @@ final class World {
 				int warships = 0;
 				int soldiers = 0;
 				for (Army a : armies) if (a.kingdom.equals(k)) {
-					if (a.type.equals("army")) soldiers += a.size;
+					if (a.isArmy()) soldiers += a.size;
 					else warships += a.size;
 				}
 				for (String kk : kingdoms.keySet()) {
 					int kWarships = 0;
 					int kSoldiers = 0;
 					for (Army a : armies) if (a.kingdom.equals(kk)) {
-						if (a.type.equals("army")) kSoldiers += a.size;
+						if (a.isArmy()) kSoldiers += a.size;
 						else kWarships += a.size;
 					}
 					if (kWarships > warships) moreWarships++;
@@ -2540,7 +2540,7 @@ final class World {
 				characters.removeAll(removals);
 				List<Army> aremovals = new ArrayList<>();
 				for (Army a : armies) if (k.equals(a.kingdom)) {
-					if (a.type.equals("navy")) {
+					if (a.isNavy()) {
 						pirate.threat += a.size;
 						pirateThreatSources.put("Final Actions", pirateThreatSources.getOrDefault("Final Actions", 0.0) + a.size);
 						aremovals.add(a);
@@ -2646,13 +2646,13 @@ final class World {
 
 	private void buildShips(String kingdom, int location, double amount) {
 		for (Army a : armies) {
-			if (a.type.equals("navy") && a.location == location && a.kingdom.equals(kingdom)) {
+			if (a.isNavy() && a.location == location && a.kingdom.equals(kingdom)) {
 				a.size += amount;
 				return;
 			}
 		}
 		Army a = new Army();
-		a.type = "navy";
+		a.type = Army.Type.NAVY;
 		a.size = amount;
 		a.location = location;
 		a.kingdom = kingdom;
@@ -2979,7 +2979,7 @@ final class World {
 
 	private Army getMaxArmyInRegion(int location, Map<Army, Character> leaders, int inspires, HashSet<String> lastStands) {
 		Army max = null;
-		for (Army b : armies) if (b.location == location && b.type.equals("army")) {
+		for (Army b : armies) if (b.location == location && b.isArmy()) {
 			if (max == null || max.calcStrength(this, leaders.get(max), inspires, lastStands.contains(max.kingdom)) < b.calcStrength(this, leaders.get(b), inspires, lastStands.contains(b.kingdom))) max = b;
 		}
 		return max;
