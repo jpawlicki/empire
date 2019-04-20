@@ -26,8 +26,10 @@ and applicable modifiers and forecasting. It can be run on any basic HTTP
 server or even from local disk (no PHP or similar - it is entirely static
 assets).
 
-The frontend lives in the / (root) folder.
+The frontend lives in the /frontend folder.
 
 ### Tools
-The repository also contains some tools - some current and some vestigial. This
-includes the map editor and similar.
+The repository also contains some tools, including the map editor and various
+GM tools.
+
+The tools live in the /tools folder.
