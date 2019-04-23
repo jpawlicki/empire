@@ -35,7 +35,7 @@ final class Army {
 	private static final double swordOfTruthMod = 0.25;
 	private static final double iruhanMod = 0.15;
 	private static final double lastStandMod = 4.0;
-	private static final double perInspireMod = 4.0;
+	private static final double perInspireMod = 0.05;
 
 	private static final String leaderGeneral = "general";
 	private static final String leaderAdmiral = "admiral";
