@@ -57,7 +57,7 @@ final class Army {
 	public double calcStrength(World w, Character leader, int inspires, boolean lastStand) {
 		double strength = size * (isArmy() ? armyBaseStrength : navyBaseStrength);
 
-		double mods = 1;
+		double mods = 1.0;
 		Region r = w.regions.get(location);
 
 		if (hasTag(armySteelTag)) mods += steelMod;
