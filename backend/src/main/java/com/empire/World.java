@@ -54,6 +54,7 @@ final class World {
 	List<Message> rtc = new ArrayList<>();
 	List<Integer> cultRegions = new ArrayList<>();
 	Schedule turnSchedule = new Schedule();
+	int inspiresHint;
 	long nextTurn;
 
 	private static Gson getGson() {
@@ -2569,6 +2570,9 @@ final class World {
 				notifyAll("Pirate Threat", "Pirate Threat has increased by " + Math.round(totalIncrease * 100) + " pirates, a quarter of which appeared this week. The increase was driven by: " + sources);
 			}
 		}
+
+		// Record inspire count.
+		inspiresHint = inspires;
 
 		// Date advances.
 		Season currentSeason = getSeason();
