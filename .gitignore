@@ -1,3 +1,4 @@
+.*
 *.class
 backend/build/
 backend/.gradle/
