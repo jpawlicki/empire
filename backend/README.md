@@ -37,3 +37,8 @@ To use vist:  https://YOUR-PROJECT-ID.appspot.com
 ## Testing
 
     gradle test
+
+# Developers
+## Todos
+### Armies
+ - Might be beneficial for class to have a constructor or static creation method
