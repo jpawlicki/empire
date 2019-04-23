@@ -74,8 +74,8 @@ public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
 
-  @Override
-  public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+  	@Override
+  	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 		String json = "";
