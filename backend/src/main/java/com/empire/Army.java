@@ -37,8 +37,10 @@ final class Army {
 	private static final double lastStandMod = 4.0;
 	private static final double perInspireMod = 0.05;
 
-	private static final String leaderGeneral = "general";
-	private static final String leaderAdmiral = "admiral";
+	private static final String noCaptor = "";
+
+	private static final String charDimGeneral = "general";
+	private static final String charDimAdmiral = "admiral";
 	private static final double perLevelLeaderMod = 0.2;
 
 	int id = -1;
@@ -70,7 +72,7 @@ final class Army {
 		}
 		if (lastStand) mods += lastStandMod;
 		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * perInspireMod;
-		if (leader != null && "".equals(leader.captor)) mods += leader.calcLevel(isArmy() ? leaderGeneral : leaderAdmiral) * perLevelLeaderMod;
+		if (leader != null && noCaptor.equals(leader.captor)) mods += leader.calcLevel(isArmy() ? charDimGeneral : charDimAdmiral) * perLevelLeaderMod;
 
 		return strength * mods;
 	}
