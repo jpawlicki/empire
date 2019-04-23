@@ -40,5 +40,13 @@ To use vist:  https://YOUR-PROJECT-ID.appspot.com
 
 # Developers
 ## Todos
+### Suggested enums
+ - Army tags
+ - Nation tags
+ - Noble tags
+
 ### Armies
  - Might be beneficial for class to have a constructor or static creation method
+
+### Regions
+ - Separate methods for fortification percentage display vs army strength modification
