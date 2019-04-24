@@ -677,6 +677,9 @@ class Character {
 		mods.push({"v": 0.3 * this.calcLevel("spy"), "unit": "%", "why": "Experience"});
 		if (getNation(this.kingdom).calcStateReligion() == "Northern (Lyskr)") mods.push({"v": .4, "unit": "%", "why": "State Ideology (Lyskr)"});
 		if (getNation(this.kingdom).calcStateReligion() == "Company") mods.push({"v": .2, "unit": "%", "why": "State Ideology (Company)"});
+		if (getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && g_data.inspires_hint > 0) {
+			mods.push(new Calc("*", [{"v": .05, "unit": "%", "why": "bonus per inspiration"}, {"v": g_data.inspires_hint, "unit": " Inspirations", "why": g_data.inspires_hint + " Iruhan cardinals inspiring in Sancta Civitate"}]));
+		}
 		return Calc.moddedNum({"v": 1, "unit": "power", "why": "Base Plot Power"}, mods);
 	}
 }
@@ -718,6 +721,9 @@ class Army {
 			let state = k.calcStateReligion();
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .25, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology matches state ideology"});
 			else if (state.startsWith("Iruhan")) mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology and Iruhan state religion"});
+		}
+		if (k != undefined && k.calcStateReligion().startsWith("Iruhan") && g_data.inspires_hint > 0) {
+			mods.push(new Calc("*", [{"v": .05, "unit": "%", "why": "bonus per inspiration"}, {"v": g_data.inspires_hint, "unit": " Inspirations", "why": g_data.inspires_hint + " Iruhan cardinals inspiring in Sancta Civitate"}]));
 		}
 		for (let c of g_data.characters) {
 			if (c.leadingArmy == this.id) mods.push({"v": c.calcLevel(this.type == "army" ? "general" : "admiral") * 0.2, "unit": "%", "why": "Led by " + c.name});
