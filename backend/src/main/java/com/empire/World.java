@@ -779,11 +779,6 @@ final class World {
 					}
 				}
 			}
-			for (Army a : leaders.keySet()) {
-				Character l = leaders.get(a);
-				leaders.get(a).addExperience(a.isArmy() ? "general" : "admiral", this);
-				leaders.get(a).leadingArmy = a.id;
-			}
 		}
 		HashMap<String, Double> pirateThreatSources = new HashMap<>();
 		// All merges.
@@ -818,11 +813,21 @@ final class World {
 					target.size += src.size;
 					target.gold += src.gold;
 					armies.remove(src);
-					if (leaders.get(src) != null) leaders.get(src).orderhint = "";
+
+					if (leaders.get(src) != null) {
+						leaders.get(src).orderhint = "";
+						String d = target.isArmy() ? "general" : "admiral";
+						if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < leaders.get(src).calcLevel(d)) leaders.put(target, leaders.get(src));
+					}
 				}
 			}
 		}
 		for (Army a : armies) if (a.size >= 2 * originalSizes.get(a)) a.preparation.clear();
+		for (Army a : leaders.keySet()) {
+			Character l = leaders.get(a);
+			leaders.get(a).addExperience(a.isArmy() ? "general" : "admiral", this);
+			leaders.get(a).leadingArmy = a.id;
+		}
 
 		// Intrigue operations resolved.
 		ArrayList<String> boosts = new ArrayList<>();

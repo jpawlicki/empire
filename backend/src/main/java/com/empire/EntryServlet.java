@@ -482,7 +482,7 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			World w = World.load(4, getWorldDate(4, service), service);
-			for (Character c : w.characters) if (c.name.equals("Fremm Cerwayc Dadaeme")) c.location = 100; 
+			for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
 			service.put(w.toEntity(4));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
