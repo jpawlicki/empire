@@ -15,33 +15,33 @@ final class Army {
 		NAVY
 	}
 
-	private static final double armyBaseStrength = 1E-2;
-	private static final double navyBaseStrength = 1.0;
+	public static final double armyBaseStrength = 1E-2;
+	public static final double navyBaseStrength = 1.0;
 
-	private static final String armySteelTag = "Steel";
-	private static final double steelMod = 0.15;
+	public static final String armySteelTag = "Steel";
+	public static final double steelMod = 0.15;
 
-	private static final String armySeafaringTag = "Seafaring";
-	private static final double seafaringMod = 1.5;
+	public static final String armySeafaringTag = "Seafaring";
+	public static final double seafaringMod = 1.5;
 
-	private static final String armyPirateTag = "Pirate";
+	public static final String armyPirateTag = "Pirate";
 
-	private static final String nationDisciplinedTag = "Disciplined";
-	private static final double disciplinedMod = 0.1;
+	public static final String nationDisciplinedTag = "Disciplined";
+	public static final double disciplinedMod = 0.1;
 
-	private static final String nobleLoyalTag = "Loyal";
-	private static final double loyalMod = 0.25;
+	public static final String nobleLoyalTag = "Loyal";
+	public static final double loyalMod = 0.25;
 
-	private static final double swordOfTruthMod = 0.25;
-	private static final double iruhanMod = 0.15;
-	private static final double lastStandMod = 4.0;
-	private static final double perInspireMod = 0.05;
+	public static final double swordOfTruthMod = 0.25;
+	public static final double iruhanMod = 0.15;
+	public static final double lastStandMod = 4.0;
+	public static final double perInspireMod = 0.05;
 
-	private static final String noCaptor = "";
+	public static final String noCaptor = "";
 
-	private static final String charDimGeneral = "general";
-	private static final String charDimAdmiral = "admiral";
-	private static final double perLevelLeaderMod = 0.2;
+	public static final String charDimGeneral = "general";
+	public static final String charDimAdmiral = "admiral";
+	public static final double perLevelLeaderMod = 0.2;
 
 	int id = -1;
 	Type type;
