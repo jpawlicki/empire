@@ -15,6 +15,9 @@
 			#map {
 				overflow: auto;
 			}
+			#map text {
+				pointer-events: none;
+			}
 		</style>
 		<script src="rhill-voronoi-core.js"></script>
 		<script>
@@ -29,10 +32,10 @@
 				"#8c7f72", // Fulyn
 				"#fe9999", // Holmslatr
 				"#003f00", // Hosshofn
-				//"#99e5ff", // Hrip
+				"#99e5ff", // Hrip
 				"#007f7f", // Isla
 				"#005999", // Mabe
-				//"#f2e5ff", // Mestrhofn
+				"#f2e5ff", // Mestrhofn
 				"#33cca5", // Miycc
 				"#590026", // Muoem
 				"#f2f2d8", // Siylmae
@@ -40,7 +43,7 @@
 				"#593300", // Tavia
 				"#d83300", // Telmymsyn
 				"#7fff0c", // Tribes
-				//"#b2a50c", // Turujmi
+				"#b2a50c", // Turujmi
 				"#268c0c" // Zemsim
 			];
 			let players = colors.length;
@@ -277,7 +280,7 @@
 						let xs = width / n + 1;
 						let ys = height / n + 1;
 						for (let i = 0; i < n; i++) {
-							for (let j = 0; j < n; j++) {
+							for (let j = 0; j < siteCount / n; j++) {
 								let x = (j + .5) * xs;
 								let y = (i + .5) * ys + j % 2 * .5 * ys;
 								x += (Math.random() - .5) * xs / 2;

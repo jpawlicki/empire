@@ -260,6 +260,7 @@
 				g_data.communications = g_turndata[date].communications;
 				g_data.pirates = g_turndata[date].pirate;
 				g_data.harvests = g_turndata[date].harvests;
+				g_data.inspires_hint = g_turndata[date].hasOwnProperty("inspires_hint") ? g_turndata[date].inspires_hint : 0;
 
 				// Styleize
 				let style = `

@@ -817,8 +817,8 @@ class OrdersPane extends HTMLElement {
 				}
 				if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
 				if (g_data.kingdoms[whoami].signingbonushint != undefined) shadow.querySelector("[name=economy_recruit_bonus]").value = g_data.kingdoms[whoami].signingbonushint;
-				shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));
 				if (g_data.kingdoms[whoami].rationhint != undefined) shadow.querySelector("[name=economy_ration]").value = g_data.kingdoms[whoami].rationhint;
+				shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));
 				for (let k in g_data.kingdoms) {
 					if (k == whoami) continue;
 					shadow.querySelector("[name=rel_" + k + "_attack]").value = g_data.kingdoms[whoami].relationships[k].battle;

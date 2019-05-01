@@ -779,11 +779,6 @@ final class World {
 					}
 				}
 			}
-			for (Army a : leaders.keySet()) {
-				Character l = leaders.get(a);
-				leaders.get(a).addExperience(a.isArmy() ? "general" : "admiral", this);
-				leaders.get(a).leadingArmy = a.id;
-			}
 		}
 		HashMap<String, Double> pirateThreatSources = new HashMap<>();
 		// All merges.
@@ -818,11 +813,21 @@ final class World {
 					target.size += src.size;
 					target.gold += src.gold;
 					armies.remove(src);
-					if (leaders.get(src) != null) leaders.get(src).orderhint = "";
+
+					if (leaders.get(src) != null) {
+						leaders.get(src).orderhint = "";
+						String d = target.isArmy() ? "general" : "admiral";
+						if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < leaders.get(src).calcLevel(d)) leaders.put(target, leaders.get(src));
+					}
 				}
 			}
 		}
 		for (Army a : armies) if (a.size >= 2 * originalSizes.get(a)) a.preparation.clear();
+		for (Army a : leaders.keySet()) {
+			Character l = leaders.get(a);
+			leaders.get(a).addExperience(a.isArmy() ? "general" : "admiral", this);
+			leaders.get(a).leadingArmy = a.id;
+		}
 
 		// Intrigue operations resolved.
 		ArrayList<String> boosts = new ArrayList<>();
@@ -2081,7 +2086,7 @@ final class World {
 						r.noble.addTag("Loyal");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "The wedding of the daughter of " + r.noble.name + " was a spectacular affair. It is rare for the nobility to find much joy in their political marriage, but in this case the couple's obvious love for one another warmed your heart to witness. " + r.noble.name + " could not thank you enough for attending, and swore never to forget this day."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case RECESSION:
@@ -2089,7 +2094,7 @@ final class World {
 						r.noble.addTag("Frugal");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "By learning from your example (and taking out a small loan from your treasury), " + r.noble.name + " has solved the financial worries in " + r.name + " and has stimulated the local economy."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case BANDITRY:
@@ -2099,7 +2104,7 @@ final class World {
 						r.noble.addTag("Policing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "With the aid of our troops, " + r.noble.name + " has eliminated the bandit threat from " + r.name + ", and has established a personal police to ensure the region remains secure."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case BORDER:
@@ -2109,7 +2114,7 @@ final class World {
 						r.noble.addTag("Inspiring");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", r.noble.name + " has capitalized on the new security of the borders of " + r.name + ", citing this as an example of the glorious purpose of our armies to potential recruits."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case ENNUI:
@@ -2117,7 +2122,7 @@ final class World {
 						r.noble.addTag("Generous");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", r.noble.name + " was refreshed by witnessing the feasting and jubilation in " + r.name + ", and has discovered a new joy in generousity."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case CULTISM:
@@ -2125,7 +2130,7 @@ final class World {
 						r.noble.addTag("Pious");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "With people flocking to the new temple in " + r.name + ", " + r.noble.name + " has been able to turn them away from assisting the Cult."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case OVERWHELMED:
@@ -2133,7 +2138,7 @@ final class World {
 						r.noble.addTag("Meticulous");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "Assisted by our governance of " + r.name + ", " + r.noble.name + " has gotten back on their feet - and picked up a trick or two!"));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case UPRISING:
@@ -2141,7 +2146,7 @@ final class World {
 						r.noble.addTag("Soothing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "As unrest settles in " + r.name + ", " + r.noble.name + " has made a name for themself among the people, listening to concerns and addressing sources of conflict."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case STARVATION:
@@ -2149,7 +2154,7 @@ final class World {
 						r.noble.addTag("Rationing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "With the immediate starvation in " + r.name + " addressed, " + r.noble.name + " has made reforms in how food is handled or wasted to help ensure that starvation does not become a problem again."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 				case GUILD:
@@ -2157,7 +2162,7 @@ final class World {
 						r.noble.addTag("Patronizing");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Resolved", "By clever hiring of persons to fill our construction order, " + r.noble.name + " has given the guilds in " + r.name + " a reputation of ineffectiveness and curtailed their growth. They have promised to subsidize future constructions in the region as well."));
 						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.unrest = Math.max(0, r.noble.unrest - .12);
+						r.noble.unrest = Math.max(0, r.noble.unrest - .25);
 					}
 					break;
 			}
@@ -2169,52 +2174,52 @@ final class World {
 					case WEDDING:
 						r.noble.addTag("Snubbed");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", "The wedding " + r.noble.name + " invited you to in " + r.name + " has taken place without you and " + r.noble.name + " is very cross."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case RECESSION:
 						r.noble.addTag("Hoarding");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", "The economic issues in " + r.name + " have been resolved, but " + r.noble.name + " has pledged to never let go of gold so easily again - not even to our tax collectors."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case BANDITRY:
 						r.noble.addTag("Shady Connections");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", "The bandits in " + r.name + " have been legitimized by the " + r.noble.name + ", in a deal to avoid future incidents. Regrettably, in so doing " + r.name + " has become a gathering place of undesireables."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case BORDER:
 						r.noble.addTag("Untrusting");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", r.noble.name + " has dealt with their fears by building up a large personal guard. Unfortunately, they take the best of " + r.name + " recruits, leaving the kingdom with only the bottom quality."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case ENNUI:
 						r.noble.addTag("Workaholic");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", r.noble.name + " has found purpose in their work, but regrettably demands everyone else in " + r.name + " work just as tirelessly."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case CULTISM:
 						r.noble.addTag("Cultist");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", r.noble.name + " has dealt with the cultists by agreeing to grant them access to the section of " + r.name + " they desire."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case OVERWHELMED:
 						r.noble.addTag("Wasteful");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", r.noble.name + " has resolved their troubles " + r.name + " but acquired a habit of accepting wastefulness."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case UPRISING:
 						r.noble.addTag("Tyrannical");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", "The uprising in " + r.name + " came to a head this week when the dissidents stormed the home of " + r.noble.name + " and slew almost all the inhabitants. In grief and rage, " + r.noble.name + " retaliated in kind, wiping out the rebels and their families, and vows to never let this repeat."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case STARVATION:
 						r.noble.addTag("Desperate");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", "Faced with rampant starvation in " + r.name + ", " + r.noble.name + " has despaired of help from our kingdom and solicited other rulers to take over. We should no longer trust the region's natural defenses."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 					case GUILD:
 						r.noble.addTag("Broke");
 						notifications.add(new Notification(r.kingdom, "Noble Crisis Expired", r.noble.name + " has dealt with the guilds in " + r.name + " by personally financing a trade war against them. Although successful, they are now thoroughly broke and attempting to rebuild their wealth by high permitting costs. We can expect any construction in the region to be more expensive."));
-						r.noble.unrest = Math.min(1, r.noble.unrest + .25);
+						r.noble.unrest = Math.min(1, r.noble.unrest + .12);
 						break;
 				}
 				ArrayList<Crisis.Type> possibleCrises = new ArrayList<>();
