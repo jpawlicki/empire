@@ -1,9 +1,58 @@
 package com.empire;
 
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Before;
 import org.junit.Test;
 
 public class ArmyTest {
+	public static Army plainArmy;
+	public static World world;
+	public static double delta = 1E-5;
+
+	@Before
+	public void setUopPlainArmy(){
+		plainArmy = new Army();
+		plainArmy.type = Army.Type.ARMY;
+		plainArmy.size = 100.0;
+		plainArmy.kingdom = "k1";
+		plainArmy.location = 0;
+
+		world = WorldTest.makeTestWorld();
+	}
+
+	@Test
+	public void calcStrengthBasic(){
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthNavy(){
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthSteel(){
+		plainArmy.addTag(Army.armySteelTag);
+		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthSeafaring(){
+		plainArmy.addTag(Army.armySeafaringTag);
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+
+		world.regions.get(0).type = Region.Type.WATER;
+		assertEquals(2.5, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthDisciplined(){
+		world.getNation("k1").addTag(Army.nationDisciplinedTag);
+		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
   @Test
   public void calcStrength_basic() {
 		Army a = new Army();
