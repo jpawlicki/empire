@@ -87,6 +87,21 @@ public class ArmyTest {
 		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
+	@Test
+	public void calcStrengthLoyal(){
+		plainArmy.location = 1;
+
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		plainArmy.type = Army.Type.ARMY;
+
+		world.regions.get(1).kingdom = "k2";
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		world.regions.get(1).kingdom = "k1";
+
+		assertEquals(1.25, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
   @Test
   public void calcStrength_basic() {
 		Army a = new Army();

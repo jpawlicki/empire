@@ -32,6 +32,8 @@ public class Constants {
     public static final double perInspireMod = 0.05;
 
     public static final String noCaptor = "";
+    public static final Noble noNoble = null;
+    public static final Character noLeader = null;
 
     public static final double basePlotStrength = 1.0;
     public static final double guardAgainstPlotMod = 0.5;
