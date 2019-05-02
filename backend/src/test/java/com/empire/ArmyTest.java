@@ -12,6 +12,19 @@ public class ArmyTest {
 	public static World world;
 	public static double delta = 1E-5;
 
+	private void addFortification(){
+		Construction fort = new Construction();
+		fort.type = Constants.constFort;
+		world.regions.get(0).constructions = Arrays.asList(fort, fort);
+	}
+
+	private Character getLeader(){
+		Character leader = new Character();
+		leader.experience.put(Constants.charDimGeneral, 3.0);
+		leader.experience.put(Constants.charDimAdmiral, 3.0);
+		return leader;
+	}
+
 	@Before
 	public void setUpPlainArmy(){
 		plainArmy = new Army();
@@ -71,12 +84,6 @@ public class ArmyTest {
 	public void calcStrengthDisciplined(){
 		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), delta);
-	}
-
-	private void addFortification(){
-		Construction fort = new Construction();
-		fort.type = Constants.constFort;
-		world.regions.get(0).constructions = Arrays.asList(fort, fort);
 	}
 
 	@Test
@@ -143,5 +150,23 @@ public class ArmyTest {
 		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
 		world.regions.get(0).population = 1.0;
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 2, false), delta);
+	}
+
+	@Test
+	public void calcStrengthCaptured(){
+		Character leader = getLeader();
+		leader.captor = "DONTCARE";
+		assertEquals(1.0, plainArmy.calcStrength(world, leader, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthGeneral(){
+		assertEquals(1.4, plainArmy.calcStrength(world, getLeader(), 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthAdmiral(){
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(140.0, plainArmy.calcStrength(world, getLeader(), 0, false), delta);
 	}
 }
