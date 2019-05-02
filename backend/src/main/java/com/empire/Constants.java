@@ -1,7 +1,9 @@
 package com.empire;
 
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -48,7 +50,7 @@ public class Constants {
     public static final String charDimAdmiral = "admiral";
     public static final String charDimSpy = "spy";
     public static final String charDimGovernor = "governor";
-    public static final String[] charDims = new String[]{charDimGeneral, charDimAdmiral, charDimSpy, charDimGovernor};
+    public static final List<String> charDims = Arrays.asList(charDimGeneral, charDimAdmiral, charDimSpy, charDimGovernor);
 
     public static final int minDimLevel = 1;
     public static final double oneDimExpAdd = 1.0;
