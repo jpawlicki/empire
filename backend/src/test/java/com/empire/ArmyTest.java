@@ -5,6 +5,9 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 public class ArmyTest {
 	public static Army plainArmy;
 	public static World world;
@@ -41,6 +44,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthSeafaring(){
 		plainArmy.addTag(Constants.armySeafaringTag);
+
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
 
 		world.regions.get(0).type = Region.Type.WATER;
@@ -50,7 +54,37 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthDisciplined(){
 		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
+
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		plainArmy.type = Army.Type.ARMY;
+
+		plainArmy.kingdom = Constants.armyPirateTag;
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		plainArmy.kingdom = "k1";
+
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthFortification(){
+		Construction fort = new Construction();
+		fort.type = Constants.constFort;
+		world.regions.get(0).constructions = Collections.singletonList(fort);
+
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		plainArmy.type = Army.Type.ARMY;
+
+		world.regions.get(0).type = Region.Type.WATER;
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		world.regions.get(0).type = Region.Type.LAND;
+
+		plainArmy.kingdom = "k2";
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+		plainArmy.kingdom = "k1";
+
+		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
   @Test
