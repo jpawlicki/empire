@@ -2,6 +2,7 @@ package com.empire;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -40,4 +41,10 @@ public class CharacterTest {
         }
     }
 
+    @Test(expected=NullPointerException.class)
+    public void CalcLevelUnknownDimThrowsError(){
+        // Not a great test but have something in here about unknown keys, could be fixed by using enum
+        setExperience(1.0);
+        c.calcLevel("DUMMY");
+    }
 }
