@@ -8,9 +8,9 @@ import org.junit.Test;
 import java.util.Arrays;
 
 public class ArmyTest {
-	public static Army plainArmy;
-	public static World world;
-	public static double delta = 1E-5;
+	private static Army plainArmy;
+	private static World world;
+	private static double delta = 1E-5;
 
 	private void addFortification(){
 		Construction fort = new Construction();
@@ -23,6 +23,13 @@ public class ArmyTest {
 		leader.experience.put(Constants.charDimGeneral, 3.0);
 		leader.experience.put(Constants.charDimAdmiral, 3.0);
 		return leader;
+	}
+
+	private void makeSwordOfTruthDominant(){
+		Region r = new Region();
+		r.religion = Ideology.SWORD_OF_TRUTH;
+		r.population = 1E9;
+		world.regions.add(r);
 	}
 
 	@Before
@@ -131,6 +138,30 @@ public class ArmyTest {
 	public void calcStrengthLoyal(){
 		plainArmy.location = 1;
 		assertEquals(1.25, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthSwordOfTruthNonIruhan(){
+		makeSwordOfTruthDominant();
+		world.regions.get(0).religion = Ideology.ALYRJA;
+		world.regions.get(0).population = 1.0;
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthSwordOfTruthAligned(){
+		makeSwordOfTruthDominant();
+		world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+		world.regions.get(0).population = 1.0;
+		assertEquals(1.25, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthSwordOfTruthNonAligned(){
+		makeSwordOfTruthDominant();
+		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
+		world.regions.get(0).population = 1.0;
+		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
