@@ -6,12 +6,12 @@ import com.google.common.base.Charsets;
 import java.io.IOException;
 
 public class WorldTest {
+	public static String basicWorldJson;
 	public static String armyWorldJson;
-	public static String emptyWorldJson;
 
 	static{
+		basicWorldJson = readResourceAsString("BasicWorldTest.json");
 		armyWorldJson = readResourceAsString("ArmyWorldTest.json");
-		emptyWorldJson = readResourceAsString("EmptyWorldTest.json");
 	}
 
 	private static String readResourceAsString(String resource){
@@ -22,11 +22,11 @@ public class WorldTest {
 		}
 	}
 
-	static World armyTestWorld() {
-		return World.fromJson(armyWorldJson);
+	static World basicTestWorld() {
+		return World.fromJson(basicWorldJson);
 	}
 
-	static World emptyTestWorld() {
-		return World.fromJson(emptyWorldJson);
+	static World armyTestWorld() {
+		return World.fromJson(armyWorldJson);
 	}
 }

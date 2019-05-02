@@ -35,7 +35,7 @@ final class Character {
 		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
 		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
-		if (!Constants.noCaptor.equals(captor)) power -= Constants.capturedPlotMod;
+		if (!captor.equals(Constants.noCaptor)) power += Constants.capturedPlotMod;
 
 		return power;
 	}
