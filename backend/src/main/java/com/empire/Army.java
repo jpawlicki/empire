@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 final class Army {
-	static enum Type {
+	enum Type {
 		@SerializedName("army")
 		ARMY,
 		@SerializedName("navy")
@@ -34,7 +34,7 @@ final class Army {
 
 		if (hasTag(Constants.armySteelTag)) mods += Constants.steelMod;
 		if (hasTag(Constants.armySeafaringTag) && r.isSea()) mods += Constants.seafaringMod;
-		if (isArmy() && !Constants.armyPirateTag.equals(kingdom) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
+		if (isArmy() && !kingdom.equals(Constants.armyPirateTag) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
 		if (isArmy() && r.noble != null && r.noble.hasTag(Constants.nobleLoyalTag) && r.kingdom.equals(kingdom)) mods += Constants.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
@@ -44,7 +44,7 @@ final class Army {
 		}
 		if (lastStand) mods += Constants.lastStandMod;
 		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
-		if (leader != null && Constants.noCaptor.equals(leader.captor)) mods += leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
+		if (leader != null && leader.captor.equals(Constants.noCaptor)) mods += leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
 
 		return strength * mods;
 	}
