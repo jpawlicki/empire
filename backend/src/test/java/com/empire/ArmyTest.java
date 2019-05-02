@@ -40,7 +40,7 @@ public class ArmyTest {
 		plainArmy.kingdom = "k1";
 		plainArmy.location = 0;
 
-		world = WorldTest.makeTestWorld();
+		world = WorldTest.armyTestWorld();
 	}
 
 	@Test
