@@ -34,13 +34,13 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthSteel(){
-		plainArmy.addTag(Army.armySteelTag);
+		plainArmy.addTag(Constants.armySteelTag);
 		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
 	public void calcStrengthSeafaring(){
-		plainArmy.addTag(Army.armySeafaringTag);
+		plainArmy.addTag(Constants.armySeafaringTag);
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
 
 		world.regions.get(0).type = Region.Type.WATER;
@@ -49,7 +49,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthDisciplined(){
-		world.getNation("k1").addTag(Army.nationDisciplinedTag);
+		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
