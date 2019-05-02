@@ -2,7 +2,6 @@ package com.empire;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,11 +9,17 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 public class CharacterTest {
-    Character c;
+    private Character c;
+    private static World world;
+    private static double delta = 1E-5;
 
     @Before
     public void createCharacter(){
         c = new Character();
+        c.kingdom = "k1";
+        setExperience(0.0);
+
+        world = WorldTest.makeTestWorld();
     }
 
     private void setExperience(double exp){
@@ -42,9 +47,44 @@ public class CharacterTest {
     }
 
     @Test(expected=NullPointerException.class)
-    public void CalcLevelUnknownDimThrowsError(){
+    public void calcLevelUnknownDimThrowsError(){
         // Not a great test but have something in here about unknown keys, could be fixed by using enum
-        setExperience(1.0);
         c.calcLevel("DUMMY");
+    }
+
+    @Test
+    public void addExperienceGeneralRegular(){
+        c.addExperience(Constants.charDimGeneral, world);
+        assertEquals(1.0, c.getExperience(Constants.charDimGeneral), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimAdmiral), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimGovernor), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimSpy), delta);
+    }
+
+    @Test
+    public void addExperienceAdmirallRegular(){
+        c.addExperience(Constants.charDimAdmiral, world);
+        assertEquals(0.0, c.getExperience(Constants.charDimGeneral), delta);
+        assertEquals(1.0, c.getExperience(Constants.charDimAdmiral), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimGovernor), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimSpy), delta);
+    }
+
+    @Test
+    public void addExperienceGovernorRegular(){
+        c.addExperience(Constants.charDimGovernor, world);
+        assertEquals(0.0, c.getExperience(Constants.charDimGeneral), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimAdmiral), delta);
+        assertEquals(1.0, c.getExperience(Constants.charDimGovernor), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimSpy), delta);
+    }
+
+    @Test
+    public void addExperienceSpyRegular(){
+        c.addExperience(Constants.charDimSpy, world);
+        assertEquals(0.0, c.getExperience(Constants.charDimGeneral), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimAdmiral), delta);
+        assertEquals(0.0, c.getExperience(Constants.charDimGovernor), delta);
+        assertEquals(1.0, c.getExperience(Constants.charDimSpy), delta);
     }
 }
