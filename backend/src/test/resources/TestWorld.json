@@ -17,7 +17,8 @@
 	},
 	"regions": [{
 		"kingdom": "k1",
-		"type": "land"
+		"type": "land",
+		"population": 1.0
 	}, {
 		"kingdom": "k1",
 		"type": "land",

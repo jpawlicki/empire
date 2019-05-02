@@ -132,6 +132,19 @@ public class ArmyTest {
 		assertEquals(5.0, plainArmy.calcStrength(world, null, 0, true), delta);
 	}
 
+	@Test
+	public void calcStrengthInspireNavy(){
+		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(100.0, plainArmy.calcStrength(world, null, 2, false), delta);
+	}
+
+	@Test
+	public void calcStrengthInspire(){
+		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
+		assertEquals(1.1, plainArmy.calcStrength(world, null, 2, false), delta);
+	}
+
   @Test
   public void calcStrength_basic() {
 		Army a = new Army();
