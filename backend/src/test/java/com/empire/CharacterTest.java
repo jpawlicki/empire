@@ -19,7 +19,8 @@ public class CharacterTest {
         c.kingdom = "k1";
         setExperience(0.0);
 
-        world = WorldTest.emptyTestWorld();
+        world = WorldTest.basicTestWorld();
+        world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
     }
 
     private void setExperience(double exp){
@@ -127,5 +128,51 @@ public class CharacterTest {
         addHeroicTag();
         c.addExperience(Constants.charDimAll, world);
         assertDimsExpEqual(0.5, 0.5, 0.5, 0.5);
+    }
+
+    @Test
+    public void calcPlotPowerBasic(){
+        assertEquals(1.3, c.calcPlotPower(world, false, 0), delta);
+    }
+
+    @Test
+    public void calcPlotPowerSpyLevel(){
+        setExperience(4.0);
+        assertEquals(1.6, c.calcPlotPower(world, false, 0), delta);
+    }
+
+    @Test
+    public void calcPlotPowerGuarding(){
+        assertEquals(1.8, c.calcPlotPower(world, true, 0), delta);
+    }
+
+    @Test
+    public void calcPlotPowerLyskr(){
+        world.regions.get(0).religion = Ideology.LYSKR;
+        assertEquals(1.7, c.calcPlotPower(world, false, 0), delta);
+    }
+
+    @Test
+    public void calcPlotPowerCompany(){
+        world.regions.get(0).religion = Ideology.COMPANY;
+        assertEquals(1.5, c.calcPlotPower(world, false, 0), delta);
+    }
+
+    @Test
+    public void calcPlotPowerInspireNonIruhan(){
+        world.regions.get(0).religion = Ideology.ALYRJA;
+        assertEquals(1.3, c.calcPlotPower(world, false, 2), delta);
+    }
+
+    @Test
+    public void calcPlotPowerInspireIruhan(){
+        world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+        assertEquals(1.4, c.calcPlotPower(world, false, 2), delta);
+    }
+
+    @Test
+    public void calcPlotPowerCaptive(){
+        c.captor = "DONTCARE";
+        assertEquals(0.8, c.calcPlotPower(world, false, 0), delta);
     }
 }
