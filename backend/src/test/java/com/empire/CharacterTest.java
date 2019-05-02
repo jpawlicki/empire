@@ -87,4 +87,13 @@ public class CharacterTest {
         assertEquals(0.0, c.getExperience(Constants.charDimGovernor), delta);
         assertEquals(1.0, c.getExperience(Constants.charDimSpy), delta);
     }
+
+    @Test
+    public void addExperienceAllRegular(){
+        c.addExperience(Constants.charDimAll, world);
+        assertEquals(0.25, c.getExperience(Constants.charDimGeneral), delta);
+        assertEquals(0.25, c.getExperience(Constants.charDimAdmiral), delta);
+        assertEquals(0.25, c.getExperience(Constants.charDimGovernor), delta);
+        assertEquals(0.25, c.getExperience(Constants.charDimSpy), delta);
+    }
 }
