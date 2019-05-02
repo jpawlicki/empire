@@ -1,6 +1,19 @@
 {
 	"kingdoms": {
-		"k1": {}
+		"k1": {
+			"relationships": {
+				"k2": {
+					"battle": "ATTACK"
+				}
+			}
+		},
+		"k2": {
+			"relationships": {
+				"k1": {
+					"battle": "ATTACK"
+				}
+			}
+		}
 	},
 	"regions": [{
 		"kingdom": "k1",

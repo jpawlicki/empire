@@ -65,4 +65,6 @@ public class Constants {
         expLevels.put(8.0, 3);
         expLevels.put(3.0, 2);
     }
+
+    public static final String constFort = "fortifications";
 }
