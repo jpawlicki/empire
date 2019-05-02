@@ -11,7 +11,7 @@ public class ArmyTest {
 	public static double delta = 1E-5;
 
 	@Before
-	public void setUopPlainArmy(){
+	public void setUpPlainArmy(){
 		plainArmy = new Army();
 		plainArmy.type = Army.Type.ARMY;
 		plainArmy.size = 100.0;
