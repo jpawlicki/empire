@@ -42,63 +42,88 @@ public class ArmyTest {
 	}
 
 	@Test
+	public void calcStrengthSeafaringOnLand(){
+		plainArmy.addTag(Constants.armySeafaringTag);
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
 	public void calcStrengthSeafaring(){
 		plainArmy.addTag(Constants.armySeafaringTag);
-
-		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
-
 		world.regions.get(0).type = Region.Type.WATER;
 		assertEquals(2.5, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
-	public void calcStrengthDisciplined(){
+	public void calcStrengthDisciplinedNavy(){
 		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
-
 		plainArmy.type = Army.Type.NAVY;
 		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		plainArmy.type = Army.Type.ARMY;
+	}
 
+	@Test
+	public void calcStrengthDisciplinedPirate(){
+		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
 		plainArmy.kingdom = Constants.armyPirateTag;
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		plainArmy.kingdom = "k1";
+	}
 
+	@Test
+	public void calcStrengthDisciplined(){
+		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	private void addFortification(int region){
+		Construction fort = new Construction();
+		fort.type = Constants.constFort;
+		world.regions.get(region).constructions = Collections.singletonList(fort);
+	}
+
+	@Test
+	public void calcStrengthFortificationNavy(){
+		addFortification(0);
+		plainArmy.type = Army.Type.NAVY;
+		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthFortificationWater(){
+		addFortification(0);
+		world.regions.get(0).type = Region.Type.WATER;
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
+
+	@Test
+	public void calcStrengthFortificationNotFriendly(){
+		addFortification(0);
+		plainArmy.kingdom = "k2";
+		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
 	public void calcStrengthFortification(){
-		Construction fort = new Construction();
-		fort.type = Constants.constFort;
-		world.regions.get(0).constructions = Collections.singletonList(fort);
+		addFortification(0);
+		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
+	}
 
+	@Test
+	public void calcStrengthLoyalNavy(){
+		plainArmy.location = 1;
 		plainArmy.type = Army.Type.NAVY;
 		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		plainArmy.type = Army.Type.ARMY;
+	}
 
-		world.regions.get(0).type = Region.Type.WATER;
+	@Test
+	public void calcStrengthLoyalNotRegionOwner(){
+		plainArmy.location = 1;
+		world.regions.get(1).kingdom = "k2";
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		world.regions.get(0).type = Region.Type.LAND;
-
-		plainArmy.kingdom = "k2";
-		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		plainArmy.kingdom = "k1";
-
-		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
 	public void calcStrengthLoyal(){
 		plainArmy.location = 1;
-
-		plainArmy.type = Army.Type.NAVY;
-		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		plainArmy.type = Army.Type.ARMY;
-
-		world.regions.get(1).kingdom = "k2";
-		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
-		world.regions.get(1).kingdom = "k1";
-
 		assertEquals(1.25, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
