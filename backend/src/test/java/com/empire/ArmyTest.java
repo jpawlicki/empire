@@ -6,7 +6,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 public class ArmyTest {
 	public static Army plainArmy;
@@ -74,37 +73,37 @@ public class ArmyTest {
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
-	private void addFortification(int region){
+	private void addFortification(){
 		Construction fort = new Construction();
 		fort.type = Constants.constFort;
-		world.regions.get(region).constructions = Collections.singletonList(fort);
+		world.regions.get(0).constructions = Arrays.asList(fort, fort);
 	}
 
 	@Test
 	public void calcStrengthFortificationNavy(){
-		addFortification(0);
+		addFortification();
 		plainArmy.type = Army.Type.NAVY;
 		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
 	public void calcStrengthFortificationWater(){
-		addFortification(0);
+		addFortification();
 		world.regions.get(0).type = Region.Type.WATER;
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
 	public void calcStrengthFortificationNotFriendly(){
-		addFortification(0);
+		addFortification();
 		plainArmy.kingdom = "k2";
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
 	public void calcStrengthFortification(){
-		addFortification(0);
-		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), delta);
+		addFortification();
+		assertEquals(1.3, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
 	@Test
@@ -142,6 +141,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthInspire(){
 		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
+		world.regions.get(0).population = 1.0;
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 2, false), delta);
 	}
 }
