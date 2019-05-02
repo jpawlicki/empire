@@ -34,11 +34,11 @@ To use vist: http://localhost:8080/
 
 To use vist:  https://YOUR-PROJECT-ID.appspot.com
 
-## Testing
-
-    gradle test
 
 # Developers
+## Testing
+    `gradle test`
+
 ## Todos
 ### Suggested enums
  - Army tags
