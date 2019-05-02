@@ -127,6 +127,11 @@ public class ArmyTest {
 		assertEquals(1.25, plainArmy.calcStrength(world, null, 0, false), delta);
 	}
 
+	@Test
+	public void calcStrengthLastStand(){
+		assertEquals(5.0, plainArmy.calcStrength(world, null, 0, true), delta);
+	}
+
   @Test
   public void calcStrength_basic() {
 		Army a = new Army();
