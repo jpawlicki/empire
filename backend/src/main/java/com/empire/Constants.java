@@ -52,7 +52,6 @@ public class Constants {
     public static final String charDimGovernor = "governor";
     public static final List<String> charDims = Arrays.asList(charDimGeneral, charDimAdmiral, charDimSpy, charDimGovernor);
 
-    public static final int minDimLevel = 1;
     public static final double oneDimExpAdd = 1.0;
     public static final double allDimExpAdd = 0.25;
     public static final double perLevelLeaderMod = 0.2;
