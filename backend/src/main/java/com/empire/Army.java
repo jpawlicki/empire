@@ -44,8 +44,9 @@ final class Army {
 		}
 		if (lastStand) mods += Constants.lastStandMod;
 		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
-		if (leader != Constants.noLeader && leader.captor.equals(Constants.noCaptor)) mods +=
-				leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
+		if (leader != Constants.noLeader && leader.captor.equals(Constants.noCaptor)) {
+			mods += leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
+		}
 
 		return strength * mods;
 	}
