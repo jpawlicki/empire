@@ -6,13 +6,8 @@ import com.google.common.base.Charsets;
 import java.io.IOException;
 
 public class WorldTest {
-	public static String basicWorldJson;
-	public static String armyWorldJson;
-
-	static{
-		basicWorldJson = readResourceAsString("BasicWorldTest.json");
-		armyWorldJson = readResourceAsString("ArmyWorldTest.json");
-	}
+	public static final String basicWorldJson = readResourceAsString("BasicWorldTest.json");
+	public static final String armyWorldJson = readResourceAsString("ArmyWorldTest.json");
 
 	private static String readResourceAsString(String resource){
 		try {
