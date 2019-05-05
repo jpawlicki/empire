@@ -9,7 +9,7 @@ public class WorldTest {
 	public static final String basicWorldJson = readResourceAsString("BasicWorldTest.json");
 	public static final String armyWorldJson = readResourceAsString("ArmyWorldTest.json");
 
-	private static String readResourceAsString(String resource){
+	private static String readResourceAsString(String resource) {
 		try {
 			return Resources.toString(Resources.getResource(resource), Charsets.UTF_8);
 		} catch(IOException e){
