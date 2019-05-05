@@ -20,14 +20,9 @@ final class Character {
 	int leadingArmy = -1;
 	String orderhint = "";
 
+	// TODO: This function should technically be considered part of the game rules config IMHO
 	public int calcLevel(String dimension) {
-		double xp = experience.get(dimension);
-
-		return Constants.expLevels.entrySet().stream().
-				filter(e -> xp >= e.getKey()).
-				map(Map.Entry::getValue).
-				findFirst().
-				orElse(Constants.minDimLevel);
+		return (int) Math.sqrt(experience.getOrDefault(dimension, 0.0) + 1);
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {

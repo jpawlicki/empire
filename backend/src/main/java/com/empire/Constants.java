@@ -60,15 +60,5 @@ public class Constants {
     public static final String nationHeroicTag = "Heroic";
     public static final double heroicExpMultiplier = 2.0;
 
-    // This map is ordered by insertion order, code depends on the keys being in descending order
-    // Perhaps change to a TreeMap which orders keys internally (although in ascending order)
-    public static final Map<Double, Integer> expLevels = new LinkedHashMap<>();
-    static {
-        expLevels.put(24.0, 5);
-        expLevels.put(15.0, 4);
-        expLevels.put(8.0, 3);
-        expLevels.put(3.0, 2);
-    }
-
     public static final String constFort = "fortifications";
 }
