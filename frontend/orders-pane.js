@@ -801,8 +801,8 @@ class OrdersPane extends HTMLElement {
 			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];
 		});
 		if (g_data.date % 7 == 0) {
-			shadow.querySelector("#tab_game").className = "tab_game alert";
-			shadow.querySelector("#score_header").className = "alert";
+			shadow.querySelector("#tab_game").classList.add("alert");
+			shadow.querySelector("#score_header").classList.add("alert");
 		} else {
 			for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
 		}
