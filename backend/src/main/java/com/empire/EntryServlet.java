@@ -259,6 +259,14 @@ public class EntryServlet extends HttpServlet {
 						for (String mail : emails.keySet()) {
 							mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
 						}
+						if (w.gameover) {
+							ActiveGames newActiveGames = new ActiveGames();
+							Entity activeGames = new Entity("ACTIVEGAMES", "_");
+							newActiveGames.activeGameIds = new ArrayList<>(ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games")).activeGameIds);
+							newActiveGames.activeGameIds.remove(gameId);
+							activeGames.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(newActiveGames));
+							service.put(activeGames);
+						}
 					}
 					txn.commit();
 				} catch (EntityNotFoundException e) {
@@ -274,49 +282,22 @@ public class EntryServlet extends HttpServlet {
 		return "";
 	}
 
-	// TODO: remove.
+	// TODO: remove - insecure.
 	private boolean postAdvanceWorld(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		HashSet<String> kingdoms = new HashSet<>();
 		try {
 			World	w = World.load(r.gameId, r.turn, service);
-			HashMap<String, Map<String, String>> orders = new HashMap<>();
-			for (String kingdom : w.getNationNames()) {
-				kingdoms.add(kingdom);
-				try {
-					orders.put(kingdom, Order.loadOrder(r.gameId, kingdom, w.date, service).getOrders());
-				} catch (EntityNotFoundException e) {
-					// Can't load the relevant orders - tool will make default orders.
-				}
-			}
-			w.advance(orders);
+			w.nextTurn = 0;
 			service.put(w.toEntity(r.gameId));
-			Entity date = new Entity("CURRENTDATE", "game_" + r.gameId);
-			date.setProperty("date", (long)w.date);
-			service.put(date);
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			return false;
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
-		// Mail
-		if (r.skipMail) return true;
-		txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		HashSet<String> addresses = new HashSet<>();
-		try {
-			for (String kingdom : kingdoms) {
-				try {
-					addresses.add(Nation.NationGson.loadNation(kingdom, r.gameId, service).email);
-				} catch (EntityNotFoundException e) {
-					log.log(Level.SEVERE, "Failed to find mailing address for " + kingdom + " (game " + r.gameId + ")", e);
-				}
-			}
-		} finally {
-			if (txn.isActive()) txn.rollback();
-		}
-		mail(addresses, "👑 Empire: Turn Advances", "A game of Empire that you are playing in has advanced to turn " + (r.turn + 1) + ". You can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=" + r.gameId + ".");
+		getAdvancePoll();
 		return true;
 	}
 
