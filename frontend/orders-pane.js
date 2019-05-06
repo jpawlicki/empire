@@ -15,11 +15,11 @@ class OrdersPane extends HTMLElement {
 		let shadow = this.attachShadow({mode: "open"});
 		let html = `
 			<div id="tabs">
-				<div id="tab_units" class="tab_units">units</div>
-				<div id="tab_plots" class="tab_plots">plots</div>
-				<div id="tab_nations" class="tab_nations">nations</div>
-				<div id="tab_economy" class="tab_economy">economy</div>
-				<div id="tab_game" class="tab_game">game</div>
+				<div id="tab_units" class="tab_units">Units</div>
+				<div id="tab_plots" class="tab_plots">Plots</div>
+				<div id="tab_nations" class="tab_nations">Nations</div>
+				<div id="tab_economy" class="tab_economy">Economy</div>
+				<div id="tab_game" class="tab_game">Game</div>
 			</div>
 			<form id="form">
 				<table id="content_units">
@@ -98,7 +98,7 @@ class OrdersPane extends HTMLElement {
 					</table>
 				</div>
 				<div id="content_game">
-					<h1>Score</h1>
+					<h1 id="score_header">Score</h1>
 					<div id="score_switches">
 						<label><input type="checkbox" id="score_food" name="score_food"></input>Food</label>
 						<label><input type="checkbox" id="score_prosperity" name="score_prosperity"></input>Prosperity</label>
@@ -143,9 +143,6 @@ class OrdersPane extends HTMLElement {
 			table, input, select, button {
 				font-size: inherit;
 			}
-			#tabs > div::first-letter {
-				text-transform: capitalize;
-			}
 			#tabs {
 				display: flex;
 				justify-content: space-around;
@@ -181,6 +178,13 @@ class OrdersPane extends HTMLElement {
 				border-bottom: 3px solid grey;
 				border-left: 1.5px solid white;
 				border-right: 1.5px solid white;
+			}
+			.alert::before {
+				content: url('data:image/svg+xml; utf8, <svg viewBox="2 2 20 20" xmlns="http://www.w3.org/2000/svg"><path fill="red" d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" /></svg>');
+				width: 0.8em;
+				height: 0.8em;
+				margin-right: 0.2em;
+				display: inline-block;
 			}
 			h1 {
 				margin-top: 0.7em;
@@ -789,7 +793,12 @@ class OrdersPane extends HTMLElement {
 			};
 			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];
 		});
-		if (g_data.date % 7 != 0) for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
+		if (g_data.date % 7 == 0) {
+			shadow.querySelector("#tab_game").classList.add("alert");
+			shadow.querySelector("#score_header").classList.add("alert");
+		} else {
+			for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
+		}
 		for (let value of g_data.kingdoms[whoami].getRuler().values) {
 			shadow.getElementById("score_" + value).checked = true;
 		}
