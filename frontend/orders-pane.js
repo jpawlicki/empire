@@ -807,7 +807,7 @@ class OrdersPane extends HTMLElement {
 			for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
 		}
 		if (g_data.date >= 26 && (g_data.date - 26) % 6 == 0) {
-			shadow.querySelector("#tab_game").className = "tab_game alert";
+			shadow.querySelector("#tab_game").classList.add("alert");
 		} else {
 			shadow.querySelector("end_vote_div").style.display = "none";
 		}
