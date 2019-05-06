@@ -34,6 +34,19 @@ To use vist: http://localhost:8080/
 
 To use vist:  https://YOUR-PROJECT-ID.appspot.com
 
-## Testing
 
-    gradle test
+# Developers
+## Testing
+    `gradle test`
+
+## Todos
+### Suggested enums
+ - Army tags
+ - Nation tags
+ - Noble tags
+
+### Armies
+ - Might be beneficial for class to have a constructor or static creation method
+
+### Regions
+ - Separate methods for fortification percentage display vs army strength modification
