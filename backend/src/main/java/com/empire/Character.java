@@ -1,9 +1,10 @@
 package com.empire;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Collections;
 
 final class Character {
 	String name = "";
@@ -19,32 +20,35 @@ final class Character {
 	int leadingArmy = -1;
 	String orderhint = "";
 
+	// TODO: This function should technically be considered part of the game rules config IMHO
 	public int calcLevel(String dimension) {
-		double xp = experience.get(dimension);
-		if (xp >= 24) return 5;
-		else if (xp >= 15) return 4;
-		else if (xp >= 8) return 3;
-		else if (xp >= 3) return 2;
-		else return 1;
+		return (int) Math.sqrt(experience.getOrDefault(dimension, 0.0) + 1);
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = 1;
-		if (boosted) power += 0.5;
-		power += calcLevel("spy") * 0.3;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += .4;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += .2;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * .05;
-		if (!"".equals(captor)) power -= 0.5;
+		double power = Constants.basePlotStrength;
+
+		power += calcLevel(Constants.charDimSpy) * Constants.perSpyLevelPlotMod;
+
+		if (boosted) power += Constants.guardAgainstPlotMod;
+		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
+		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
+		if (!captor.equals(Constants.noCaptor)) power += Constants.capturedPlotMod;
+
 		return power;
 	}
 
 	public void addExperience(String dimension, World w) {
-		if ("*".equals(dimension)) {
-			for (String d : new String[]{"general", "admiral", "spy", "governor"}) experience.put(d, experience.get(d) + (w.getNation(kingdom).hasTag("Heroic") ? .5 : .25));
-		} else {
-			experience.put(dimension, experience.get(dimension) + (w.getNation(kingdom).hasTag("Heroic") ? 2 : 1));
-		}
+		List<String> dims = dimension.equals(Constants.charDimAll) ? Constants.charDims : Collections.singletonList(dimension);
+		double expBase = dimension.equals(Constants.charDimAll) ? Constants.allDimExpAdd : Constants.oneDimExpAdd;
+		double expMult = w.getNation(kingdom).hasTag(Constants.nationHeroicTag) ? Constants.heroicExpMultiplier : 1.0;
+
+		dims.forEach(d -> experience.put(d, experience.get(d) + expBase * expMult));
+	}
+
+	public double getExperience(String dimension){
+		return experience.get(dimension);
 	}
 
 	public boolean hasTag(String tag) {

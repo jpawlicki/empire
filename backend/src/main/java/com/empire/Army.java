@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 final class Army {
-	static enum Type {
+	enum Type {
 		@SerializedName("army")
 		ARMY,
 		@SerializedName("navy")
@@ -27,22 +27,27 @@ final class Army {
 	String orderhint = "";
 
 	public double calcStrength(World w, Character leader, int inspires, boolean lastStand) {
-		double strength = size * (isArmy() ? 1 / 100.0 : 1);
-		double mods = 1;
+		double strength = size * (isArmy() ? Constants.armyBaseStrength : Constants.navyBaseStrength);
+
+		double mods = 1.0;
 		Region r = w.regions.get(location);
-		if (hasTag("Steel")) mods += .15;
-		if (hasTag("Seafaring") && r.isSea()) mods += 1.5;
-		if (isArmy() && !"Pirate".equals(kingdom) && w.getNation(kingdom).hasTag("Disciplined")) mods += .1;
+
+		if (hasTag(Constants.armySteelTag)) mods += Constants.steelMod;
+		if (hasTag(Constants.armySeafaringTag) && r.isSea()) mods += Constants.seafaringMod;
+		if (isArmy() && !kingdom.equals(Constants.armyPirateTag) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
-		if (isArmy() && r.noble != null && r.noble.hasTag("Loyal") && r.kingdom.equals(kingdom)) mods += .25;
+		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.kingdom.equals(kingdom)) mods += Constants.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);
-			if (Ideology.SWORD_OF_TRUTH == sr) mods += .25;
-			else if (sr.religion == Religion.IRUHAN) mods += .15;
+			if (Ideology.SWORD_OF_TRUTH == sr) mods += Constants.swordOfTruthMod;
+			else if (sr.religion == Religion.IRUHAN) mods += Constants.iruhanMod;
 		}
-		if (lastStand) mods += 4;
-		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * .05;
-		if (leader != null && "".equals(leader.captor)) mods += leader.calcLevel(isArmy() ? "general" : "admiral") * .2;
+		if (lastStand) mods += Constants.lastStandMod;
+		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
+		if (leader != Constants.noLeader && leader.captor.equals(Constants.noCaptor)) {
+			mods += leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
+		}
+
 		return strength * mods;
 	}
 
