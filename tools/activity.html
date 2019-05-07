@@ -1,10 +1,10 @@
 <html>
 	<head>
+		<script src="../frontend/server.js"></script>
 		<script>
 			function fetchActivity(event) {
 				let pw = document.getElementById("gmPassword").value;
 				let gameId = parseInt(document.getElementById("gameId").value);
-				let g_server = getArg("server") == "prod" ? "https://empire-189013.appspot.com" : "http://localhost:8080";
 				
 				let req = new XMLHttpRequest();
 				req.open("get", g_server + "/entry/activity?gid=" + gameId + "&password=" + pw, true);

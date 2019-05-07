@@ -1,12 +1,12 @@
 <html>
 	<head>
+		<script src="../frontend/server.js"></script>
 		<script>
 			function postForm() {
 				let pw = document.getElementById("gmPassword").value;
 				let pw2 = document.getElementById("obsPassword").value;
 				let nations = document.getElementById("nations").value.split("\n").map(x => x.trim()).filter(x => x.length > 0);
 				let gameId = parseInt(document.getElementById("gameId").value);
-				let g_server = getArg("server") == "prod" ? "https://empire-189013.appspot.com" : "http://localhost:8080";
 				
 				let req = new XMLHttpRequest();
 				req.open("post", g_server + "/entry/startworld?gid=" + gameId, true);
