@@ -62,7 +62,7 @@
 
 				for (let k of g_gamestate.kingdoms) {
 					let req = new XMLHttpRequest();
-					req.open("get", "https://empire-189013.appspot.com/entry/setup?k=" + k.name + "&gid=" + gameId, true);
+					req.open("get", g_server + "/entry/setup?k=" + k.name + "&gid=" + gameId, true);
 					//req.open("get",             "http://localhost:8080/entry/setup?k=" + k.name + "&gid=" + gameId, true);
 					req.onerror = function (e) {};
 					req.onload = function (ev) {
@@ -618,8 +618,7 @@
 				for (let s of document.querySelectorAll("form input, form button, form select")) s.disabled = true;
 				submit.innerHTML = "Checking with server...";
 				let req = new XMLHttpRequest();
-				req.open("post", "https://empire-189013.appspot.com/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
-				//req.open("post",             "http://localhost:8080/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
+				req.open("post", g_server + "/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
 				req.onerror = function (e) {
 					submit.innerHTML = "A different player has already claimed this nation";
 				};

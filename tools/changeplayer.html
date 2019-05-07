@@ -6,9 +6,10 @@
 				let gameId = parseInt(document.getElementById("gameId").value);
 				let kingdom = document.getElementById("kingdom").value;
 				let nuemail = document.getElementById("email").value;
+				let g_server = getArg("server") == "prod" ? "https://empire-189013.appspot.com" : "http://localhost:8080";
 				
 				let req = new XMLHttpRequest();
-				req.open("post", "https://empire-189013.appspot.com/entry/changeplayer?gid=" + gameId + "&password=" + pw + "&k=" + kingdom, true);
+				req.open("post", g_server + "/entry/changeplayer?gid=" + gameId + "&password=" + pw + "&k=" + kingdom, true);
 				req.onerror = function (e) {
 					window.alert(req.status);
 				};

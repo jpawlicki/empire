@@ -6,10 +6,10 @@
 				let pw2 = document.getElementById("obsPassword").value;
 				let nations = document.getElementById("nations").value.split("\n").map(x => x.trim()).filter(x => x.length > 0);
 				let gameId = parseInt(document.getElementById("gameId").value);
+				let g_server = getArg("server") == "prod" ? "https://empire-189013.appspot.com" : "http://localhost:8080";
 				
 				let req = new XMLHttpRequest();
-				req.open("post", "https://empire-189013.appspot.com/entry/startworld?gid=" + gameId, true);
-				//req.open("post", "http://localhost:8080/entry/startworld?gid=" + gameId, true);
+				req.open("post", g_server + "/entry/startworld?gid=" + gameId, true);
 				req.onerror = function (e) {
 					window.alert(req.status);
 				};
@@ -58,22 +58,17 @@
 			<label>Game ID: <input id="gameId" type="number"/></label>
 			<button>Start!</button>
 		</form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=1&skipmail=t" method="POST"><button>Advance Game 0 turn 1</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=2&skipmail=t" method="POST"><button>Advance Game 0 turn 2</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=3&skipmail=t" method="POST"><button>Advance Game 0 turn 3</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=4&skipmail=t" method="POST"><button>Advance Game 0 turn 4</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=5&skipmail=t" method="POST"><button>Advance Game 0 turn 5</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=6&skipmail=t" method="POST"><button>Advance Game 0 turn 6</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=7&skipmail=t" method="POST"><button>Advance Game 0 turn 7</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=8&skipmail=t" method="POST"><button>Advance Game 0 turn 8</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=9&skipmail=t" method="POST"><button>Advance Game 0 turn 9</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=10&skipmail=t" method="POST"><button>Advance Game 0 turn 10</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=11&skipmail=t" method="POST"><button>Advance Game 0 turn 11</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=12&skipmail=t" method="POST"><button>Advance Game 0 turn 12</button></form>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=0&t=13&skipmail=t" method="POST"><button>Advance Game 0 turn 13</button></form>
-		<hr/>
-		<form action="http://empire-189013.appspot.com/entry/advanceworld?gid=4&t=2" method="POST"><button>Advance Game 4 turn 2</button></form>
-		<hr/>
-		<form action="http://empire-189013.appspot.com/entry/migrate?gid=3" method="POST"><button>migrate()</button></form>
+		<div id="advances"></div>
+		<script>
+			for (let i = 1; i < 30; i++) {
+				let f = document.createElement("form");
+				f.setAttribute("action", g_server + "/entry/advanceworld?gid=0&t=" + i);
+				f.setAttribute("method", "POST");
+				let b = document.createElement("button");
+				b.appendChild(document.createTextNode("Advance game 0 turn " + i));
+				f.appendChild(b);
+				document.getElementById("advances").appendChild(f);
+			}
+		</script>
 	</body>
 </html>
