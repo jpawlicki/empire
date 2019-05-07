@@ -21,21 +21,13 @@
 		<script src="zip-div.js"></script>
 		<script src="international-report.js"></script>
 		<script src="timeline-report.js"></script>
+		<script src="server.js"></script>
 		<script>
 			g_data = {};
 			g_latest_date = 0;
-			function getArg(p) {
-				var t = window.location.search;
-				var s = t.indexOf(p + "=");
-				if (s == -1) return undefined;
-				var e = t.indexOf("&", s);
-				if (e == -1) e = t.length;
-				return decodeURI(t.substring(s + p.length + 1, e));
-			}
 			let whoami = getArg("k");
 			let password = getArg("p");
 			let gameId = parseInt(getArg("g"));
-			let g_server = getArg("server") == "local" ? "http://localhost:8080" : "https://empire-189013.appspot.com";
 			if (isNaN(gameId)) gameId = parseInt(getArg("gid")); // A bug in the server sent out mails with gid=X, so just accept either for now.
 			let currentTurn = parseInt(getArg("t"));
 			if (password != undefined) history.replaceState({}, "", window.location.href.replace(/p=[^&]*/, "p=_"));
