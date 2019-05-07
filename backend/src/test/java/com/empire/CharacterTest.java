@@ -58,12 +58,6 @@ public class CharacterTest {
         }
     }
 
-    @Test(expected=NullPointerException.class)
-    public void calcLevelUnknownDimThrowsError() {
-        // Not a great test but have something in here about unknown keys, could be fixed by using enum
-        c.calcLevel("DUMMY");
-    }
-
     @Test
     public void addExperienceGeneralRegular() {
         c.addExperience(Constants.charDimGeneral, world);
