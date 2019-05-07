@@ -14,5 +14,5 @@ if (getArg("server") == "local") {
 } else if (window.location.protocol == "file:") {
 	g_server = "http://localhost:8080";
 } else {
-  g_server = "https://empire-189013.appspot.com";
+	g_server = "https://empire-189013.appspot.com";
 }
