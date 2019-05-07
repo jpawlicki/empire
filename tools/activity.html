@@ -1,12 +1,13 @@
 <html>
 	<head>
+		<script src="../frontend/server.js"></script>
 		<script>
 			function fetchActivity(event) {
 				let pw = document.getElementById("gmPassword").value;
 				let gameId = parseInt(document.getElementById("gameId").value);
 				
 				let req = new XMLHttpRequest();
-				req.open("get", "https://empire-189013.appspot.com/entry/activity?gid=" + gameId + "&password=" + pw, true);
+				req.open("get", g_server + "/entry/activity?gid=" + gameId + "&password=" + pw, true);
 				req.onerror = function (e) {
 					window.alert(req.status);
 				};
