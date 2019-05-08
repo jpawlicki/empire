@@ -808,7 +808,7 @@ class OrdersPane extends HTMLElement {
 		if (g_data.date >= 26 && (g_data.date - 26) % 6 == 0) {
 			shadow.querySelector("#tab_game").classList.add("alert");
 		} else {
-			shadow.querySelector("end_vote_div").style.display = "none";
+			shadow.querySelector("#end_vote_div").style.display = "none";
 		}
 		for (let value of g_data.kingdoms[whoami].getRuler().values) {
 			shadow.getElementById("score_" + value).checked = true;
