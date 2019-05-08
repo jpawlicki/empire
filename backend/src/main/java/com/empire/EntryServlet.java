@@ -528,7 +528,7 @@ public class EntryServlet extends HttpServlet {
 			msg.setSubject(subject);
 			msg.setText(body);
 			Transport.send(msg);
-		} catch (MessagingException | UnsupportedEncodingException e) {
+		} catch (MessagingException | UnsupportedEncodingException | NoClassDefFoundError e) {
 			log.log(Level.SEVERE, "Failed to send mail", e);
 		}
 	}
