@@ -626,7 +626,7 @@ class OrdersPane extends HTMLElement {
 			let submit = document.createElement("button");
 			let checkForUpdate = function() {
 				let req = new XMLHttpRequest();
-				req.open("get", "https://empire-189013.appspot.com/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 				req.onerror = function (e) {
 					window.alert("Failed to communicate with the server.");
 				};
@@ -661,7 +661,7 @@ class OrdersPane extends HTMLElement {
 				}
 				if (data.to.length > 0 && data.text.length > 0) {
 					let req = new XMLHttpRequest();
-					req.open("post", "https://empire-189013.appspot.com/entry/rtc?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+					req.open("post", g_server + "/entry/rtc?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 					req.onerror = function (e) {
 						window.alert("Failed to communicate with the server.");
 					};
@@ -761,8 +761,7 @@ class OrdersPane extends HTMLElement {
 			} else {
 				op.submitQueued = false;
 				op.currentlySubmitting = true;
-				req.open("post", "https://empire-189013.appspot.com/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
-				//req.open("post",          "http://localhost:8080/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+				req.open("post", g_server + "/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 				req.onerror = function (e) {
 					op.currentlySubmitting = false;
 					window.alert("Failed to communicate with the server.");
@@ -805,7 +804,7 @@ class OrdersPane extends HTMLElement {
 
 		// Load Old Orders
 		let req = new XMLHttpRequest();
-		req.open("get", "https://empire-189013.appspot.com/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+		req.open("get", g_server + "/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 		//req.open("get", "http://localhost:8080/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 		req.onerror = function (e) {
 			console.log(e);

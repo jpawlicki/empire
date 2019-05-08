@@ -351,6 +351,18 @@ public class EntryServlet extends HttpServlet {
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
 			g.setProperty("date", 1);
 			service.put(g);
+			ActiveGames activeGames;
+			try {
+				activeGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
+			} catch (EntityNotFoundException e) {
+				// No active game registry - create it.
+				activeGames = new ActiveGames();
+				activeGames.activeGameIds = new ArrayList<>();
+			}
+			activeGames.activeGameIds.add(r.gameId);
+			Entity games = new Entity("ACTIVEGAMES", "_");
+			games.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(activeGames));
+			service.put(games);
 			txn.commit();
 		} finally {
 			if (txn.isActive()) txn.rollback();
@@ -535,7 +547,7 @@ public class EntryServlet extends HttpServlet {
 			msg.setSubject(subject);
 			msg.setText(body);
 			Transport.send(msg);
-		} catch (MessagingException | UnsupportedEncodingException e) {
+		} catch (MessagingException | UnsupportedEncodingException | NoClassDefFoundError e) {
 			log.log(Level.SEVERE, "Failed to send mail", e);
 		}
 	}

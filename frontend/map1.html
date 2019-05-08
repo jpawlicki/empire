@@ -21,17 +21,10 @@
 		<script src="zip-div.js"></script>
 		<script src="international-report.js"></script>
 		<script src="timeline-report.js"></script>
+		<script src="server.js"></script>
 		<script>
 			g_data = {};
 			g_latest_date = 0;
-			function getArg(p) {
-				var t = window.location.search;
-				var s = t.indexOf(p + "=");
-				if (s == -1) return undefined;
-				var e = t.indexOf("&", s);
-				if (e == -1) e = t.length;
-				return decodeURI(t.substring(s + p.length + 1, e));
-			}
 			let whoami = getArg("k");
 			let password = getArg("p");
 			let gameId = parseInt(getArg("g"));
@@ -209,7 +202,7 @@
 			function startRequest(date = -1, callback = function(){}) {
 				document.getElementById("password_submit").disabled = true;
 				let req = new XMLHttpRequest();
-				req.open("get", "https://empire-189013.appspot.com/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (date != -1 ? "&t=" + date : ""), true);
+				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (date != -1 ? "&t=" + date : ""), true);
 				req.onerror = function (e) {};
 				req.onload = function (ev) {
 					if (req.status != 200) {
