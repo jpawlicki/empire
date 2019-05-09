@@ -2608,7 +2608,7 @@ final class World {
 				if ("end".equals(orders.get(kingdom).getOrDefault("end_vote", "end"))) votesToEnd++;
 				totalVotes++;
 			}
-			if (votesToEnd / totalVotes >= 2.0 / 3.0) {
+			if (votesToEnd / totalVotes > 1.0 / 3.0) {
 				// Game ends. Early return.
 				gameover = true;
 				HashMap<String, String> emails = new HashMap<>();
