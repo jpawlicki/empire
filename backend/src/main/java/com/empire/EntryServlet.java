@@ -260,10 +260,9 @@ public class EntryServlet extends HttpServlet {
 							mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
 						}
 						if (w.gameover) {
-							ActiveGames newActiveGames = new ActiveGames();
-							Entity activeGames = new Entity("ACTIVEGAMES", "_");
-							newActiveGames.activeGameIds = new ArrayList<>(ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games")).activeGameIds);
+							ActiveGames newActiveGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
 							newActiveGames.activeGameIds.remove(gameId);
+							Entity activeGames = new Entity("ACTIVEGAMES", "_");
 							activeGames.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(newActiveGames));
 							service.put(activeGames);
 						}
@@ -282,7 +281,7 @@ public class EntryServlet extends HttpServlet {
 		return "";
 	}
 
-	// TODO: remove - insecure.
+	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
 	private boolean postAdvanceWorld(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));

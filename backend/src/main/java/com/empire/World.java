@@ -2603,12 +2603,12 @@ final class World {
 		// Check for game end.
 		if (date >= 27 && (date - 27) % 6 == 0) {
 			int votesToEnd = 0;
-			int votesToExtend = 0;
+			double totalVotes = 0;
 			for (String kingdom : kingdoms.keySet()) {
 				if ("end".equals(orders.get(kingdom).getOrDefault("end_vote", "end"))) votesToEnd++;
-				else votesToExtend++;
+				totalVotes++;
 			}
-			if (votesToEnd * 3 > votesToExtend * 2) {
+			if (votesToEnd / totalVotes >= 2.0 / 3.0) {
 				// Game ends. Early return.
 				gameover = true;
 				HashMap<String, String> emails = new HashMap<>();
