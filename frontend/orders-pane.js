@@ -114,6 +114,13 @@ class OrdersPane extends HTMLElement {
 						<label><input type="checkbox" id="score_ideology" name="score_ideology"></input>Ideology</label>
 						<expandable-snippet text="Your score profiles can be changed on every 7th turn.">
 					</div>
+					<div id="end_vote_div">
+						<h1 class="alert">Game Extension Vote</h1>
+						<select name="end_vote">
+							<option value="end">End the game</option>
+							<option value="extend">Extend the game by 6 turns</option>
+						</select>
+					</div>
 					<h1>Final Actions</h1>
 					<expandable-snippet text="Final Actions are powerful actions that end the story of your nation and remove you from the game."></expandable-snippet>
 					<select id="final_action" name="final_action">
@@ -797,6 +804,11 @@ class OrdersPane extends HTMLElement {
 			shadow.querySelector("#score_header").classList.add("alert");
 		} else {
 			for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
+		}
+		if (g_data.date >= 26 && (g_data.date - 26) % 6 == 0) {
+			shadow.querySelector("#tab_game").classList.add("alert");
+		} else {
+			shadow.querySelector("#end_vote_div").style.display = "none";
 		}
 		for (let value of g_data.kingdoms[whoami].getRuler().values) {
 			shadow.getElementById("score_" + value).checked = true;

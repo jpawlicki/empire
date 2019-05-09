@@ -56,6 +56,7 @@ final class World {
 	Schedule turnSchedule = new Schedule();
 	int inspiresHint;
 	long nextTurn;
+	boolean gameover;
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
@@ -2597,6 +2598,23 @@ final class World {
 		// Notify of upcoming harvest.
 		if (isHarvestTurn()) {
 			notifyAll("Harvest Preparations", "People all over the world prepare to reap the harvest upon which they have labored, and hunger is (perhaps only temporarily) banished. All regions will produce their harvest this turn (before eating).");
+		}
+
+		// Check for game end.
+		if (date >= 27 && (date - 27) % 6 == 0) {
+			int votesToEnd = 0;
+			double totalVotes = 0;
+			for (String kingdom : kingdoms.keySet()) {
+				if ("end".equals(orders.get(kingdom).getOrDefault("end_vote", "end"))) votesToEnd++;
+				totalVotes++;
+			}
+			if (votesToEnd / totalVotes > 1.0 / 3.0) {
+				// Game ends. Early return.
+				gameover = true;
+				HashMap<String, String> emails = new HashMap<>();
+				for (String kingdom : kingdoms.keySet()) emails.put(getNation(kingdom).email, "The curtain has closed on this stage of history. Your decisions, and those of your fellow rulers, good and bad, have set the course for the known world and its inhabitants.\n\nTo review the final state of the game, as well as any letters you received from the final turn, you can view https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\n\nThank you for playing and we hope to see you again soon!");
+				return emails;
+			}
 		}
 
 		// Prepare e-mails.

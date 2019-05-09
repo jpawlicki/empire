@@ -228,6 +228,7 @@
 				// Data Computation
 				g_data = {};
 				g_data.date = g_turndata[date].date;
+				g_data.gameover = g_turndata[date].gameover;
 				g_data.notifications = g_turndata[date].notifications;
 				g_data.regions = [];
 				g_data.rtc = g_turndata[date].rtc;
@@ -411,10 +412,14 @@
 				document.getElementById("internationalkey").addEventListener("click", function() { changeReport("international/home");});
 				document.getElementById("timelinekey").addEventListener("click", function() { changeReport("timeline/home");});
 				if (whoami != "(Observer)") {
-					let orders = document.createElement("orders-pane");
-					orders.setAttribute("kingdom", whoami);
-					document.getElementById("orders").innerHTML = "";
-					document.getElementById("orders").appendChild(orders);
+					if (!g_data.gameover) {
+						let orders = document.createElement("orders-pane");
+						orders.setAttribute("kingdom", whoami);
+						document.getElementById("orders").innerHTML = "";
+						document.getElementById("orders").appendChild(orders);
+					} else {
+						document.querySelector("body").style.gridTemplateColumns = "20% 80%";
+					}
 					if (g_data.date == g_turndata.length - 1) changeReport("kingdom/" + whoami);
 				} else {
 					let k = "";
