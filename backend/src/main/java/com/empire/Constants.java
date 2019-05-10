@@ -11,14 +11,25 @@ import java.util.Map;
  * the numeric data could be game config
  */
 public class Constants {
+    //Armies
     public static final double armyBaseStrength = 1E-2;
     public static final double navyBaseStrength = 1.0;
 
     public static final String armySteelTag = "Steel";
     public static final double steelMod = 0.15;
 
+    public static final String armyFormationsTag = "Formations";
+    public static final String armyPillagersTag = "Pillagers";
+    public static final String armyRaidersTag = "Raiders";
+
     public static final String armySeafaringTag = "Seafaring";
     public static final double seafaringMod = 1.5;
+
+    public static final String armyImpressmentTag = "Impressment";
+    public static final String armyWeatheredTag = "Weathered";
+    public static final String armyPathfindersTag = "Pathfinders";
+    public static final String armyRidersTag = "Riders";
+    public static final String armyCraftsSoldiersTag = "Crafts-soldiers";
 
     public static final String pirateKingdom = "Pirate";
 

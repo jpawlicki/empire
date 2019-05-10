@@ -53,24 +53,24 @@ final class Region {
 		ArrayList<String> t = new ArrayList<>();
 		switch (culture) {
 			case ANPILAYN:
-				t.add("Steel");
-				t.add("Formations");
+				t.add(Constants.armySteelTag);
+				t.add(Constants.armyFormationsTag);
 				break;
 			case EOLSUNG:
-				t.add("Pillagers");
-				t.add("Raiders");
+				t.add(Constants.armyPillagersTag);
+				t.add(Constants.armyRaidersTag);
 				break;
 			case HANSA:
-				t.add("Seafaring");
-				t.add("Impressment");
+				t.add(Constants.armySeafaringTag);
+				t.add(Constants.armyImpressmentTag);
 				break;
 			case TYRGAETAN:
-				t.add("Weathered");
-				t.add("Pathfinders");
+				t.add(Constants.armyWeatheredTag);
+				t.add(Constants.armyPathfindersTag);
 				break;
 			case TAVIAN:
-				t.add("Riders");
-				t.add("Crafts-soldiers");
+				t.add(Constants.armyRidersTag);
+				t.add(Constants.armyCraftsSoldiersTag);
 				break;
 		}
 		return t;
