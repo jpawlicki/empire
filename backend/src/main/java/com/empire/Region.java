@@ -1,14 +1,8 @@
 package com.empire;
 
 import com.google.gson.annotations.SerializedName;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Set;
+
+import java.util.*;
 import java.util.function.Function;
 
 final class Region {
@@ -35,20 +29,23 @@ final class Region {
 
 	public boolean canFoodTransferTo(World w, Region target) {
 		HashSet<Region> legals = new HashSet<>();
-		ArrayList<Region> stack = new ArrayList<>();
-		stack.add(this);
 		legals.add(this);
+		Stack<Region> stack = new Stack<>();
+		stack.push(this);
+
 		for (Region n : getNeighbors(w)) {
-			if (n.isSea()) stack.add(n);
+			if (n.isSea()) stack.push(n);
 			legals.add(n);
 		}
-		while (!stack.isEmpty()) {
-			Region r = stack.remove(stack.size() - 1);
+
+		while (!stack.empty()) {
+			Region r = stack.pop();
 			for (Region n : r.getNeighbors(w)) {
-				if (n.isSea() && !legals.contains(n)) stack.add(n);
+				if (n.isSea() && !legals.contains(n)) stack.push(n);
 				legals.add(n);
 			}
 		}
+
 		return legals.contains(target);
 	}
 
