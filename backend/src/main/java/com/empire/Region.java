@@ -36,6 +36,18 @@ final class Region {
 	double harvest;
 	boolean gotCultFood;
 
+	private static int numUniqueIdeologies(String kingdom, World w) {
+		HashSet<Ideology> ideologies = new HashSet<>();
+		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
+		return ideologies.size();
+	}
+
+	private static int numUniqueIdeologies2(String kingdom, World w) {
+		return (int) w.regions.stream()
+				.filter(r -> kingdom.equals(r.kingdom))
+				.distinct().count();
+	}
+
 	public boolean canFoodTransferTo(World w, Region target) {
 		HashSet<Region> legals = new HashSet<>();
 		legals.add(this);
@@ -99,12 +111,6 @@ final class Region {
 				break;
 		}
 		return t;
-	}
-
-	private static int numUniqueIdeologies(String kingdom, World w) {
-		HashSet<Ideology> ideologies = new HashSet<>();
-		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
-		return ideologies.size();
 	}
 
 	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
