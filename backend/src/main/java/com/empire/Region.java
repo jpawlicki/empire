@@ -74,7 +74,7 @@ final class Region {
 		return legals.contains(target);
 	}
 
-	public ArrayList<String> getArmyTags() {
+	public List<String> getArmyTags() {
 		ArrayList<String> t = new ArrayList<>();
 		switch (culture) {
 			case ANPILAYN:
@@ -107,7 +107,7 @@ final class Region {
 		return ideologies.size();
 	}
 
-	public double calcRecruitment(World w, ArrayList<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population / 2000.0;
 		double mods = 1;
 		NationData wKingdom = w.getNation(kingdom);
@@ -149,8 +149,7 @@ final class Region {
 		return Math.max(0, base * mods);
 	}
 
-
-	public double calcTaxIncome(World w, ArrayList<Character> governors, double taxRate, double rationing) {
+	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
 		double base = population / 10000.0;
 		double mods = taxRate;
 		double unrest = calcUnrest(w);
