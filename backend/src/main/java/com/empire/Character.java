@@ -40,8 +40,8 @@ final class Character {
 	}
 
 	public void addExperience(String dimension, World w) {
-		List<String> dims = dimension.equals(Constants.charDimAll) ? Constants.charDims : Collections.singletonList(dimension);
-		double expBase = dimension.equals(Constants.charDimAll) ? Constants.allDimExpAdd : Constants.oneDimExpAdd;
+		List<String> dims = Constants.charDimAll.equals(dimension) ? Constants.charDims : Collections.singletonList(dimension);
+		double expBase = Constants.charDimAll.equals(dimension) ? Constants.allDimExpAdd : Constants.oneDimExpAdd;
 		double expMult = w.getNation(kingdom).hasTag(Constants.nationHeroicTag) ? Constants.heroicExpMultiplier : 1.0;
 
 		dims.forEach(d -> experience.put(d, experience.get(d) + expBase * expMult));
