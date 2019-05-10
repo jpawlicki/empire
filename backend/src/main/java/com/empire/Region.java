@@ -2,7 +2,16 @@ package com.empire;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Deque;
+import java.util.ArrayDeque;
+import java.util.PriorityQueue;
+import java.util.Comparator;
 import java.util.function.Function;
 
 final class Region {
@@ -30,7 +39,7 @@ final class Region {
 	public boolean canFoodTransferTo(World w, Region target) {
 		HashSet<Region> legals = new HashSet<>();
 		legals.add(this);
-		Stack<Region> stack = new Stack<>();
+		Deque<Region> stack = new ArrayDeque<>();
 		stack.push(this);
 
 		for (Region n : getNeighbors(w)) {
@@ -38,12 +47,28 @@ final class Region {
 			legals.add(n);
 		}
 
-		while (!stack.empty()) {
+		while (!stack.isEmpty()) {
 			Region r = stack.pop();
 			for (Region n : r.getNeighbors(w)) {
 				if (n.isSea() && !legals.contains(n)) stack.push(n);
 				legals.add(n);
 			}
+		}
+
+		return legals.contains(target);
+	}
+
+	public boolean canFoodTransferTo2(World w, Region target) {
+		HashSet<Region> legals = new HashSet<>();
+		legals.add(this);
+		Deque<Region> stack = new ArrayDeque<>();
+		stack.push(this);
+
+		while (!stack.isEmpty()) {
+			stack.pop().getNeighbors(w).stream()
+					.peek(legals::add)
+					.filter(r -> r.isSea() && !legals.contains(r))
+					.forEach(stack::push);
 		}
 
 		return legals.contains(target);
