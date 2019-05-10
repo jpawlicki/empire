@@ -37,7 +37,7 @@ final class Region {
 	boolean gotCultFood;
 
 	private static int numUniqueIdeologies(String kingdom, World w) {
-		HashSet<Ideology> ideologies = new HashSet<>();
+		Set<Ideology> ideologies = new HashSet<>();
 		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
 		return ideologies.size();
 	}
@@ -49,7 +49,7 @@ final class Region {
 	}
 
 	public boolean canFoodTransferTo(World w, Region target) {
-		HashSet<Region> legals = new HashSet<>();
+		Set<Region> legals = new HashSet<>();
 		legals.add(this);
 		Deque<Region> stack = new ArrayDeque<>();
 		stack.push(this);
@@ -71,7 +71,7 @@ final class Region {
 	}
 
 	public boolean canFoodTransferTo2(World w, Region target) {
-		HashSet<Region> legals = new HashSet<>();
+		Set<Region> legals = new HashSet<>();
 		legals.add(this);
 		Deque<Region> stack = new ArrayDeque<>();
 		stack.push(this);
@@ -87,7 +87,7 @@ final class Region {
 	}
 
 	public List<String> getArmyTags() {
-		ArrayList<String> t = new ArrayList<>();
+		List<String> t = new ArrayList<>();
 		switch (culture) {
 			case ANPILAYN:
 				t.add(Constants.armySteelTag);
@@ -219,7 +219,7 @@ final class Region {
 	}
 
 	public void setReligion(Ideology bias, World w) {
-		HashMap<Ideology, Integer> ideologies = new HashMap<>();
+		Map<Ideology, Integer> ideologies = new HashMap<>();
 		for (Construction c : constructions) {
 			if (c.type.equals("temple")) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
@@ -268,7 +268,7 @@ final class Region {
 	}
 
 	public Map<String, Double> calcPlotPowers(World w, List<String> boosts, int inspires) {
-		HashMap<String, Double> powers = new HashMap<>();
+		Map<String, Double> powers = new HashMap<>();
 		for (String kingdom : w.getNationNames()) {
 			powers.put(kingdom, 0.0);
 		}
@@ -297,7 +297,7 @@ final class Region {
 					return a.power > b.power ? -1 : a.power < b.power ? 1 : 0;
 				}
 			});
-			HashSet<Region> visited = new HashSet<>();
+			Set<Region> visited = new HashSet<>();
 			pq.add(getPower.apply(new Node(c.calcPlotPower(w, boosts.contains(c.kingdom), inspires), w.regions.get(c.location))));
 			while (!pq.isEmpty()) {
 				Node n = pq.poll();
