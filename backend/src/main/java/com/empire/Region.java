@@ -12,12 +12,13 @@ import java.util.Set;
 import java.util.function.Function;
 
 final class Region {
-	static enum Type {
+	enum Type {
 		@SerializedName("land")
 		LAND,
 		@SerializedName("water")
 		WATER
 	}
+
 	String name;
 	Type type;
 	Culture culture;
