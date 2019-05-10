@@ -34,7 +34,7 @@ final class Army {
 
 		if (hasTag(Constants.armySteelTag)) mods += Constants.steelMod;
 		if (hasTag(Constants.armySeafaringTag) && r.isSea()) mods += Constants.seafaringMod;
-		if (isArmy() && !kingdom.equals(Constants.armyPirateTag) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
+		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.kingdom, kingdom, w)) mods += r.calcFortification() - 1;
 		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.kingdom.equals(kingdom)) mods += Constants.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
@@ -44,7 +44,7 @@ final class Army {
 		}
 		if (lastStand) mods += Constants.lastStandMod;
 		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
-		if (leader != Constants.noLeader && leader.captor.equals(Constants.noCaptor)) {
+		if (leader != Constants.noLeader && Constants.noCaptor.equals(leader.captor)) {
 			mods += leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
 		}
 
