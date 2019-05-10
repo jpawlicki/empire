@@ -86,6 +86,7 @@ final class Region {
 		return legals.contains(target);
 	}
 
+	// TODO - the function this method provides looks like it should reside in the Culture enum class
 	public List<String> getArmyTags() {
 		List<String> t = new ArrayList<>();
 		switch (culture) {
