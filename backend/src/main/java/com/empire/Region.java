@@ -1,23 +1,27 @@
 package com.empire;
 
 import com.google.gson.annotations.SerializedName;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
+
 import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.ArrayList;
 import java.util.Set;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Deque;
+import java.util.ArrayDeque;
+import java.util.PriorityQueue;
+import java.util.Comparator;
 import java.util.function.Function;
 
 final class Region {
-	static enum Type {
+	enum Type {
 		@SerializedName("land")
 		LAND,
 		@SerializedName("water")
 		WATER
 	}
+
 	String name;
 	Type type;
 	Culture culture;
@@ -32,59 +36,85 @@ final class Region {
 	double harvest;
 	boolean gotCultFood;
 
+	private static int numUniqueIdeologies(String kingdom, World w) {
+		Set<Ideology> ideologies = new HashSet<>();
+		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
+		return ideologies.size();
+	}
+
+	private static int numUniqueIdeologies2(String kingdom, World w) {
+		return (int) w.regions.stream()
+				.filter(r -> kingdom.equals(r.kingdom))
+				.distinct().count();
+	}
+
 	public boolean canFoodTransferTo(World w, Region target) {
-		HashSet<Region> legals = new HashSet<>();
-		ArrayList<Region> stack = new ArrayList<>();
-		stack.add(this);
+		Set<Region> legals = new HashSet<>();
 		legals.add(this);
+		Deque<Region> stack = new ArrayDeque<>();
+		stack.push(this);
+
 		for (Region n : getNeighbors(w)) {
-			if (n.isSea()) stack.add(n);
+			if (n.isSea()) stack.push(n);
 			legals.add(n);
 		}
+
 		while (!stack.isEmpty()) {
-			Region r = stack.remove(stack.size() - 1);
+			Region r = stack.pop();
 			for (Region n : r.getNeighbors(w)) {
-				if (n.isSea() && !legals.contains(n)) stack.add(n);
+				if (n.isSea() && !legals.contains(n)) stack.push(n);
 				legals.add(n);
 			}
 		}
+
 		return legals.contains(target);
 	}
 
-	public ArrayList<String> getArmyTags() {
-		ArrayList<String> t = new ArrayList<>();
+	public boolean canFoodTransferTo2(World w, Region target) {
+		Set<Region> legals = new HashSet<>();
+		legals.add(this);
+		Deque<Region> stack = new ArrayDeque<>();
+		stack.push(this);
+
+		while (!stack.isEmpty()) {
+			stack.pop().getNeighbors(w).stream()
+					.peek(legals::add)
+					.filter(r -> r.isSea() && !legals.contains(r))
+					.forEach(stack::push);
+		}
+
+		return legals.contains(target);
+	}
+
+	// TODO - the function this method provides looks like it should reside in the Culture enum class
+	public List<String> getArmyTags() {
+		List<String> t = new ArrayList<>();
 		switch (culture) {
 			case ANPILAYN:
-				t.add("Steel");
-				t.add("Formations");
+				t.add(Constants.armySteelTag);
+				t.add(Constants.armyFormationsTag);
 				break;
 			case EOLSUNG:
-				t.add("Pillagers");
-				t.add("Raiders");
+				t.add(Constants.armyPillagersTag);
+				t.add(Constants.armyRaidersTag);
 				break;
 			case HANSA:
-				t.add("Seafaring");
-				t.add("Impressment");
+				t.add(Constants.armySeafaringTag);
+				t.add(Constants.armyImpressmentTag);
 				break;
 			case TYRGAETAN:
-				t.add("Weathered");
-				t.add("Pathfinders");
+				t.add(Constants.armyWeatheredTag);
+				t.add(Constants.armyPathfindersTag);
 				break;
 			case TAVIAN:
-				t.add("Riders");
-				t.add("Crafts-soldiers");
+				t.add(Constants.armyRidersTag);
+				t.add(Constants.armyCraftsSoldiersTag);
 				break;
 		}
 		return t;
 	}
 
-	private static int numUniqueIdeologies(String kingdom, World w) {
-		HashSet<Ideology> ideologies = new HashSet<>();
-		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
-		return ideologies.size();
-	}
-
-	public double calcRecruitment(World w, ArrayList<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population / 2000.0;
 		double mods = 1;
 		NationData wKingdom = w.getNation(kingdom);
@@ -126,8 +156,7 @@ final class Region {
 		return Math.max(0, base * mods);
 	}
 
-
-	public double calcTaxIncome(World w, ArrayList<Character> governors, double taxRate, double rationing) {
+	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
 		double base = population / 10000.0;
 		double mods = taxRate;
 		double unrest = calcUnrest(w);
@@ -191,7 +220,7 @@ final class Region {
 	}
 
 	public void setReligion(Ideology bias, World w) {
-		HashMap<Ideology, Integer> ideologies = new HashMap<>();
+		Map<Ideology, Integer> ideologies = new HashMap<>();
 		for (Construction c : constructions) {
 			if (c.type.equals("temple")) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
@@ -240,7 +269,7 @@ final class Region {
 	}
 
 	public Map<String, Double> calcPlotPowers(World w, List<String> boosts, int inspires) {
-		HashMap<String, Double> powers = new HashMap<>();
+		Map<String, Double> powers = new HashMap<>();
 		for (String kingdom : w.getNationNames()) {
 			powers.put(kingdom, 0.0);
 		}
@@ -269,7 +298,7 @@ final class Region {
 					return a.power > b.power ? -1 : a.power < b.power ? 1 : 0;
 				}
 			});
-			HashSet<Region> visited = new HashSet<>();
+			Set<Region> visited = new HashSet<>();
 			pq.add(getPower.apply(new Node(c.calcPlotPower(w, boosts.contains(c.kingdom), inspires), w.regions.get(c.location))));
 			while (!pq.isEmpty()) {
 				Node n = pq.poll();
