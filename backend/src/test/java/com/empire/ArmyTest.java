@@ -83,7 +83,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthDisciplinedPirate() {
 		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
-		plainArmy.kingdom = Constants.armyPirateTag;
+		plainArmy.kingdom = Constants.pirateKingdom;
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 

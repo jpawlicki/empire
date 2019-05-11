@@ -34,14 +34,14 @@ final class Character {
 		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
 		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
-		if (!captor.equals(Constants.noCaptor)) power += Constants.capturedPlotMod;
+		if (!Constants.noCaptor.equals(captor)) power += Constants.capturedPlotMod;
 
 		return power;
 	}
 
 	public void addExperience(String dimension, World w) {
-		List<String> dims = dimension.equals(Constants.charDimAll) ? Constants.charDims : Collections.singletonList(dimension);
-		double expBase = dimension.equals(Constants.charDimAll) ? Constants.allDimExpAdd : Constants.oneDimExpAdd;
+		List<String> dims = Constants.charDimAll.equals(dimension) ? Constants.charDims : Collections.singletonList(dimension);
+		double expBase = Constants.charDimAll.equals(dimension) ? Constants.allDimExpAdd : Constants.oneDimExpAdd;
 		double expMult = w.getNation(kingdom).hasTag(Constants.nationHeroicTag) ? Constants.heroicExpMultiplier : 1.0;
 
 		dims.forEach(d -> experience.put(d, experience.get(d) + expBase * expMult));

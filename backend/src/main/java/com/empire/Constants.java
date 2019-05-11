@@ -28,7 +28,7 @@ public class Constants {
     public static final String armySeafaringTag = "Seafaring";
     public static final double seafaringMod = 1.5;
 
-    public static final String armyPirateTag = "Pirate";
+    public static final String pirateKingdom = "Pirate";
 
     public static final String nationDisciplinedTag = "Disciplined";
     public static final double disciplinedMod = 0.1;
