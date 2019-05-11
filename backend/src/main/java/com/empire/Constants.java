@@ -14,10 +14,10 @@ public class Constants {
     public static final double foodFedPointFactor = 1 / 1000000.0;
     public static final double foodFedPlentifulPointFactor = 2 / 1000000.0;
 
-		public static final double numShipsBuiltPerShipyard = 5;
-		public static final double shipBuildingTraitWeeksProduction = 5;
+    public static final double numShipsBuiltPerShipyard = 5;
+    public static final double shipBuildingTraitWeeksProduction = 5;
 
-		public static final double razeRefundFactor = 0.8;
+    public static final double razeRefundFactor = 0.8;
 
     public static final double armyBaseStrength = 1E-2;
     public static final double navyBaseStrength = 1.0;
