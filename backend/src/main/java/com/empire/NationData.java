@@ -47,15 +47,15 @@ class NationData {
 		if (Relationship.War.ATTACK == aa.getRelationship(b).battle || Relationship.War.ATTACK == bb.getRelationship(a).battle) {
 			return true;
 		}
-		if (region != null && region.kingdom != null && region.kingdom.equals(a) && Relationship.War.NEUTRAL == aa.getRelationship(b).battle) return true;
-		if (region != null && region.kingdom != null && region.kingdom.equals(b) && Relationship.War.NEUTRAL == bb.getRelationship(a).battle) return true;
+		if (region != null && region.getKingdom() != null && region.getKingdom().equals(a) && Relationship.War.NEUTRAL == aa.getRelationship(b).battle) return true;
+		if (region != null && region.getKingdom() != null && region.getKingdom().equals(b) && Relationship.War.NEUTRAL == bb.getRelationship(a).battle) return true;
 		return false;
 	}
 
 	static Ideology getStateReligion(String kingdom, World w) {
 		HashMap<Ideology, Double> weights = new HashMap<>();
 		for (Region r : w.regions) {
-			if (!kingdom.equals(r.kingdom)) continue;
+			if (!kingdom.equals(r.getKingdom())) continue;
 			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
 		}
 		Ideology max = Ideology.COMPANY;

@@ -130,7 +130,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthLoyalNotRegionOwner() {
 		plainArmy.location = 1;
-		world.regions.get(1).kingdom = "k2";
+		world.regions.get(1).setKingdomNoScore("k2");
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
