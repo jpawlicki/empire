@@ -2,9 +2,7 @@ package com.empire;
 
 
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * This class is a holding place for game constants, much of the variables here could be turned into enums,
