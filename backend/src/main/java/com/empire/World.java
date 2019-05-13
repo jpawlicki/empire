@@ -399,26 +399,22 @@ final class World {
 					c.addTag("Ruler");
 					if ("checked".equals(setup.food)) c.values.add("food");
 					if ("checked".equals(setup.happiness)) c.values.add("happiness");
-					if ("checked".equals(setup.supremacy)) c.values.add("supremacy");
-					if ("checked".equals(setup.conquest)) c.values.add("territory");
+					if ("checked".equals(setup.territory)) c.values.add("territory");
 					if ("checked".equals(setup.glory)) c.values.add("glory");
 					if ("checked".equals(setup.religion)) c.values.add("religion");
 					if ("checked".equals(setup.ideology)) c.values.add("ideology");
 					if ("checked".equals(setup.security)) c.values.add("security");
 					if ("checked".equals(setup.riches)) c.values.add("riches");
-					if ("checked".equals(setup.friendship)) c.values.add("friendship");
 					if ("checked".equals(setup.culture)) c.values.add("culture");
 				} else {
 					c.values.add("food");
 					if (Math.random() < 0.1) c.values.add("happiness");
-					if (Math.random() < 0.1) c.values.add("supremacy");
 					if (Math.random() < 0.1) c.values.add("territory");
 					if (Math.random() < 0.1) c.values.add("glory");
 					if (Math.random() < 0.1) c.values.add("religion");
 					if (Math.random() < 0.1) c.values.add("ideology");
 					if (Math.random() < 0.1) c.values.add("security");
 					if (Math.random() < 0.1) c.values.add("riches");
-					if (Math.random() < 0.1) c.values.add("friendship");
 					if (Math.random() < 0.1) c.values.add("culture");
 				}
 				if (i == 4) c.addTag("Cardinal");
@@ -2373,23 +2369,6 @@ final class World {
 				double frac = battles / (battles + peace);
 				score(k, "glory", frac >= .30 ? 1 : -1);
 			}
-			// Supremacy
-			for (String k : kingdoms.keySet()) {
-				if (!tributes.getOrDefault(k, new ArrayList<>()).isEmpty()) score(k, "supremacy", -4);
-				for (String t : tributes.keySet()) if (tributes.get(t).contains(k)) score(k, "supremacy", 1);
-			}
-			// Friendship
-			for (String k : kingdoms.keySet()) {
-				int friends = 0;
-				int enemies = 0;
-				for (String kk : kingdoms.keySet()) {
-					if (k.equals(kk)) continue;
-					if (NationData.isFriendly(k, kk, this)) friends++;
-					else if (NationData.isEnemy(k, kk, this)) enemies++;
-				}
-				if (friends > enemies) score(k, "friendship", 1);
-				if (enemies > friends) score(k, "friendship", -1.5);
-			}
 			// Security
 			for (String k : kingdoms.keySet()) {
 				int moreSoldiers = 0;
@@ -2457,14 +2436,12 @@ final class World {
 				c.addTag("Ruler");
 				c.values.add("food");
 				if (Math.random() < 0.1) c.values.add("happiness");
-				if (Math.random() < 0.1) c.values.add("supremacy");
 				if (Math.random() < 0.1) c.values.add("territory");
 				if (Math.random() < 0.1) c.values.add("glory");
 				if (Math.random() < 0.1) c.values.add("religion");
 				if (Math.random() < 0.1) c.values.add("ideology");
 				if (Math.random() < 0.1) c.values.add("security");
 				if (Math.random() < 0.1) c.values.add("riches");
-				if (Math.random() < 0.1) c.values.add("friendship");
 				if (Math.random() < 0.1) c.values.add("culture");
 				c.experience.put("general", Math.floor(Math.random() * 10 + 1));
 				c.experience.put("admiral", Math.floor(Math.random() * 10 + 1));
