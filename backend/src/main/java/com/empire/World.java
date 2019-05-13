@@ -1920,7 +1920,7 @@ final class World {
 						getNation(k).gold -= signingBonus * recruits / 100;
 						incomeSources.getOrDefault(k, new Budget()).spentRecruits += signingBonus * recruits / 100;
 					}
-					ArrayList<String> tags = r.getArmyTags();
+					List<String> tags = r.getArmyTags();
 					Army merge = null;
 					outer: for (Army a : armies) {
 						if (a.location == i && a.isArmy() && a.kingdom.equals(k)) {
