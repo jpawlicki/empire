@@ -101,13 +101,10 @@ class OrdersPane extends HTMLElement {
 					<h1 id="score_header">Score</h1>
 					<div id="score_switches">
 						<label><input type="checkbox" id="score_food" name="score_food"></input>Food</label>
-						<label><input type="checkbox" id="score_prosperity" name="score_prosperity"></input>Prosperity</label>
 						<label><input type="checkbox" id="score_happiness" name="score_happiness"></input>Happiness</label>
-						<label><input type="checkbox" id="score_unity" name="score_unity"></input>Unity</label>
 						<label><input type="checkbox" id="score_riches" name="score_riches"></input>Riches</label>
-						<label><input type="checkbox" id="score_conquest" name="score_conquest"></input>Conquest</label>
+						<label><input type="checkbox" id="score_territory" name="score_territory"></input>Territory</label>
 						<label><input type="checkbox" id="score_glory" name="score_glory"></input>Glory</label>
-						<label><input type="checkbox" id="score_supremacy" name="score_supremacy"></input>Supremacy</label>
 						<label><input type="checkbox" id="score_religion" name="score_religion"></input>Religion</label>
 						<label><input type="checkbox" id="score_security" name="score_security"></input>Security</label>
 						<label><input type="checkbox" id="score_culture" name="score_culture"></input>Culture</label>
