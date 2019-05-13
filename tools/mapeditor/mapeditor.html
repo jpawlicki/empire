@@ -23,28 +23,34 @@
 		<script>
 			let width = 1000;
 			let height = 1000;
-			let colors = [
-				"#728cff", // Aefoss
-				"#f259f2", // Balyucesu 
-				"#8c7f72", // Celyn
-				"#fe9933", // Doomstoll
-				"#7f00f2", // Ejymsyn
-				"#d80066", // Fiskrbaer
-				"#99e5ff", // Gangrjata
-				"#003f00", // Hosshofn
-				"#007f7f", // Isla
-				"#fe9999", // Jaraslatr
-				"#33cca5", // Kyaradis
-				"#f2e5ff", // Landhylli
-				"#005999", // Mabe
-				"#590026", // Nysiunarri
-				"#f2f2d8", // Prenepulse
-				"#7fff0c", // Rettrsvelt
-				"#000059", // Slail
-				"#593300", // Tavia
-				"#d83300", // Upiceil
-				"#b2a50c", // Yrslekye
-				"#268c0c" // Zemsim
+			// The last nations in this list will be dropped for reduced player-count maps.
+			let nations = [
+				{"color": "#d83300", "name": "Upiceil", "default_region_names": ["Scribe's Hollow","Widefield","Sevencourt","Summersage","Sancta Civitate","Greatriver"]},
+				{"color": "#fe9933", "name": "Doomstoll", "default_region_names": ["Silverguard","Ravenhall","Freehold","Runestone","Justice Point","Silverspire"]},
+				{"color": "#593300", "name": "Tavia", "default_region_names": ["Endless Beauty","Ebon Sands","Myriad Oases","Many Roads","Hundred Spires","Countless Histories"]},
+				{"color": "#7fff0c", "name": "Rettrsvelt", "default_region_names": ["Crumble","Grind","Dread","Rust","Wear","Bend","Rot","Scour","Breach"]},
+				{"color": "#005999", "name": "Mabe", "default_region_names": ["Highcliff","Sailkeep","Clothridge","Ashpeak Vale","Silverdell","Marbletop"]},
+				{"color": "#f2f2d8", "name": "Pernepusle", "default_region_names": ["Whitesand","Tumblebeach","Rocksand","Greenwood", "Sacred Way", "Sunlake"]},
+				{"color": "#003f00", "name": "Hosshofn", "default_region_names": ["Bloodwater", "Graveyard", "Stillriver", "Silentwood", "Thornfear", "Bonesteel"]},
+				{"color": "#f259f2", "name": "Balyucesu", "default_region_names": ["Widow's Pyre", "Sailor's Grave", "Thievesend", "Soldier's Rest", "Hunter's Folly", "Kingspride"]},
+				{"color": "#728cff", "name": "Aefoss", "default_region_names": ["Timberhold","Darkmountain","Whitewater","Foreverfall","Grandfather Mountain","Grandmother Mountain"]},
+				{"color": "#7f00f2", "name": "Ejymsyn", "default_region_names": ["Cascadia","Five Gates","Field of Fallen Heroes","Greymount","Nightsands","Stacked Stones"]},
+				{"color": "#007f7f", "name": "Isla", "default_region_names": ["Snowhelm","Hope's Landing","Icehaven","Iceshore Pass","Winterwood Crest","Winterwood Vale"]},
+				{"color": "#33cca5", "name": "Kyaradis", "default_region_names": ["Aleharbor","Port Crown","Golden Docks","Wayfield Delta","Coinwell","Bleakridge"]},
+				{"color": "#268c0c", "name": "Zemsim", "default_region_names": ["Moonshadow Forest","Moonsand","Mount Sion","Nightwood","The Coast of Stars","Orchid's Perch"]}
+				{"color": "#fe9999", "name": "Jaraslatr", "default_region_names": ["Saltreach","Razorwind Hold","Kindlewood","Firehall","Blackford","Vexillum Cinere","Saltbreeze"]},
+				{"color": "#000059", "name": "Slail", "default_region_names": ["Clearwater","Falcon's Rest","Fangriver","Crystal Bay","Wolfden","Deerwood"]},
+				{"color": "#d80066", "name": "Fiskrbaer", "default_region_names": ["The Skull","Startree","Magdalena's Well","Ghostwood","Windstar","Bloodswamp"]},
+				{"color": "#8c7f72", "name": "Celyn", "default_region_names": ["Goldwood","Driftwood","Woody Neck","Shorewood","Riverwood","Rosewood"]},
+				{"color": "#590026", "name": "Nysiunarri", "default_region_names": ["Keep Northguard","Mountainshadow","Vigilant Shore","Fort Steadfast","The Midlands","Blackrock Peak"]},
+				{"color": "#f2e5ff", "name": "Landhylli", "default_region_names": ["Beacon", "New Hope", "Northhaven", "Tyrshelter", "Providence", "Innsbrooke"]},
+				{"color": "#b2a50c", "name": "Yrslekye", "default_region_names": ["Waverisen", "Shorebreaker", "Dolphin Point", "Sunsparkle", "Saltbreeze", "Greatdock"]},
+				{"color": "#99e5ff", "name": "Gangrjata", "default_region_names": ["", "", "", "", "", ""]},
+				{"color": "#99e5ff", "name": "Walymyn", "default_region_names": ["", "", "", "", "", ""]},
+				{"color": "#99e5ff", "name": "", "default_region_names": ["", "", "", "", "", ""]},
+				{"color": "#99e5ff", "name": "", "default_region_names": ["", "", "", "", "", ""]},
+				{"color": "#99e5ff", "name": "", "default_region_names": ["", "", "", "", "", ""]},
+				{"color": "#99e5ff", "name": "", "default_region_names": ["", "", "", "", "", ""]}
 			];
 			let players = colors.length;
 			let data = {};
