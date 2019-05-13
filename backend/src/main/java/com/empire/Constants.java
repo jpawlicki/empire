@@ -11,6 +11,14 @@ import java.util.Map;
  * the numeric data could be game config
  */
 public class Constants {
+    public static final double foodFedPointFactor = 1 / 1E6;
+    public static final double foodFedPlentifulPointFactor = 2 / 1E6;
+
+    public static final double numShipsBuiltPerShipyard = 5;
+    public static final double shipBuildingTraitWeeksProduction = 5;
+
+    public static final double razeRefundFactor = 0.8;
+
     public static final double armyBaseStrength = 1E-2;
     public static final double navyBaseStrength = 1.0;
 

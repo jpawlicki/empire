@@ -23,7 +23,6 @@ final class Region {
 	Culture culture;
 	String climate;
 	double population;
-	String kingdom;
 	Ideology religion;
 	double unrestPopular;
 	Noble noble;
@@ -31,6 +30,8 @@ final class Region {
 	double food;
 	double harvest;
 	boolean gotCultFood;
+
+	private String kingdom;
 
 	public boolean canFoodTransferTo(World w, Region target) {
 		HashSet<Region> legals = new HashSet<>();
@@ -214,11 +215,25 @@ final class Region {
 				Ideology si = NationData.getStateReligion(k, w);
 				if (max.religion == si.religion) w.score(k, "religion", 2);
 				if (religion.religion == si.religion) w.score(k, "religion", -2);
-				if (max == si) w.score(k, "ideology", 3);
-				if (religion == si) w.score(k, "ideology", -3);
+				if (max == si) w.score(k, "ideology", 2);
+				if (religion == si) w.score(k, "ideology", -2);
 			}
 		}
 		religion = max;
+	}
+
+	public String getKingdom() {
+		return kingdom;
+	}
+
+	public void setKingdomNoScore(String kingdom) {
+		this.kingdom = kingdom;
+	}
+
+	public void setKingdom(World w, String kingdom) {
+		w.score(kingdom, "territory", 4);
+		w.score(this.kingdom, "territory", -4);
+		this.kingdom = kingdom;
 	}
 
 	public Set<Region> getNeighbors(World w) {

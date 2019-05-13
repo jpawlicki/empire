@@ -113,19 +113,14 @@ class CharacterReport extends HTMLElement {
 		// If values, show them; else hide them.
 		let valueTooltips = {
 			"food": "Feeding their people.",
-			"prosperity": "The prosperity of their people.",
 			"happiness": "The happiness of their general population.",
-			"supremacy": "The supremacy and independence of their nation.",
-			"conquest": "Conquering other lands.",
+			"territory": "Expanding their borders.",
 			"glory": "Fighting in glorious combat.",
 			"religion": "Spreading their overall religion (vs other religions).",
 			"ideology": "Spreading their interpretation of their religion (among followers of their overall religion).",
 			"security": "Building large armies and navies (used or not).",
 			"riches": "Amassing wealth.",
-			"friendship": "Forming numerous alliances.",
 			"culture": "The happiness of all people of their culture.",
-			"unity": "Preventing war betwen nations of their culture.",
-			"worldpeace": "World peace.",
 		};
 		if (c.values.length > 0) {
 			for (let v of c.values) {
