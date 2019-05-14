@@ -377,7 +377,7 @@ final class Region {
 		double base = Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 		double mods = 1;
 		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
-		if (noble != null && noble.hasTag("Desperate")) mods -= 2;
+		if (noble != null && noble.hasTag("Desperate")) mods += Constants.nobleDesperateMod;
 		if (w.getNation(kingdom).hasTag("Stoic")) mods += .75;
 		mods += calcFortification() - 1;
 		return Math.max(0, base * mods);

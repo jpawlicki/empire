@@ -91,6 +91,9 @@ public class Constants {
     public static final String nobleShadyTag = "Shady Connections";
     public static final double nobleShadyMod = 2.0;
 
+    public static final String nobleDesperateTag = "Desperate";
+    public static final double nobleDesperateMod = -2.0;
+
     public static final double noblePirateThreatMod = -0.5;
 
     //Religion
