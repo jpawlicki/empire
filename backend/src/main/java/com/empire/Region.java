@@ -367,7 +367,7 @@ final class Region {
 		if (religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH) {
 			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill * Constants.clericalUnrestGoodwillFactor);
 		}
-		if (noble != null && noble.name != "" && !"".equals(noble.name)) {
+		if (noble != null && !"".equals(noble.name)) {
 			unrest = Math.max(noble.unrest, unrest);
 		}
 		return Math.min(1, Math.max(0, unrest));
