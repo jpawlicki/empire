@@ -379,7 +379,7 @@ final class Region {
 		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
 		if (noble != null && noble.hasTag(Constants.nobleDesperateTag)) mods += Constants.nobleDesperateMod;
 		if (w.getNation(kingdom).hasTag(Constants.nationStoicTag)) mods += Constants.stoicConqStrengthMod;
-		mods += calcFortification() - 1;
+		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
 	}
 
@@ -398,6 +398,10 @@ final class Region {
 		double fort = 1;
 		for (Construction c : constructions) if (c.type.equals("fortifications")) fort += .15;
 		return Math.min(5, fort);
+	}
+
+	public double calcFortificationMod() {
+		return calcFortification() - 1;
 	}
 
 	public boolean isLand() {
