@@ -189,13 +189,18 @@ final class Region {
 			}
 		}
 
-		NationData wKingdom = w.getNation(kingdom);
-
 		if (noble != null && noble.hasTag(Constants.nobleFrugalTag)) mods += Constants.nobleFrugalMod;
 		if (noble != null && noble.hasTag(Constants.nobleHoardingTag)) mods += Constants.nobleHoardingMod;
 
-		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
-		if (wKingdom.hasTag("Mercantile")) mods += .15;
+		NationData wKingdom = w.getNation(kingdom);
+		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
+		if (wKingdom.hasTag(Constants.nationMercantileTag)) mods += Constants.mercantileTaxMod;
+		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+			int conquests = 0;
+			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
+			mods += conquests * Constants.perConquestWarlikeTaxMod;
+		}
+
 		boolean neighborKuun = false;
 		for (Region r : getNeighbors(w)) {
 			if (r.kingdom != null && !r.kingdom.equals(kingdom) && Ideology.RIVER_OF_KUUN == NationData.getStateReligion(r.kingdom, w)) neighborKuun = true;
@@ -212,11 +217,7 @@ final class Region {
 		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
 			mods -= .3;
 		}
-		if (wKingdom.hasTag("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
-			int conquests = 0;
-			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
-			mods += conquests * .05;
-		}
+
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += .03 * numUniqueIdeologies(kingdom, w);
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += .03 * numUniqueIdeologies(kingdom, w);
 		return Math.max(0, base * mods);
