@@ -327,13 +327,14 @@ final class Region {
 		for (final Character c : w.characters) {
 			Function<Node, Node> getPower = (Node n) -> {
 				Region r = n.location;
-				if (r.isSea()) return new Node(n.power * .9, n.location);
+				if (r.isSea()) return new Node(n.power * Constants.plotDecaySea, n.location);
 				if (NationData.isFriendly(c.kingdom, r.kingdom, w)) {
 					if (r.religion == Ideology.LYSKR) return new Node(n.power, n.location);
-					return new Node(n.power * (.9 - r.calcUnrest(w) / 10), n.location);
+					return new Node(n.power * (Constants.plotDecayFriendly - r.calcUnrest(w) / 10), n.location);
 				}
-				return new Node(n.power * (.8 + r.calcUnrest(w) / 10), n.location);
+				return new Node(n.power * (Constants.plotDecayNonFriendly + r.calcUnrest(w) / 10), n.location);
 			};
+
 			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
 				@Override
 				public int compare(Node a, Node b) {
