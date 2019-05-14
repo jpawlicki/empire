@@ -191,8 +191,8 @@ final class Region {
 
 		NationData wKingdom = w.getNation(kingdom);
 
-		if (noble != null && noble.hasTag("Frugal")) mods += .5;
-		if (noble != null && noble.hasTag("Hoarding")) mods -= .35;
+		if (noble != null && noble.hasTag(Constants.nobleFrugalTag)) mods += Constants.nobleFrugalMod;
+		if (noble != null && noble.hasTag(Constants.nobleHoardingTag)) mods += Constants.nobleHoardingMod;
 
 		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
 		if (wKingdom.hasTag("Mercantile")) mods += .15;
