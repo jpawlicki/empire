@@ -134,6 +134,14 @@ final class Region {
 		if (noble != null && noble.hasTag(Constants.nobleUntrustingTag)) mods += Constants.nobleUntrustngMod;
 		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
 
+		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
+		if (wKingdom.hasTag(Constants.nationPatrioticTag)) mods += Constants.patrioticMod;
+		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+			int conquests = 0;
+			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
+			mods += conquests * Constants.perConquestWarlikeRecruitmentMod;
+		}
+
 		if (religion == Ideology.RJINKU) {
 			mods += Constants.rjinkuRecruitmentMod;
 		} else if (religion == Ideology.SWORD_OF_TRUTH) {
@@ -153,14 +161,6 @@ final class Region {
 		}
 
 		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Constants.armyPillagersTag)) mods += Constants.armyPillagersRecruitmentMod;
-
-		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
-		if (wKingdom.hasTag("Patriotic")) mods += .15;
-		if (wKingdom.hasTag("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
-			int conquests = 0;
-			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
-			mods += conquests * .05;
-		}
 
 		return Math.max(0, base * mods);
 	}
