@@ -396,14 +396,14 @@ final class Region {
 		return Math.sqrt(population) * 3 / 100 * (1 + calcUnrest(w) * 2 - .7);
 	}
 
-	public double calcFortification() {
+	public double calcFortificationPct() {
 		double fort = 1;
-		for (Construction c : constructions) if (c.type.equals("fortifications")) fort += .15;
-		return Math.min(5, fort);
+		for (Construction c : constructions) if (c.type.equals(Constants.constFort)) fort += Constants.perFortMod;
+		return Math.min(Constants.maxFortMod, fort);
 	}
 
 	public double calcFortificationMod() {
-		return calcFortification() - 1;
+		return calcFortificationPct() - 1;
 	}
 
 	public boolean isLand() {
