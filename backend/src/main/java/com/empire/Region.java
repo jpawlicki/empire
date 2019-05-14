@@ -205,17 +205,17 @@ final class Region {
 		for (Region r : getNeighbors(w)) {
 			if (r.kingdom != null && !r.kingdom.equals(kingdom) && Ideology.RIVER_OF_KUUN == NationData.getStateReligion(r.kingdom, w)) neighborKuun = true;
 		}
-		if (neighborKuun) mods += 0.5;
+		if (neighborKuun) mods += Constants.riverOfKuunNeighborTaxMod;
 		if (religion == Ideology.SYRJEN) {
-			mods += 1.25;
+			mods += Constants.syrjenTaxMod;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
-			if (getTapestryBonus) mods += .5;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == 1.25) {
-			mods += .5;
+			if (getTapestryBonus) mods += Constants.tapestryTaxMod;
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == Constants.riverOfKuunRationingThresh) {
+			mods += Constants.riverOfKuunTaxMod;
 		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
-			mods -= .3;
+			mods += Constants.chaliceOfCompassionTaxMod;
 		}
 
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += .03 * numUniqueIdeologies(kingdom, w);
