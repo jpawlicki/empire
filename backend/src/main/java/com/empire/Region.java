@@ -374,13 +374,18 @@ final class Region {
 	}
 
 	public double calcMinConquestStrength(World w) {
-		double base = Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
+		double base = calcBaseConquestStrength(w);
 		double mods = 1;
 		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
 		if (noble != null && noble.hasTag(Constants.nobleDesperateTag)) mods += Constants.nobleDesperateMod;
 		if (w.getNation(kingdom).hasTag(Constants.nationStoicTag)) mods += Constants.stoicConqStrengthMod;
 		mods += calcFortification() - 1;
 		return Math.max(0, base * mods);
+	}
+
+	// TODO: This is a game rule/equation
+	public double calcBaseConquestStrength(World w){
+		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 	}
 
 	public double calcMinPatrolStrength(World w) {
