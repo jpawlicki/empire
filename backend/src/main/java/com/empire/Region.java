@@ -250,7 +250,7 @@ final class Region {
 	public void setReligion(Ideology bias, World w) {
 		Map<Ideology, Integer> ideologies = new HashMap<>();
 		for (Construction c : constructions) {
-			if (c.type.equals("temple")) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
+			if (c.type.equals(Constants.constTemple)) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
 		int maxV = ideologies.getOrDefault(bias, -1);
 		Ideology max = bias == null ? religion : bias;
