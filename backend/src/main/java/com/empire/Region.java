@@ -135,16 +135,17 @@ final class Region {
 		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
 
 		if (religion == Ideology.RJINKU) {
-			mods += 1;
+			mods += Constants.rjinkuRecruitmentMod;
 		} else if (religion == Ideology.SWORD_OF_TRUTH) {
-			mods += 1;
+			mods += Constants.swordOfTruthRecruitmentMod;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
-			if (getTapestryBonus) mods += .5;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= 1.25) {
-			mods += .5;
+			if (getTapestryBonus) mods += Constants.tapestryRecruitmentMod;
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= Constants.riverOfKuunRationingThresh) {
+			mods += Constants.riverOfKuunRecruitmentMod;
 		}
+
 		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag("Pillagers")) mods -= .75;
 		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
 		if (wKingdom.hasTag("Patriotic")) mods += .15;

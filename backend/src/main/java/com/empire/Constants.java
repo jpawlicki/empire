@@ -75,6 +75,24 @@ public class Constants {
     public static final String nobleWastefulTag = "Wasteful";
     public static final double nobleWastefulMod = 0.1;
 
+    //Religion
+    public static final double rjinkuRecruitmentMod = 1.0;
+    public static final double rjinkuBattledRecruitmentMod = 0.5;
+    public static final double syrjenTaxMod = 1.25;
+    public static final double swordOfTruthRecruitmentMod = 1.0;
+    public static final double chaliceOfCompassionTaxMod = -0.3;
+    public static final double chaliceOfCompassionFoodMod = -0.15;
+    public static final double tapestryRecruitmentMod = 0.5;
+    public static final double tapestryTaxMod = 0.5;
+    public static final double perIdeologyTapestryRecruitmentMod = 0.03;
+    public static final double perIdeologyTapestryRecruitmentModGlobal = 0.03;
+    public static final double perIdeologyTapestryTaxMod = 0.03;
+    public static final double perIdeologyTapestryTaxModGlobal = 0.03;
+    public static final double riverOfKuunRationingThresh = 1.25;
+    public static final double riverOfKuunTaxMod = 0.5;
+    public static final double riverOfKuunRecruitmentMod = 0.5;
+    public static final double riverOfKuunNeighborTaxMod = 0.5;
+
     public static final String noCaptor = "";
     public static final Noble noNoble = null;
     public static final Character noLeader = null;
