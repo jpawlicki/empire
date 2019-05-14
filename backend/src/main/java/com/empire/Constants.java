@@ -63,6 +63,7 @@ public class Constants {
 
     public static final String nobleLoyalTag = "Loyal";
     public static final double loyalMod = 0.25;
+    public static final double loyalMinConqMod = 1.0;
 
     public static final String nobleInspiringTag = "Inspiring";
     public static final double nobleInspiringMod = 0.5;
