@@ -263,7 +263,7 @@ final class Region {
 		if (Ideology.VESSEL_OF_FAITH == max && religion != max) {
 			for (String k : w.getNationNames()) {
 				if (Ideology.VESSEL_OF_FAITH != NationData.getStateReligion(k, w)) continue;
-				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular - .05);
+				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular + Constants.vesselOfFaithSetRelUnrestMod);
 			}
 		}
 		if (max != religion) {

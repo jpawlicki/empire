@@ -97,6 +97,7 @@ public class Constants {
     public static final double chaliceOfCompassionFoodMod = -0.15;
     public static final double tapestryRecruitmentMod = 0.5;
     public static final double tapestryTaxMod = 0.5;
+    public static final double vesselOfFaithSetRelUnrestMod = -0.05; // TODO: this is used in setReligion, what rule does this implement?
     public static final double perIdeologyTapestryRecruitmentMod = 0.03;
     public static final double perIdeologyTapestryRecruitmentModGlobal = 0.03;
     public static final double perIdeologyTapestryTaxMod = 0.03;
