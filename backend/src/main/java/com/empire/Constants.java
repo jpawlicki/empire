@@ -168,6 +168,8 @@ public class Constants {
     public static final String constFort = "fortifications";
     public static final String constTemple = "temple";
 
+    public static final double clericalUnrestGoodwillFactor = 1E-2;
+
     public static final double plotDecaySea = 0.9;
     public static final double plotDecayFriendly = 0.9;
     public static final double plotDecayNonFriendly = 0.8;
