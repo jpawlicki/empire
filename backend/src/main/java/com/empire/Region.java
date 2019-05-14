@@ -227,11 +227,11 @@ final class Region {
 	public double calcConsumption(World w, double foodMod) {
 		double base = population;
 		double mods = foodMod;
-		if (noble != null && noble.hasTag("Rationing")) mods -= .2;
-		if (noble != null && noble.hasTag("Wasteful")) mods += .1;
-		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods -= .15;
+		if (noble != null && noble.hasTag(Constants.nobleRationingTag)) mods += Constants.nobleRationingMod;
+		if (noble != null && noble.hasTag(Constants.nobleWastefulTag)) mods += Constants.nobleWastefulMod;
+		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += Constants.chaliceOfCompassionFoodMod;
 		if (mods < 0) mods = 0;
-		return base * mods;
+		return Math.max(0, base * mods);
 	}
 
 	public double calcPirateThreat(World w) {
