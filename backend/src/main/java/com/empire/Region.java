@@ -388,10 +388,12 @@ final class Region {
 		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 	}
 
+	// TODO: This is a game rule/equation
 	public double calcMinPatrolStrength(World w) {
-		double mods = 1;
-		mods += calcUnrest(w) * 2 - .7;
-		return Math.sqrt(population) * 3 / 100 * mods;
+//		double mods = 1;
+//		mods += calcUnrest(w) * 2 - .7;
+//		return Math.sqrt(population) * 3 / 100 * mods;
+		return Math.sqrt(population) * 3 / 100 * (1 + calcUnrest(w) * 2 - .7);
 	}
 
 	public double calcFortification() {
