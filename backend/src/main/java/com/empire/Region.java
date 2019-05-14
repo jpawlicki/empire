@@ -146,6 +146,12 @@ final class Region {
 			mods += Constants.riverOfKuunRecruitmentMod;
 		}
 
+		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w) && rulerBattled) mods += Constants.rjinkuBattledRecruitmentMod;
+		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += Constants.perIdeologyTapestryRecruitmentMod * numUniqueIdeologies(kingdom, w);
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) {
+			mods += Constants.perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
+		}
+
 		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag("Pillagers")) mods -= .75;
 		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
 		if (wKingdom.hasTag("Patriotic")) mods += .15;
@@ -154,9 +160,7 @@ final class Region {
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * .05;
 		}
-		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w) && rulerBattled) mods += .5;
-		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += .03 * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += .03 * numUniqueIdeologies(kingdom, w);
+
 		return Math.max(0, base * mods);
 	}
 
