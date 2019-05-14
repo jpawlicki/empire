@@ -116,7 +116,6 @@ public class Constants {
     public static final double allDimExpAdd = 0.25;
     public static final double perLevelLeaderMod = 0.2;
     public static final double perLevelGovernRecruitMod = 0.5;
-    public static final double unrestRecruitmentEffectThresh = 0.25;
 
     // Nations
     public static final String nationHeroicTag = "Heroic";
@@ -144,5 +143,8 @@ public class Constants {
 
     // Regions
     public static final double recruitmentPerPop = 5E-4; // (1.0 / 2000.0)
+    public static final double taxPerPop = 1E-4; // (1.0 / 10000.0)
+    public static final double unrestRecruitmentEffectThresh = 0.25;
+    public static final double unrestTaxEffectThresh = 0.25;
     public static final String constFort = "fortifications";
 }

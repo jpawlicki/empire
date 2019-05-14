@@ -121,7 +121,6 @@ final class Region {
 		if (unrest > Constants.unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - Constants.unrestRecruitmentEffectThresh);
 
 		double mods = 1;
-		NationData wKingdom = w.getNation(kingdom);
 		mods += calcSigningBonusMod(signingBonus);
 
 		if (governors != null) {
@@ -134,6 +133,7 @@ final class Region {
 		if (noble != null && noble.hasTag(Constants.nobleUntrustingTag)) mods += Constants.nobleUntrustngMod;
 		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
 
+		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
 		if (wKingdom.hasTag(Constants.nationPatrioticTag)) mods += Constants.patrioticMod;
 		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
@@ -177,11 +177,14 @@ final class Region {
 
 
 	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
-		double base = population / 10000.0;
-		double mods = taxRate;
+		double base = population * Constants.taxPerPop;
 		double unrest = calcUnrest(w);
+		if (unrest > Constants.unrestTaxEffectThresh) base *= 1.0 - (unrest - Constants.unrestTaxEffectThresh);
+
+		double mods = taxRate;
+
 		NationData wKingdom = w.getNation(kingdom);
-		if (unrest > .25) base *= 1.25 - unrest;
+
 		if (noble != null && noble.hasTag("Frugal")) mods += .5;
 		if (noble != null && noble.hasTag("Hoarding")) mods -= .35;
 		if (governors != null) {
