@@ -12,6 +12,12 @@ public class Constants {
     public static final double foodFedPointFactor = 1 / 1E6;
     public static final double foodFedPlentifulPointFactor = 2 / 1E6;
 
+    public static final String scoreProfReligion = "religion";
+    public static final double scoreReligionPerConverted = 2;
+
+    public static final String scoreProfIdeology = "ideology";
+    public static final double scoreIdeologyPerConverted = 2;
+
     public static final double numShipsBuiltPerShipyard = 5;
     public static final double shipBuildingTraitWeeksProduction = 5;
 

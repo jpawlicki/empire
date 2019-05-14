@@ -269,10 +269,10 @@ final class Region {
 		if (max != religion) {
 			for (String k : w.getNationNames()) {
 				Ideology si = NationData.getStateReligion(k, w);
-				if (max.religion == si.religion) w.score(k, "religion", 2);
-				if (religion.religion == si.religion) w.score(k, "religion", -2);
-				if (max == si) w.score(k, "ideology", 2);
-				if (religion == si) w.score(k, "ideology", -2);
+				if (max.religion == si.religion) w.score(k, Constants.scoreProfReligion, Constants.scoreReligionPerConverted);
+				if (religion.religion == si.religion) w.score(k, Constants.scoreProfReligion, -Constants.scoreReligionPerConverted);
+				if (max == si) w.score(k, Constants.scoreProfIdeology, Constants.scoreIdeologyPerConverted);
+				if (religion == si) w.score(k, Constants.scoreProfIdeology, -Constants.scoreIdeologyPerConverted);
 			}
 		}
 		religion = max;
