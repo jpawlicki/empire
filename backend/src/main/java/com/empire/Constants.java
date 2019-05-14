@@ -75,6 +75,13 @@ public class Constants {
     public static final String nobleWastefulTag = "Wasteful";
     public static final double nobleWastefulMod = 0.1;
 
+    public static final String noblePolicingTag = "Policing";
+
+    public static final String nobleShadyTag = "Shady Connections";
+    public static final double nobleShadyMod = 2.0;
+
+    public static final double noblePirateThreatMod = -0.5;
+
     //Religion
     public static final double rjinkuRecruitmentMod = 1.0;
     public static final double rjinkuBattledRecruitmentMod = 0.5;
@@ -148,4 +155,6 @@ public class Constants {
     public static final double unrestRecruitmentEffectThresh = 0.25;
     public static final double unrestTaxEffectThresh = 0.25;
     public static final String constFort = "fortifications";
+
+    public static final double pirateThreatDoubleGold = 30;
 }

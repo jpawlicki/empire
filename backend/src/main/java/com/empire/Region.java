@@ -237,12 +237,13 @@ final class Region {
 	public double calcPirateThreat(World w) {
 		if (isSea()) return 0;
 		if (religion == Ideology.ALYRJA) return 0;
-		if (noble != null && noble.hasTag("Policing")) return 0;
+		if (noble != null && noble.hasTag(Constants.noblePolicingTag)) return 0;
+
 		double unrest = calcUnrest(w);
 		double mods = 1;
-		if (noble != null && noble.hasTag("Shady Connections")) mods += 2;
-		if (noble != null) mods -= 0.5;
-		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / 30) - 1;
+		if (noble != null && noble.hasTag(Constants.nobleShadyTag)) mods += Constants.nobleShadyMod;
+		if (noble != null) mods += Constants.noblePirateThreatMod;
+		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / Constants.pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
 	}
 
