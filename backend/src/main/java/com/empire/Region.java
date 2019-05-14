@@ -335,12 +335,15 @@ final class Region {
 				return new Node(n.power * (Constants.plotDecayNonFriendly + r.calcUnrest(w) / 10), n.location);
 			};
 
+			// TODO: try this function-style equivalent instead once unit tests are created
+			//PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> n.power));
 			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
 				@Override
 				public int compare(Node a, Node b) {
 					return a.power > b.power ? -1 : a.power < b.power ? 1 : 0;
 				}
 			});
+
 			Set<Region> visited = new HashSet<>();
 			pq.add(getPower.apply(new Node(c.calcPlotPower(w, boosts.contains(c.kingdom), inspires), w.regions.get(c.location))));
 			while (!pq.isEmpty()) {
