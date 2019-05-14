@@ -76,5 +76,7 @@ public class Constants {
     public static final String nationHeroicTag = "Heroic";
     public static final double heroicExpMultiplier = 2.0;
 
+    // Regions
+    public static final double recruitmentPerPop = 5E-4; // (1.0 / 2000.0)
     public static final String constFort = "fortifications";
 }

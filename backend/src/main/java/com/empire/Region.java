@@ -116,7 +116,7 @@ final class Region {
 	}
 
 	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
-		double base = population / 2000.0;
+		double base = population * Constants.recruitmentPerPop;
 		double mods = 1;
 		NationData wKingdom = w.getNation(kingdom);
 		if (signingBonus == -1) mods -= 0.5;
