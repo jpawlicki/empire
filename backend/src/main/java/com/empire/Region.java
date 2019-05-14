@@ -130,9 +130,10 @@ final class Region {
 			}
 		}
 
-		if (noble != null && noble.hasTag("Inspiring")) mods += .5;
-		if (noble != null && noble.hasTag("Untrusting")) mods -= .35;
-		if (noble != null && noble.hasTag("Tyrannical")) mods -= .5;
+		if (noble != null && noble.hasTag(Constants.nobleInspiringTag)) mods += Constants.nobleInspiringMod;
+		if (noble != null && noble.hasTag(Constants.nobleUntrustingTag)) mods += Constants.nobleUntrustngMod;
+		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
+
 		if (religion == Ideology.RJINKU) {
 			mods += 1;
 		} else if (religion == Ideology.SWORD_OF_TRUTH) {

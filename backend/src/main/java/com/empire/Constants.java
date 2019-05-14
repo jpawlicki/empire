@@ -42,13 +42,38 @@ public class Constants {
     public static final String nationDisciplinedTag = "Disciplined";
     public static final double disciplinedMod = 0.1;
 
-    public static final String nobleLoyalTag = "Loyal";
-    public static final double loyalMod = 0.25;
-
     public static final double swordOfTruthMod = 0.25;
     public static final double iruhanMod = 0.15;
     public static final double lastStandMod = 4.0;
     public static final double perInspireMod = 0.05;
+
+    // Nobles
+    public static final String noblePiousTag = "Pious";
+    public static final int noblePiousFactor = 3;
+
+    public static final String nobleLoyalTag = "Loyal";
+    public static final double loyalMod = 0.25;
+
+    public static final String nobleInspiringTag = "Inspiring";
+    public static final double nobleInspiringMod = 0.5;
+
+    public static final String nobleUntrustingTag = "Untrusting";
+    public static final double nobleUntrustngMod = -0.35;
+
+    public static final String nobleTyrannicalTag = "Tyrannical";
+    public static final double nobleTyrannicalMod = -0.5;
+
+    public static final String nobleFrugalTag = "Frugal";
+    public static final double nobleFrugalMod = 0.5;
+
+    public static final String nobleHoardingTag = "Hoarding";
+    public static final double nobleHoardingMod = -0.35;
+
+    public static final String nobleRationingTag = "Rationing";
+    public static final double nobleRationingMod = -0.2;
+
+    public static final String nobleWastefulTag = "Wasteful";
+    public static final double nobleWastefulMod = 0.1;
 
     public static final String noCaptor = "";
     public static final Noble noNoble = null;
