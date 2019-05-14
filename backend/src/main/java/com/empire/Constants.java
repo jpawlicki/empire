@@ -9,6 +9,7 @@ import java.util.List;
  * the numeric data could be game config
  */
 public class Constants {
+    // Scoring
     public static final double foodFedPointFactor = 1 / 1E6;
     public static final double foodFedPlentifulPointFactor = 2 / 1E6;
 
@@ -17,6 +18,9 @@ public class Constants {
 
     public static final String scoreProfIdeology = "ideology";
     public static final double scoreIdeologyPerConverted = 2;
+
+    public static final String scoreProfTerritory = "territory";
+    public static final double scorePerConqueredTerritory = 4;
 
     public static final double numShipsBuiltPerShipyard = 5;
     public static final double shipBuildingTraitWeeksProduction = 5;

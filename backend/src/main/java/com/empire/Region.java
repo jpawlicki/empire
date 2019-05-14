@@ -287,8 +287,8 @@ final class Region {
 	}
 
 	public void setKingdom(World w, String kingdom) {
-		w.score(kingdom, "territory", 4);
-		w.score(this.kingdom, "territory", -4);
+		w.score(kingdom, Constants.scoreProfTerritory, Constants.scorePerConqueredTerritory);
+		w.score(this.kingdom, Constants.scoreProfTerritory, -Constants.scorePerConqueredTerritory);
 		this.kingdom = kingdom;
 	}
 
