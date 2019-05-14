@@ -119,14 +119,14 @@ final class Region {
 		double base = population * Constants.recruitmentPerPop;
 		double mods = 1;
 		NationData wKingdom = w.getNation(kingdom);
-		if (signingBonus == -1) mods -= 0.5;
-		else if (signingBonus == -2) mods -= 1;
-		else if (signingBonus >= 1) mods += (Math.log(signingBonus) / Math.log(2)) * .5 + .5;
+		mods += calcSigningBonusMod(signingBonus);
+
 		if (governors != null) {
 			for (Character c : governors) {
 				mods += c.calcLevel("governor") * .5 + 1;
 			}
 		}
+
 		double unrest = calcUnrest(w);
 		if (unrest > .25) base *= 1.25 - unrest;
 		if (noble != null && noble.hasTag("Inspiring")) mods += .5;
@@ -156,6 +156,17 @@ final class Region {
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += .03 * numUniqueIdeologies(kingdom, w);
 		return Math.max(0, base * mods);
 	}
+
+	// TODO: this belongs alongside the game constants, should determine a way to parameterize these function-type rules
+	public double calcSigningBonusMod(double signingBonus){
+		/* Original:
+		if (signingBonus == -1) return -0.5;
+		else if (signingBonus == -2) return  -1;
+		else if (signingBonus >= 1) return (Math.log(signingBonus) / Math.log(2)) * .5 + .5;
+		*/
+		return signingBonus <= 0 ? signingBonus * 0.5 : (Math.log(signingBonus) / Math.log(2)) * 0.5 + 0.5;
+	}
+
 
 	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
 		double base = population / 10000.0;
