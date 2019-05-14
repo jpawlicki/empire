@@ -152,7 +152,8 @@ final class Region {
 			mods += Constants.perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
 		}
 
-		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag("Pillagers")) mods -= .75;
+		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Constants.armyPillagersTag)) mods += Constants.armyPillagersRecruitmentMod;
+
 		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
 		if (wKingdom.hasTag("Patriotic")) mods += .15;
 		if (wKingdom.hasTag("War-like") && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {

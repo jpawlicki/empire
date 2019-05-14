@@ -25,7 +25,10 @@ public class Constants {
     public static final double steelMod = 0.15;
 
     public static final String armyFormationsTag = "Formations";
+
     public static final String armyPillagersTag = "Pillagers";
+    public static final double armyPillagersRecruitmentMod = -0.75;
+
     public static final String armyRaidersTag = "Raiders";
 
     public static final String armySeafaringTag = "Seafaring";
