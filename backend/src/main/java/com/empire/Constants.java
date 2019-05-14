@@ -164,6 +164,9 @@ public class Constants {
     public static final double mercantileTaxMod = 0.15;
     public static final double mercantileGoldShare = 0.5;
 
+    public static final String nationStoicTag = "Stoic";
+    public static final double stoicConqStrengthMod = 0.75;
+
     // Regions
     public static final double recruitmentPerPop = 5E-4; // (1.0 / 2000.0)
     public static final double taxPerPop = 1E-4; // (1.0 / 10000.0)

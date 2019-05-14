@@ -378,7 +378,7 @@ final class Region {
 		double mods = 1;
 		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
 		if (noble != null && noble.hasTag(Constants.nobleDesperateTag)) mods += Constants.nobleDesperateMod;
-		if (w.getNation(kingdom).hasTag("Stoic")) mods += .75;
+		if (w.getNation(kingdom).hasTag(Constants.nationStoicTag)) mods += Constants.stoicConqStrengthMod;
 		mods += calcFortification() - 1;
 		return Math.max(0, base * mods);
 	}
