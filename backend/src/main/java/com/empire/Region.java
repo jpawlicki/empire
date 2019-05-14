@@ -218,8 +218,9 @@ final class Region {
 			mods += Constants.chaliceOfCompassionTaxMod;
 		}
 
-		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += .03 * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += .03 * numUniqueIdeologies(kingdom, w);
+		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += Constants.perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += Constants.perIdeologyTapestryTaxModGlobal * numUniqueIdeologies(kingdom, w);
+
 		return Math.max(0, base * mods);
 	}
 
