@@ -117,6 +117,9 @@ final class Region {
 
 	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population * Constants.recruitmentPerPop;
+		double unrest = calcUnrest(w);
+		if (unrest > Constants.unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - Constants.unrestRecruitmentEffectThresh);
+
 		double mods = 1;
 		NationData wKingdom = w.getNation(kingdom);
 		mods += calcSigningBonusMod(signingBonus);
@@ -127,8 +130,6 @@ final class Region {
 			}
 		}
 
-		double unrest = calcUnrest(w);
-		if (unrest > .25) base *= 1.25 - unrest;
 		if (noble != null && noble.hasTag("Inspiring")) mods += .5;
 		if (noble != null && noble.hasTag("Untrusting")) mods -= .35;
 		if (noble != null && noble.hasTag("Tyrannical")) mods -= .5;
