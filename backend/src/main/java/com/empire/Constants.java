@@ -116,6 +116,7 @@ public class Constants {
     public static final double allDimExpAdd = 0.25;
     public static final double perLevelLeaderMod = 0.2;
     public static final double perLevelGovernRecruitMod = 0.5;
+    public static final double perLevelGovernTaxMod = 0.5;
 
     // Nations
     public static final String nationHeroicTag = "Heroic";

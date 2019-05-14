@@ -183,15 +183,17 @@ final class Region {
 
 		double mods = taxRate;
 
+		if (governors != null) {
+			for (Character c : governors) {
+				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + 1;
+			}
+		}
+
 		NationData wKingdom = w.getNation(kingdom);
 
 		if (noble != null && noble.hasTag("Frugal")) mods += .5;
 		if (noble != null && noble.hasTag("Hoarding")) mods -= .35;
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcLevel("governor") * .5 + 1;
-			}
-		}
+
 		if (wKingdom.hasTag("Coast-Dwelling") && isCoastal(w)) mods += .12;
 		if (wKingdom.hasTag("Mercantile")) mods += .15;
 		boolean neighborKuun = false;
