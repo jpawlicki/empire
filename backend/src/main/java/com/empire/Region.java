@@ -123,7 +123,7 @@ final class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel("governor") * .5 + 1;
+				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + 1;
 			}
 		}
 
