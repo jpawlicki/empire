@@ -37,7 +37,7 @@ final class Region {
 
 	private String kingdom;
 
-	private static int numUniqueIdeologies(String kingdom, World w) {
+	static int numUniqueIdeologies(String kingdom, World w) {
 		Set<Ideology> ideologies = new HashSet<>();
 		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
 		return ideologies.size();
