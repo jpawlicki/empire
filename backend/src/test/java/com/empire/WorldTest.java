@@ -8,6 +8,7 @@ import java.io.IOException;
 public class WorldTest {
 	public static final String basicWorldJson = readResourceAsString("BasicWorldTest.json");
 	public static final String armyWorldJson = readResourceAsString("ArmyWorldTest.json");
+	public static final String regionWorldJson = readResourceAsString("RegionWorldTest.json");
 
 	private static String readResourceAsString(String resource) {
 		try {
@@ -23,5 +24,9 @@ public class WorldTest {
 
 	static World armyTestWorld() {
 		return World.fromJson(armyWorldJson);
+	}
+
+	static World regionTestWorld() {
+		return World.fromJson(regionWorldJson);
 	}
 }
