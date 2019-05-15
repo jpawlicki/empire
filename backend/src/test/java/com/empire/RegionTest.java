@@ -19,5 +19,6 @@ public class RegionTest {
     @Test
     public void numUniqueIdeologiesTest(){
         assertEquals(2, Region.numUniqueIdeologies("k1", world));
+        assertEquals(2, Region.numUniqueIdeologies2("k1", world));
     }
 }

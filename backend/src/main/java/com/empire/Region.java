@@ -47,6 +47,7 @@ final class Region {
 	static int numUniqueIdeologies2(String kingdom, World w) {
 		return (int) w.regions.stream()
 				.filter(r -> kingdom.equals(r.kingdom))
+				.map(r -> r.religion)
 				.distinct().count();
 	}
 
