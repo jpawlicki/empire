@@ -204,6 +204,7 @@ public class ArmyTest {
 	@Test
 	public void raze() {
 		Region r = world.regions.get(0);
+		r.population = 1000;
 		world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
 		// Nothing to raze.
 		assertEquals(0, r.constructions.size());
@@ -235,5 +236,11 @@ public class ArmyTest {
 		// Razing requires a minimum strength.
 		r.population = 1000000;
 		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Vessel of Faith)", null, 0, false), DELTA);
+
+		// Razing can raze multiple buildings in one action.
+		r.population = 100;
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		assertEquals(160, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
 	}
 }
