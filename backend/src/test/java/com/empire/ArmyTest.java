@@ -1,6 +1,7 @@
 package com.empire;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -208,7 +209,7 @@ public class ArmyTest {
 	public void raze() {
 		Region r = world.regions.get(0);
 		r.population = 1000;
-		world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+		r.religion = Ideology.SWORD_OF_TRUTH;
 		// Nothing to raze.
 		assertEquals(0, r.constructions.size());
 		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
@@ -249,10 +250,31 @@ public class ArmyTest {
 
 	@Test
 	public void conquer() {
+		// Basic conquest.
 		Region r = world.regions.get(0);
+		r.religion = Ideology.SWORD_OF_TRUTH;
 		r.setKingdomNoScore("k2");
 		HashSet<Region> conqueredRegions = new HashSet<>();
 		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
 		assertTrue(conqueredRegions.contains(r));
+		assertEquals("k1", r.getKingdom());
+
+		// Conquest requires a minimum size.
+		r.population = 100000;
+		r.setKingdomNoScore("k2");
+		conqueredRegions.clear();
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		assertTrue(conqueredRegions.isEmpty());
+		assertEquals("k2", r.getKingdom());
+
+		// Conquest destroys fortifications.
+		r.population = 100;
+		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortification(40));
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		assertTrue(conqueredRegions.contains(r));
+		assertEquals("k1", r.getKingdom());
+		assertTrue(r.constructions.isEmpty());
 	}
 }
