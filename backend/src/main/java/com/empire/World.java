@@ -1042,49 +1042,7 @@ final class World {
 					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 					armies.remove(army);
 				} else if (action.startsWith("Conquer")) {
-					if (!army.isArmy()) continue;
-					if (!region.isLand()) continue;
-					if (army.kingdom.equals(region.getKingdom())) continue;
-					if (conqueredRegions.contains(region)) continue;
-					// Must be strongest in region (not counting other armies of the same ruler).
-					boolean stopped = false;
-					for (Army a : armies) {
-						if (a.isArmy() && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(World.this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
-							stopped = true;
-							notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not the strongest army in " + region.name + " and cannot conquer it."));
-							break;
-						}
-					}
-					if (stopped) continue;
-					// Must be strong enough.
-					if (army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < region.calcMinConquestStrength(World.this)) {
-						notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not strong enough to conquer " + region.name + "."));
-						continue;
-					}
-					// Must attack.
-					if (getNation(army.kingdom).getRelationship(region.getKingdom()).battle != Relationship.War.ATTACK) {
-						notifications.add(new Notification(army.kingdom, "Conquest Failed", "Army " + army.id + " is not able to conquer " + region.name + " without attacking " + region.getKingdom() + "."));
-						continue;
-					}
-					String target = action.replace("Conquer for ", "");
-					if (target.equals("Conquer")) target = army.kingdom;
-					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
-					if (target.equals(region.getKingdom())) continue;
-					String nobleFate = "";
-					if (region.noble != null && (region.noble.unrest < .5 || getNation(target).hasTag("Republican"))) {
-						nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
-						region.noble = null;
-					}
-					if (region.noble != null) {
-						nobleFate = " " + region.noble.name + " swore fealty to their new rulers.";
-						region.noble.unrest = .15;
-					}
-					if (getNation(region.getKingdom()).goodwill <= -75) getNation(army.kingdom).goodwill += 15;
-					notifyAllPlayers(region.name + " Conquered", "An army of " + army.kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
-					for (Region r : regions) if (r.noble != null && r.getKingdom().equals(army.kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(army.kingdom) && getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
-					region.setKingdom(World.this, target);
-					conqueredRegions.add(region);
-					army.orderhint = "";
+					army.conquer(World.this, action, leaders, inspires, lastStands);
 				} else if (action.startsWith("Slay Civilians")) {
 					if (!army.isArmy()) continue;
 					// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.
