@@ -489,7 +489,6 @@ final class World {
 	}
 
 	class Advancer {
-
 		final Map<String, Map<String, String>> orders;
 		HashMap<String, ArrayList<String>> tributes = new HashMap<>();
 		HashSet<String> lastStands = new HashSet<>();
@@ -990,31 +989,7 @@ final class World {
 						}
 					}
 				} else if (action.startsWith("Raze ")) {
-					if (!army.isArmy()) continue;
-					if (army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < regions.get(army.location).calcMinConquestStrength(World.this) / 2) {
-						notifications.add(new Notification(army.kingdom, "Razing Failed", "Army " + army.id + " is not powerful enough to raze constructions in " + region.name + "."));
-						continue;
-					}
-					String target = action.replace("Raze ", "");
-					Construction bestRaze = null;
-					for (Construction c : region.constructions) {
-						if (target.contains(c.type) && (!"temple".equals(c.type) || target.contains(c.religion.toString()))) {
-							if (bestRaze == null || bestRaze.originalCost < c.originalCost) bestRaze = c;
-						}
-					}
-					if (bestRaze == null) {
-						notifications.add(new Notification(army.kingdom, "Razing Failed", "By the time army " + army.id + " was ready, there was no " + target + " left to raze in " + region.name + "."));
-						continue;
-					}
-					if ("temple".equals(bestRaze.type)) {
-						region.setReligion(null, World.this);
-					}
-					double gold = bestRaze.originalCost * Constants.razeRefundFactor;
-					getNation(army.kingdom).gold += gold;
-					incomeSources.getOrDefault(army.kingdom, new Budget()).incomeRaze += gold;
-					region.constructions.remove(bestRaze);
-					notifications.add(new Notification(army.kingdom, "Razing in " + region.name, "Our army looted and razed a " + target + ", carrying off assets worth " + Math.round(gold) + " gold."));
-					if (!region.getKingdom().equals(army.kingdom)) notifications.add(new Notification(region.getKingdom(), "Razing in " + region.name, "An army of " + army.kingdom + " looted a " + target + ", then burned it to the ground."));
+					incomeSources.getOrDefault(army.kingdom, new Budget()).incomeRaze += army.raze(World.this, action, leaders.get(army), inspires, lastStands.contains(army.kingdom));
 				} else if (action.startsWith("Force civilians to ")) {
 					if (!army.isArmy()) continue;
 					// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.

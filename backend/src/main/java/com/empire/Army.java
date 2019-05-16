@@ -66,5 +66,38 @@ final class Army {
 	void addTag(String tag) {
 		tags.add(tag);
 	}
+
+	/**
+	 * Orders the army to attempt to raze something.
+	 * @return the gold gained from razing.
+	 */
+	public double raze(World w, String order, Character leader, int inspires, boolean lastStanding) {
+		if (!isArmy()) return 0;
+		Region region = w.regions.get(location);
+		if (calcStrength(w, leader, inspires, lastStanding) < region.calcMinConquestStrength(w) / 2) {
+			w.notifications.add(new Notification(kingdom, "Razing Failed", "Army " + id + " is not powerful enough to raze constructions in " + region.name + "."));
+			return 0;
+		}
+		String target = order.replace("Raze ", "");
+		Construction bestRaze = null;
+		for (Construction c : region.constructions) {
+			if (target.contains(c.type) && (!"temple".equals(c.type) || target.contains(c.religion.toString()))) {
+				if (bestRaze == null || bestRaze.originalCost < c.originalCost) bestRaze = c;
+			}
+		}
+		if (bestRaze == null) {
+			w.notifications.add(new Notification(kingdom, "Razing Failed", "By the time army " + id + " was ready, there was no " + target + " left to raze in " + region.name + "."));
+			return 0;
+		}
+		region.constructions.remove(bestRaze);
+		if ("temple".equals(bestRaze.type)) {
+			region.setReligion(null, w);
+		}
+		double gold = bestRaze.originalCost * Constants.razeRefundFactor;
+		w.getNation(kingdom).gold += gold;
+		w.notifications.add(new Notification(kingdom, "Razing in " + region.name, "Our army looted and razed a " + target + ", carrying off assets worth " + Math.round(gold) + " gold."));
+		if (!region.getKingdom().equals(kingdom)) w.notifications.add(new Notification(region.getKingdom(), "Razing in " + region.name, "An army of " + kingdom + " looted a " + target + ", then burned it to the ground."));
+		return gold;
+	}
 }
 
