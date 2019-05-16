@@ -15,7 +15,7 @@ public class StringUtil {
 
 	public static String quantify(int num, String unit) {
 		if (unit.endsWith("s")) return num + " " + unit;
-		return num + " " + unit + num != 1 ? "s" : "";
+		return num + " " + unit + (num != 1 ? "s" : "");
 	}
 
 	private StringUtil() {}
