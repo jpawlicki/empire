@@ -200,4 +200,40 @@ public class ArmyTest {
 		plainArmy.type = Army.Type.NAVY;
 		assertEquals(140.0, plainArmy.calcStrength(world, getLeader(), 0, false), DELTA);
 	}
+
+	@Test
+	public void raze() {
+		Region r = world.regions.get(0);
+		world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+		// Nothing to raze.
+		assertEquals(0, r.constructions.size());
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+
+		// Raze one temple.
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.setReligion(null, world);
+		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
+		assertEquals(80, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
+		assertEquals(0, r.constructions.size());
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+
+		// Razing temple changes religion.
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.VESSEL_OF_FAITH, 100));
+		r.setReligion(null, world);
+		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		assertEquals(80, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		assertEquals(80, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(1, r.constructions.size());
+		assertEquals(Ideology.VESSEL_OF_FAITH, r.religion);
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(1, r.constructions.size());
+
+		// Razing requires a minimum strength.
+		r.population = 1000000;
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Vessel of Faith)", null, 0, false), DELTA);
+	}
 }
