@@ -357,5 +357,12 @@ final class Construction {
 		c.originalCost = cost;
 		return c;
 	}
+
+	static Construction makeFortification(double cost) {
+		Construction c = new Construction();
+		c.type = "fortifications";
+		c.originalCost = cost;
+		return c;
+	}
 }
 
