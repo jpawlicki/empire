@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 final class Army {
 	enum Type {
@@ -108,40 +109,41 @@ final class Army {
 
 	/**
 	 * Orders the army to conquer the region they inhabit.
+	 * Modifies conqueredRegions.
 	 */
-	public void conquer(World w, String order, Map<Army, Character> leaders, int inspires, Set<String> lastStands) {
-		if (!isArmy()) continue;
-		Region region = w.regions.get(location)l
-		if (!region.isLand()) continue;
-		if (kingdom.equals(region.getKingdom())) continue;
+	public void conquer(World w, String order, Set<Region> conqueredRegions, Map<String, List<String>> tributes, Map<Army, Character> leaders, int inspires, Set<String> lastStands) {
+		if (!isArmy()) return;
+		Region region = w.regions.get(location);
+		if (!region.isLand()) return;
+		if (kingdom.equals(region.getKingdom())) return;
 		if (conqueredRegions.contains(region)) return;
 		// Must be strongest in region (not counting other armies of the same ruler).
 		boolean stopped = false;
 		double strength = calcStrength(w, leaders.get(this), inspires, lastStands.contains(kingdom));
-		for (Army a : armies) {
+		for (Army a : w.armies) {
 			if (a.isArmy() && a.location == location && !a.kingdom.equals(kingdom) && a.calcStrength(w, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > strength) {
 				stopped = true;
-				notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not the strongest army in " + region.name + " and cannot conquer it."));
+				w.notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not the strongest army in " + region.name + " and cannot conquer it."));
 				break;
 			}
 		}
 		if (stopped) return;
 		// Must be strong enough.
 		if (strength < region.calcMinConquestStrength(w)) {
-			notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not strong enough to conquer " + region.name + "."));
+			w.notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not strong enough to conquer " + region.name + "."));
 			return;
 		}
 		// Must attack.
 		if (w.getNation(kingdom).getRelationship(region.getKingdom()).battle != Relationship.War.ATTACK) {
-			notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not able to conquer " + region.name + " without attacking " + region.getKingdom() + "."));
+			w.notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not able to conquer " + region.name + " without attacking " + region.getKingdom() + "."));
 			return;
 		}
-		String target = action.replace("Conquer for ", "");
+		String target = order.replace("Conquer for ", "");
 		if (target.equals("Conquer")) target = kingdom;
-		if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
+		if (w.getNation(target) == null) return;
 		if (target.equals(region.getKingdom())) return;
 		String nobleFate = "";
-		if (region.noble != null && (region.noble.unrest < .5 || getNation(target).hasTag("Republican"))) {
+		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag("Republican"))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
 			region.noble = null;
 		}
@@ -149,9 +151,9 @@ final class Army {
 			nobleFate = " " + region.noble.name + " swore fealty to their new rulers.";
 			region.noble.unrest = .15;
 		}
-		if (getNation(region.getKingdom()).goodwill <= -75) getNation(kingdom).goodwill += 15;
-		notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
-		for (Region r : regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
+		if (w.getNation(region.getKingdom()).goodwill <= -75) w.getNation(kingdom).goodwill += 15;
+		w.notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
+		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
 		region.setKingdom(w, target);
 		conqueredRegions.add(region);
 		orderhint = "";

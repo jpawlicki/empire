@@ -6,6 +6,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 public class ArmyTest {
 	private static Army plainArmy;
@@ -242,5 +245,14 @@ public class ArmyTest {
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 		assertEquals(160, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+	}
+
+	@Test
+	public void conquer() {
+		Region r = world.regions.get(0);
+		r.setKingdomNoScore("k2");
+		HashSet<Region> conqueredRegions = new HashSet<>();
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		assertTrue(conqueredRegions.contains(r));
 	}
 }

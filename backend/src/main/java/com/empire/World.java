@@ -490,7 +490,7 @@ final class World {
 
 	class Advancer {
 		final Map<String, Map<String, String>> orders;
-		HashMap<String, ArrayList<String>> tributes = new HashMap<>();
+		HashMap<String, List<String>> tributes = new HashMap<>();
 		HashSet<String> lastStands = new HashSet<>();
 		HashSet<String> abdications = new HashSet<>();
 		HashMap<String, Budget> incomeSources = new HashMap<>();
@@ -1042,7 +1042,7 @@ final class World {
 					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 					armies.remove(army);
 				} else if (action.startsWith("Conquer")) {
-					army.conquer(World.this, action, leaders, inspires, lastStands);
+					army.conquer(World.this, action, conqueredRegions, tributes, leaders, inspires, lastStands);
 				} else if (action.startsWith("Slay Civilians")) {
 					if (!army.isArmy()) continue;
 					// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.
@@ -2998,7 +2998,7 @@ final class World {
 		INTERNATIONAL;
 	}
 
-	private void notifyAllPlayers(String title, String notification) {
+	void notifyAllPlayers(String title, String notification) {
 		for (String k : kingdoms.keySet()) {
 			notifications.add(new Notification(k, title, notification));
 		}
