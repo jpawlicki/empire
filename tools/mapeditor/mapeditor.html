@@ -17,6 +17,7 @@
 			}
 			#map text {
 				pointer-events: none;
+				text-anchor: middle;
 			}
 		</style>
 		<script src="rhill-voronoi-core.js"></script>
@@ -38,19 +39,34 @@
 				{"color": "#007f7f", "name": "Isla", "culture": "tyrgaetan", "default_region_names": ["Snowhelm","Hope's Landing","Icehaven","Iceshore Pass","Winterwood Crest","Winterwood Vale"]},
 				{"color": "#33cca5", "name": "Kyaradis", "culture": "hansa", "default_region_names": ["Aleharbor","Port Crown","Golden Docks","Wayfield Delta","Coinwell","Bleakridge"]},
 				{"color": "#268c0c", "name": "Zemsim", "culture": "anpilayn", "default_region_names": ["Moonshadow Forest","Moonsand","Mount Sion","Nightwood","The Coast of Stars","Orchid's Perch"]},
-				{"color": "#fe9999", "name": "Jaraslatr", "culture": "eolsung", "default_region_names": ["Saltreach","Razorwind Hold","Kindlewood","Firehall","Blackford","Vexillum Cinere","Saltbreeze"]},
+				{"color": "#fe9999", "name": "Jaraslatr", "culture": "eolsung", "default_region_names": ["Saltreach","Razorwind Hold","Kindlewood","Firehall","Blackford","Irongate"]},
 				{"color": "#000059", "name": "Slail", "culture": "anpilayn", "default_region_names": ["Clearwater","Falcon's Rest","Fangriver","Crystal Bay","Wolfden","Deerwood"]},
 				{"color": "#d80066", "name": "Fiskrbaer", "culture": "eolsung", "default_region_names": ["The Skull","Startree","Magdalena's Well","Ghostwood","Windstar","Bloodswamp"]},
 				{"color": "#8c7f72", "name": "Celyn", "culture": "anpilayn", "default_region_names": ["Goldwood","Driftwood","Woody Neck","Shorewood","Riverwood","Rosewood"]},
 				{"color": "#590026", "name": "Nysiunarri", "culture": "anpilayn", "default_region_names": ["Keep Northguard","Mountainshadow","Vigilant Shore","Fort Steadfast","The Midlands","Blackrock Peak"]},
 				{"color": "#f2e5ff", "name": "Landhylli", "culture": "eolsung", "default_region_names": ["Beacon", "New Hope", "Northhaven", "Tyrshelter", "Providence", "Innsbrooke"]},
 				{"color": "#b2a50c", "name": "Yrslekye", "culture": "anpilayn", "default_region_names": ["Waverisen", "Shorebreaker", "Dolphin Point", "Sunsparkle", "Saltbreeze", "Greatdock"]},
-				{"color": "#99e5ff", "name": "Gangrjata", "culture": "eolsung", "default_region_names": ["Mistmountain", "The Frostway", "Shepherd's Crook", "Starsummit", "Windmusic", "Snowhelm"]},
+				{"color": "#99e5ff", "name": "Gangrjata", "culture": "eolsung", "default_region_names": ["Mistmountain", "The Frostway", "Shepherd's Crook", "Starsummit", "Windmusic", "Whitecap"]},
 				{"color": "#ff0000", "name": "Walymyn", "culture": "anpilayn", "default_region_names": ["Fort Hammerbreak", "Castle Silversword", "Castle Burntwheel", "Castle Ironglove", "Castle Greaves", "Castle Argonstaff"]},
 				{"color": "#ff00ff", "name": "Orkatopt", "culture": "eolsung", "default_region_names": ["Raider's Retreat", "Longship Dock", "Tyrsaxe", "Haftwood", "Dragonshead", "Greyisle"]},
 				{"color": "#0000ff", "name": "Quencalia", "culture": "tavian", "default_region_names": ["Hundred Homes", "Hearthfires", "Six Statues", "Crescent Road", "Layered Majesty", "Pilgrim's Hollow"]},
 				{"color": "#00ffff", "name": "Varthavaettr", "culture": "tyrgaetan", "default_region_names": ["Caldera", "Shieldrim", "Lava's Run", "Smoking Soil", "Burnwood", "The Devastation"]},
 				{"color": "#00ff00", "name": "Xilyn", "culture": "anpilayn", "default_region_names": ["Ironwater Mines", "Dogsmoor", "Littletree", "Hangman's Bluff", "Gravewater", "Steelwind Keep"]} 
+			];
+			let seas = [
+				"The Frozen Sea",
+				"The North Sea",
+				"The Infinite Waters",
+				"The Crossing",
+				"Neckwater",
+				"The Gulf",
+				"The Holy Waters",
+				"Stormwater",
+				"The Sunrise Sea",
+				"The Eolshav",
+				"Tyrslake",
+				"Firewater",
+				"Sunwater"
 			];
 			let data = {};
 			function paint() {
@@ -65,9 +81,7 @@
 					line.addEventListener("click", () => regionClick(r.id));
 					document.getElementById("svg").appendChild(line);
 					let text = "";
-					if (!r.hasOwnProperty("name") || r.name == "") text += "?";
-					if (r.climate == "seasonal") text += "S";
-					if (r.climate == "treacherous") text += "T";
+					if (data.hasOwnProperty("holycity") && data.holycity == r.id) text += "Holy";
 					if (text != "") {
 						let t = document.createElementNS("http://www.w3.org/2000/svg", "text");
 						t.appendChild(document.createTextNode(text));
@@ -114,13 +128,9 @@
 						}
 						data.borders = data.borders.filter(b => b.a != b.b);
 					}
-				} else if (mode == "climate") {
-					if (r.climate == "green") r.climate = "seasonal";
-					else if (r.climate == "seasonal") r.climate = "treacherous";
-					else r.climate = "green";
-				} else if (mode == "metadata") {
-					r.name = window.prompt("Name?", r.hasOwnProperty("name") ? r.name : "");
-
+				} else if (mode == "holycity") {
+					if (data.hasOwnProperty("holycity") && data.holycity == regionId) delete data.holycity;
+					else data.holycity = regionId;
 				}
 				if (lastClick != -1) lastClick = -1;
 				else lastClick = regionId;
@@ -305,7 +315,7 @@
 						let r = {
 						  id: i,
 							type: "land",
-							climate: "green",
+							name: "",
 							core: -1
 						}
 						data.regions.push(r);
@@ -468,6 +478,46 @@
 				}
 				paint();
 			}
+			function nameRegions() {
+				let cursor = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+				cursor.setAttribute("r", 4);
+				svg.appendChild(cursor);
+				document.getElementById("svg").appendChild(cursor);
+				let regionList = [];
+				for (let i = -1; i < data.players; i++) {
+					for (let s of data.regions) if (s.core == i) regionList.push(s);
+				}
+				function commitName(name, i) {
+					console.log("Naming " + regionList[i].id + " " + name);
+					regionList[i].name = name;
+					document.getElementById("names").innerHTML = "";
+					nameNextRegion(i + 1);
+				}
+				function nameNextRegion(i) {
+					if (i >= regionList.length) {
+						svg.removeChild(cursor);
+					} else if (regionList[i].hasOwnProperty("name") && regionList[i].name != "") {
+						nameNextRegion(i + 1);
+					} else {
+						let tp = getRandomPointInRegion(regionList[i].id);
+						cursor.setAttribute("cx", tp.x);
+						cursor.setAttribute("cy", tp.y);
+						let core = regionList[i].core;
+						let usednames = [];
+						for (let r of data.regions) usednames.push(r.name);
+						let nameset = (core == -1 ? seas : nations[core].default_region_names).filter((v, j, arr) => !usednames.includes(v));
+						if (nameset.length == 0) window.alert("No eligable names for region " + regionList[i].id + " - did you place too many cores?");
+						let namediv = document.getElementById("names");
+						for (let n of nameset) {
+							let b = document.createElement("button");
+							b.appendChild(document.createTextNode(n));
+							b.addEventListener("click", ((name)=>((x)=>commitName(x, i))(n)));
+							namediv.appendChild(b);
+						}
+					}
+				}
+				nameNextRegion(0);
+			}
 			function makeCoreControls() {
 				let core = document.getElementById("cores");
 				for (let i = 0; i < data.players; i++) {
@@ -490,14 +540,16 @@
 			<button onclick="loadData()">Load Data</button>
 			<button onclick="saveData()">Save Data</button>
 			<button onclick="finalizeBorders()">Finalize Borders</button>
-			<label><input type="radio" name="mode" value="sea">Set Types (Land / Sea)</label>
-			<label><input type="radio" name="mode" value="merge">Merge Cells</label>
-			<label><input type="radio" name="mode" value="border">Set Border Size (1/2/3)</label>
-			<label><input type="radio" name="mode" value="climate">Set Climate (Green / Seasonal / Treacherous)</label>
-			<label><input type="radio" name="mode" value="metadata">Set Region Metadata (Name, Image)</label>
-			<label style="display:none"><input type="radio" name="mode" value="none" checked></label>
+			<button onclick="nameRegions()">Name Regions</button>
+			<label><input type="radio" name="mode" value="sea"/>Set Types (Land / Sea)</label>
+			<label><input type="radio" name="mode" value="merge"/>Merge Cells</label>
+			<label><input type="radio" name="mode" value="border"/>Set Border Size (1/2/3)</label>
+			<label><input type="radio" name="mode" value="holycity"/>Locate Sancta Civitate</label>
+			<label style="display:none"><input type="radio" name="mode" value="none" checked/></label>
 		</div>
 		<div id="cores">
+		</div>
+		<div id="names">
 		</div>
 	</body>
 </html>
