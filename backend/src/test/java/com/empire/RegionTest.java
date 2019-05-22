@@ -62,7 +62,7 @@ public class RegionTest {
         assertEquals(2, Region.numUniqueIdeologies2(k1, w));
     }
 
-    // TODO:  The can transfer food tests rely on making a test w that is too complex at the moment, these should
+    // TODO(s):  The can transfer food tests rely on making a test w that is too complex at the moment, these should
     // be revisited if/once refactoring has made this more feasible
 
     @Test
@@ -108,12 +108,47 @@ public class RegionTest {
     @Test
     public void calcUnrestClericalIruhan(){
         r.religion = Ideology.SWORD_OF_TRUTH;
-        n1.goodwill = -100.0;
-        assertEquals(1.0, r.calcUnrestClerical(w), DELTA);
+        n1.goodwill = -50.0;
+        assertEquals(0.5, r.calcUnrestClerical(w), DELTA);
     }
-    
+
     @Test
-    public void calcUnrestBasic(){
-        assertEquals(unrestMiddle, r.calcUnrest(w), DELTA);
+    public void calcUnrestNobleNull(){
+        r.noble = null;
+        assertEquals(0.0, r.calcUnrestNoble(), DELTA);
+    }
+
+    @Test
+    public void calcUnrestNobleEmptyName(){
+        Noble n = mock(Noble.class);
+        n.unrest = unrestMiddle;
+        n.name = "";
+        r.noble = n;
+        assertEquals(0.0, r.calcUnrestNoble(), DELTA);
+    }
+
+    @Test
+    public void calcUnrestNoblePresent(){
+        Noble n = mock(Noble.class);
+        n.unrest = unrestMiddle;
+        n.name = "DONTCARE";
+        r.noble = n;
+        assertEquals(unrestMiddle, r.calcUnrestNoble(), DELTA);
+    }
+
+    @Test
+    public void calcUnrestAll(){
+        r.unrestPopular = unrestLower;
+        assertEquals(unrestLower, r.calcUnrest(w), DELTA);
+
+        r.religion = Ideology.SWORD_OF_TRUTH;
+        n1.goodwill = -25.0;
+        assertEquals(0.25, r.calcUnrest(w), DELTA);
+
+        Noble n = mock(Noble.class);
+        n.unrest = unrestHigher;
+        n.name = "DONTCARE";
+        r.noble = n;
+        assertEquals(unrestHigher, r.calcUnrest(w), DELTA);
     }
 }
