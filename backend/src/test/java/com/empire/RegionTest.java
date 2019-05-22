@@ -27,6 +27,7 @@ public class RegionTest {
         r = new Region();
         r.setKingdomNoScore(k1);
         r.religion = Ideology.COMPANY;
+        r.population = 10000.0;
         r.unrestPopular = unrestMiddle;
 
 //        w = WorldTest.regionTestWorld();
@@ -58,8 +59,8 @@ public class RegionTest {
 
     @Test
     public void numUniqueIdeologiesTest(){
-        assertEquals(2, Region.numUniqueIdeologies(k1, w));
-        assertEquals(2, Region.numUniqueIdeologies2(k1, w));
+        assertEquals(3, Region.numUniqueIdeologies(k1, w));
+        assertEquals(3, Region.numUniqueIdeologies2(k1, w));
     }
 
     // TODO(s):  The can transfer food tests rely on making a test w that is too complex at the moment, these should
@@ -153,8 +154,13 @@ public class RegionTest {
     }
 
     @Test
+    public void calcBaseConquestStrength(){
+        r.unrestPopular = 0.4;
+        assertEquals(4.8, r.calcBaseConquestStrength(w), DELTA);
+    }
+
+    @Test
     public void calcMinPatrolStrength(){
-        r.population = 10000.0;
         r.unrestPopular = 0.4;
         assertEquals(3.3, r.calcMinPatrolStrength(w), DELTA);
     }
