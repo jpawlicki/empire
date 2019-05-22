@@ -197,4 +197,14 @@ public class RegionTest {
         r.constructions = Arrays.asList(fort, fort);
         assertEquals(0.3, r.calcFortificationMod(), DELTA);
     }
+
+    @Test
+    public void calcSigningBonus(){
+        assertEquals(-1.0, r.calcSigningBonusMod(-2.0), DELTA);
+        assertEquals(-0.5, r.calcSigningBonusMod(-1.0), DELTA);
+        assertEquals(0.0, r.calcSigningBonusMod(0.0), DELTA);
+        assertEquals(1.0, r.calcSigningBonusMod(2.0), DELTA);
+        assertEquals(1.5, r.calcSigningBonusMod(4.0), DELTA);
+        assertEquals(2.0, r.calcSigningBonusMod(8.0), DELTA);
+    }
 }
