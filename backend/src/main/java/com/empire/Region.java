@@ -40,13 +40,13 @@ class Region {
 	//TODO: does this method belong with kingdom/nation?
 	static int numUniqueIdeologies(String kingdom, World w) {
 		Set<Ideology> ideologies = new HashSet<>();
-		for (Region r : w.regions) if (kingdom.equals(r.kingdom)) ideologies.add(r.religion);
+		for (Region r : w.regions) if (kingdom.equals(r.getKingdom())) ideologies.add(r.religion);
 		return ideologies.size();
 	}
 
 	static int numUniqueIdeologies2(String kingdom, World w) {
 		return (int) w.regions.stream()
-				.filter(r -> kingdom.equals(r.kingdom))
+				.filter(r -> kingdom.equals(r.getKingdom()))
 				.map(r -> r.religion)
 				.distinct().count();
 	}
