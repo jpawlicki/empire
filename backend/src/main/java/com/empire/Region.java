@@ -365,14 +365,32 @@ class Region {
 	}
 
 	public double calcUnrest(World w) {
-		double unrest = unrestPopular;
-		if (religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH) {
-			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill * Constants.clericalUnrestGoodwillFactor);
-		}
-		if (noble != null && !"".equals(noble.name)) {
-			unrest = Math.max(noble.unrest, unrest);
-		}
-		return Math.min(1, Math.max(0, unrest));
+//		double unrest = unrestPopular;
+//		if (religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH) {
+//			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill * Constants.clericalUnrestGoodwillFactor);
+//		}
+//		if (noble != null && !"".equals(noble.name)) {
+//			unrest = Math.max(noble.unrest, unrest);
+//		}
+//		return Math.min(1, Math.max(0, unrest));
+		return Math.min(1.0, Math.max(getUnrestPopular(), Math.max(calcUnrestClerical(w), calcUnrestNoble())));
+	}
+
+	public double getUnrestPopular(){
+		return unrestPopular;
+	}
+
+	// TODO: Move to a different class (don't know which one but I think there is probably a better home, idea: Ideology)
+	// TODO: Enforce [0.0, 1.0] range wherever this goes?
+	public double calcUnrestClerical(World w){
+		return religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH ?
+				-w.getNation(kingdom).goodwill * Constants.clericalUnrestGoodwillFactor : 0.0;
+	}
+
+	// TODO: Some or all of the condition checking into Noble?
+	// TODO: Enforce [0.0, 1.0] range?
+	public double calcUnrestNoble(){
+		return noble != null && !"".equals(noble.name) ? noble.unrest : 0.0;
 	}
 
 	public double calcMinConquestStrength(World w) {
