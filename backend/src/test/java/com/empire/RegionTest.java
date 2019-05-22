@@ -1,7 +1,6 @@
 package com.empire;
 
 import java.util.Arrays;
-import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -22,13 +21,14 @@ public class RegionTest {
     private static final double unrestMiddle = 0.25;
     private static final double unrestLower = 0.15;
     private static final double unrestHigher = 0.35;
+    private static final double pop = 1E4;
 
     @Before
     public void setUpRegion() {
         r = new Region();
         r.setKingdomNoScore(k1);
         r.religion = Ideology.COMPANY;
-        r.population = 10000.0;
+        r.population = pop;
         r.unrestPopular = unrestMiddle;
 
 //        w = WorldTest.regionTestWorld();
@@ -155,7 +155,7 @@ public class RegionTest {
     }
 
     @Test
-    public void calcMinConquestStrengthNoble(){
+    public void calcMinConquestStrengthNobleLoyal(){
         Noble n = mock(Noble.class);
         when(n.hasTag(Constants.nobleLoyalTag)).thenReturn(true);
         r.noble = n;
@@ -206,5 +206,37 @@ public class RegionTest {
         assertEquals(1.0, r.calcSigningBonusMod(2.0), DELTA);
         assertEquals(1.5, r.calcSigningBonusMod(4.0), DELTA);
         assertEquals(2.0, r.calcSigningBonusMod(8.0), DELTA);
+    }
+
+    @Test
+    public void calcConsumptionBasic(){
+        assertEquals(pop, r.calcConsumption(w, 1.0), DELTA);
+    }
+
+    @Test
+    public void calcConsumptionFoodMod(){
+        assertEquals(2E4, r.calcConsumption(w, 2.0), DELTA);
+    }
+
+    @Test
+    public void calcConsumptionNobleRationing(){
+        Noble n = mock(Noble.class);
+        when(n.hasTag(Constants.nobleRationingTag)).thenReturn(true);
+        r.noble = n;
+        assertEquals(8E3, r.calcConsumption(w, 1.0), DELTA);
+    }
+
+    @Test
+    public void calcConsumptionNobleWasteful(){
+        Noble n = mock(Noble.class);
+        when(n.hasTag(Constants.nobleWastefulTag)).thenReturn(true);
+        r.noble = n;
+        assertEquals(1.1E4, r.calcConsumption(w, 1.0), DELTA);
+    }
+
+    @Test
+    public void calcConsumptionChalice(){
+        r.religion = Ideology.CHALICE_OF_COMPASSION;
+        assertEquals(8.5E3, r.calcConsumption(w, 1.0), DELTA);
     }
 }
