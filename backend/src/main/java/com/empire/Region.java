@@ -404,16 +404,18 @@ class Region {
 	}
 
 	// TODO: This is a game rule/equation
+	// TODO: Enfore min/max
 	public double calcBaseConquestStrength(World w){
 		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 	}
 
 	// TODO: This is a game rule/equation
+	// TODO: Enforce min/max
 	public double calcMinPatrolStrength(World w) {
 //		double mods = 1;
 //		mods += calcUnrest(w) * 2 - .7;
 //		return Math.sqrt(population) * 3 / 100 * mods;
-		return Math.sqrt(population) * 3 / 100 * (1 + calcUnrest(w) * 2 - .7);
+		return 0.03 * Math.sqrt(population) * (1 + (2 * calcUnrest(w) - 0.7));
 	}
 
 	public double calcFortificationPct() {

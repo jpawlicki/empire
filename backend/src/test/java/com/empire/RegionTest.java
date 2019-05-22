@@ -151,4 +151,11 @@ public class RegionTest {
         r.noble = n;
         assertEquals(unrestHigher, r.calcUnrest(w), DELTA);
     }
+
+    @Test
+    public void calcMinPatrolStrength(){
+        r.population = 10000.0;
+        r.unrestPopular = 0.4;
+        assertEquals(3.3, r.calcMinPatrolStrength(w), DELTA);
+    }
 }
