@@ -150,18 +150,38 @@ public class RegionTest {
 
     @Test
     public void calcBaseConquestStrength(){
-        r.unrestPopular = 1.0;
         r.noble = null;
-        assertEquals(3.0, r.calcBaseConquestStrength(w), DELTA);
+        assertEquals(5.25, r.calcBaseConquestStrength(w), DELTA);
     }
 
     @Test
     public void calcMinConquestStrengthNoble(){
         Noble n = mock(Noble.class);
-        n.tags = Collections.singletonList(Constants.nobleLoyalTag);
+        when(n.hasTag(Constants.nobleLoyalTag)).thenReturn(true);
         r.noble = n;
-        r.unrestPopular = 1.0;
-        assertEquals(3.0, r.calcMinConquestStrength(w), DELTA);
+        assertEquals(10.5, r.calcMinConquestStrength(w), DELTA);
+    }
+
+    @Test
+    public void calcMinConquestStrengthDesperate(){
+        Noble n = mock(Noble.class);
+        when(n.hasTag(Constants.nobleDesperateTag)).thenReturn(true);
+        r.noble = n;
+        assertEquals(0, r.calcMinConquestStrength(w), DELTA);
+    }
+
+    @Test
+    public void calcMinConquestStrengthStoic(){
+        when(n1.hasTag(Constants.nationStoicTag)).thenReturn(true);
+        assertEquals(9.1875, r.calcMinConquestStrength(w), DELTA);
+    }
+
+    @Test
+    public void calcMinConquestStrengthFortified(){
+        Construction fort = mock(Construction.class);
+        fort.type = Constants.constFort;
+        r.constructions = Arrays.asList(fort, fort);
+        assertEquals(6.825, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test

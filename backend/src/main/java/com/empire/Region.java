@@ -437,7 +437,7 @@ class Region {
 	}
 }
 
-final class Construction {
+class Construction {
 	String type;
 	Ideology religion; // Only for type == "temple".
 	double originalCost;
