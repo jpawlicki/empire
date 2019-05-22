@@ -161,7 +161,7 @@ class Region {
 		this.noble = dataEntry.noble;
 		this.constructions = dataEntry.constructions;
 		this.food = dataEntry.food;
-		this.harvest = dataEntry.harvest;
+		this.crops = dataEntry.crops;
 		this.religion = dataEntry.religion;
 		this.date = date;
 		if (this.noble == undefined) this.noble = {};
@@ -244,26 +244,29 @@ class Region {
 		return Calc.moddedNum(base, mods);
 	}
 
-	calcHarvest() {
+	calcCrops() {
+		return {"v": this.crops, "unit": " crops", "why": "Already Planted"};
+	}
+
+	calcHarvestCapacity() {
 		let base = new Calc("*", [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": this.harvest, "unit": " measures / citizen", "why": "Regional Havest Rate"}]);
+			{"v": 25, "unit": " reaps / citizen", "why": "Global Havest Rate"}]);
 		let mods = [];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .5 && !contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .5 - unrest, "unit": "%", "why": "Unrest"});
-		if (contains(this.noble.tags, "Meticulous")) mods.push({"v": .15, "unit": "%", "why": "Noble"});
+		if (unrest > .25 && !contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		return Calc.moddedNum(base, mods);
+	}
+
+	calcHarvest() {
+		return new Calc("max", calcCrops(), calcHavestCapacity());
 	}
 
 	calcNextHarvest() {
 		let base = new Calc("*", [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": g_data.harvests[(Math.floor((this.date + 1) / 13) + 1) % 4], "unit": " measures / citizen", "why": "Regional Havest Rate"}]);
-		let mods = [];
-		let unrest = this.calcUnrest().v;
-		if (unrest > .5) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
-		if (contains(this.noble.tags, "Meticulous")) mods.push({"v": .15, "unit": "%", "why": "Noble"});
-		return Calc.moddedNum(base, mods);
+			{"v": 13, "unit": " plants / citizen", "why": "Global Planting Rate"}]);
+		return new Calc("max", base, calcHarvestCapacity());
 	}
 
 	calcHarvestWeeks() {

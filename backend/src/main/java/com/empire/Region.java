@@ -28,7 +28,7 @@ final class Region {
 	Noble noble;
 	List<Construction> constructions = new ArrayList<>();
 	double food;
-	double harvest;
+	double crops;
 	boolean gotCultFood;
 
 	private String kingdom;
@@ -303,10 +303,14 @@ final class Region {
 		return powers;
 	}
 
-	public double calcUnrest(World w) {
+	/**
+	 * Returns the regional unrest.
+	 * @param goodwills a function of kingdom name to Church goodwill.
+	 */
+	public double calcUnrest(GoodwillProvider goodwill) {
 		double unrest = unrestPopular;
 		if (religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH) {
-			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill / 100);
+			unrest = Math.max(unrest, -goodwill.getGoodwill(kingdom) / 100);
 		}
 		if (noble != null && noble.name != "" && !"".equals(noble.name)) {
 			unrest = Math.max(noble.unrest, unrest);
@@ -342,6 +346,20 @@ final class Region {
 
 	public boolean isSea() {
 		return type == Type.WATER;
+	}
+
+	void plant() {
+		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
+	}
+
+	void harvest(Set<String> stoicNations, GoodwillProvider goodwills) {
+		if (!isLand()) return;
+		double maxHarvest = population * Constants.harvestPerCitizen;
+		double unrest = calcUnrest(goodwills);
+		if (unrest > .25 && !stoicNations.contains(getKingdom())) maxHarvest *= 1.25 - unrest;
+		maxHarvest = Math.min(crops, maxHarvest);
+		food += maxHarvest;
+		crops = population * Constants.plantsPerCitizen;
 	}
 }
 

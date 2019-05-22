@@ -35,7 +35,11 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-final class World {
+interface GoodwillProvider {
+	double getGoodwill(String nation);
+}
+
+final class World implements GoodwillProvider {
 	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
@@ -50,7 +54,6 @@ final class World {
 	String gmPasswordHash;
 	String obsPasswordHash;
 	List<Notification> notifications = new ArrayList<>();
-	List<Double> harvests = new ArrayList<>();
 	List<Message> rtc = new ArrayList<>();
 	List<Integer> cultRegions = new ArrayList<>();
 	Schedule turnSchedule = new Schedule();
@@ -92,9 +95,8 @@ final class World {
 		w.turnSchedule.locale = "America/Los_Angeles";
 		w.nextTurn = w.turnSchedule.getNextTime();
 		w.regions = new ArrayList<>();
-		w.harvests = WorldConstantData.harvests;
 		w.pirate.threat = 4;
-		// Set up regions (culture, climate, harvest, popular unrest).
+		// Set up regions (culture, climate, popular unrest).
 		for (WorldConstantData.Region r : WorldConstantData.regions) {
 			Region rr = new Region();
 			rr.climate = r.climate;
@@ -102,7 +104,6 @@ final class World {
 			rr.name = r.name;
 			if (r.land) {
 				rr.unrestPopular = 0.12;
-				rr.harvest = w.harvests.get(0);
 			}
 			w.regions.add(rr);
 		}
@@ -193,6 +194,7 @@ final class World {
 				double flexFactor = remaining == 1 ? remainingShare : Math.min(remainingShare / 2, Math.random() * .4 + .8);
 				remainingShare -= flexFactor;
 				w.regions.get(r).population = population * flexFactor / nation.coreRegions.size();
+				w.regions.get(r).crops = population * Constants.setupCropsPerCitizen;
 				w.regions.get(r).food = food * flexFactor / nation.coreRegions.size();
 				w.regions.get(r).setKingdomNoScore(kingdom);
 				remaining--;
@@ -806,9 +808,6 @@ final class World {
 					inspires++;
 				}
 			}
-			for (Region r : regions) {
-				if (r.getKingdom() != null && NationData.getStateReligion(r.getKingdom(), World.this).religion == Religion.IRUHAN) r.harvest *= 1 + 0.002 * inspires;
-			}
 		}
 
 		void splitArmies() {
@@ -1409,7 +1408,7 @@ final class World {
 					if (enemyStrength == 0) continue;
 					double cf = enemyStrength / totalArmyStrength;
 					if (a.hasTag("Formations") && cf > .45 && cf < .9) cf = .45;
-					if (region.kingdom != null && NationData.isFriendly(region.kingdom, a.kingdom, World.this, region)) {
+					if (region.getKingdom() != null && NationData.isFriendly(region.getKingdom(), a.kingdom, World.this)) {
 						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortification() - 1)));
 					}
 					if (cf >= .9) cf = 1;
@@ -1475,7 +1474,7 @@ final class World {
 					}
 					if (cropsWrecked < 1) {
 						battleDetails += ", " + Math.round((1 - cropsWrecked) * 100) + "% of the crops were destroyed";
-						region.harvest *= cropsWrecked;
+						region.crops *= cropsWrecked;
 					}
 					if (popKilled < 1) {
 						battleDetails += ", " + Math.round((1 - popKilled) * region.population) + " civilians were mistakenly killed, and as many more fled for their lives to surrounding regions";
@@ -1572,7 +1571,6 @@ final class World {
 
 				if (r.noble != null && r.noble.hasTag("Snubbed")) r.noble.unrest = Math.min(1, r.noble.unrest + .02);
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom()) && NationData.isEnemy(k, r.getKingdom(), World.this) && getNation(k).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .04);
-				if (Ideology.CHALICE_OF_COMPASSION == r.religion) r.harvest *= 1.05;
 				if (r.noble != null && r.noble.hasTag("Policing")) pirate.bribes.put(r.getKingdom(), pirate.bribes.getOrDefault(r.getKingdom(), 0.0) - 8);
 			}
 			// Syrjen unrest mods.
@@ -1902,16 +1900,11 @@ final class World {
 		}
 
 		void reapHarvests() {
+			for (Region r : regions) r.plant();
+			Set<String> stoicNations = new HashSet<>();
+			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag("Stoic")) stoicNations.add(k);
 			if (isHarvestTurn()) {
-				for (Region r : regions) if (r.isLand()) {
-					double base = r.harvest * r.population;
-					double mods = 1;
-					double unrest = r.calcUnrest(World.this);
-					if (unrest > .5 && !getNation(r.getKingdom()).hasTag("Stoic")) base *= 1.5 - unrest;
-					if (r.noble != null && r.noble.hasTag("Meticulous")) mods += .15;
-					r.food += base * mods;
-					r.harvest = harvests.get(((date + 1) / 13) % 4);
-				}
+				for (Region r : regions) r.harvest(stoicNations, World.this);
 			}
 		}
 
@@ -2090,7 +2083,7 @@ final class World {
 						c.location = regions.indexOf(n.get((int)(Math.random() * n.size())));
 					}
 				}
-				for (Region r : regions) r.harvest *= .97;
+				for (Region r : regions) r.crops *= .97;
 			}
 			if (tivar.quake) {
 				HashMap<String, HashMap<String, Integer>> wreckage = new HashMap<>();
@@ -2106,7 +2099,7 @@ final class World {
 					}
 					r.setReligion(null, World.this);
 				}
-				for (Region r : regions) r.harvest *= .97;
+				for (Region r : regions) r.crops *= .97;
 				for (String k : wreckage.keySet()) {
 					String notification = "The terrible magical earthquakes triggered by the followers of Rjinku have taken their toll on our nation, destroying:";
 					for (String t : wreckage.get(k).keySet()) {
@@ -2116,10 +2109,10 @@ final class World {
 				}
 			}
 			if (tivar.veil) {
-				for (Region r : regions) r.harvest *= .97;
+				for (Region r : regions) r.crops *= .97;
 			}
 			if (tivar.deluge) {
-				for (Region r : regions) r.harvest *= .97;
+				for (Region r : regions) r.crops *= .97;
 				
 			}
 		}
@@ -3119,6 +3112,11 @@ final class World {
 
 	public int turnsUntilHarvest() {
 		return (13 - ((date + 52 - 12) % 13)) % 13;
+	}
+
+	@Override
+	public double getGoodwill(String nation) {
+		return getNation(nation).goodwill;
 	}
 }
 
