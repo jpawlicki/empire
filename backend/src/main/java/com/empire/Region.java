@@ -393,6 +393,7 @@ class Region {
 		return noble != null && !"".equals(noble.name) ? noble.unrest : 0.0;
 	}
 
+	// TODO: Enfore min/max, add testing
 	public double calcMinConquestStrength(World w) {
 		double base = calcBaseConquestStrength(w);
 		double mods = 1;
@@ -404,13 +405,12 @@ class Region {
 	}
 
 	// TODO: This is a game rule/equation
-	// TODO: Enfore min/max
 	public double calcBaseConquestStrength(World w){
 		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 	}
 
 	// TODO: This is a game rule/equation
-	// TODO: Enforce min/max
+	// TODO: Enforce min/max, add testing
 	public double calcMinPatrolStrength(World w) {
 //		double mods = 1;
 //		mods += calcUnrest(w) * 2 - .7;

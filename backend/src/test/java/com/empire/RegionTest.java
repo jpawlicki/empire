@@ -1,6 +1,7 @@
 package com.empire;
 
 import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -114,12 +115,6 @@ public class RegionTest {
     }
 
     @Test
-    public void calcUnrestNobleNull(){
-        r.noble = null;
-        assertEquals(0.0, r.calcUnrestNoble(), DELTA);
-    }
-
-    @Test
     public void calcUnrestNobleEmptyName(){
         Noble n = mock(Noble.class);
         n.unrest = unrestMiddle;
@@ -155,8 +150,18 @@ public class RegionTest {
 
     @Test
     public void calcBaseConquestStrength(){
-        r.unrestPopular = 0.4;
-        assertEquals(4.8, r.calcBaseConquestStrength(w), DELTA);
+        r.unrestPopular = 1.0;
+        r.noble = null;
+        assertEquals(3.0, r.calcBaseConquestStrength(w), DELTA);
+    }
+
+    @Test
+    public void calcMinConquestStrengthNoble(){
+        Noble n = mock(Noble.class);
+        n.tags = Collections.singletonList(Constants.nobleLoyalTag);
+        r.noble = n;
+        r.unrestPopular = 1.0;
+        assertEquals(3.0, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test
