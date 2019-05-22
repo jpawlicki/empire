@@ -189,4 +189,12 @@ public class RegionTest {
         r.unrestPopular = 0.4;
         assertEquals(3.3, r.calcMinPatrolStrength(w), DELTA);
     }
+
+    @Test
+    public void calcFortificationMod(){
+        Construction fort = mock(Construction.class);
+        fort.type = Constants.constFort;
+        r.constructions = Arrays.asList(fort, fort);
+        assertEquals(0.3, r.calcFortificationMod(), DELTA);
+    }
 }
