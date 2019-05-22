@@ -35,7 +35,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-final class World {
+class World {
 	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 

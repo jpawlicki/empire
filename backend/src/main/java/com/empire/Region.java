@@ -14,7 +14,7 @@ import java.util.PriorityQueue;
 import java.util.Comparator;
 import java.util.function.Function;
 
-final class Region {
+class Region {
 	enum Type {
 		@SerializedName("land")
 		LAND,
