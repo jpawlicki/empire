@@ -177,7 +177,6 @@ class Region {
 		return signingBonus <= 0 ? signingBonus * 0.5 : (Math.log(signingBonus) / Math.log(2)) * 0.5 + 0.5;
 	}
 
-
 	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
 		double base = population * Constants.taxPerPop;
 		double unrest = calcUnrest(w);
