@@ -375,7 +375,6 @@ class Region {
 	}
 
 	// TODO: This is a game rule/equation
-	// TODO: Enforce min/max, add testing
 	public double calcMinPatrolStrength(World w) {
 		return 0.03 * Math.sqrt(population) * (1 + (2 * calcUnrest(w) - 0.7));
 	}
