@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -224,6 +223,9 @@ public class ArmyTest {
 	}
 
 	@Test
+
+
+	@Test
 	public void raze() {
 		Region r = world.regions.get(0);
 		r.population = 1000;
@@ -274,7 +276,7 @@ public class ArmyTest {
 		r.religion = Ideology.SWORD_OF_TRUTH;
 		r.setKingdomNoScore(k2);
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.contains(r));
 		assertEquals(k1, r.getKingdom());
 
@@ -282,7 +284,7 @@ public class ArmyTest {
 		r.population = 100000;
 		r.setKingdomNoScore(k2);
 		conqueredRegions.clear();
-		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.isEmpty());
 		assertEquals(k2, r.getKingdom());
 
@@ -291,7 +293,7 @@ public class ArmyTest {
 		r.constructions.add(Construction.makeFortification(40));
 		r.constructions.add(Construction.makeFortification(40));
 		r.constructions.add(Construction.makeFortification(40));
-		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.contains(r));
 		assertEquals(k1, r.getKingdom());
 		assertTrue(r.constructions.isEmpty());
