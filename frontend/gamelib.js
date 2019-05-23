@@ -245,7 +245,7 @@ class Region {
 	}
 
 	calcCrops() {
-		return {"v": this.crops, "unit": " crops", "why": "Already Planted"};
+		return Calc.moddedNum({"v": this.crops, "unit": " crops", "why": "Already Planted"}, []);
 	}
 
 	calcHarvestCapacity() {
@@ -259,14 +259,14 @@ class Region {
 	}
 
 	calcHarvest() {
-		return new Calc("max", calcCrops(), calcHavestCapacity());
+		return new Calc("max", [this.calcCrops(), this.calcHarvestCapacity()]);
 	}
 
 	calcNextHarvest() {
 		let base = new Calc("*", [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 13, "unit": " plants / citizen", "why": "Global Planting Rate"}]);
-		return new Calc("max", base, calcHarvestCapacity());
+		return new Calc("max", base, this.calcHarvestCapacity());
 	}
 
 	calcHarvestWeeks() {
