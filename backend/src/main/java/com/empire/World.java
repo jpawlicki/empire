@@ -1409,8 +1409,8 @@ class World {
 					if (enemyStrength == 0) continue;
 					double cf = enemyStrength / totalArmyStrength;
 					if (a.hasTag("Formations") && cf > .45 && cf < .9) cf = .45;
-					if (region.kingdom != null && NationData.isFriendly(region.kingdom, a.kingdom, World.this, region)) {
-						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortification() - 1)));
+					if (region.getKingdom() != null && NationData.isFriendly(region.getKingdom(), a.kingdom, World.this)) {
+						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortificationMod())));
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
