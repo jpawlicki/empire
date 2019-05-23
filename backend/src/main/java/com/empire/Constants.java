@@ -168,8 +168,8 @@ public class Constants {
     public static final double stoicConqStrengthMod = 0.75;
 
     // Regions
-    public static final double recruitmentPerPop = 5E-4; // (1.0 / 2000.0)
-    public static final double taxPerPop = 1E-4; // (1.0 / 10000.0)
+    public static final double recruitmentPerPop = 1.0 / 2000.0;
+    public static final double taxPerPop = 1.0 / 10000.0;
     public static final double unrestRecruitmentEffectThresh = 0.25;
     public static final double unrestTaxEffectThresh = 0.25;
     public static final String constFort = "fortifications";
