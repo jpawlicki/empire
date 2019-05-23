@@ -51,8 +51,8 @@
 					req.onload = function (ev) {
 						finalize();
 					};
-					// To avoid contention, spread these out a little.
-					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), commitCount * 500, req, ns);
+					// To avoid contention, spread these out a little. The first one takes extra long (~650 ms vs 40 ms).
+					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), commitCount > 1 ? 700 + commitCount * 60 : 0, req, ns);
 				}
 
 				
