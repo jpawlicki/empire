@@ -204,7 +204,6 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleRationingTag)) mods += Constants.nobleRationingMod;
 		if (noble != null && noble.hasTag(Constants.nobleWastefulTag)) mods += Constants.nobleWastefulMod;
 		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += Constants.chaliceOfCompassionFoodMod;
-		if (mods < 0) mods = 0;
 		return Math.max(0, base * mods);
 	}
 
