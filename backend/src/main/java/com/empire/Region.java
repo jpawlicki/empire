@@ -51,11 +51,17 @@ class Region {
 		Deque<Region> stack = new ArrayDeque<>();
 		stack.push(this);
 
+		for (Region n : getNeighbors(w)) {
+			if (n.isSea()) stack.push(n);
+			legals.add(n);
+		}
+
 		while (!stack.isEmpty()) {
-			stack.pop().getNeighbors(w).stream()
-					.peek(legals::add)
-					.filter(r -> r.isSea() && !legals.contains(r))
-					.forEach(stack::push);
+			Region r = stack.pop();
+			for (Region n : r.getNeighbors(w)) {
+				if (n.isSea() && !legals.contains(n)) stack.push(n);
+				legals.add(n);
+			}
 		}
 
 		return legals.contains(target);
