@@ -1,12 +1,14 @@
 package com.empire;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 public class RegionTest {
     private static Region r;
@@ -30,8 +32,8 @@ public class RegionTest {
         r.religion = Ideology.COMPANY;
         r.population = pop;
         r.unrestPopular = unrestMiddle;
+        r.setKingdomNoScore(k1);
 
-//        w = WorldTest.regionTestWorld();
         w = mockWorld(r);
     }
 
@@ -43,6 +45,11 @@ public class RegionTest {
         Region r4 = mockRegion(k2, Region.Type.LAND, null);
         Region r5 = mockRegion(k3, Region.Type.WATER, null);
         world.regions = Arrays.asList(r, r1, r2, r3, r4, r5);
+
+        Pirate p = mock(Pirate.class);
+        p.bribes = new HashMap<>();
+        p.bribes.put(k1, 0.0);
+        world.pirate = p;
 
         n1 = mock(NationData.class);
         when(world.getNation(k1)).thenReturn(n1);
@@ -56,6 +63,14 @@ public class RegionTest {
         r.type = type;
         r.religion = religion;
         return r;
+    }
+
+    private Noble mockNoble(String nobleTag, double unrest) {
+        Noble n = mock(Noble.class);
+        n.unrest = unrest;
+        n.name = "DONTCARE";
+        when(n.hasTag(nobleTag)).thenReturn(true);
+        return n;
     }
 
     @Test
@@ -116,19 +131,14 @@ public class RegionTest {
 
     @Test
     public void calcUnrestNobleEmptyName(){
-        Noble n = mock(Noble.class);
-        n.unrest = unrestMiddle;
-        n.name = "";
-        r.noble = n;
+        r.noble = mockNoble(null, unrestMiddle);
+        r.noble.name = "";
         assertEquals(0.0, r.calcUnrestNoble(), DELTA);
     }
 
     @Test
     public void calcUnrestNoblePresent(){
-        Noble n = mock(Noble.class);
-        n.unrest = unrestMiddle;
-        n.name = "DONTCARE";
-        r.noble = n;
+        r.noble = mockNoble(null, unrestMiddle);
         assertEquals(unrestMiddle, r.calcUnrestNoble(), DELTA);
     }
 
@@ -141,10 +151,7 @@ public class RegionTest {
         n1.goodwill = -25.0;
         assertEquals(0.25, r.calcUnrest(w), DELTA);
 
-        Noble n = mock(Noble.class);
-        n.unrest = unrestHigher;
-        n.name = "DONTCARE";
-        r.noble = n;
+        r.noble = mockNoble(null, unrestHigher);
         assertEquals(unrestHigher, r.calcUnrest(w), DELTA);
     }
 
@@ -156,17 +163,13 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthNobleLoyal(){
-        Noble n = mock(Noble.class);
-        when(n.hasTag(Constants.nobleLoyalTag)).thenReturn(true);
-        r.noble = n;
+        r.noble = mockNoble(Constants.nobleLoyalTag, 0.0);
         assertEquals(10.5, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test
     public void calcMinConquestStrengthDesperate(){
-        Noble n = mock(Noble.class);
-        when(n.hasTag(Constants.nobleDesperateTag)).thenReturn(true);
-        r.noble = n;
+        r.noble = mockNoble(Constants.nobleDesperateTag, 0.0);
         assertEquals(0, r.calcMinConquestStrength(w), DELTA);
     }
 
@@ -220,17 +223,13 @@ public class RegionTest {
 
     @Test
     public void calcConsumptionNobleRationing(){
-        Noble n = mock(Noble.class);
-        when(n.hasTag(Constants.nobleRationingTag)).thenReturn(true);
-        r.noble = n;
+        r.noble = mockNoble(Constants.nobleRationingTag, 0.0);
         assertEquals(8E3, r.calcConsumption(w, 1.0), DELTA);
     }
 
     @Test
     public void calcConsumptionNobleWasteful(){
-        Noble n = mock(Noble.class);
-        when(n.hasTag(Constants.nobleWastefulTag)).thenReturn(true);
-        r.noble = n;
+        r.noble = mockNoble(Constants.nobleWastefulTag, 0.0);
         assertEquals(1.1E4, r.calcConsumption(w, 1.0), DELTA);
     }
 
@@ -238,5 +237,67 @@ public class RegionTest {
     public void calcConsumptionChalice(){
         r.religion = Ideology.CHALICE_OF_COMPASSION;
         assertEquals(8.5E3, r.calcConsumption(w, 1.0), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatBasic(){
+        r.unrestPopular = 0.0;
+        assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatUnrest(){
+        assertEquals(0.25, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatWaterZero(){
+        r.type = Region.Type.WATER;
+        assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatAlyrjaZero(){
+        r.religion = Ideology.ALYRJA;
+        assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatNoblePolicingZero(){
+        r.noble = mockNoble(Constants.noblePolicingTag, 0.0);
+        assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatNoble(){
+        r.noble = mockNoble(Constants.nobleShadyTag, 0.0);
+        assertEquals(0.125, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatNobleShady(){
+        r.noble = mockNoble(null, 0.0);
+        assertEquals(0.625, r.calcPirateThreat(w), DELTA);
+    }
+
+    @Test
+    public void calcPirateThreatBribe(){
+        w.pirate.bribes.put(k1, -90.0);
+        assertEquals(0.03125, r.calcPirateThreat(w), DELTA);
+
+        w.pirate.bribes.put(k1, -60.0);
+        assertEquals(0.0625, r.calcPirateThreat(w), DELTA);
+
+        w.pirate.bribes.put(k1, -30.0);
+        assertEquals(0.125, r.calcPirateThreat(w), DELTA);
+
+        w.pirate.bribes.put(k1, 30.0);
+        assertEquals(0.5, r.calcPirateThreat(w), DELTA);
+
+        w.pirate.bribes.put(k1, 60.0);
+        assertEquals(1.0, r.calcPirateThreat(w), DELTA);
+
+        w.pirate.bribes.put(k1, 90.0);
+        assertEquals(2.0, r.calcPirateThreat(w), DELTA);
     }
 }

@@ -3083,7 +3083,7 @@ final class Communication {
 	int postDate = -1;
 }
 
-final class Pirate {
+class Pirate {
 	double threat;
 	Map<String, Double> bribes = new HashMap<>();
 }
