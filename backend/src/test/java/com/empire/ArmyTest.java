@@ -90,54 +90,55 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthSeafaring() {
 		plainArmy.addTag(Constants.armySeafaringTag);
-		world.regions.get(0).type = Region.Type.WATER;
+		when(world.regions.get(0).isSea()).thenReturn(true);
 		assertEquals(2.5, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplinedNavy() {
-		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
 		plainArmy.type = Army.Type.NAVY;
+		when(n1.hasTag(Constants.nationDisciplinedTag)).thenReturn(true);
 		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
-		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
 		plainArmy.kingdom = Constants.pirateKingdom;
+		world.getNation(k1).addTag(Constants.nationDisciplinedTag);
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplined() {
-		world.getNation("k1").addTag(Constants.nationDisciplinedTag);
+		when(n1.hasTag(Constants.nationDisciplinedTag)).thenReturn(true);
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortificationNavy() {
-		addFortification();
 		plainArmy.type = Army.Type.NAVY;
+		when(world.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		assertEquals(100.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortificationWater() {
-		addFortification();
-		world.regions.get(0).type = Region.Type.WATER;
+		when(world.regions.get(0).calcFortificationMod()).thenReturn(0.3);
+		when(world.regions.get(0).isLand()).thenReturn(false);
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortificationNotFriendly() {
-		addFortification();
-		plainArmy.kingdom = "k2";
+		plainArmy.kingdom = k2;
+		when(world.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortification() {
-		addFortification();
+		when(world.regions.get(0).calcFortificationMod()).thenReturn(0.3);
+		when(world.regions.get(0).isLand()).thenReturn(true);
 		assertEquals(1.3, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
@@ -151,7 +152,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthLoyalNotRegionOwner() {
 		plainArmy.location = 1;
-		world.regions.get(1).setKingdomNoScore("k2");
+		when(world.regions.get(1).getKingdom()).thenReturn(k2);
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
@@ -163,15 +164,15 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthSwordOfTruthNonIruhan() {
-		makeSwordOfTruthDominant();
 		world.regions.get(0).religion = Ideology.ALYRJA;
 		world.regions.get(0).population = 1.0;
+		when(world.getDominantIruhanIdeology()).thenReturn(Ideology.SWORD_OF_TRUTH);
 		assertEquals(1.0, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthSwordOfTruthAligned() {
-		makeSwordOfTruthDominant();
+		when(world.getDominantIruhanIdeology()).thenReturn(Ideology.SWORD_OF_TRUTH);
 		world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
 		world.regions.get(0).population = 1.0;
 		assertEquals(1.25, plainArmy.calcStrength(world, null, 0, false), DELTA);
@@ -179,7 +180,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthSwordOfTruthNonAligned() {
-		makeSwordOfTruthDominant();
+		when(world.getDominantIruhanIdeology()).thenReturn(Ideology.SWORD_OF_TRUTH);
 		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
 		world.regions.get(0).population = 1.0;
 		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), DELTA);
@@ -227,6 +228,7 @@ public class ArmyTest {
 		Region r = world.regions.get(0);
 		r.population = 1000;
 		r.religion = Ideology.SWORD_OF_TRUTH;
+		r.constructions = new ArrayList<>();
 		// Nothing to raze.
 		assertEquals(0, r.constructions.size());
 		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
@@ -270,19 +272,19 @@ public class ArmyTest {
 		// Basic conquest.
 		Region r = world.regions.get(0);
 		r.religion = Ideology.SWORD_OF_TRUTH;
-		r.setKingdomNoScore("k2");
+		r.setKingdomNoScore(k2);
 		HashSet<Region> conqueredRegions = new HashSet<>();
 		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
 		assertTrue(conqueredRegions.contains(r));
-		assertEquals("k1", r.getKingdom());
+		assertEquals(k1, r.getKingdom());
 
 		// Conquest requires a minimum size.
 		r.population = 100000;
-		r.setKingdomNoScore("k2");
+		r.setKingdomNoScore(k2);
 		conqueredRegions.clear();
 		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
 		assertTrue(conqueredRegions.isEmpty());
-		assertEquals("k2", r.getKingdom());
+		assertEquals(k2, r.getKingdom());
 
 		// Conquest destroys fortifications.
 		r.population = 100;
@@ -291,7 +293,7 @@ public class ArmyTest {
 		r.constructions.add(Construction.makeFortification(40));
 		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
 		assertTrue(conqueredRegions.contains(r));
-		assertEquals("k1", r.getKingdom());
+		assertEquals(k1, r.getKingdom());
 		assertTrue(r.constructions.isEmpty());
 	}
 }
