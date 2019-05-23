@@ -1,5 +1,6 @@
 package com.empire;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -8,17 +9,18 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ArmyTest {
 	private static Army plainArmy;
 	private static World world;
+	private static NationData n1;
+	private static NationData n2;
 	private static final double DELTA = 1E-5;
 
-	private void addFortification() {
-		Construction fort = new Construction();
-		fort.type = Constants.constFort;
-		world.regions.get(0).constructions = Arrays.asList(fort, fort);
-	}
+	private static final String k1 = "k1";
+	private static final String k2 = "k2";
 
 	private Character getLeader() {
 		Character leader = new Character();
@@ -27,22 +29,39 @@ public class ArmyTest {
 		return leader;
 	}
 
-	private void makeSwordOfTruthDominant() {
-		Region r = new Region();
-		r.religion = Ideology.SWORD_OF_TRUTH;
-		r.population = 1E9;
-		world.regions.add(r);
-	}
-
 	@Before
 	public void setUpPlainArmy() {
 		plainArmy = new Army();
 		plainArmy.type = Army.Type.ARMY;
 		plainArmy.size = 100.0;
-		plainArmy.kingdom = "k1";
+		plainArmy.kingdom = k1;
 		plainArmy.location = 0;
 
-		world = WorldTest.armyTestWorld();
+		world = mockWorld();
+	}
+
+
+	private World mockWorld(){
+		World w = mock(World.class);
+		w.notifications = new ArrayList<>();
+
+		n1 = mock(NationData.class);
+		Relationship rel1 = mock(Relationship.class);
+		rel1.battle = Relationship.War.ATTACK;
+		when(n1.getRelationship(k2)).thenReturn(rel1);
+		when(w.getNation(k1)).thenReturn(n1);
+
+		n2 = mock(NationData.class);
+		Relationship rel2 = mock(Relationship.class);
+		rel2.battle = Relationship.War.ATTACK;
+		when(n2.getRelationship(k1)).thenReturn(rel2);
+		when(w.getNation(k2)).thenReturn(n2);
+
+		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
+		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
+		r2.noble = Mocks.noble(Constants.nobleLoyalTag, 0.0);
+		w.regions = Arrays.asList(r1, r2);
+		return w;
 	}
 
 	@Test
