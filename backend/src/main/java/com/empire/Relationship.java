@@ -1,6 +1,6 @@
 package com.empire;
 
-final class Relationship {
+class Relationship {
 	public static final Relationship NPC_RELATION = new Relationship();
 	static {
 		NPC_RELATION.battle = Relationship.War.ATTACK;
