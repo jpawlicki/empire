@@ -1900,12 +1900,12 @@ class World implements GoodwillProvider {
 		}
 
 		void reapHarvests() {
-			for (Region r : regions) r.plant();
 			Set<String> stoicNations = new HashSet<>();
 			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag("Stoic")) stoicNations.add(k);
 			if (isHarvestTurn()) {
 				for (Region r : regions) r.harvest(stoicNations, World.this);
 			}
+			for (Region r : regions) r.plant();
 		}
 
 		void cedeRegions() {

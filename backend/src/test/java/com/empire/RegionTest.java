@@ -1,7 +1,9 @@
 package com.empire;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
@@ -28,6 +30,7 @@ public class RegionTest {
     @Before
     public void setUpRegion() {
         r = new Region();
+				r.type = Region.Type.LAND;
         r.setKingdomNoScore(k1);
         r.religion = Ideology.COMPANY;
         r.population = pop;
@@ -112,19 +115,19 @@ public class RegionTest {
     @Test
     public void calcUnrestClericalNonIruhan(){
         r.religion = Ideology.ALYRJA;
-        assertEquals(0.0, r.calcUnrestClerical((unused) -> -25), DELTA);
+        assertEquals(0.0, r.calcUnrestClerical(unused -> -25), DELTA);
     }
 
     @Test
     public void calcUnrestVesselOfFaith(){
         r.religion = Ideology.VESSEL_OF_FAITH;
-        assertEquals(0.0, r.calcUnrestClerical((unused) -> -25), DELTA);
+        assertEquals(0.0, r.calcUnrestClerical(unused -> -25), DELTA);
     }
 
     @Test
     public void calcUnrestClericalIruhan(){
         r.religion = Ideology.SWORD_OF_TRUTH;
-        assertEquals(0.5, r.calcUnrestClerical((unued) -> -50), DELTA);
+        assertEquals(0.5, r.calcUnrestClerical(unused -> -50), DELTA);
     }
 
     @Test
@@ -143,10 +146,10 @@ public class RegionTest {
     @Test
     public void calcUnrestAll(){
         r.unrestPopular = unrestLower;
-        assertEquals(unrestLower, r.calcUnrest((unused) -> -25), DELTA);
+        assertEquals(unrestLower, r.calcUnrest(unused -> -25), DELTA);
 
         r.religion = Ideology.SWORD_OF_TRUTH;
-        assertEquals(0.25, r.calcUnrest((unused) -> -25), DELTA);
+        assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
 
         r.noble = mockNoble(null, unrestHigher);
         assertEquals(unrestHigher, r.calcUnrest((unused -> -25)), DELTA);
@@ -297,4 +300,55 @@ public class RegionTest {
         w.pirate.bribes.put(k1, 90.0);
         assertEquals(2.0, r.calcPirateThreat(w), DELTA);
     }
+
+		@Test
+		public void plantChaliceOfCompassion() {
+			r.religion = Ideology.CHALICE_OF_COMPASSION;
+			r.population = 10000;
+			r.crops = 0;
+			r.plant();
+			assertEquals(2000, r.crops, DELTA);
+		}
+
+		@Test
+		public void plantAlyrja() {
+			r.religion = Ideology.ALYRJA;
+			r.population = 10000;
+			r.crops = 0;
+			r.plant();
+			assertEquals(0, r.crops, DELTA);
+		}
+
+		@Test
+		public void harvest() {
+			r.population = 10000;
+			r.crops = 1000000;
+			r.food = 0;
+			r.harvest(new HashSet<>(), unused -> 0);
+			assertEquals(250000, r.food, DELTA);
+			assertEquals(130000, r.crops, DELTA);
+		}
+
+		@Test
+		public void harvestUnrest() {
+			r.population = 10000;
+			r.crops = 1000000;
+			r.food = 0;
+			r.unrestPopular = .95;
+			r.harvest(new HashSet<>(), unused -> 0);
+			assertEquals(75000, r.food, DELTA);
+			assertEquals(130000, r.crops, DELTA);
+		}
+
+		@Test
+		public void harvestUnrestStoic() {
+			// RETER
+			r.population = 10000;
+			r.crops = 1000000;
+			r.food = 0;
+			r.unrestPopular = .95;
+			r.harvest(Collections.singleton("k1"), unused -> 0);
+			assertEquals(250000, r.food, DELTA);
+			assertEquals(130000, r.crops, DELTA);
+		}
 }
