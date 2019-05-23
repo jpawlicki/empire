@@ -137,6 +137,8 @@ public class Constants {
     public static final double oneDimExpAdd = 1.0;
     public static final double allDimExpAdd = 0.25;
     public static final double perLevelLeaderMod = 0.2;
+    public static final double baseGovernRecruitMod = 1.0;
+    public static final double baseGovernTaxMod = 1.0;
     public static final double perLevelGovernRecruitMod = 0.5;
     public static final double perLevelGovernTaxMod = 0.5;
 

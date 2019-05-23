@@ -105,7 +105,7 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + 1;
+				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + Constants.baseGovernRecruitMod;
 			}
 		}
 
@@ -159,7 +159,7 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + 1;
+				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + Constants.baseGovernTaxMod;
 			}
 		}
 
