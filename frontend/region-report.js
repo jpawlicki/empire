@@ -67,7 +67,7 @@ class RegionReport extends HTMLElement {
 					</div>
 					<h1><tooltip-element tooltip="Harvests happen every 13 weeks, turn crops into food. Battles in a region can destroy crops. High unrest can also reduce the yield of the harvest.">Crops:</tooltip-element> +${num(r.calcHarvestWeeks(), 1)} Weeks</h1>
 					<div>
-						<tooltip-element tooltip="The total crops in this region.">Crops:</tooltip-element><div>${num(r.calcHarvest(), 0, 1 / 1000)}k / ${num(r.calcCrops(), 0, 1 / 1000)}k</div>
+						<tooltip-element tooltip="The total crops in this region.">Crops:</tooltip-element><div>${num(r.calcCrops(), 0, 1 / 1000)}k</div>
 						<tooltip-element tooltip="The maximum amount of crops the region currently has labor available to harvest.">Harvest Capacity:</tooltip-element><div>${num(r.calcHarvestCapacity(), 0, 1 / 1000)}k</div>
 						<div>Time Until Harvest:</div><div>${(13 - ((g_data.date + 52 - 12) % 13)) % 13} Weeks</div>
 					</div>

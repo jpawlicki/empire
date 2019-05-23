@@ -40,19 +40,19 @@
 						"dominant_ideology": nations[k].religion,
 						"bonus": nations[k].bonus,
 						"email": document.getElementById("email").value,
-						"password": capitalize(k)
+						"password": "player"
 					};
 					for (let s of nations[k].score) ns[s] = "checked";
 					let req = new XMLHttpRequest();
 					req.open("post", g_server + "/entry/setup?gid=" + gameId + "&k=" + capitalize(k), true);
 					req.onerror = function (e) {
-						window.alert(req.status);
+						window.alert("Error setting up a kingdom: " + req.status);
 					};
 					req.onload = function (ev) {
 						finalize();
 					};
 					// To avoid contention, spread these out a little.
-					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), Math.random() * 5000, req, ns);
+					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), commitCount * 500, req, ns);
 				}
 
 				
@@ -62,7 +62,8 @@
 	</head>
 	<body>
 		Starts a new game with basic / default nations. The GM password is "gm" and observer password is "obs".
-		Each nation's password is that nation's name.
+		Each nation's password is "player".
+		To avoid local datastore contention, the initializations are spread over a few seconds. Wait for a 204 popup.
 		<form onsubmit="return postForm();">
 			<label>Game ID: <input id="gameId" type="number"/></label>
 			<label>Email: <input id="email" type="email"/></label>

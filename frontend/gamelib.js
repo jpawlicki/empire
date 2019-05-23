@@ -32,6 +32,8 @@ class Calc {
 			this.v = args[0].v / args[1].v;
 		} else if (op == "max") {
 			this.v = args.reduce((a, b) => (a > b.v ? a : b.v), 0);
+		} else if (op == "min") {
+			this.v = args.reduce((a, b) => (a < b.v ? a : b.v), Number.POSITIVE_INFINITY);
 		} else if (op == "sqrt") {
 			this.v = Math.sqrt(args[0].v);
 		}
@@ -40,6 +42,7 @@ class Calc {
 	explain() {
 		if (this.op == "sqrt") return "√(" + this.explainArg(this.args[0]) + ")";
 		else if (this.op == "max") return "max(" + this.args.reduce((a, b) => (a + ", " + this.explainArg(b)), "").slice(2) + ")";
+		else if (this.op == "min") return "min(" + this.args.reduce((a, b) => (a + ", " + this.explainArg(b)), "").slice(2) + ")";
 		else return "(" + this.args.reduce((a, b) => (a + " " + this.op.replace("*", "×") + " " + this.explainArg(b)), "").slice(3) + ")";
 	}
 
@@ -259,7 +262,7 @@ class Region {
 	}
 
 	calcHarvest() {
-		return new Calc("max", [this.calcCrops(), this.calcHarvestCapacity()]);
+		return new Calc("min", [this.calcCrops(), this.calcHarvestCapacity()]);
 	}
 
 	calcNextHarvest() {

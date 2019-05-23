@@ -194,7 +194,7 @@ final class World implements GoodwillProvider {
 				double flexFactor = remaining == 1 ? remainingShare : Math.min(remainingShare / 2, Math.random() * .4 + .8);
 				remainingShare -= flexFactor;
 				w.regions.get(r).population = population * flexFactor / nation.coreRegions.size();
-				w.regions.get(r).crops = population * Constants.setupCropsPerCitizen;
+				w.regions.get(r).crops = w.regions.get(r).population * Constants.setupCropsPerCitizen;
 				w.regions.get(r).food = food * flexFactor / nation.coreRegions.size();
 				w.regions.get(r).setKingdomNoScore(kingdom);
 				remaining--;

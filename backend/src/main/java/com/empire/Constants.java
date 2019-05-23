@@ -69,10 +69,10 @@ public class Constants {
 
     public static final String constFort = "fortifications";
 
-		public static final double harvestPerCitizen = 25;
-		public static final double plantsPerCitizen = 13;
+    public static final double harvestPerCitizen = 25;
+    public static final double plantsPerCitizen = 13;
 
-		public static final double chaliceOfCompassionPlantPerCitizen = 0.2;
+    public static final double chaliceOfCompassionPlantPerCitizen = 0.2;
 
-		public static final double setupCropsPerCitizen = 7.5;
+    public static final double setupCropsPerCitizen = 7.5;
 }
