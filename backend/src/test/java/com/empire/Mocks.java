@@ -1,5 +1,6 @@
 package com.empire;
 
+import java.util.ArrayList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -10,6 +11,7 @@ class Mocks {
         r.type = type;
         r.population = population;
         r.religion = religion;
+        r.constructions = new ArrayList<>();
         return r;
     }
 
