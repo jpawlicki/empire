@@ -270,13 +270,13 @@ public class RegionTest {
 
     @Test
     public void calcPirateThreatNoble(){
-        r.noble = mockNoble(Constants.nobleShadyTag, 0.0);
+        r.noble = mockNoble(null, 0.0);
         assertEquals(0.125, r.calcPirateThreat(w), DELTA);
     }
 
     @Test
     public void calcPirateThreatNobleShady(){
-        r.noble = mockNoble(null, 0.0);
+        r.noble = mockNoble(Constants.nobleShadyTag, 0.0);
         assertEquals(0.625, r.calcPirateThreat(w), DELTA);
     }
 
