@@ -39,7 +39,7 @@ interface GoodwillProvider {
 	double getGoodwill(String nation);
 }
 
-final class World implements GoodwillProvider {
+class World implements GoodwillProvider {
 	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
@@ -1409,7 +1409,7 @@ final class World implements GoodwillProvider {
 					double cf = enemyStrength / totalArmyStrength;
 					if (a.hasTag("Formations") && cf > .45 && cf < .9) cf = .45;
 					if (region.getKingdom() != null && NationData.isFriendly(region.getKingdom(), a.kingdom, World.this)) {
-						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortification() - 1)));
+						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortificationMod())));
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
@@ -1965,7 +1965,7 @@ final class World implements GoodwillProvider {
 						getNation(k).gold -= signingBonus * recruits / 100;
 						incomeSources.getOrDefault(k, new Budget()).spentRecruits += signingBonus * recruits / 100;
 					}
-					ArrayList<String> tags = r.getArmyTags();
+					List<String> tags = r.getArmyTags();
 					Army merge = null;
 					outer: for (Army a : armies) {
 						if (a.location == i && a.isArmy() && a.kingdom.equals(k)) {
@@ -3140,7 +3140,7 @@ final class Communication {
 	int postDate = -1;
 }
 
-final class Pirate {
+class Pirate {
 	double threat;
 	Map<String, Double> bribes = new HashMap<>();
 }

@@ -36,7 +36,7 @@ final class Army {
 		if (hasTag(Constants.armySteelTag)) mods += Constants.steelMod;
 		if (hasTag(Constants.armySeafaringTag) && r.isSea()) mods += Constants.seafaringMod;
 		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
-		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortification() - 1;
+		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += Constants.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);
