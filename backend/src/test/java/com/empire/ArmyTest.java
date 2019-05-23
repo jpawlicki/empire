@@ -21,13 +21,6 @@ public class ArmyTest {
 	private static final String k1 = "k1";
 	private static final String k2 = "k2";
 
-	private Character getLeader() {
-		Character leader = new Character();
-		leader.experience.put(Constants.charDimGeneral, 3.0);
-		leader.experience.put(Constants.charDimAdmiral, 3.0);
-		return leader;
-	}
-
 	@Before
 	public void setUpPlainArmy() {
 		plainArmy = new Army();
@@ -181,7 +174,7 @@ public class ArmyTest {
 	public void calcStrengthSwordOfTruthNonAligned() {
 		when(world.getDominantIruhanIdeology()).thenReturn(Ideology.SWORD_OF_TRUTH);
 		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
-		world.regions.get(0).population = 1.0;
+		world.regions.get(0).population = 1E9;
 		assertEquals(1.15, plainArmy.calcStrength(world, null, 0, false), DELTA);
 	}
 
@@ -200,30 +193,31 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthInspire() {
 		world.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
-		world.regions.get(0).population = 1.0;
+		world.regions.get(0).population = 1E9;
 		assertEquals(1.1, plainArmy.calcStrength(world, null, 2, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthCaptured() {
-		Character leader = getLeader();
+		Character leader = Mocks.character(3.0);
 		leader.captor = "DONTCARE";
 		assertEquals(1.0, plainArmy.calcStrength(world, leader, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthGeneral() {
-		assertEquals(1.4, plainArmy.calcStrength(world, getLeader(), 0, false), DELTA);
+		Character c = Mocks.character(3.0);
+		when(c.calcLevel(Constants.charDimGeneral)).thenReturn(2);
+		assertEquals(1.4, plainArmy.calcStrength(world, c, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthAdmiral() {
 		plainArmy.type = Army.Type.NAVY;
-		assertEquals(140.0, plainArmy.calcStrength(world, getLeader(), 0, false), DELTA);
+		Character c = Mocks.character(3.0);
+		when(c.calcLevel(Constants.charDimAdmiral)).thenReturn(2);
+		assertEquals(140.0, plainArmy.calcStrength(world, c, 0, false), DELTA);
 	}
-
-	@Test
-
 
 	@Test
 	public void raze() {
