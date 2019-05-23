@@ -39,12 +39,6 @@ class Region {
 
 	//TODO: does this method belong with kingdom/nation?
 	static int numUniqueIdeologies(String kingdom, World w) {
-		Set<Ideology> ideologies = new HashSet<>();
-		for (Region r : w.regions) if (kingdom.equals(r.getKingdom())) ideologies.add(r.religion);
-		return ideologies.size();
-	}
-
-	static int numUniqueIdeologies2(String kingdom, World w) {
 		return (int) w.regions.stream()
 				.filter(r -> kingdom.equals(r.getKingdom()))
 				.map(r -> r.religion)
@@ -52,28 +46,6 @@ class Region {
 	}
 
 	public boolean canFoodTransferTo(World w, Region target) {
-		Set<Region> legals = new HashSet<>();
-		legals.add(this);
-		Deque<Region> stack = new ArrayDeque<>();
-		stack.push(this);
-
-		for (Region n : getNeighbors(w)) {
-			if (n.isSea()) stack.push(n);
-			legals.add(n);
-		}
-
-		while (!stack.isEmpty()) {
-			Region r = stack.pop();
-			for (Region n : r.getNeighbors(w)) {
-				if (n.isSea() && !legals.contains(n)) stack.push(n);
-				legals.add(n);
-			}
-		}
-
-		return legals.contains(target);
-	}
-
-	public boolean canFoodTransferTo2(World w, Region target) {
 		Set<Region> legals = new HashSet<>();
 		legals.add(this);
 		Deque<Region> stack = new ArrayDeque<>();
@@ -169,11 +141,6 @@ class Region {
 
 	// TODO: this belongs alongside the game constants, should determine a way to parameterize these function-type rules
 	public double calcSigningBonusMod(double signingBonus){
-		/* Original:
-		if (signingBonus == -1) return -0.5;
-		else if (signingBonus == -2) return  -1;
-		else if (signingBonus >= 1) return (Math.log(signingBonus) / Math.log(2)) * .5 + .5;
-		*/
 		return signingBonus <= 0 ? signingBonus * 0.5 : (Math.log(signingBonus) / Math.log(2)) * 0.5 + 0.5;
 	}
 
@@ -366,14 +333,6 @@ class Region {
 	}
 
 	public double calcUnrest(World w) {
-//		double unrest = unrestPopular;
-//		if (religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH) {
-//			unrest = Math.max(unrest, -w.getNation(kingdom).goodwill * Constants.clericalUnrestGoodwillFactor);
-//		}
-//		if (noble != null && !"".equals(noble.name)) {
-//			unrest = Math.max(noble.unrest, unrest);
-//		}
-//		return Math.min(1, Math.max(0, unrest));
 		return Math.min(1.0, Math.max(getUnrestPopular(), Math.max(calcUnrestClerical(w), calcUnrestNoble())));
 	}
 
@@ -413,9 +372,6 @@ class Region {
 	// TODO: This is a game rule/equation
 	// TODO: Enforce min/max, add testing
 	public double calcMinPatrolStrength(World w) {
-//		double mods = 1;
-//		mods += calcUnrest(w) * 2 - .7;
-//		return Math.sqrt(population) * 3 / 100 * mods;
 		return 0.03 * Math.sqrt(population) * (1 + (2 * calcUnrest(w) - 0.7));
 	}
 
@@ -458,4 +414,3 @@ class Construction {
 		return c;
 	}
 }
-
