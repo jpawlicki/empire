@@ -311,7 +311,7 @@ class Region {
 			};
 
 			// TODO: try this function-style equivalent instead once unit tests are created
-			//PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> n.power));
+//			PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> -n.power));
 			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
 				@Override
 				public int compare(Node a, Node b) {
