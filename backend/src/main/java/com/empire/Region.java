@@ -249,12 +249,14 @@ class Region {
 	}
 
 	public void setReligion(Ideology bias, World w) {
-		Map<Ideology, Integer> ideologies = new HashMap<>();
+		if (bias == null) bias = religion;
+		HashMap<Ideology, Integer> ideologies = new HashMap<>();
+
 		for (Construction c : constructions) {
 			if (c.type.equals(Constants.constTemple)) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
 		int maxV = ideologies.getOrDefault(bias, -1);
-		Ideology max = bias == null ? religion : bias;
+		Ideology max = bias;
 		for (Ideology r : ideologies.keySet()) {
 			if (ideologies.get(r) > maxV) {
 				maxV = ideologies.get(r);
@@ -440,5 +442,20 @@ class Construction {
 	String type;
 	Ideology religion; // Only for type == "temple".
 	double originalCost;
+
+	static Construction makeTemple(Ideology religion, double cost) {
+		Construction c = new Construction();
+		c.type = "temple";
+		c.religion = religion;
+		c.originalCost = cost;
+		return c;
+	}
+
+	static Construction makeFortification(double cost) {
+		Construction c = new Construction();
+		c.type = "fortifications";
+		c.originalCost = cost;
+		return c;
+	}
 }
 
