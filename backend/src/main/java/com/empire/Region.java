@@ -397,8 +397,11 @@ class Region {
 		return type == Type.WATER;
 	}
 
-	void plant() {
+	void plant(boolean isHarvestTurn) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
+		if (isHarvestTurn) {
+			crops += population * Constants.plantsPerCitizen;
+		}
 	}
 
 	void harvest(Set<String> stoicNations, GoodwillProvider goodwills) {
@@ -408,7 +411,7 @@ class Region {
 		if (unrest > .25 && !stoicNations.contains(getKingdom())) maxHarvest *= 1.25 - unrest;
 		maxHarvest = Math.min(crops, maxHarvest);
 		food += maxHarvest;
-		crops = population * Constants.plantsPerCitizen;
+		crops = 0;
 	}
 }
 

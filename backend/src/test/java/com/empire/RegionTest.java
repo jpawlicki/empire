@@ -306,7 +306,7 @@ public class RegionTest {
 			r.religion = Ideology.CHALICE_OF_COMPASSION;
 			r.population = 10000;
 			r.crops = 0;
-			r.plant();
+			r.plant(false);
 			assertEquals(2000, r.crops, DELTA);
 		}
 
@@ -315,8 +315,16 @@ public class RegionTest {
 			r.religion = Ideology.ALYRJA;
 			r.population = 10000;
 			r.crops = 0;
-			r.plant();
+			r.plant(false);
 			assertEquals(0, r.crops, DELTA);
+		}
+
+		@Test
+		public void plantHarvestTurn() {
+			r.population = 10000;
+			r.crops = 0;
+			r.plant(true);
+			assertEquals(130000, r.crops, DELTA);
 		}
 
 		@Test
@@ -326,7 +334,7 @@ public class RegionTest {
 			r.food = 0;
 			r.harvest(new HashSet<>(), unused -> 0);
 			assertEquals(250000, r.food, DELTA);
-			assertEquals(130000, r.crops, DELTA);
+			assertEquals(0, r.crops, DELTA);
 		}
 
 		@Test
@@ -337,18 +345,17 @@ public class RegionTest {
 			r.unrestPopular = .95;
 			r.harvest(new HashSet<>(), unused -> 0);
 			assertEquals(75000, r.food, DELTA);
-			assertEquals(130000, r.crops, DELTA);
+			assertEquals(0, r.crops, DELTA);
 		}
 
 		@Test
 		public void harvestUnrestStoic() {
-			// RETER
 			r.population = 10000;
 			r.crops = 1000000;
 			r.food = 0;
 			r.unrestPopular = .95;
 			r.harvest(Collections.singleton("k1"), unused -> 0);
 			assertEquals(250000, r.food, DELTA);
-			assertEquals(130000, r.crops, DELTA);
+			assertEquals(0, r.crops, DELTA);
 		}
 }

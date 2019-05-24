@@ -1905,7 +1905,7 @@ class World implements GoodwillProvider {
 			if (isHarvestTurn()) {
 				for (Region r : regions) r.harvest(stoicNations, World.this);
 			}
-			for (Region r : regions) r.plant();
+			for (Region r : regions) r.plant(isHarvestTurn());
 		}
 
 		void cedeRegions() {
