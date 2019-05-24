@@ -5,7 +5,7 @@
   "regions": [{
     "kingdom": "k1",
     "type": "land",
-    "relgion": "Sword of Truth",
+    "religion": "Sword of Truth",
     "population": 1.0
   }]
 }
