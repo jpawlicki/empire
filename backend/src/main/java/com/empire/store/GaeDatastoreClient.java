@@ -11,7 +11,7 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class GaeDatastoreClient {
+public class GaeDatastoreClient implements DatastoreClient{
     private static final String playerType = "Player";
     private static final String nationType = "Nation";
     private static final String orderType = "Order";
