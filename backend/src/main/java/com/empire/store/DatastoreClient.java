@@ -1,6 +1,5 @@
 package com.empire.store;
 
-import com.empire.Order;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
@@ -73,11 +72,11 @@ public class DatastoreClient {
 
     // Order
 
-    public Order loadOrder(long gameId, String kingdom, int turn) throws EntityNotFoundException {
-        Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
-        return new Order(gameId, kingdom, turn, (int)((Long)e.getProperty("version")).longValue(), ((Text)e.getProperty("json")).getValue());
-    }
-
+//    public Orders loadOrders(long gameId, String kingdom, int turn) throws EntityNotFoundException {
+//        Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
+//        return new Orders(gameId, turn, (int)((Long)e.getProperty("version")).longValue(), kingdom, ((Text)e.getProperty("json")).getValue());
+//    }
+//
 //    public HashMap<String, String> getOrders() {
 //        return
 //                new GsonBuilder()
@@ -85,15 +84,15 @@ public class DatastoreClient {
 //                        .create()
 //                        .fromJson(json, Order.OrderGson.class).orders;
 //    }
-
-    private Entity orderToEntity(Order order) {
-        Entity e = new Entity(orderType, createOrderkey(order.gameId, order.kingdom, order.turn));
-        e.setProperty(jsonProp, new Text(order.json));
-        e.setProperty(versionProp, order.version);
-        return e;
-    }
-
-    private String createOrderkey(long gameId, String kingdom, int turn) {
-        return gameId + "_" + turn + "_" + kingdom;
-    }
+//
+//    private Entity orderToEntity(Orders orders) {
+//        Entity e = new Entity(orderType, createOrderkey(orders.gameId, orders.kingdom, orders.turn));
+//        e.setProperty(jsonProp, new Text(orders.json));
+//        e.setProperty(versionProp, orders.version);
+//        return e;
+//    }
+//
+//    private String createOrderkey(long gameId, String kingdom, int turn) {
+//        return gameId + "_" + turn + "_" + kingdom;
+//    }
 }
