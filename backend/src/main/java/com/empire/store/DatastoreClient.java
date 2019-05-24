@@ -1,6 +1,5 @@
 package com.empire.store;
 
-import com.empire.Nation;
 import com.empire.Order;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -52,10 +51,10 @@ public class DatastoreClient {
 
     // Nation
 
-    public Nation.NationGson loadNation(String nation, long gameId) throws EntityNotFoundException {
+    public Nation loadNation(String nation, long gameId) throws EntityNotFoundException {
         Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(nation, gameId)));
         String jsonStr = (String) e.getProperty(jsonProp);
-        return getGson().fromJson(jsonStr, Nation.NationGson.class);
+        return getGson().fromJson(jsonStr, Nation.class);
     }
 
     private Entity nationToEntity(String nation, long gameId) {
