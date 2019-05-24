@@ -1,5 +1,7 @@
-package com.empire;
+package com.empire.store;
 
+import com.empire.Nation;
+import com.empire.Order;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
@@ -9,7 +11,6 @@ import com.google.appengine.api.datastore.Text;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import java.util.HashMap;
 
 public class DatastoreClient {
     private static final String playerType = "Player";
