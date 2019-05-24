@@ -11,10 +11,12 @@ public class CharacterTest {
     private static World world;
     private static final double DELTA = 1E-5;
 
+    private static final String k1 = "k1";
+
     @Before
     public void createCharacter() {
         c = new Character();
-        c.kingdom = "k1";
+        c.kingdom = k1;
         setExperience(0.0);
 
         world = WorldTest.basicTestWorld();
@@ -33,7 +35,7 @@ public class CharacterTest {
     }
 
     private void addHeroicTag() {
-        world.getNation("k1").addTag(Constants.nationHeroicTag);
+        world.getNation(k1).addTag(Constants.nationHeroicTag);
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {
