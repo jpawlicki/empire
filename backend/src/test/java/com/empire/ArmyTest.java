@@ -274,20 +274,22 @@ public class ArmyTest {
 		assertEquals(0, r.constructions.size());
 		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
 
+		/*
 		//TODO: This test does not belong in the Army class, the Region should be responsible for determining how its religion has changed, this is impossible to properly/effectively test as written
 		// Razing temple changes religion.
-//		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
-//		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
-//		r.constructions.add(Construction.makeTemple(Ideology.VESSEL_OF_FAITH, 100));
-//		r.setReligion(null, w);
-//		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
-//		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
-//		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
-//		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
-//		assertEquals(1, r.constructions.size());
-//		assertEquals(Ideology.VESSEL_OF_FAITH, r.religion);
-//		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
-//		assertEquals(1, r.constructions.size());
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.VESSEL_OF_FAITH, 100));
+		r.setReligion(null, w);
+		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(1, r.constructions.size());
+		assertEquals(Ideology.VESSEL_OF_FAITH, r.religion);
+		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(1, r.constructions.size());
+		*/
 
 		// Razing requires a minimum strength.
 		r.population = 1000000;
@@ -310,7 +312,7 @@ public class ArmyTest {
 		HashSet<Region> conqueredRegions = new HashSet<>();
 		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.contains(r));
-//		assertEquals(k2, r.getKingdom());
+		//assertEquals(k2, r.getKingdom());
 	}
 
 	@Test
@@ -323,7 +325,7 @@ public class ArmyTest {
 		HashSet<Region> conqueredRegions = new HashSet<>();
 		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.isEmpty());
-//		assertEquals(k1, r.getKingdom());
+		//assertEquals(k1, r.getKingdom());
 	}
 
 	@Test
@@ -341,37 +343,39 @@ public class ArmyTest {
 		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(r.constructions.isEmpty());
 		assertTrue(conqueredRegions.contains(r));
-//		assertEquals(k2, r.getKingdom());
+		//assertEquals(k2, r.getKingdom());
 	}
 
-//	@Test
-//	public void conquer() {
-//		// Basic conquest.
-//		Region r = w.regions.get(0);
-//		r.religion = Ideology.SWORD_OF_TRUTH;
-//		when(r.isLand()).thenReturn(true);
-//		r.setKingdomNoScore(k2);
-//		HashSet<Region> conqueredRegions = new HashSet<>();
-//		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
-//		assertTrue(conqueredRegions.contains(r));
-//		assertEquals(k1, r.getKingdom());
-//
-//		// Conquest requires a minimum size.
-//		r.population = 100000;
-//		r.setKingdomNoScore(k2);
-//		conqueredRegions.clear();
-//		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
-//		assertTrue(conqueredRegions.isEmpty());
-//		assertEquals(k2, r.getKingdom());
-//
-//		// Conquest destroys fortifications.
-//		r.population = 100;
-//		r.constructions.add(Construction.makeFortification(40));
-//		r.constructions.add(Construction.makeFortification(40));
-//		r.constructions.add(Construction.makeFortification(40));
-//		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
-//		assertTrue(conqueredRegions.contains(r));
-//		assertEquals(k1, r.getKingdom());
-//		assertTrue(r.constructions.isEmpty());
-//	}
+	/*
+	@Test
+	public void conquer() {
+		// Basic conquest.
+		Region r = w.regions.get(0);
+		r.religion = Ideology.SWORD_OF_TRUTH;
+		when(r.isLand()).thenReturn(true);
+		r.setKingdomNoScore(k2);
+		HashSet<Region> conqueredRegions = new HashSet<>();
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		assertTrue(conqueredRegions.contains(r));
+		assertEquals(k1, r.getKingdom());
+
+		// Conquest requires a minimum size.
+		r.population = 100000;
+		r.setKingdomNoScore(k2);
+		conqueredRegions.clear();
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		assertTrue(conqueredRegions.isEmpty());
+		assertEquals(k2, r.getKingdom());
+
+		// Conquest destroys fortifications.
+		r.population = 100;
+		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortification(40));
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		assertTrue(conqueredRegions.contains(r));
+		assertEquals(k1, r.getKingdom());
+		assertTrue(r.constructions.isEmpty());
+	}
+	*/
 }
