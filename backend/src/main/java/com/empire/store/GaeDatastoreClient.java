@@ -11,7 +11,7 @@ import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-public class DatastoreClient {
+public class GaeDatastoreClient {
     private static final String playerType = "Player";
     private static final String nationType = "Nation";
     private static final String orderType = "Order";
@@ -22,19 +22,19 @@ public class DatastoreClient {
     private static final String passhashProp = "passHash";
     private static final String versionProp = "version";
 
-    private static DatastoreClient instance = null;
+    private static GaeDatastoreClient instance = null;
 
     private final DatastoreService service;
 
-    public static DatastoreClient getInstance() {
+    public static GaeDatastoreClient getInstance() {
         if(instance == null) {
-            instance = new DatastoreClient(DatastoreServiceFactory.getDatastoreService());
+            instance = new GaeDatastoreClient(DatastoreServiceFactory.getDatastoreService());
         }
 
         return instance;
     }
 
-    private DatastoreClient(DatastoreService service) {
+    private GaeDatastoreClient(DatastoreService service) {
         this.service = service;
     }
 
