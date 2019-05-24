@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 
 public class CharacterTest {
     private Character c;
-    private static World world;
+    private static World w;
     private static final double DELTA = 1E-5;
 
     private static final String k1 = "k1";
@@ -19,8 +19,8 @@ public class CharacterTest {
         c.kingdom = k1;
         setExperience(0.0);
 
-        world = WorldTest.basicTestWorld();
-        world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+        w = WorldTest.basicTestWorld();
+        w.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
     }
 
     private void setExperience(double exp) {
@@ -35,7 +35,7 @@ public class CharacterTest {
     }
 
     private void addHeroicTag() {
-        world.getNation(k1).addTag(Constants.nationHeroicTag);
+        w.getNation(k1).addTag(Constants.nationHeroicTag);
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {
@@ -60,113 +60,113 @@ public class CharacterTest {
 
     @Test
     public void addExperienceGeneralRegular() {
-        c.addExperience(Constants.charDimGeneral, world);
+        c.addExperience(Constants.charDimGeneral, w);
         assertDimsExpEqual(1.0, 0.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceAdmirallRegular() {
-        c.addExperience(Constants.charDimAdmiral, world);
+        c.addExperience(Constants.charDimAdmiral, w);
         assertDimsExpEqual(0.0, 1.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceGovernorRegular() {
-        c.addExperience(Constants.charDimGovernor, world);
+        c.addExperience(Constants.charDimGovernor, w);
         assertDimsExpEqual(0.0, 0.0, 1.0, 0.0);
     }
 
     @Test
     public void addExperienceSpyRegular() {
-        c.addExperience(Constants.charDimSpy, world);
+        c.addExperience(Constants.charDimSpy, w);
         assertDimsExpEqual(0.0, 0.0, 0.0, 1.0);
 
     }
 
     @Test
     public void addExperienceAllRegular() {
-        c.addExperience(Constants.charDimAll, world);
+        c.addExperience(Constants.charDimAll, w);
         assertDimsExpEqual(0.25, 0.25, 0.25, 0.25);
     }
 
     @Test
     public void addExperienceGeneralHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimGeneral, world);
+        c.addExperience(Constants.charDimGeneral, w);
         assertDimsExpEqual(2.0, 0.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceAdmiralHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimAdmiral, world);
+        c.addExperience(Constants.charDimAdmiral, w);
         assertDimsExpEqual(0.0, 2.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceGovernorHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimGovernor, world);
+        c.addExperience(Constants.charDimGovernor, w);
         assertDimsExpEqual(0.0, 0.0, 2.0, 0.0);
     }
 
     @Test
     public void addExperienceSpyHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimSpy, world);
+        c.addExperience(Constants.charDimSpy, w);
         assertDimsExpEqual(0.0, 0.0, 0.0, 2.0);
     }
 
     @Test
     public void addExperienceAllHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimAll, world);
+        c.addExperience(Constants.charDimAll, w);
         assertDimsExpEqual(0.5, 0.5, 0.5, 0.5);
     }
 
     @Test
     public void calcPlotPowerBasic() {
-        assertEquals(1.3, c.calcPlotPower(world, false, 0), DELTA);
+        assertEquals(1.3, c.calcPlotPower(w, false, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerSpyLevel() {
         setExperience(4.0);
-        assertEquals(1.6, c.calcPlotPower(world, false, 0), DELTA);
+        assertEquals(1.6, c.calcPlotPower(w, false, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerGuarding() {
-        assertEquals(1.8, c.calcPlotPower(world, true, 0), DELTA);
+        assertEquals(1.8, c.calcPlotPower(w, true, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerLyskr() {
-        world.regions.get(0).religion = Ideology.LYSKR;
-        assertEquals(1.7, c.calcPlotPower(world, false, 0), DELTA);
+        w.regions.get(0).religion = Ideology.LYSKR;
+        assertEquals(1.7, c.calcPlotPower(w, false, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerCompany() {
-        world.regions.get(0).religion = Ideology.COMPANY;
-        assertEquals(1.5, c.calcPlotPower(world, false, 0), DELTA);
+        w.regions.get(0).religion = Ideology.COMPANY;
+        assertEquals(1.5, c.calcPlotPower(w, false, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerInspireNonIruhan() {
-        world.regions.get(0).religion = Ideology.ALYRJA;
-        assertEquals(1.3, c.calcPlotPower(world, false, 2), DELTA);
+        w.regions.get(0).religion = Ideology.ALYRJA;
+        assertEquals(1.3, c.calcPlotPower(w, false, 2), DELTA);
     }
 
     @Test
     public void calcPlotPowerInspireIruhan() {
-        world.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
-        assertEquals(1.4, c.calcPlotPower(world, false, 2), DELTA);
+        w.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+        assertEquals(1.4, c.calcPlotPower(w, false, 2), DELTA);
     }
 
     @Test
     public void calcPlotPowerCaptive() {
         c.captor = "DONTCARE";
-        assertEquals(0.8, c.calcPlotPower(world, false, 0), DELTA);
+        assertEquals(0.8, c.calcPlotPower(w, false, 0), DELTA);
     }
 }
