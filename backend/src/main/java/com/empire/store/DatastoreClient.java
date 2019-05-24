@@ -1,5 +1,6 @@
 package com.empire.store;
 
+import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
@@ -14,8 +15,10 @@ public class DatastoreClient {
     private static final String playerType = "Player";
     private static final String nationType = "Nation";
     private static final String orderType = "Order";
+    private static final String worldType = "World";
 
     private static final String jsonProp = "json";
+    private static final String jsonGzipProp = "json_gzip";
     private static final String passhashProp = "passHash";
     private static final String versionProp = "version";
 
@@ -95,4 +98,32 @@ public class DatastoreClient {
 //    private String createOrderkey(long gameId, String kingdom, int turn) {
 //        return gameId + "_" + turn + "_" + kingdom;
 //    }
+
+    // World
+    private Gson getGsonWorld() {
+        return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    }
+
+    private String loadJson(long gameId, int turn) throws EntityNotFoundException {
+        Entity e = service.get(KeyFactory.createKey(worldType, gameId + "_" + turn));
+        if (e.hasProperty(jsonProp)) {
+            return new String(((Text)e.getProperty(jsonProp)).getValue());
+        } else {
+            return Compressor.decompress(((Blob)e.getProperty(jsonGzipProp)).getBytes());
+        }
+    }
+
+    public World load(long gameId, int turn) throws EntityNotFoundException {
+        return fromJson(loadJson(gameId, turn));
+    }
+
+    public World fromJson(String json) {
+        return getGson().fromJson(json, World.class);
+    }
+
+    public Entity worldToEntity(long gameId, World world) {
+		Entity e = new Entity(worldType, gameId + "_" + world.date);
+		e.setProperty(jsonGzipProp, new Blob(Compressor.compress(getGson().toJson(this))));
+		return e;
+	}
 }
