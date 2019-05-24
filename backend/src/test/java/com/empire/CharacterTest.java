@@ -1,14 +1,19 @@
 package com.empire;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class CharacterTest {
     private Character c;
     private static World w;
+    private static NationData n1;
+    private static Region r1;
     private static final double DELTA = 1E-5;
 
     private static final String k1 = "k1";
@@ -19,8 +24,19 @@ public class CharacterTest {
         c.kingdom = k1;
         setExperience(0.0);
 
-        w = WorldTest.basicTestWorld();
-        w.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+        w = mockWorld();
+    }
+
+    private World mockWorld(){
+        World world = mock(World.class);
+
+        n1 = mock(NationData.class);
+        when(world.getNation(k1)).thenReturn(n1);
+
+        r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.SWORD_OF_TRUTH);
+        world.regions = Collections.singletonList(r1);
+
+        return world;
     }
 
     private void setExperience(double exp) {
@@ -35,7 +51,7 @@ public class CharacterTest {
     }
 
     private void addHeroicTag() {
-        w.getNation(k1).addTag(Constants.nationHeroicTag);
+        when(n1.hasTag(Constants.nationHeroicTag)).thenReturn(true);
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {
@@ -142,25 +158,25 @@ public class CharacterTest {
 
     @Test
     public void calcPlotPowerLyskr() {
-        w.regions.get(0).religion = Ideology.LYSKR;
+        r1.religion = Ideology.LYSKR;
         assertEquals(1.7, c.calcPlotPower(w, false, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerCompany() {
-        w.regions.get(0).religion = Ideology.COMPANY;
+        r1.religion = Ideology.COMPANY;
         assertEquals(1.5, c.calcPlotPower(w, false, 0), DELTA);
     }
 
     @Test
     public void calcPlotPowerInspireNonIruhan() {
-        w.regions.get(0).religion = Ideology.ALYRJA;
+        r1.religion = Ideology.ALYRJA;
         assertEquals(1.3, c.calcPlotPower(w, false, 2), DELTA);
     }
 
     @Test
     public void calcPlotPowerInspireIruhan() {
-        w.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
+        r1.religion = Ideology.SWORD_OF_TRUTH;
         assertEquals(1.4, c.calcPlotPower(w, false, 2), DELTA);
     }
 
