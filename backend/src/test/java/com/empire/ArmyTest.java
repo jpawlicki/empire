@@ -1,11 +1,15 @@
 package com.empire;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 
 public class ArmyTest {
 	private static Army plainArmy;
@@ -199,5 +203,78 @@ public class ArmyTest {
 	public void calcStrengthAdmiral() {
 		plainArmy.type = Army.Type.NAVY;
 		assertEquals(140.0, plainArmy.calcStrength(world, getLeader(), 0, false), DELTA);
+	}
+
+	@Test
+	public void raze() {
+		Region r = world.regions.get(0);
+		r.population = 1000;
+		r.religion = Ideology.SWORD_OF_TRUTH;
+		// Nothing to raze.
+		assertEquals(0, r.constructions.size());
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+
+		// Raze one temple.
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.setReligion(null, world);
+		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
+		assertEquals(80, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
+		assertEquals(0, r.constructions.size());
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+
+		// Razing temple changes religion.
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.VESSEL_OF_FAITH, 100));
+		r.setReligion(null, world);
+		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		assertEquals(80, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		assertEquals(80, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(1, r.constructions.size());
+		assertEquals(Ideology.VESSEL_OF_FAITH, r.religion);
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(1, r.constructions.size());
+
+		// Razing requires a minimum strength.
+		r.population = 1000000;
+		assertEquals(0, plainArmy.raze(world, "Raze temple Iruhan (Vessel of Faith)", null, 0, false), DELTA);
+
+		// Razing can raze multiple buildings in one action.
+		r.population = 100;
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
+		assertEquals(160, plainArmy.raze(world, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+	}
+
+	@Test
+	public void conquer() {
+		// Basic conquest.
+		Region r = world.regions.get(0);
+		r.religion = Ideology.SWORD_OF_TRUTH;
+		r.setKingdomNoScore("k2");
+		HashSet<Region> conqueredRegions = new HashSet<>();
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		assertTrue(conqueredRegions.contains(r));
+		assertEquals("k1", r.getKingdom());
+
+		// Conquest requires a minimum size.
+		r.population = 100000;
+		r.setKingdomNoScore("k2");
+		conqueredRegions.clear();
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		assertTrue(conqueredRegions.isEmpty());
+		assertEquals("k2", r.getKingdom());
+
+		// Conquest destroys fortifications.
+		r.population = 100;
+		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortification(40));
+		plainArmy.conquer(world, "Conquer", conqueredRegions, new HashMap<String, List<String>>(), new HashMap<Army, Character>(), 0, new HashSet<String>());
+		assertTrue(conqueredRegions.contains(r));
+		assertEquals("k1", r.getKingdom());
+		assertTrue(r.constructions.isEmpty());
 	}
 }

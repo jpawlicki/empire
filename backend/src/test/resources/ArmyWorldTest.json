@@ -15,14 +15,17 @@
 			}
 		}
 	},
-	"regions": [{
-		"kingdom": "k1",
-		"type": "land"
-	}, {
-		"kingdom": "k1",
-		"type": "land",
-		"noble": {
-			"tags": ["Loyal"]
+	"regions": [
+		{
+			"kingdom": "k1",
+			"type": "land"
+		},
+		{
+			"kingdom": "k1",
+			"type": "land",
+			"noble": {
+				"tags": ["Loyal"]
+			}
 		}
-	}]
+	]
 }

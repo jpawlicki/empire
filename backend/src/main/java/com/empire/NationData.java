@@ -83,7 +83,7 @@ class NationData {
 	Culture culture;
 	List<Integer> coreRegions = new ArrayList<>();
 	private ArrayList<String> tags = new ArrayList<>();
-	ArrayList<String> previousTributes = new ArrayList<>();
+	List<String> previousTributes = new ArrayList<>();
 	String taxratehint = "100";
 	String rationhint = "100";
 	String signingbonushint = "0";
