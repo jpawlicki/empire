@@ -257,53 +257,29 @@ public class ArmyTest {
 		assertEquals(0, a.raze(w, "Raze temple Iruhan (Vessel of Faith)", null, 0, false), DELTA);
 	}
 
+	/*
+	//TODO: This test cannot be properly/effectively tested as written, need a way to verify that a simple setReligion(Ideology religion) method has been called
+
 	@Test
-	public void raze() {
+	public void razeChangeReligion(){
 		Region r = w.regions.get(0);
-		r.population = 1000;
-		r.religion = Ideology.SWORD_OF_TRUTH;
-		r.constructions = new ArrayList<>();
-
-		// Nothing to raze.
-		assertEquals(0, r.constructions.size());
-		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
-
-		// Raze one temple.
-		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
-		r.setReligion(null, w);
-		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
-		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
-		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
-		assertEquals(0, r.constructions.size());
-		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
-
-		/*
-		//TODO: This test does not belong in the Army class, the Region should be responsible for determining how its religion has changed, this is impossible to properly/effectively test as written
-		// Razing temple changes religion.
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 		r.constructions.add(Construction.makeTemple(Ideology.VESSEL_OF_FAITH, 100));
-		r.setReligion(null, w);
-		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
+		r.religion = Ideology.SWORD_OF_TRUTH;
+		when(r.calcMinConquestStrength(w)).thenReturn(1.99);
+
 		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		assertEquals(2, r.constructions.size());
+		verify(r).setReligion(Ideology.SWORD_OF_TRUTH);
 		assertEquals(Ideology.SWORD_OF_TRUTH, r.religion);
 		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
 		assertEquals(1, r.constructions.size());
 		assertEquals(Ideology.VESSEL_OF_FAITH, r.religion);
 		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
 		assertEquals(1, r.constructions.size());
-		*/
-
-		// Razing requires a minimum strength.
-		r.population = 1000000;
-		assertEquals(0, a.raze(w, "Raze temple Iruhan (Vessel of Faith)", null, 0, false), DELTA);
-
-		// Razing can raze multiple buildings in one action.
-		r.population = 100;
-		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
-		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
-		assertEquals(160, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
 	}
+	*/
 
 	@Test
 	public void conquerBasic() {
