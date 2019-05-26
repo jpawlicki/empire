@@ -7,9 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ArmyTest {
@@ -312,7 +315,7 @@ public class ArmyTest {
 		HashSet<Region> conqueredRegions = new HashSet<>();
 		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.contains(r));
-		//assertEquals(k2, r.getKingdom());
+		verify(r).setKingdom(w, k2);
 	}
 
 	@Test
@@ -325,7 +328,7 @@ public class ArmyTest {
 		HashSet<Region> conqueredRegions = new HashSet<>();
 		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(conqueredRegions.isEmpty());
-		//assertEquals(k1, r.getKingdom());
+		verify(r, never()).setKingdom(w, k2);
 	}
 
 	@Test
@@ -343,39 +346,6 @@ public class ArmyTest {
 		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
 		assertTrue(r.constructions.isEmpty());
 		assertTrue(conqueredRegions.contains(r));
-		//assertEquals(k2, r.getKingdom());
+		verify(r).setKingdom(w, k2);
 	}
-
-	/*
-	@Test
-	public void conquer() {
-		// Basic conquest.
-		Region r = w.regions.get(0);
-		r.religion = Ideology.SWORD_OF_TRUTH;
-		when(r.isLand()).thenReturn(true);
-		r.setKingdomNoScore(k2);
-		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
-		assertTrue(conqueredRegions.contains(r));
-		assertEquals(k1, r.getKingdom());
-
-		// Conquest requires a minimum size.
-		r.population = 100000;
-		r.setKingdomNoScore(k2);
-		conqueredRegions.clear();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
-		assertTrue(conqueredRegions.isEmpty());
-		assertEquals(k2, r.getKingdom());
-
-		// Conquest destroys fortifications.
-		r.population = 100;
-		r.constructions.add(Construction.makeFortification(40));
-		r.constructions.add(Construction.makeFortification(40));
-		r.constructions.add(Construction.makeFortification(40));
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
-		assertTrue(conqueredRegions.contains(r));
-		assertEquals(k1, r.getKingdom());
-		assertTrue(r.constructions.isEmpty());
-	}
-	*/
 }
