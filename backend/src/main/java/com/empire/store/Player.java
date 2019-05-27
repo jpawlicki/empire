@@ -8,5 +8,13 @@ final class Player {
         this.email = email;
         this.passHash = passHash;
     }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "email='" + email + '\'' +
+                ", passHash='" + passHash + '\'' +
+                '}';
+    }
 }
 
