@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -66,6 +67,8 @@ TODO: Will eventually need a changePassword/change-email.
 public class EntryServlet extends HttpServlet {
     private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
     private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
+
+    private static final DatastoreClient dsClient = GaeDatastoreClient.getInstance();
 
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -154,22 +157,24 @@ public class EntryServlet extends HttpServlet {
     private String getOrders(Request r, HttpServletResponse resp) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         if (!checkPassword(r, service).passesRead()) return null;
-        try {
-            Order o = Order.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
-            resp.setHeader("SJS-Version", "" + o.version);
-            return o.json;
-        } catch (EntityNotFoundException e) {
-            return null;
-        }
+//        try {
+//            Order o = Order.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
+            Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
+            resp.setHeader("SJS-Version", "" + orders.version);
+            return GaeDatastoreClient.gson.toJson(orders.orders);
+//        } catch (EntityNotFoundException e) {
+//            return null;
+//        }
     }
 
     private String getSetup(Request r) {
         // TODO - should filter this data or display it.
-        try {
-            return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
-        } catch (EntityNotFoundException e) {
-            return null;
-        }
+//        try {
+            return GaeDatastoreClient.gson.toJson(dsClient.getNation(r.kingdom, r.gameId));
+//            return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
+//        } catch (EntityNotFoundException e) {
+//            return null;
+//        }
     }
 
     private int getWorldDate(long gameId, DatastoreService service) throws EntityNotFoundException {
@@ -184,9 +189,14 @@ public class EntryServlet extends HttpServlet {
         }
         try {
             int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-            World w = World.load(r.gameId, date, service);
-            if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
+//            World w = World.load(r.gameId, date, service);
+            World w = dsClient.getWorld(r.gameId, date);
+
+            /* TODO: MUST ADD THESE BACK, they are commented because did not make a complete copy of World
+            if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
             w.filter(r.kingdom);
+            */
+
             return w.toString();
         } catch (EntityNotFoundException e) {
             log.log(Level.INFO, "No such world.");
@@ -200,9 +210,17 @@ public class EntryServlet extends HttpServlet {
         try {
             int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
             HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
+
+            /* TODO: MUST MAKE THIS WORK WITH World class
             World w = World.load(r.gameId, date, service);
             List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
             List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
+            */
+
+            World w = dsClient.getWorld(r.gameId, date);
+            List<String> emails = Collections.emptyList();
+            List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
+
             List<Map<String, Boolean>> result = new ArrayList<>();
             for (List<Boolean> turnActives : actives) {
                 HashMap<String, Boolean> turn = new HashMap<>();
