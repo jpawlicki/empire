@@ -8,41 +8,51 @@ import java.util.List;
  * This class is a holding place for game constants, much of the variables here could be turned into enums,
  * the numeric data could be game config
  */
-public class Constants {
+public class Rules {
+	private static Rules loadRules(int ruleSetId) {
+		try (FileReader r = new FileReader("/resources/rules/" + ruleSetId + "/rules.json")) {
+			return new GsonBuilder().create().fromJson(r, Rules.class);
+		} finally {
+			r.close();
+		}
+	}
+
+	private Rules() {}
+		
     // Scoring
-    public static final double foodFedPointFactor = 1 / 1E6;
-    public static final double foodFedPlentifulPointFactor = 2 / 1E6;
+    public static final double foodFedPointFactor;
+    public static final double foodFedPlentifulPointFactor;
 
     public static final String scoreProfReligion = "religion";
-    public static final double scoreReligionPerConverted = 2;
+    public static final double scoreReligionPerConverted;
 
     public static final String scoreProfIdeology = "ideology";
-    public static final double scoreIdeologyPerConverted = 2;
+    public static final double scoreIdeologyPerConverted;
 
     public static final String scoreProfTerritory = "territory";
-    public static final double scorePerConqueredTerritory = 4;
+    public static final double scorePerConqueredTerritory;
 
-    public static final double numShipsBuiltPerShipyard = 5;
-    public static final double shipBuildingTraitWeeksProduction = 5;
+    public static final double numShipsBuiltPerShipyard;
+    public static final double shipBuildingTraitWeeksProduction;
 
-    public static final double razeRefundFactor = 0.8;
+    public static final double razeRefundFactor;
 
     //Armies
-    public static final double armyBaseStrength = 1E-2;
-    public static final double navyBaseStrength = 1.0;
+    public static final double armyBaseStrength;
+    public static final double navyBaseStrength;
 
     public static final String armySteelTag = "Steel";
-    public static final double steelMod = 0.15;
+    public static final double steelMod;
 
     public static final String armyFormationsTag = "Formations";
 
     public static final String armyPillagersTag = "Pillagers";
-    public static final double armyPillagersRecruitmentMod = -0.75;
+    public static final double armyPillagersRecruitmentMod;
 
     public static final String armyRaidersTag = "Raiders";
 
     public static final String armySeafaringTag = "Seafaring";
-    public static final double seafaringMod = 1.5;
+    public static final double seafaringMod;
 
     public static final String armyImpressmentTag = "Impressment";
     public static final String armyWeatheredTag = "Weathered";
@@ -52,80 +62,79 @@ public class Constants {
 
     public static final String pirateKingdom = "Pirate";
 
-    public static final double swordOfTruthMod = 0.25;
-    public static final double iruhanMod = 0.15;
-    public static final double lastStandMod = 4.0;
-    public static final double perInspireMod = 0.05;
+    public static final double swordOfTruthMod;
+    public static final double iruhanMod;
+    public static final double lastStandMod;
+    public static final double perInspireMod;
 
-    // Nobles
     public static final String noblePiousTag = "Pious";
-    public static final int noblePiousFactor = 3;
+    public static final int noblePiousFactor;
 
     public static final String nobleLoyalTag = "Loyal";
-    public static final double loyalMod = 0.25;
-    public static final double loyalMinConqMod = 1.0;
+    public static final double loyalMod;
+    public static final double loyalMinConqMod;
 
     public static final String nobleInspiringTag = "Inspiring";
-    public static final double nobleInspiringMod = 0.5;
+    public static final double nobleInspiringMod;
 
     public static final String nobleUntrustingTag = "Untrusting";
-    public static final double nobleUntrustngMod = -0.35;
+    public static final double nobleUntrustngMod;
 
     public static final String nobleTyrannicalTag = "Tyrannical";
-    public static final double nobleTyrannicalMod = -0.5;
+    public static final double nobleTyrannicalMod;
 
     public static final String nobleFrugalTag = "Frugal";
-    public static final double nobleFrugalMod = 0.5;
+    public static final double nobleFrugalMod;
 
     public static final String nobleHoardingTag = "Hoarding";
-    public static final double nobleHoardingMod = -0.35;
+    public static final double nobleHoardingMod;
 
     public static final String nobleRationingTag = "Rationing";
-    public static final double nobleRationingMod = -0.2;
+    public static final double nobleRationingMod;
 
     public static final String nobleWastefulTag = "Wasteful";
-    public static final double nobleWastefulMod = 0.1;
+    public static final double nobleWastefulMod;
 
     public static final String noblePolicingTag = "Policing";
 
     public static final String nobleShadyTag = "Shady Connections";
-    public static final double nobleShadyMod = 2.0;
+    public static final double nobleShadyMod;
 
     public static final String nobleDesperateTag = "Desperate";
-    public static final double nobleDesperateMod = -2.0;
+    public static final double nobleDesperateMod;
 
-    public static final double noblePirateThreatMod = -0.5;
+    public static final double noblePirateThreatMod;
 
     //Religion
-    public static final double rjinkuRecruitmentMod = 1.0;
-    public static final double rjinkuBattledRecruitmentMod = 0.5;
-    public static final double syrjenTaxMod = 1.25;
-    public static final double swordOfTruthRecruitmentMod = 1.0;
-    public static final double chaliceOfCompassionTaxMod = -0.3;
-    public static final double chaliceOfCompassionFoodMod = -0.15;
-    public static final double tapestryRecruitmentMod = 0.5;
-    public static final double tapestryTaxMod = 0.5;
-    public static final double vesselOfFaithSetRelUnrestMod = -0.1;
-    public static final double perIdeologyTapestryRecruitmentMod = 0.03;
-    public static final double perIdeologyTapestryRecruitmentModGlobal = 0.03;
-    public static final double perIdeologyTapestryTaxMod = 0.03;
-    public static final double perIdeologyTapestryTaxModGlobal = 0.03;
-    public static final double riverOfKuunRationingThresh = 1.25;
-    public static final double riverOfKuunTaxMod = 0.5;
-    public static final double riverOfKuunRecruitmentMod = 0.5;
-    public static final double riverOfKuunNeighborTaxMod = 0.5;
+    public static final double rjinkuRecruitmentMod;
+    public static final double rjinkuBattledRecruitmentMod;
+    public static final double syrjenTaxMod;
+    public static final double swordOfTruthRecruitmentMod;
+    public static final double chaliceOfCompassionTaxMod;
+    public static final double chaliceOfCompassionFoodMod;
+    public static final double tapestryRecruitmentMod;
+    public static final double tapestryTaxMod;
+    public static final double vesselOfFaithSetRelUnrestMod;
+    public static final double perIdeologyTapestryRecruitmentMod;
+    public static final double perIdeologyTapestryRecruitmentModGlobal;
+    public static final double perIdeologyTapestryTaxMod;
+    public static final double perIdeologyTapestryTaxModGlobal;
+    public static final double riverOfKuunRationingThresh;
+    public static final double riverOfKuunTaxMod;
+    public static final double riverOfKuunRecruitmentMod;
+    public static final double riverOfKuunNeighborTaxMod;
 
     public static final String noCaptor = "";
     public static final Noble noNoble = null;
     public static final Character noLeader = null;
 
-    public static final double basePlotStrength = 1.0;
-    public static final double guardAgainstPlotMod = 0.5;
-    public static final double perSpyLevelPlotMod = 0.3;
-    public static final double lyskrPlotMod = 0.4;
-    public static final double companyPlotMod = 0.2;
-    public static final double perInspirePlotMod = 0.05;
-    public static final double capturedPlotMod = -0.5;
+    public static final double basePlotStrength;
+    public static final double guardAgainstPlotMod;
+    public static final double perSpyLevelPlotMod;
+    public static final double lyskrPlotMod;
+    public static final double companyPlotMod;
+    public static final double perInspirePlotMod;
+    public static final double capturedPlotMod;
 
     public static final String charDimAll = "*";
     public static final String charDimGeneral = "general";
@@ -134,56 +143,56 @@ public class Constants {
     public static final String charDimGovernor = "governor";
     public static final List<String> charDims = Arrays.asList(charDimGeneral, charDimAdmiral, charDimSpy, charDimGovernor);
 
-    public static final double oneDimExpAdd = 1.0;
-    public static final double allDimExpAdd = 0.25;
-    public static final double perLevelLeaderMod = 0.2;
-    public static final double baseGovernRecruitMod = 1.0;
-    public static final double baseGovernTaxMod = 1.0;
-    public static final double perLevelGovernRecruitMod = 0.5;
-    public static final double perLevelGovernTaxMod = 0.5;
+    public static final double oneDimExpAdd;
+    public static final double allDimExpAdd;
+    public static final double perLevelLeaderMod;
+    public static final double baseGovernRecruitMod;
+    public static final double baseGovernTaxMod;
+    public static final double perLevelGovernRecruitMod;
+    public static final double perLevelGovernTaxMod;
 
     // Nations
     public static final String nationHeroicTag = "Heroic";
-    public static final double heroicExpMultiplier = 2.0;
+    public static final double heroicExpMultiplier;
 
     public static final String nationDisciplinedTag = "Disciplined";
-    public static final double disciplinedMod = 0.1;
+    public static final double disciplinedMod;
 
     public static final String nationCoastDwellingTag = "Coast-Dwelling";
-    public static final double coastDwellingRecruitMod = 0.12;
-    public static final double coastDwellingTaxMod = 0.12;
+    public static final double coastDwellingRecruitMod;
+    public static final double coastDwellingTaxMod;
 
     public static final String nationPatrioticTag = "Patriotic";
-    public static final double patrioticMod = 0.15;
-    public static final double patrioticArmyShare = 0.15;
+    public static final double patrioticMod;
+    public static final double patrioticArmyShare;
 
     public static final String nationWarlikeTag = "War-like";
-    public static final double perConquestWarlikeRecruitmentMod = 0.05;
-    public static final double perConquestWarlikeTaxMod = 0.05;
-    public static final double warlikeArmyShare = 0.15;
+    public static final double perConquestWarlikeRecruitmentMod;
+    public static final double perConquestWarlikeTaxMod;
+    public static final double warlikeArmyShare;
 
     public static final String nationMercantileTag = "Mercantile";
-    public static final double mercantileTaxMod = 0.15;
-    public static final double mercantileGoldShare = 0.5;
+    public static final double mercantileTaxMod;
+    public static final double mercantileGoldShare;
 
     public static final String nationStoicTag = "Stoic";
-    public static final double stoicConqStrengthMod = 0.75;
+    public static final double stoicConqStrengthMod;
 
     // Regions
-    public static final double recruitmentPerPop = 1.0 / 2000.0;
-    public static final double taxPerPop = 1.0 / 10000.0;
-    public static final double unrestRecruitmentEffectThresh = 0.25;
-    public static final double unrestTaxEffectThresh = 0.25;
+    public static final double recruitmentPerPop;
+    public static final double taxPerPop;
+    public static final double unrestRecruitmentEffectThresh;
+    public static final double unrestTaxEffectThresh;
     public static final String constFort = "fortifications";
-    public static final double perFortMod = 0.15;
-    public static final double maxFortMod = 5.0;
+    public static final double perFortMod;
+    public static final double maxFortMod;
     public static final String constTemple = "temple";
 
-    public static final double clericalUnrestGoodwillFactor = 1E-2;
+    public static final double clericalUnrestGoodwillFactor;
 
-    public static final double plotDecaySea = 0.9;
-    public static final double plotDecayFriendly = 0.9;
-    public static final double plotDecayNonFriendly = 0.8;
+    public static final double plotDecaySea;
+    public static final double plotDecayFriendly;
+    public static final double plotDecayNonFriendly;
 
-    public static final double pirateThreatDoubleGold = 30;
+    public static final double pirateThreatDoubleGold;
 }
