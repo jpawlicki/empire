@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Arrays;
 
 class WorldConstantData {
-	static final List<Double> harvests = Arrays.asList(new Double[]{8.5, 14.0, 19.5, 14.0});
 	static final HashMap<String, Kingdom> kingdoms = new HashMap<>();
 	static final ArrayList<Region> regions = new ArrayList<>();
 	static final ArrayList<Border> borders = new ArrayList<>();

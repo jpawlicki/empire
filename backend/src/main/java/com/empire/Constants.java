@@ -175,6 +175,13 @@ public class Constants {
     public static final double unrestRecruitmentEffectThresh = 0.25;
     public static final double unrestTaxEffectThresh = 0.25;
     public static final String constFort = "fortifications";
+
+    public static final double harvestPerCitizen = 25;
+    public static final double plantsPerCitizen = 13;
+
+    public static final double chaliceOfCompassionPlantPerCitizen = 0.2;
+
+    public static final double setupCropsPerCitizen = 7.5;
     public static final double perFortMod = 0.15;
     public static final double maxFortMod = 5.0;
     public static final String constTemple = "temple";

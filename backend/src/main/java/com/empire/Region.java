@@ -32,7 +32,7 @@ class Region {
 	Noble noble;
 	List<Construction> constructions = new ArrayList<>();
 	double food;
-	double harvest;
+	double crops;
 	boolean gotCultFood;
 
 	private String kingdom;
@@ -311,7 +311,7 @@ class Region {
 			};
 
 			// TODO: try this function-style equivalent instead once unit tests are created
-//			PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> -n.power));
+			// PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> -n.power));
 			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
 				@Override
 				public int compare(Node a, Node b) {
@@ -337,7 +337,7 @@ class Region {
 		return powers;
 	}
 
-	public double calcUnrest(World w) {
+	public double calcUnrest(GoodwillProvider w) {
 		return Math.min(1.0, Math.max(getUnrestPopular(), Math.max(calcUnrestClerical(w), calcUnrestNoble())));
 	}
 
@@ -347,9 +347,9 @@ class Region {
 
 	// TODO: Move to a different class (don't know which one but I think there is probably a better home, idea: Ideology)
 	// TODO: Enforce [0.0, 1.0] range wherever this goes?
-	public double calcUnrestClerical(World w){
+	public double calcUnrestClerical(GoodwillProvider w){
 		return religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH ?
-				-w.getNation(kingdom).goodwill * Constants.clericalUnrestGoodwillFactor : 0.0;
+				-w.getGoodwill(kingdom) * Constants.clericalUnrestGoodwillFactor : 0.0;
 	}
 
 	// TODO: Some or all of the condition checking into Noble?
@@ -395,6 +395,23 @@ class Region {
 
 	public boolean isSea() {
 		return type == Type.WATER;
+	}
+
+	void plant(boolean isHarvestTurn) {
+		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
+		if (isHarvestTurn) {
+			crops += population * Constants.plantsPerCitizen;
+		}
+	}
+
+	void harvest(Set<String> stoicNations, GoodwillProvider goodwills) {
+		if (!isLand()) return;
+		double maxHarvest = population * Constants.harvestPerCitizen;
+		double unrest = calcUnrest(goodwills);
+		if (unrest > .25 && !stoicNations.contains(getKingdom())) maxHarvest *= 1.25 - unrest;
+		maxHarvest = Math.min(crops, maxHarvest);
+		food += maxHarvest;
+		crops = 0;
 	}
 }
 
