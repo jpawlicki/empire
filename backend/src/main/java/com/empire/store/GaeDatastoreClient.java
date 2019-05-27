@@ -9,8 +9,11 @@ import com.google.appengine.api.datastore.KeyFactory;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.logging.Logger;
 
 public class GaeDatastoreClient implements DatastoreClient{
+    private static final Logger log = Logger.getLogger(GaeDatastoreClient.class.getName());
+
     private static final String playerType = "Player";
     private static final String nationType = "Nation";
     private static final String orderType = "Order";
@@ -22,33 +25,32 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String versionProp = "version";
 
     private static GaeDatastoreClient instance = null;
-
+    private static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
     private final DatastoreService service;
-    private final Gson gson;
 
     public static GaeDatastoreClient getInstance() {
         if(instance == null) {
-            instance = new GaeDatastoreClient(DatastoreServiceFactory.getDatastoreService(), createGson());
+            instance = new GaeDatastoreClient(DatastoreServiceFactory.getDatastoreService(), gson);
         }
 
         return instance;
     }
 
-    private static Gson createGson() {
-        return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-    }
-
     private GaeDatastoreClient(DatastoreService service, Gson gson) {
         this.service = service;
-        this.gson = gson;
     }
 
     // Player
 
-    public Player loadPlayer(String email) throws EntityNotFoundException {
-        Entity e = service.get(KeyFactory.createKey(playerType, email));
-        return new Player(email, (String)e.getProperty(passhashProp));
+    public Player loadPlayer(String email) {
+        try {
+            Entity e = service.get(KeyFactory.createKey(playerType, email));
+            return new Player(email, (String) e.getProperty(passhashProp));
+        } catch (EntityNotFoundException e){
+            log.severe("Enable to retrieve Player with key " + email);
+            return null;
+        }
     }
 
     private Entity playerToEntity(Player player) {
@@ -59,10 +61,15 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Nation
 
-    public Nation loadNation(String nation, long gameId) throws EntityNotFoundException {
-        Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(nation, gameId)));
-        String jsonStr = (String) e.getProperty(jsonProp);
-        return gson.fromJson(jsonStr, Nation.class);
+    public Nation loadNation(String nation, long gameId) {
+        try {
+            Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(nation, gameId)));
+            String jsonStr = (String) e.getProperty(jsonProp);
+            return gson.fromJson(jsonStr, Nation.class);
+        } catch (EntityNotFoundException e) {
+            log.severe("Enable to retrieve Nation with key " + createNationkey(nation, gameId));
+            return null;
+        }
     }
 
     private Entity nationToEntity(String nation, long gameId) {
@@ -77,10 +84,15 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Order
 
-    public Orders loadOrders(long gameId, String kingdom, int turn) throws EntityNotFoundException {
-        Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
-        String jsonStr = (String) e.getProperty(jsonProp);
-        return gson.fromJson(jsonStr, Orders.class);
+    public Orders loadOrders(long gameId, String kingdom, int turn) {
+        try {
+            Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
+            String jsonStr = (String) e.getProperty(jsonProp);
+            return gson.fromJson(jsonStr, Orders.class);
+        } catch (EntityNotFoundException e){
+            log.severe("Enable to retrieve Orders with key " + createOrderkey(gameId, kingdom, turn));
+            return null;
+        }
     }
 
     private Entity orderToEntity(Orders orders) {
@@ -96,18 +108,23 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // World
 
-    private World loadWorld(long gameId, int turn) throws EntityNotFoundException {
-        Entity e = service.get(KeyFactory.createKey(worldType, createWorldKey(gameId, turn)));
-        String jsonStr;
+    public World loadWorld(long gameId, int turn) {
+        try {
+            Entity e = service.get(KeyFactory.createKey(worldType, createWorldKey(gameId, turn)));
+            String jsonStr;
 
-        if (e.hasProperty(jsonProp)) {
-            jsonStr = (String) e.getProperty(jsonProp);
-        } else {
-            jsonStr = Compressor.decompress(((Blob)e.getProperty(jsonGzipProp)).getBytes());
+            if (e.hasProperty(jsonProp)) {
+                jsonStr = (String) e.getProperty(jsonProp);
+            } else {
+                jsonStr = Compressor.decompress(((Blob) e.getProperty(jsonGzipProp)).getBytes());
 
+            }
+
+            return gson.fromJson(jsonStr, World.class);
+        } catch (EntityNotFoundException e){
+            log.severe("Enable to retrieve World with key " + createWorldKey(gameId, turn));
+            return null;
         }
-
-        return gson.fromJson(jsonStr, World.class);
     }
 
     private Entity worldToEntity(long gameId, World world) {
