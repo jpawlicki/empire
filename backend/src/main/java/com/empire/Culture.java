@@ -3,23 +3,32 @@ package com.empire;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 enum Culture {
 	@SerializedName("anpilayn")
-	ANPILAYN(Religion.IRUHAN),
+	ANPILAYN(Religion.IRUHAN, Army.Tag.STEEL, Army.Tag.FORMATIONS),
 	@SerializedName("eolsung")
-	EOLSUNG(Religion.NORTHERN),
+	EOLSUNG(Religion.NORTHERN, Army.Tag.PILLAGERS, Army.Tag.RAIDERS),
 	@SerializedName("hansa")
-	HANSA(Religion.IRUHAN),
+	HANSA(Religion.IRUHAN, Army.Tag.SEAFARING, Army.Tag.IMPRESSMENT),
 	@SerializedName("tavian")
-	TAVIAN(Religion.TAVIAN),
+	TAVIAN(Religion.TAVIAN, Army.Tag.RIDERS, Army.Tag.CRAFTS_SOLDIERS),
 	@SerializedName("tyrgaetan")
-	TYRGAETAN(Religion.NORTHERN);
+	TYRGAETAN(Religion.NORTHERN, Army.Tag.WEATHERED, Army.Tag.PATHFINDERS);
 
 	final Religion religion;
+	final List<Army.Tag> armyTags;
+
+	public List<Army.Tag> getArmyTags() {
+		return armyTags;
+	}
 	
-	private Culture(Religion religion) {
+	private Culture(Religion religion, Army.Tag... tags) {
 		this.religion = religion;
+		ArrayList<Army.Tag> t = new ArrayList<>();
+		for (Army.Tag at : tags) t.add(at);
+		armyTags = Collections.unmodifiableList(t);
 	}
 }

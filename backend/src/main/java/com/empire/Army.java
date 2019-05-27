@@ -16,6 +16,35 @@ class Army {
 		NAVY
 	}
 
+	enum Tag {
+		@SerializedName("Steel")
+		STEEL,
+		@SerializedName("Formations")
+		FORMATIONS,
+		@SerializedName("Pillagers")
+		PILLAGERS,
+		@SerializedName("Raiders")
+		RAIDERS,
+		@SerializedName("Seafaring")
+		SEAFARING,
+		@SerializedName("Impressment")
+		IMPRESSMENT,
+		@SerializedName("Riders")
+		RIDERS,
+		@SerializedName("Crafts-soldiers")
+		CRAFTS_SOLDIERS,
+		@SerializedName("Weathered")
+		WEATHERED,
+		@SerializedName("Pathfinders")
+		PATHFINDERS,
+		@SerializedName("Unpredictable")
+		UNPREDICTABLE,
+		@SerializedName("Higher Power")
+		HIGHER_POWER,
+		@SerializedName("Undead")
+		UNDEAD
+	}
+
 	int id = -1;
 	Type type;
 	double size;
@@ -23,7 +52,7 @@ class Army {
 	String kingdom = "";
 	int location = -1;
 	List<Preparation> preparation = new ArrayList<>();
-	List<String> tags = new ArrayList<>();
+	List<Tag> tags = new ArrayList<>();
 	Map<String, Double> composition = new HashMap<>();
 	String orderhint = "";
 
@@ -33,8 +62,8 @@ class Army {
 		double mods = 1.0;
 		Region r = w.regions.get(location);
 
-		if (hasTag(Constants.armySteelTag)) mods += Constants.steelMod;
-		if (hasTag(Constants.armySeafaringTag) && r.isSea()) mods += Constants.seafaringMod;
+		if (hasTag(Tag.STEEL)) mods += Constants.steelMod;
+		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += Constants.seafaringMod;
 		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += Constants.loyalMod;
@@ -52,7 +81,7 @@ class Army {
 		return strength * mods;
 	}
 
-	public boolean hasTag(String tag) {
+	public boolean hasTag(Tag tag) {
 		return tags.contains(tag);
 	}
 
@@ -64,7 +93,7 @@ class Army {
 		return type == Type.NAVY;
 	}
 
-	void addTag(String tag) {
+	void addTag(Army.Tag tag) {
 		tags.add(tag);
 	}
 

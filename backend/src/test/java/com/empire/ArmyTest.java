@@ -73,19 +73,19 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthSteel() {
-		a.addTag(Constants.armySteelTag);
+		a.addTag(Army.Tag.STEEL);
 		assertEquals(1.15, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthSeafaringOnLand() {
-		a.addTag(Constants.armySeafaringTag);
+		a.addTag(Army.Tag.SEAFARING);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthSeafaring() {
-		a.addTag(Constants.armySeafaringTag);
+		a.addTag(Army.Tag.SEAFARING);
 		when(w.regions.get(0).isSea()).thenReturn(true);
 		assertEquals(2.5, a.calcStrength(w, null, 0, false), DELTA);
 	}

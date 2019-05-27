@@ -67,32 +67,8 @@ class Region {
 		return legals.contains(target);
 	}
 
-	// TODO - the function this method provides looks like it should reside in the Culture enum class
-	public List<String> getArmyTags() {
-		List<String> t = new ArrayList<>();
-		switch (culture) {
-			case ANPILAYN:
-				t.add(Constants.armySteelTag);
-				t.add(Constants.armyFormationsTag);
-				break;
-			case EOLSUNG:
-				t.add(Constants.armyPillagersTag);
-				t.add(Constants.armyRaidersTag);
-				break;
-			case HANSA:
-				t.add(Constants.armySeafaringTag);
-				t.add(Constants.armyImpressmentTag);
-				break;
-			case TYRGAETAN:
-				t.add(Constants.armyWeatheredTag);
-				t.add(Constants.armyPathfindersTag);
-				break;
-			case TAVIAN:
-				t.add(Constants.armyRidersTag);
-				t.add(Constants.armyCraftsSoldiersTag);
-				break;
-		}
-		return t;
+	public List<Army.Tag> getArmyTags() {
+		return culture.getArmyTags();
 	}
 
 	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
@@ -140,7 +116,7 @@ class Region {
 			mods += Constants.perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
 		}
 
-		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Constants.armyPillagersTag)) mods += Constants.armyPillagersRecruitmentMod;
+		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += Constants.armyPillagersRecruitmentMod;
 
 		return Math.max(0, base * mods);
 	}
