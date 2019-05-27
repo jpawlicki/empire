@@ -163,12 +163,6 @@ public class GaeDatastoreClient implements DatastoreClient{
         return gameId + "_" + date + "_" + email;
     }
 
-//    List<List<Boolean>> fetchLoginHistory(long gameId, int finalDate, List<String> emails) {
-//        List<List<Boolean>> result = new ArrayList<>();
-//        for (int i = 1; i <= finalDate; i++) result.add(checkLogin(gameId, i, emails, service));
-//        return result;
-//    }
-
     public static void main(String[] args) {
         GaeDatastoreClient client = GaeDatastoreClient.getInstance();
 
