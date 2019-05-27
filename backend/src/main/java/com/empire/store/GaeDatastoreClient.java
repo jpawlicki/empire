@@ -43,7 +43,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Player
 
-    public Player loadPlayer(String email) {
+    public Player getPlayer(String email) {
         try {
             Entity e = service.get(KeyFactory.createKey(playerType, email));
             return new Player(email, (String) e.getProperty(passhashProp));
@@ -61,7 +61,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Nation
 
-    public Nation loadNation(String nation, long gameId) {
+    public Nation getNation(String nation, long gameId) {
         try {
             Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(nation, gameId)));
             String jsonStr = (String) e.getProperty(jsonProp);
@@ -84,7 +84,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Order
 
-    public Orders loadOrders(long gameId, String kingdom, int turn) {
+    public Orders getOrders(long gameId, String kingdom, int turn) {
         try {
             Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
             String jsonStr = (String) e.getProperty(jsonProp);
@@ -108,7 +108,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // World
 
-    public World loadWorld(long gameId, int turn) {
+    public World getWorld(long gameId, int turn) {
         try {
             Entity e = service.get(KeyFactory.createKey(worldType, createWorldKey(gameId, turn)));
             String jsonStr;
