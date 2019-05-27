@@ -27,7 +27,7 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String loginProp = "login";
 
     private static GaeDatastoreClient instance = null;
-    private static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+    public static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
     private final DatastoreService service;
 
