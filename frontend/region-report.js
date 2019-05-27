@@ -44,12 +44,12 @@ class RegionReport extends HTMLElement {
 				<div id="kingdom"><report-link href="kingdom/${r.kingdom}">${r.kingdom}</report-link></div>
 				<div id="cct"><tooltip-element tooltip="${climate_tooltips[r.climate]}">${r.climate}</tooltip-element></div>
 				<div id="content">
-					<h1><tooltip-element tooltip="A region's population determines its tax production, recruitment, harvest size, and food consumption. Population grows slowly, but regions can also attract refugees from neighboring regions that have battles or starvation.">Population</tooltip-element>: <tooltip-element tooltip="${r.population}">${Math.round(r.population / 1000)}k</tooltip-element></h1>
+					<h1><tooltip-element tooltip="A region's population determines its tax production, recruitment, maximum harvest size, and food consumption. Population grows slowly, but regions can also attract refugees from neighboring regions that have battles or starvation.">Population</tooltip-element>: <tooltip-element tooltip="${r.population}">${Math.round(r.population / 1000)}k</tooltip-element></h1>
 					<div>
 						<tooltip-element tooltip="A region's dominant religion and ideology is determined by which religion and ideology has the most temples in the region.">Religion:</tooltip-element><tooltip-element tooltip="${religion_tooltips[religion]}">${religion}</tooltip-element>
 						<tooltip-element tooltip="A region's culture is fixed and does not change.">Culture:</tooltip-element><tooltip-element tooltip="${culture_tooltips[r.culture]}">${r.culture}</tooltip-element>
 					</div>
-					<h1><tooltip-element tooltip="Regional unrest affects a region's recruitment, taxation, and harvest, as well as how difficult it is to capture. Regional unrest is equal to the highest of popular unrest, noble unrest (if a noble rules the region), and clerical unrest (for most Iruhan-following regions).">Unrest</tooltip-element>: ${num(r.calcUnrest(), 0, 100)}%</h1>
+					<h1><tooltip-element tooltip="Regional unrest affects a region's recruitment, taxation, and maximum harvest, as well as how difficult it is to capture. Regional unrest is equal to the highest of popular unrest, noble unrest (if a noble rules the region), and clerical unrest (for most Iruhan-following regions).">Unrest</tooltip-element>: ${num(r.calcUnrest(), 0, 100)}%</h1>
 					<div>
 						<tooltip-element tooltip="Popular unrest is increased by high taxes, local battles, starvation, and forcible relocation or refugees. It can be lowered by lowering taxes or more generous rationing.">Popular Unrest:</tooltip-element><div>${Math.round(r.unrest_popular * 100)}%</div>
 						${getNobleUnrestBlock(r)}
@@ -65,10 +65,10 @@ class RegionReport extends HTMLElement {
 					<div>
 						<tooltip-element tooltip="The total measures of food stockpiled in the region.">Total Measures:</tooltip-element><div><tooltip-element tooltip="${r.food}">${Math.round(r.food / 1000)}k</tooltip-element></div>
 					</div>
-					<h1><tooltip-element tooltip="Harvests happen every 13 weeks, creating more food. Each of the four harvests has a different yield. Battles in a region can destroy crops and reduce the yield of a harvest. High unrest also reduces the yield of the harvest.">Harvest:</tooltip-element> +${num(r.calcHarvestWeeks(), 1)} Weeks</h1>
+					<h1><tooltip-element tooltip="Harvests happen every 13 weeks, turn crops into food. Battles in a region can destroy crops. High unrest can also reduce the yield of the harvest.">Crops:</tooltip-element> +${num(r.calcHarvestWeeks(), 1)} Weeks</h1>
 					<div>
-						<tooltip-element tooltip="The total measures of food projected to be harvested.">Total Measures:</tooltip-element><div>${num(r.calcHarvest(), 0, 1 / 1000)}k</div>
-						<tooltip-element tooltip="The projection for the harvest following the upcoming harvest.">Following Harvest:</tooltip-element><div>+${num(r.calcNextHarvestWeeks(), 1)} Weeks</div>
+						<tooltip-element tooltip="The total crops in this region.">Crops:</tooltip-element><div>${num(r.calcCrops(), 0, 1 / 1000)}k</div>
+						<tooltip-element tooltip="The maximum amount of crops the region currently has labor available to harvest.">Harvest Capacity:</tooltip-element><div>${num(r.calcHarvestCapacity(), 0, 1 / 1000)}k</div>
 						<div>Time Until Harvest:</div><div>${(13 - ((g_data.date + 52 - 12) % 13)) % 13} Weeks</div>
 					</div>
 					<h1><tooltip-element tooltip="Taxation output of the region, when taxed at 100%. Tax is primarily determined by population and unrest, though several religious ideologies also affect taxation output.">Tax:</tooltip-element> +${num(r.calcTaxation())} gold</h1>

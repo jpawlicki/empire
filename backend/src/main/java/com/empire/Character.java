@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 
-final class Character {
+class Character {
 	String name = "";
 	String kingdom = "";
 	String captor = "";
