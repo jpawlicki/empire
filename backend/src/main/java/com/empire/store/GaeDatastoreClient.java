@@ -18,11 +18,13 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String nationType = "Nation";
     private static final String orderType = "Order";
     private static final String worldType = "World";
+    private static final String activeType = "Active";
 
     private static final String jsonProp = "json";
     private static final String jsonGzipProp = "json_gzip";
     private static final String passhashProp = "passHash";
     private static final String versionProp = "version";
+    private static final String loginProp = "login";
 
     private static GaeDatastoreClient instance = null;
     private static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
@@ -138,6 +140,34 @@ public class GaeDatastoreClient implements DatastoreClient{
 	private String createWorldKey(long gameId, int turn){
         return gameId + "_" + turn;
     }
+
+    // Login
+
+    public LoginKey getLogin(long gameId, int date, String email) {
+        try {
+            Entity e = service.get(KeyFactory.createKey("Active", gameId + "_" + date + "_" + email));
+            return new LoginKey("", 0, 0);
+        } catch (EntityNotFoundException e) {
+            log.severe("Enable to retrieve Login with key " + createLoginKey(gameId, date, email));
+            return null;
+        }
+    }
+
+    public void putLogin(long gameId, int date, String email) {
+        Entity e = new Entity(activeType, createLoginKey(gameId, date, email));
+        e.setProperty(loginProp, true);
+        service.put(e);
+    }
+
+    private String createLoginKey(long gameId, int date, String email){
+        return gameId + "_" + date + "_" + email;
+    }
+
+//    List<List<Boolean>> fetchLoginHistory(long gameId, int finalDate, List<String> emails) {
+//        List<List<Boolean>> result = new ArrayList<>();
+//        for (int i = 1; i <= finalDate; i++) result.add(checkLogin(gameId, i, emails, service));
+//        return result;
+//    }
 
     public static void main(String[] args) {
         GaeDatastoreClient client = GaeDatastoreClient.getInstance();
