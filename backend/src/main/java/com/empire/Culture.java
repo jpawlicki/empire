@@ -2,7 +2,7 @@ package com.empire;
 
 import com.google.gson.annotations.SerializedName;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,8 +27,6 @@ enum Culture {
 	
 	private Culture(Religion religion, Army.Tag... tags) {
 		this.religion = religion;
-		ArrayList<Army.Tag> t = new ArrayList<>();
-		for (Army.Tag at : tags) t.add(at);
-		armyTags = Collections.unmodifiableList(t);
+		armyTags = Collections.unmodifiableList(Arrays.asList(tags));
 	}
 }
