@@ -36,7 +36,6 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String passhashProp = "passHash";
     private static final String versionProp = "version";
     private static final String loginProp = "login";
-    private static final String loginInfoProp = "login_info";
     private static final String activeGamesProp = "active_games";
 
     private static GaeDatastoreClient instance = null;
@@ -148,8 +147,9 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity orderToEntity(Orders orders) {
         Entity e = new Entity(orderType, createOrderkey(orders.gameId, orders.kingdom, orders.turn));
-        e.setProperty(jsonProp, gson.toJson(orders.orders));
-        e.setProperty(versionProp, orders.version);
+//        e.setProperty(jsonProp, gson.toJson(orders.orders));
+//        e.setProperty(versionProp, orders.version);
+        e.setProperty(jsonProp, gson.toJson(orders));
         return e;
     }
 
@@ -275,26 +275,6 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private String createLoginKey(long gameId, int date, String email){
         return gameId + "_" + date + "_" + email;
-    }
-
-    public static void main(String[] args) {
-        GaeDatastoreClient client = GaeDatastoreClient.getInstance();
-        long gameId = -1;
-        int turn = 4;
-        int version = 2;
-        String kingdom = "Test Kingdom";
-        Map<String, String> ordersMap = new HashMap<>();
-        ordersMap.put("Key0", "Order0");
-        ordersMap.put("Key1", "Order1");
-        ordersMap.put("Key2", "Order2");
-
-        Orders ordersRead0 = client.getOrders(gameId, kingdom, turn);
-
-        Orders orders = new Orders(gameId, turn, version, kingdom, ordersMap);
-        boolean resultPut = client.putOrders(orders);
-
-        Orders ordersRead = client.getOrders(gameId, kingdom, turn);
-        System.out.println("Done");
     }
 
     public static void main2(String[] args) {
