@@ -375,10 +375,7 @@ class World implements GoodwillProvider {
 			for (Region r : w.regions) if (kingdom.equals(r.getKingdom()) && r.isCoastal(w)) regions.add(r);
 			if (!regions.isEmpty()) {
 				for (int i = 0; i < shipyardsPerNation; i++) {
-					Construction c = new Construction();
-					c.type = "shipyard";
-					c.originalCost = 80;
-					regions.get((int)(Math.random() * regions.size())).constructions.add(c);
+					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(Constants.baseCostShipyard));
 				}
 			}
 		}
@@ -1179,39 +1176,36 @@ class World implements GoodwillProvider {
 					if (!c.kingdom.equals(region.getKingdom()) && getNation(region.getKingdom()).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
 						notifications.add(new Notification(c.kingdom, "Construction Failed", region.getKingdom() + " does not permit us to build in " + region.name + "."));
 					} else {
-						double cost = 0;
 						double costMod = 1;
-						Construction ct = new Construction();
+						if (getNation(c.kingdom).hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
+						if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
+						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
+						Construction ct;
 						if (action.contains("Shipyard")) {
-							ct.type = "shipyard";
-							cost = 80;
+							ct = Construction.makeShipyard(Math.max(0, Constants.baseCostShipyard * costMod));
 						} else if (action.contains("Temple")) {
-							ct.type = "temple";
-							ct.religion = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
-							cost = 30;
+							Ideology ideo = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
 							if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) costMod -= .5;
 							if (getNation(c.kingdom).hasTag(NationData.Tag.EVANGELICAL) && region.religion != NationData.getStateReligion(c.kingdom, World.this)) costMod -= 1;
-							if (ct.religion.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
+							if (ideo.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
 							if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
 								boolean templeBonus = true;
 								for (Region r : region.getNeighbors(World.this)) if (r.isLand() && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
 								if (templeBonus) costMod -= 1;
 							}
+							ct = Construction.makeTemple(ideo, Math.max(0, Constants.baseCostTemple * costMod));
 						} else if (action.contains("Fortifications")) {
-							ct.type = "fortifications";
-							cost = 20;
 							if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
+							ct = Construction.makeFortification(Math.max(0, Constants.baseCostFortifications * costMod));
+						} else {
+							continue;
 						}
-						if (getNation(c.kingdom).hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
-						if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
-						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
-						cost *= Math.max(0, costMod);
-						ct.originalCost = cost;
+						double cost = ct.originalCost;
 						if (cost <= getNation(c.kingdom).gold) {
 							getNation(c.kingdom).gold -= cost;
 							incomeSources.getOrDefault(c.kingdom, new Budget()).spentConstruction += cost;
 							region.constructions.add(ct);
-							if (ct.type.equals("temple")) {
+							if (ct.type == Construction.Type.TEMPLE) {
 								Ideology r = region.religion;
 								region.setReligion(ct.religion, World.this);
 								if (r != Ideology.VESSEL_OF_FAITH && region.religion == Ideology.VESSEL_OF_FAITH) {
@@ -1223,14 +1217,11 @@ class World implements GoodwillProvider {
 								if (ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill -= 20;
 								else if (ct.religion != Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += 15;
 							}
-							if (ct.type.equals("shipyard") && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
+							if (ct.type == Construction.Type.SHIPYARD && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
 							builds.add(region);
-							if (ct.type.equals("temple")) templeBuilds.add(region);
-							if (ct.type.equals("fortifications") && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
-								Construction c2 = new Construction();
-								c2.type = "fortifications";
-								c2.originalCost = 0;
-								region.constructions.add(c2);
+							if (ct.type == Construction.Type.TEMPLE) templeBuilds.add(region);
+							if (ct.type == Construction.Type.FORTIFICATIONS && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
+								region.constructions.add(Construction.makeFortification(0));
 							}
 						} else {
 							notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
@@ -1566,7 +1557,7 @@ class World implements GoodwillProvider {
 				if (r.getKingdom() != null && !NationData.UNRULED_NAME.equals(r.getKingdom())) {
 					for (String k : tributes.get(r.getKingdom())) if (getNation(k).hasTag(NationData.Tag.IMPERIALISTIC)) unrestMod -= 0.03;
 				}
-				for (Construction c : r.constructions) if (c.type.equals("temple")) unrestMod -= 0.02;
+				for (Construction c : r.constructions) if (c.type == Construction.Type.TEMPLE) unrestMod -= 0.02;
 				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
 
 				if (r.noble != null && r.noble.hasTag("Snubbed")) r.noble.unrest = Math.min(1, r.noble.unrest + .02);
@@ -1591,7 +1582,7 @@ class World implements GoodwillProvider {
 				for (Region n : neighboringEnemies) {
 					if (Math.random() < 0.5) continue;
 					for (Construction c : n.constructions) {
-						if (c.type.equals("fortification")) {
+						if (c.type == Construction.Type.FORTIFICATIONS) {
 							n.constructions.remove(c);
 							notifications.add(new Notification(n.getKingdom(), "Sabotage in " + n.name, k + " saboteurs have destroyed a fortification in " + n.name + ", claiming it was the will of Iruhan."));
 							notifications.add(new Notification(k, "Friendly sabotage in " + n.name, "Civilian saboteurs loyal to us have destroyed a fortification in " + n.name + ", a region of " + n.getKingdom() + ", claiming it was the will of Iruhan."));
@@ -1932,7 +1923,7 @@ class World implements GoodwillProvider {
 				if (NationData.UNRULED_NAME.equals(r.getKingdom())) continue;
 				int shipyards = 0;
 				for (Construction c: r.constructions) {
-					if ("shipyard".equals(c.type)) shipyards++;
+					if (c.type == Construction.Type.SHIPYARD) shipyards++;
 				}
 				if (shipyards > 0) {
 					Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
@@ -2086,7 +2077,7 @@ class World implements GoodwillProvider {
 				for (Region r : regions) r.crops *= .97;
 			}
 			if (tivar.quake) {
-				HashMap<String, HashMap<String, Integer>> wreckage = new HashMap<>();
+				HashMap<String, HashMap<Construction.Type, Integer>> wreckage = new HashMap<>();
 				for (Region r : regions) {
 					ArrayList<Construction> destroyed = new ArrayList<>();
 					for (Construction c : r.constructions) {
@@ -2094,7 +2085,7 @@ class World implements GoodwillProvider {
 					}
 					for (Construction c : destroyed) {
 						r.constructions.remove(c);
-						if (!wreckage.containsKey(r.getKingdom())) wreckage.put(r.getKingdom(), new HashMap<String, Integer>());
+						if (!wreckage.containsKey(r.getKingdom())) wreckage.put(r.getKingdom(), new HashMap<Construction.Type, Integer>());
 						wreckage.get(r.getKingdom()).put(c.type, wreckage.get(r.getKingdom()).getOrDefault(c.type, 0) + 1);
 					}
 					r.setReligion(null, World.this);
@@ -2102,8 +2093,8 @@ class World implements GoodwillProvider {
 				for (Region r : regions) r.crops *= .97;
 				for (String k : wreckage.keySet()) {
 					String notification = "The terrible magical earthquakes triggered by the followers of Rjinku have taken their toll on our nation, destroying:";
-					for (String t : wreckage.get(k).keySet()) {
-						notification += "\n" + wreckage.get(k).get(t) + " " + t + (t.endsWith("s") || wreckage.get(k).get(t) == 1 ? "" : "s");
+					for (Construction.Type t : wreckage.get(k).keySet()) {
+						notification += "\n" + StringUtil.quantify(wreckage.get(k).get(t), t.toString().toLowerCase());
 					}
 					notifications.add(new Notification(k, "Earthquakes", notification));
 				}

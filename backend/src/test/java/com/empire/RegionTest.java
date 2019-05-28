@@ -181,9 +181,7 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthFortified(){
-        Construction fort = mock(Construction.class);
-        fort.type = Constants.constFort;
-        r.constructions = Arrays.asList(fort, fort);
+        r.constructions = Arrays.asList(Construction.makeFortification(0), Construction.makeFortification(0));
         assertEquals(6.825, r.calcMinConquestStrength(w), DELTA);
     }
 
@@ -195,9 +193,7 @@ public class RegionTest {
 
     @Test
     public void calcFortificationMod(){
-        Construction fort = mock(Construction.class);
-        fort.type = Constants.constFort;
-        r.constructions = Arrays.asList(fort, fort);
+        r.constructions = Arrays.asList(Construction.makeFortification(0), Construction.makeFortification(0));
         assertEquals(0.3, r.calcFortificationMod(), DELTA);
     }
 

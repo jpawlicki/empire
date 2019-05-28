@@ -16,10 +16,8 @@ import java.util.function.Function;
 
 class Region {
 	enum Type {
-		@SerializedName("land")
-		LAND,
-		@SerializedName("water")
-		WATER
+		@SerializedName("land") LAND,
+		@SerializedName("water") WATER
 	}
 
 	String name;
@@ -201,7 +199,7 @@ class Region {
 		HashMap<Ideology, Integer> ideologies = new HashMap<>();
 
 		for (Construction c : constructions) {
-			if (c.type.equals(Constants.constTemple)) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
+			if (c.type == Construction.Type.TEMPLE) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
 		int maxV = ideologies.getOrDefault(bias, -1);
 		Ideology max = bias;
@@ -357,7 +355,7 @@ class Region {
 
 	public double calcFortificationPct() {
 		double fort = 1;
-		for (Construction c : constructions) if (c.type.equals(Constants.constFort)) fort += Constants.perFortMod;
+		for (Construction c : constructions) if (c.type == Construction.Type.FORTIFICATIONS) fort += Constants.perFortMod;
 		return Math.min(Constants.maxFortMod, fort);
 	}
 
@@ -392,13 +390,18 @@ class Region {
 }
 
 class Construction {
-	String type;
-	Ideology religion; // Only for type == "temple".
+	enum Type {
+		@SerializedName("fortifications") FORTIFICATIONS,
+		@SerializedName("temple") TEMPLE,
+		@SerializedName("shipyard") SHIPYARD;
+	}
+	Type type;
+	Ideology religion; // Only for temples.
 	double originalCost;
 
 	static Construction makeTemple(Ideology religion, double cost) {
 		Construction c = new Construction();
-		c.type = "temple";
+		c.type = Type.TEMPLE;
 		c.religion = religion;
 		c.originalCost = cost;
 		return c;
@@ -406,8 +409,18 @@ class Construction {
 
 	static Construction makeFortification(double cost) {
 		Construction c = new Construction();
-		c.type = "fortifications";
+		c.type = Type.FORTIFICATIONS;
 		c.originalCost = cost;
 		return c;
 	}
+
+	static Construction makeShipyard(double cost) {
+		Construction c = new Construction();
+		c.type = Type.SHIPYARD;
+		c.originalCost = cost;
+		return c;
+	}
+
+	/** A no-args constructor is needed for GSON. */
+	private Construction() {}
 }
