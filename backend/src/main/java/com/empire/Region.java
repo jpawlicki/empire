@@ -407,7 +407,7 @@ class Construction {
 		return c;
 	}
 
-	static Construction makeFortification(double cost) {
+	static Construction makeFortifications(double cost) {
 		Construction c = new Construction();
 		c.type = Type.FORTIFICATIONS;
 		c.originalCost = cost;
