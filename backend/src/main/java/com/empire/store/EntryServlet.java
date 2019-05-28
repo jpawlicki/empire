@@ -610,7 +610,7 @@ public class EntryServlet extends HttpServlet {
         int currentTurn = dsClient.getWorldDate(r.gameId);
         if (currentTurn == -1 || r.turn != currentTurn) return false;
 //        dsClient.putOrders(new Orders(r.gameId, r.turn, r.version, r.kingdom, r.body));
-        dsClient.putOrders(new Orders(r.gameId, r.turn, r.version, r.kingdom, null));
+        dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, null, r.version));
         return true;
     }
 
