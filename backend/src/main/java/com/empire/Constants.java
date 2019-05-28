@@ -171,7 +171,7 @@ public class Constants {
 
     public static final double pirateThreatDoubleGold = 30;
 
-		public static final double baseCostFortifications = 20;
-		public static final double baseCostShipyard = 80;
-		public static final double baseCostTemple = 30;
+    public static final double baseCostFortifications = 20;
+    public static final double baseCostShipyard = 80;
+    public static final double baseCostTemple = 30;
 }
