@@ -26,16 +26,14 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String orderType = "Order";
     private static final String worldType = "World";
     private static final String activeType = "Active";
-    private static final String currentDateType = "CURRENTDATE";
-    private static final String activeGamesType = "ACTIVEGAMES";
+    private static final String currentDateType = "CurrentDate";
+    private static final String activeGamesType = "ActiveGames";
 
     private static final String dateProp = "date";
     private static final String jsonProp = "json";
     private static final String jsonGzipProp = "json_gzip";
-//    private static final String passhashProp = "passHash";
-//    private static final String versionProp = "version";
     private static final String loginProp = "login";
-    private static final String activeGamesProp = "active_games";
+    private static final String activeGamesKey = "_";
 
     private static GaeDatastoreClient instance = null;
     public static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
@@ -268,7 +266,7 @@ public class GaeDatastoreClient implements DatastoreClient{
     public Set<Long> getActiveGames() {
         try {
             Entity e = service.get(KeyFactory.createKey(activeGamesType, createActiveGamesKey()));
-            String jsonStr = (String) e.getProperty(activeGamesProp);
+            String jsonStr = (String) e.getProperty(jsonProp);
             Type listType = new TypeToken<Set<Long>>(){}.getType();
             return gson.fromJson(jsonStr, listType);
         } catch (EntityNotFoundException e) {
@@ -284,12 +282,12 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity activeGamesToEntity(Set<Long> activeGames){
         Entity entity = new Entity(activeGamesType, createActiveGamesKey());
-        entity.setProperty(activeGamesProp, gson.toJson(activeGames));
+        entity.setProperty(jsonProp, gson.toJson(activeGames));
         return entity;
     }
 
     private String createActiveGamesKey(){
-        return "_";
+        return activeGamesKey;
     }
 
     public static void main(String[] args) {
