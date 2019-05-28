@@ -9,46 +9,26 @@ import java.security.SecureRandom;
 
 class NationData {
 	enum Tag {	
-		@SerializedName("Bloodthirsty")
-		BLOODTHIRSTY,
-		@SerializedName("Coast-Dwelling")
-		COAST_DWELLING,
-		@SerializedName("Defensive")
-		DEFENSIVE,
-		@SerializedName("Disciplined")
-		DISCIPLINED,
-		@SerializedName("Evangelical")
-		EVANGELICAL,
-		@SerializedName("Heroic")
-		HEROIC,
-		@SerializedName("Holy")
-		HOLY,
-		@SerializedName("Imperialistic")
-		IMPERIALISTIC,
-		@SerializedName("Industrial")
-		INDUSTRIAL,
-		@SerializedName("Mercantile")
-		MERCANTILE,
-		@SerializedName("Mystical")
-		MYSTICAL,
-		@SerializedName("Nomadic")
-		NOMADIC,
-		@SerializedName("Patriotic")
-		PATRIOTIC,
-		@SerializedName("Rebellious")
-		REBELLIOUS,
-		@SerializedName("Republican")
-		REPUBLICAN,
-		@SerializedName("Ruined")
-		RUINED,
-		@SerializedName("Seafaring")
-		SEAFARING,
-		@SerializedName("Ship-Building")
-		SHIP_BUILDING,
-		@SerializedName("Stoic")
-		STOIC,
-		@SerializedName("War-like")
-		WARLIKE;
+		@SerializedName("Bloodthirsty") BLOODTHIRSTY,
+		@SerializedName("Coast-Dwelling") COAST_DWELLING,
+		@SerializedName("Defensive") DEFENSIVE,
+		@SerializedName("Disciplined") DISCIPLINED,
+		@SerializedName("Evangelical") EVANGELICAL,
+		@SerializedName("Heroic") HEROIC,
+		@SerializedName("Holy") HOLY,
+		@SerializedName("Imperialistic") IMPERIALISTIC,
+		@SerializedName("Industrial") INDUSTRIAL,
+		@SerializedName("Mercantile") MERCANTILE,
+		@SerializedName("Mystical") MYSTICAL,
+		@SerializedName("Nomadic") NOMADIC,
+		@SerializedName("Patriotic") PATRIOTIC,
+		@SerializedName("Rebellious") REBELLIOUS,
+		@SerializedName("Republican") REPUBLICAN,
+		@SerializedName("Ruined") RUINED,
+		@SerializedName("Seafaring") SEAFARING,
+		@SerializedName("Ship-Building") SHIP_BUILDING,
+		@SerializedName("Stoic") STOIC,
+		@SerializedName("War-like") WARLIKE;
 	}
 
 	public static final String PIRATE_NAME = "Pirate";
