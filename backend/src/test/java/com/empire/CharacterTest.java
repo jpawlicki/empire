@@ -33,7 +33,7 @@ public class CharacterTest {
     }
 
     private void addHeroicTag() {
-        world.getNation("k1").addTag(Constants.nationHeroicTag);
+        world.getNation("k1").addTag(NationData.Tag.HEROIC);
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {

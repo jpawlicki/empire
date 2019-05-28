@@ -131,27 +131,21 @@ public class Constants {
     public static final String nationHeroicTag = "Heroic";
     public static final double heroicExpMultiplier = 2.0;
 
-    public static final String nationDisciplinedTag = "Disciplined";
     public static final double disciplinedMod = 0.1;
 
-    public static final String nationCoastDwellingTag = "Coast-Dwelling";
     public static final double coastDwellingRecruitMod = 0.12;
     public static final double coastDwellingTaxMod = 0.12;
 
-    public static final String nationPatrioticTag = "Patriotic";
     public static final double patrioticMod = 0.15;
     public static final double patrioticArmyShare = 0.15;
 
-    public static final String nationWarlikeTag = "War-like";
     public static final double perConquestWarlikeRecruitmentMod = 0.05;
     public static final double perConquestWarlikeTaxMod = 0.05;
     public static final double warlikeArmyShare = 0.15;
 
-    public static final String nationMercantileTag = "Mercantile";
     public static final double mercantileTaxMod = 0.15;
     public static final double mercantileGoldShare = 0.5;
 
-    public static final String nationStoicTag = "Stoic";
     public static final double stoicConqStrengthMod = 0.75;
 
     // Regions

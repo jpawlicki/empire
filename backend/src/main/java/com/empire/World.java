@@ -1189,8 +1189,8 @@ class World implements GoodwillProvider {
 							ct.type = "temple";
 							ct.religion = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
 							cost = 30;
-							if (getNation(c.kingdom).hasTag("Mystical")) costMod -= .5;
-							if (getNation(c.kingdom).hasTag("Evangelical") && region.religion != NationData.getStateReligion(c.kingdom, World.this)) costMod -= 1;
+							if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) costMod -= .5;
+							if (getNation(c.kingdom).hasTag(NationData.Tag.EVANGELICAL) && region.religion != NationData.getStateReligion(c.kingdom, World.this)) costMod -= 1;
 							if (ct.religion.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
 							if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
 								boolean templeBonus = true;
@@ -1202,7 +1202,7 @@ class World implements GoodwillProvider {
 							cost = 20;
 							if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
 						}
-						if (getNation(c.kingdom).hasTag("Industrial")) costMod -= .25;
+						if (getNation(c.kingdom).hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
 						if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
 						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
 						cost *= Math.max(0, costMod);
@@ -1219,14 +1219,14 @@ class World implements GoodwillProvider {
 										for (Region rr : regions) if (kingdom.equals(rr.getKingdom())) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
 									}
 								}
-								if (getNation(c.kingdom).hasTag("Mystical")) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
+								if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
 								if (ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill -= 20;
 								else if (ct.religion != Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += 15;
 							}
-							if (ct.type.equals("shipyard") && getNation(c.kingdom).hasTag("Ship-Building")) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
+							if (ct.type.equals("shipyard") && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
 							builds.add(region);
 							if (ct.type.equals("temple")) templeBuilds.add(region);
-							if (ct.type.equals("fortifications") && getNation(c.kingdom).hasTag("Defensive")) {
+							if (ct.type.equals("fortifications") && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
 								Construction c2 = new Construction();
 								c2.type = "fortifications";
 								c2.originalCost = 0;
@@ -1273,7 +1273,7 @@ class World implements GoodwillProvider {
 						c.name + " attempted a daring escape at the last moment, but was unable to get free."
 					};
 					notification += flavor[(int)(Math.random() * flavor.length)];
-					if (getNation(c.captor).hasTag("Bloodthirsty") && region.getKingdom().equals(c.captor)) {
+					if (getNation(c.captor).hasTag(NationData.Tag.BLOODTHIRSTY) && region.getKingdom().equals(c.captor)) {
 						getNation(c.captor).gold += 300;
 						incomeSources.getOrDefault(c.captor, new Budget()).incomeExecution += 300;
 						notification += " The inhabitants of " + c.captor + " celebrated the event with offerings to their ruler.";
@@ -1551,20 +1551,20 @@ class World implements GoodwillProvider {
 				double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
 				if (ration < 0.9) unrestMod += .15;
 				if (ration > 1.1) unrestMod -= .1;
-				if (getNation(r.getKingdom()).hasTag("Republican")) unrestMod -= .03;
+				if (getNation(r.getKingdom()).hasTag(NationData.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.noble != null && r.noble.hasTag("Soothing")) unrestMod -= .06;
 				if (r.noble != null && r.noble.hasTag("Workaholic")) unrestMod += .03;
 				if (r.noble != null && r.noble.hasTag("Generous") && isHarvestTurn()) unrestMod -= .5;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
 				if (Ideology.ALYRJA == r.religion && r.food < turnsUntilHarvest() * r.calcConsumption(World.this, 1)) unrestMod += .03;
 				if (Ideology.RJINKU == r.religion && !battlingNations.contains(r.getKingdom())) unrestMod += .02;
-				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag("Imperialistic")) {
+				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag(NationData.Tag.IMPERIALISTIC)) {
 					int tributeC = 0;
 					for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom())) tributeC++;
 					unrestMod -= 0.03 * tributeC;
 				}
 				if (r.getKingdom() != null && !NationData.UNRULED_NAME.equals(r.getKingdom())) {
-					for (String k : tributes.get(r.getKingdom())) if (getNation(k).hasTag("Imperialistic")) unrestMod -= 0.03;
+					for (String k : tributes.get(r.getKingdom())) if (getNation(k).hasTag(NationData.Tag.IMPERIALISTIC)) unrestMod -= 0.03;
 				}
 				for (Construction c : r.constructions) if (c.type.equals("temple")) unrestMod -= 0.02;
 				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
@@ -1723,7 +1723,7 @@ class World implements GoodwillProvider {
 			for (String k : kingdoms.keySet()) {
 				double seaMods = 1;
 				if (NationData.getStateReligion(k, World.this) == Ideology.SYRJEN) seaMods += 1;
-				if (getNation(k).hasTag("Seafaring")) seaMods += 1/3.0;
+				if (getNation(k).hasTag(NationData.Tag.SEAFARING)) seaMods += 1/3.0;
 				incomeSources.getOrDefault(k, new Budget()).incomeSea *= seaMods;
 			}
 		}
@@ -1777,8 +1777,8 @@ class World implements GoodwillProvider {
 			HashMap<String, Double> shares = new HashMap<>();
 			for (String k : foodBalance.keySet()) if (foodBalance.get(k) > 0) shares.put(k, shares.getOrDefault(k, 0.0) + foodBalance.get(k) / totalMeasuresDeficit);
 			double totalGoodwill = 0;
-			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) totalGoodwill += getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag("Holy")) ? 2 : 1);
-			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) shares.put(k, shares.getOrDefault(k, 0.0) + getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag("Holy")) ? 2 : 1) * 2 / totalGoodwill);
+			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) totalGoodwill += getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag(NationData.Tag.HOLY)) ? 2 : 1);
+			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) shares.put(k, shares.getOrDefault(k, 0.0) + getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag(NationData.Tag.HOLY)) ? 2 : 1) * 2 / totalGoodwill);
 			double totalShares = 0;
 			for (String k : shares.keySet()) totalShares += shares.get(k);
 			for (String k : shares.keySet()) incomeSources.getOrDefault(k, new Budget()).incomeChurch += shares.get(k) / totalShares * churchIncome;
@@ -1870,7 +1870,7 @@ class World implements GoodwillProvider {
 					mods -= 0.5;
 				}
 				if (Ideology.COMPANY == NationData.getStateReligion(a.kingdom, World.this)) mods -= 0.5;
-				if (getNation(a.kingdom).hasTag("Rebellious") && getNation(a.kingdom).coreRegions.contains(a.location)) {
+				if (getNation(a.kingdom).hasTag(NationData.Tag.REBELLIOUS) && getNation(a.kingdom).coreRegions.contains(a.location)) {
 					mods -= 0.5;
 				}
 				cost = Math.max(0, cost * mods);
@@ -1901,7 +1901,7 @@ class World implements GoodwillProvider {
 
 		void reapHarvests() {
 			Set<String> stoicNations = new HashSet<>();
-			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag("Stoic")) stoicNations.add(k);
+			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag(NationData.Tag.STOIC)) stoicNations.add(k);
 			if (isHarvestTurn()) {
 				for (Region r : regions) r.harvest(stoicNations, World.this);
 			}
@@ -2659,7 +2659,7 @@ class World implements GoodwillProvider {
 		if (region.climate.equals("treacherous") || (region.climate.equals("seasonal") && getSeason() == Season.WINTER)) return true;
 		if (region.isLand() && tivar.deluge) return true;
 		if (region.type.equals("sea") && tivar.warwinds) return true;
-		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag("Disciplined")) return true;
+		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag(NationData.Tag.DISCIPLINED)) return true;
 		return false;
 	}
 
@@ -2719,11 +2719,11 @@ class World implements GoodwillProvider {
 		for (Region target : destinations) {
 			double targetUnrestFactor = 1;
 			double fromUnrestFactor = 1;
-			if (getNation(target.getKingdom()).hasTag("Nomadic")) {
+			if (getNation(target.getKingdom()).hasTag(NationData.Tag.NOMADIC)) {
 				targetUnrestFactor = 0.2;
 				fromUnrestFactor = 0.2;
 			}
-			for (String k : kingdoms.keySet()) if (getNation(k).hasTag("Ruined") && getNation(k).coreRegions.contains(regions.indexOf(target)) && !getNation(k).coreRegions.contains(regions.indexOf(from))) {
+			for (String k : kingdoms.keySet()) if (getNation(k).hasTag(NationData.Tag.RUINED) && getNation(k).coreRegions.contains(regions.indexOf(target)) && !getNation(k).coreRegions.contains(regions.indexOf(from))) {
 				targetUnrestFactor = 0;
 				fromUnrestFactor = 0;
 			}

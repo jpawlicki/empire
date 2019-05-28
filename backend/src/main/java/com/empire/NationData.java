@@ -1,5 +1,6 @@
 package com.empire;
 
+import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -7,6 +8,49 @@ import java.util.Map;
 import java.security.SecureRandom;
 
 class NationData {
+	enum Tag {	
+		@SerializedName("Bloodthirsty")
+		BLOODTHIRSTY,
+		@SerializedName("Coast-Dwelling")
+		COAST_DWELLING,
+		@SerializedName("Defensive")
+		DEFENSIVE,
+		@SerializedName("Disciplined")
+		DISCIPLINED,
+		@SerializedName("Evangelical")
+		EVANGELICAL,
+		@SerializedName("Heroic")
+		HEROIC,
+		@SerializedName("Holy")
+		HOLY,
+		@SerializedName("Imperialistic")
+		IMPERIALISTIC,
+		@SerializedName("Industrial")
+		INDUSTRIAL,
+		@SerializedName("Mercantile")
+		MERCANTILE,
+		@SerializedName("Mystical")
+		MYSTICAL,
+		@SerializedName("Nomadic")
+		NOMADIC,
+		@SerializedName("Patriotic")
+		PATRIOTIC,
+		@SerializedName("Rebellious")
+		REBELLIOUS,
+		@SerializedName("Republican")
+		REPUBLICAN,
+		@SerializedName("Ruined")
+		RUINED,
+		@SerializedName("Seafaring")
+		SEAFARING,
+		@SerializedName("Ship-Building")
+		SHIP_BUILDING,
+		@SerializedName("Stoic")
+		STOIC,
+		@SerializedName("War-like")
+		WARLIKE;
+	}
+
 	public static final String PIRATE_NAME = "Pirate";
 	public static final String UNRULED_NAME = "Unruled";
 	public static final NationData UNRULED;
@@ -82,7 +126,7 @@ class NationData {
 	String colorBg;
 	Culture culture;
 	List<Integer> coreRegions = new ArrayList<>();
-	private ArrayList<String> tags = new ArrayList<>();
+	private ArrayList<Tag> tags = new ArrayList<>();
 	List<String> previousTributes = new ArrayList<>();
 	String taxratehint = "100";
 	String rationhint = "100";
@@ -104,11 +148,11 @@ class NationData {
 		relationships.put(who, r);
 	}
 
-	boolean hasTag(String tag) {
+	boolean hasTag(Tag tag) {
 		return tags.contains(tag);
 	}
 
-	void addTag(String tag) {
+	void addTag(Tag tag) {
 		tags.add(tag);
 	}
 }

@@ -93,20 +93,20 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthDisciplinedNavy() {
 		a.type = Army.Type.NAVY;
-		when(n1.hasTag(Constants.nationDisciplinedTag)).thenReturn(true);
+		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
 		a.kingdom = Constants.pirateKingdom;
-		w.getNation(k1).addTag(Constants.nationDisciplinedTag);
+		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplined() {
-		when(n1.hasTag(Constants.nationDisciplinedTag)).thenReturn(true);
+		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(1.1, a.calcStrength(w, null, 0, false), DELTA);
 	}
 

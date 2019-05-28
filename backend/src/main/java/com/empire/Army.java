@@ -64,7 +64,7 @@ class Army {
 
 		if (hasTag(Tag.STEEL)) mods += Constants.steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += Constants.seafaringMod;
-		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
+		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += Constants.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
@@ -172,7 +172,7 @@ class Army {
 		}
 		if (target.equals(region.getKingdom())) return;
 		String nobleFate = "";
-		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag("Republican"))) {
+		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(NationData.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
 			region.noble = null;
 		}

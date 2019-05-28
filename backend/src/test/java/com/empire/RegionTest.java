@@ -175,7 +175,7 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthStoic(){
-        when(n1.hasTag(Constants.nationStoicTag)).thenReturn(true);
+        when(n1.hasTag(NationData.Tag.STOIC)).thenReturn(true);
         assertEquals(9.1875, r.calcMinConquestStrength(w), DELTA);
     }
 

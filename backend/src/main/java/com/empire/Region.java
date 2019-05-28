@@ -90,9 +90,9 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
-		if (wKingdom.hasTag(Constants.nationPatrioticTag)) mods += Constants.patrioticMod;
-		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
+		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
+		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * Constants.perConquestWarlikeRecruitmentMod;
@@ -143,9 +143,9 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleHoardingTag)) mods += Constants.nobleHoardingMod;
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
-		if (wKingdom.hasTag(Constants.nationMercantileTag)) mods += Constants.mercantileTaxMod;
-		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
+		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
+		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * Constants.perConquestWarlikeTaxMod;
@@ -340,7 +340,7 @@ class Region {
 		double mods = 1;
 		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
 		if (noble != null && noble.hasTag(Constants.nobleDesperateTag)) mods += Constants.nobleDesperateMod;
-		if (w.getNation(kingdom).hasTag(Constants.nationStoicTag)) mods += Constants.stoicConqStrengthMod;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.STOIC)) mods += Constants.stoicConqStrengthMod;
 		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
 	}
