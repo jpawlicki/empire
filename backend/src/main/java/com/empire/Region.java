@@ -83,10 +83,6 @@ class Region {
 			}
 		}
 
-		if (noble != null && noble.hasTag(Constants.nobleInspiringTag)) mods += Constants.nobleInspiringMod;
-		if (noble != null && noble.hasTag(Constants.nobleUntrustingTag)) mods += Constants.nobleUntrustngMod;
-		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
-
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
@@ -137,9 +133,6 @@ class Region {
 			}
 		}
 
-		if (noble != null && noble.hasTag(Constants.nobleFrugalTag)) mods += Constants.nobleFrugalMod;
-		if (noble != null && noble.hasTag(Constants.nobleHoardingTag)) mods += Constants.nobleHoardingMod;
-
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
@@ -175,8 +168,6 @@ class Region {
 	public double calcConsumption(World w, double foodMod) {
 		double base = population;
 		double mods = foodMod;
-		if (noble != null && noble.hasTag(Constants.nobleRationingTag)) mods += Constants.nobleRationingMod;
-		if (noble != null && noble.hasTag(Constants.nobleWastefulTag)) mods += Constants.nobleWastefulMod;
 		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += Constants.chaliceOfCompassionFoodMod;
 		return Math.max(0, base * mods);
 	}
@@ -184,11 +175,9 @@ class Region {
 	public double calcPirateThreat(World w) {
 		if (isSea()) return 0;
 		if (religion == Ideology.ALYRJA) return 0;
-		if (noble != null && noble.hasTag(Constants.noblePolicingTag)) return 0;
 
 		double unrest = calcUnrest(w);
 		double mods = 1;
-		if (noble != null && noble.hasTag(Constants.nobleShadyTag)) mods += Constants.nobleShadyMod;
 		if (noble != null) mods += Constants.noblePirateThreatMod;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / Constants.pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
@@ -336,8 +325,6 @@ class Region {
 	public double calcMinConquestStrength(World w) {
 		double base = calcBaseConquestStrength(w);
 		double mods = 1;
-		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
-		if (noble != null && noble.hasTag(Constants.nobleDesperateTag)) mods += Constants.nobleDesperateMod;
 		if (w.getNation(kingdom).hasTag(NationData.Tag.STOIC)) mods += Constants.stoicConqStrengthMod;
 		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
@@ -369,6 +356,30 @@ class Region {
 
 	public boolean isSea() {
 		return type == Type.WATER;
+	}
+
+	Set<Integer> getCloseRegionIds(World w, int limit) {
+		HashSet<Integer> closeRegions = new HashSet<>();
+		class Node {
+			final int r;
+			final int dist;
+			Node(int r, int dist) { this.r = r; this.dist = dist; }
+		}
+		PriorityQueue<Node> queue = new PriorityQueue<>(100, Comparator.comparingInt(n -> n.dist));
+		queue.add(new Node(w.regions.indexOf(this), 0));
+		while (!queue.isEmpty()) {
+			Node n = queue.poll();
+			if (closeRegions.contains(n.r)) continue;
+			closeRegions.add(n.r);
+			for (WorldConstantData.Border b : WorldConstantData.borders) {
+				if (b.a == n.r && b.size + n.dist < limit) {
+					queue.add(new Node(b.b, b.size + n.dist));
+				} else if (b.b == n.r && b.size + n.dist < limit) {
+					queue.add(new Node(b.a, b.size + n.dist));
+				}
+			}
+		}
+		return closeRegions;
 	}
 
 	void plant(boolean isHarvestTurn) {

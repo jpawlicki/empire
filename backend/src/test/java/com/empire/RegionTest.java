@@ -68,14 +68,6 @@ public class RegionTest {
         return r;
     }
 
-    private Noble mockNoble(String nobleTag, double unrest) {
-        Noble n = mock(Noble.class);
-        n.unrest = unrest;
-        n.name = "DONTCARE";
-        when(n.hasTag(nobleTag)).thenReturn(true);
-        return n;
-    }
-
     @Test
     public void numUniqueIdeologiesTest(){
         assertEquals(3, Region.numUniqueIdeologies(k1, w));
@@ -132,14 +124,16 @@ public class RegionTest {
 
     @Test
     public void calcUnrestNobleEmptyName(){
-        r.noble = mockNoble(null, unrestMiddle);
+        r.noble = Noble.makeNoble(Culture.ANPILAYN, 1);
         r.noble.name = "";
+				r.noble.unrest = unrestMiddle;
         assertEquals(0.0, r.calcUnrestNoble(), DELTA);
     }
 
     @Test
     public void calcUnrestNoblePresent(){
-        r.noble = mockNoble(null, unrestMiddle);
+        r.noble = Noble.makeNoble(Culture.ANPILAYN, 1);
+				r.noble.unrest = unrestMiddle;
         assertEquals(unrestMiddle, r.calcUnrestNoble(), DELTA);
     }
 
@@ -151,7 +145,8 @@ public class RegionTest {
         r.religion = Ideology.SWORD_OF_TRUTH;
         assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
 
-        r.noble = mockNoble(null, unrestHigher);
+        r.noble = Noble.makeNoble(Culture.ANPILAYN, 1);
+				r.noble.unrest = unrestHigher;
         assertEquals(unrestHigher, r.calcUnrest((unused -> -25)), DELTA);
     }
 
@@ -159,18 +154,6 @@ public class RegionTest {
     public void calcBaseConquestStrength(){
         r.noble = null;
         assertEquals(5.25, r.calcBaseConquestStrength(w), DELTA);
-    }
-
-    @Test
-    public void calcMinConquestStrengthNobleLoyal(){
-        r.noble = mockNoble(Constants.nobleLoyalTag, 0.0);
-        assertEquals(10.5, r.calcMinConquestStrength(w), DELTA);
-    }
-
-    @Test
-    public void calcMinConquestStrengthDesperate(){
-        r.noble = mockNoble(Constants.nobleDesperateTag, 0.0);
-        assertEquals(0, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test
@@ -218,18 +201,6 @@ public class RegionTest {
     }
 
     @Test
-    public void calcConsumptionNobleRationing(){
-        r.noble = mockNoble(Constants.nobleRationingTag, 0.0);
-        assertEquals(8E3, r.calcConsumption(w, 1.0), DELTA);
-    }
-
-    @Test
-    public void calcConsumptionNobleWasteful(){
-        r.noble = mockNoble(Constants.nobleWastefulTag, 0.0);
-        assertEquals(1.1E4, r.calcConsumption(w, 1.0), DELTA);
-    }
-
-    @Test
     public void calcConsumptionChalice(){
         r.religion = Ideology.CHALICE_OF_COMPASSION;
         assertEquals(8.5E3, r.calcConsumption(w, 1.0), DELTA);
@@ -259,22 +230,11 @@ public class RegionTest {
     }
 
     @Test
-    public void calcPirateThreatNoblePolicingZero(){
-        r.noble = mockNoble(Constants.noblePolicingTag, 0.0);
-        assertEquals(0.0, r.calcPirateThreat(w), DELTA);
-    }
-
-    @Test
     public void calcPirateThreatNoble(){
-        r.noble = mockNoble(null, 0.0);
+        r.noble = Noble.makeNoble(Culture.ANPILAYN, 1);
         assertEquals(0.125, r.calcPirateThreat(w), DELTA);
     }
 
-    @Test
-    public void calcPirateThreatNobleShady(){
-        r.noble = mockNoble(Constants.nobleShadyTag, 0.0);
-        assertEquals(0.625, r.calcPirateThreat(w), DELTA);
-    }
 
     @Test
     public void calcPirateThreatBribe(){

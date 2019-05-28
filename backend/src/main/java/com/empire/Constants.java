@@ -43,43 +43,15 @@ public class Constants {
     public static final double perInspireMod = 0.05;
 
     // Nobles
-    public static final String noblePiousTag = "Pious";
-    public static final int noblePiousFactor = 3;
-
-    public static final String nobleLoyalTag = "Loyal";
-    public static final double loyalMod = 0.25;
-    public static final double loyalMinConqMod = 1.0;
-
-    public static final String nobleInspiringTag = "Inspiring";
-    public static final double nobleInspiringMod = 0.5;
-
-    public static final String nobleUntrustingTag = "Untrusting";
-    public static final double nobleUntrustngMod = -0.35;
-
-    public static final String nobleTyrannicalTag = "Tyrannical";
-    public static final double nobleTyrannicalMod = -0.5;
-
-    public static final String nobleFrugalTag = "Frugal";
-    public static final double nobleFrugalMod = 0.5;
-
-    public static final String nobleHoardingTag = "Hoarding";
-    public static final double nobleHoardingMod = -0.35;
-
-    public static final String nobleRationingTag = "Rationing";
-    public static final double nobleRationingMod = -0.2;
-
-    public static final String nobleWastefulTag = "Wasteful";
-    public static final double nobleWastefulMod = 0.1;
-
-    public static final String noblePolicingTag = "Policing";
-
-    public static final String nobleShadyTag = "Shady Connections";
-    public static final double nobleShadyMod = 2.0;
-
-    public static final String nobleDesperateTag = "Desperate";
-    public static final double nobleDesperateMod = -2.0;
-
     public static final double noblePirateThreatMod = -0.5;
+		public static final int nobleCrisisFrequency = 6;
+		public static final double nobleCrisisSuccessUnrest = -0.25;
+		public static final double nobleCrisisFailedUnrest = 0.12;
+		public static final double setupNobleFractionAnpilayn = 0.8;
+		public static final double setupNobleFractionEolsung = 0.5;
+		public static final double setupNobleFractionHansa = 0.8;
+		public static final double setupNobleFractionTavian = 0;
+		public static final double setupNobleFractionTyrgaetan = 0;
 
     //Religion
     public static final double rjinkuRecruitmentMod = 1.0;

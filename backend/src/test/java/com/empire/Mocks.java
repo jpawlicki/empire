@@ -15,14 +15,6 @@ class Mocks {
         return r;
     }
 
-    public static Noble noble(String nobleTag, double unrest) {
-        Noble n = mock(Noble.class);
-        n.unrest = unrest;
-        n.name = "DONTCARE";
-        when(n.hasTag(nobleTag)).thenReturn(true);
-        return n;
-    }
-
     public static Character character(double general, double admiral, double governor, double spy) {
         Character c = mock(Character.class);
         c.captor = Constants.noCaptor;
