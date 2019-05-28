@@ -3,7 +3,6 @@ package com.empire.store;
 //import com.empire.Ideology;
 
 public class Nation {
-    public static String TYPE = "Nation";
     public String rulerName = "";
     public String title = "";
     public String food = "";
@@ -21,9 +20,4 @@ public class Nation {
     public String bonus = "";
     public String email = "";
     public String password = "";
-
-//    @Override
-//    public String toString() {
-//        return getGson().toJson(this);
-//    }
 }
