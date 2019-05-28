@@ -14,7 +14,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -35,6 +36,7 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String passhashProp = "passHash";
     private static final String versionProp = "version";
     private static final String loginProp = "login";
+    private static final String loginInfoProp = "login_info";
     private static final String activeGamesProp = "active_games";
 
     private static GaeDatastoreClient instance = null;
@@ -44,13 +46,13 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     public static GaeDatastoreClient getInstance() {
         if(instance == null) {
-            instance = new GaeDatastoreClient(DatastoreServiceFactory.getDatastoreService(), gson);
+            instance = new GaeDatastoreClient(DatastoreServiceFactory.getDatastoreService());
         }
 
         return instance;
     }
 
-    private GaeDatastoreClient(DatastoreService service, Gson gson) {
+    private GaeDatastoreClient(DatastoreService service) {
         this.service = service;
     }
 
@@ -255,8 +257,9 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     public LoginKey getLogin(long gameId, int date, String email) {
         try {
-            Entity e = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
-            return new LoginKey("", 0, 0);
+            Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
+            String jsonStr = (String) entity.getProperty(jsonProp);
+            return gson.fromJson(jsonStr, LoginKey.class);
         } catch (EntityNotFoundException e) {
             log.severe("Enable to retrieve Login with key " + createLoginKey(gameId, date, email));
             return null;
@@ -266,11 +269,32 @@ public class GaeDatastoreClient implements DatastoreClient{
     public void putLogin(long gameId, int date, String email) {
         Entity e = new Entity(activeType, createLoginKey(gameId, date, email));
         e.setProperty(loginProp, true);
+        e.setProperty(jsonProp, gson.toJson(new LoginKey(email, gameId, date)));
         service.put(e);
     }
 
     private String createLoginKey(long gameId, int date, String email){
         return gameId + "_" + date + "_" + email;
+    }
+
+    public static void main(String[] args) {
+        GaeDatastoreClient client = GaeDatastoreClient.getInstance();
+        long gameId = -1;
+        int turn = 4;
+        int version = 2;
+        String kingdom = "Test Kingdom";
+        Map<String, String> ordersMap = new HashMap<>();
+        ordersMap.put("Key0", "Order0");
+        ordersMap.put("Key1", "Order1");
+        ordersMap.put("Key2", "Order2");
+
+        Orders ordersRead0 = client.getOrders(gameId, kingdom, turn);
+
+        Orders orders = new Orders(gameId, turn, version, kingdom, ordersMap);
+        boolean resultPut = client.putOrders(orders);
+
+        Orders ordersRead = client.getOrders(gameId, kingdom, turn);
+        System.out.println("Done");
     }
 
     public static void main2(String[] args) {
