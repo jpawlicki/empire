@@ -6,9 +6,12 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.Transaction;
+import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 public class GaeDatastoreClient implements DatastoreClient{
@@ -41,6 +44,24 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private GaeDatastoreClient(DatastoreService service, Gson gson) {
         this.service = service;
+    }
+
+    private boolean putEntitiesInTransaction(Iterable<Entity> entities){
+        Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+
+        try {
+            service.put(entities);
+            txn.commit();
+            return true;
+        } finally {
+            if (txn.isActive()) {
+                txn.rollback();
+            }
+        }
+    }
+
+    private boolean putEntityInTransaction(Entity entity){
+        return putEntitiesInTransaction(Collections.singletonList(entity));
     }
 
     // Player
