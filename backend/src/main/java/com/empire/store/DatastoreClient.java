@@ -8,7 +8,7 @@ public interface DatastoreClient {
 
      Nation getNation(long gameId, String nation);
      String getNationJson(long gameId, String nation);
-     boolean putNation(long gameId, String nation);
+     boolean putNation(long gameId, String nationName, Nation nation);
 
      Orders getOrders(long gameId, String kingdom, int turn);
      boolean putOrders(Orders orders);

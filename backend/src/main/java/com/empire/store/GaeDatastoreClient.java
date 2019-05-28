@@ -74,6 +74,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Player
 
+    @Override
     public Player getPlayer(String email) {
         try {
             Entity e = service.get(KeyFactory.createKey(playerType, email));
@@ -97,10 +98,12 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Nation
 
+    @Override
     public Nation getNation(long gameId, String nation) {
         return gson.fromJson(getNationJson(gameId, nation), Nation.class);
     }
 
+    @Override
     public String getNationJson(long gameId, String nation) {
         try {
             Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(gameId, nation)));
@@ -112,13 +115,13 @@ public class GaeDatastoreClient implements DatastoreClient{
     }
 
     @Override
-    public boolean putNation(long gameId, String nation) {
-        return putEntityInTransaction(nationToEntity(gameId, nation));
+    public boolean putNation(long gameId, String nationName, Nation nation) {
+        return putEntityInTransaction(nationToEntity(gameId, nationName, nation));
     }
 
-    private Entity nationToEntity(long gameId, String nation) {
-        Entity e = new Entity(nationType, createNationkey(gameId, nation));
-        e.setProperty(jsonProp, gson.toJson(this));
+    private Entity nationToEntity(long gameId, String nationName, Nation nation) {
+        Entity e = new Entity(nationType, createNationkey(gameId, nationName));
+        e.setProperty(jsonProp, gson.toJson(nation));
         return e;
     }
 
@@ -128,6 +131,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Order
 
+    @Override
     public Orders getOrders(long gameId, String kingdom, int turn) {
         try {
             Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
@@ -146,8 +150,6 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity orderToEntity(Orders orders) {
         Entity e = new Entity(orderType, createOrderkey(orders.gameId, orders.kingdom, orders.turn));
-//        e.setProperty(jsonProp, gson.toJson(orders.orders));
-//        e.setProperty(versionProp, orders.version);
         e.setProperty(jsonProp, gson.toJson(orders));
         return e;
     }
@@ -158,6 +160,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // World
 
+    @Override
     public World getWorld(long gameId, int turn) {
         try {
             Entity e = service.get(KeyFactory.createKey(worldType, createWorldKey(gameId, turn)));
@@ -196,6 +199,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // World Date
 
+    @Override
     public int getWorldDate(long gameId) {
         try {
             Entity e = service.get(KeyFactory.createKey(currentDateType, createCurrentDateKey(gameId)));
@@ -225,6 +229,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Active games
 
+    @Override
     public Set<Long> getActiveGames() {
         try {
             Entity e = service.get(KeyFactory.createKey(activeGamesType, createActiveGamesKey()));
@@ -254,6 +259,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Login
 
+    @Override
     public LoginKey getLogin(long gameId, int date, String email) {
         try {
             Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
@@ -265,6 +271,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         }
     }
 
+    @Override
     public void putLogin(long gameId, int date, String email) {
         Entity e = new Entity(activeType, createLoginKey(gameId, date, email));
         e.setProperty(loginProp, true);

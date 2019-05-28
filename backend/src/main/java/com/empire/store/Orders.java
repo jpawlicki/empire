@@ -4,16 +4,16 @@ import java.util.Map;
 
 public class Orders {
     public final long gameId;
-    public final int turn;
-    public final int version;
     public final String kingdom;
+    public final int turn;
     public final Map<String, String> orders;
+    public final int version;
 
-    public Orders(long gameId, int turn, int version, String kingdom, Map<String, String> orders) {
+    public Orders(long gameId, String kingdom, int turn, Map<String, String> orders, int version) {
         this.gameId = gameId;
-        this.turn = turn;
-        this.version = version;
         this.kingdom = kingdom;
+        this.turn = turn;
         this.orders = orders;
+        this.version = version;
     }
 }
