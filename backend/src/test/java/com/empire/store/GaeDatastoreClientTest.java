@@ -7,9 +7,14 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 
 public class GaeDatastoreClientTest {
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
+    private final DatastoreClient client = GaeDatastoreClient.getInstance();
 
     @Before
     public void setUp(){
@@ -35,10 +40,20 @@ public class GaeDatastoreClientTest {
 
         Orders ordersRead0 = client.getOrders(gameId, kingdom, turn);
 
-        Orders orders = new Orders(gameId, turn, version, kingdom, ordersMap);
+        Orders orders = new Orders(gameId, kingdom, turn, ordersMap, version);
         boolean resultPut = client.putOrders(orders);
 
         Orders ordersRead = client.getOrders(gameId, kingdom, turn);
         System.out.println("Done");
+    }
+
+    @Test
+    public void playerPutGetTest(){
+        String email = "TEST_EMAIL";
+        Player player = new Player(email, "TEST_PASSHASH");
+
+        assertNull(null, client.getPlayer(email));
+        assertTrue(client.putPlayer(player));
+        assertEquals(player, client.getPlayer(email));
     }
 }
