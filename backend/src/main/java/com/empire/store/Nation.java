@@ -1,6 +1,6 @@
 package com.empire.store;
 
-//import com.empire.Ideology;
+import java.util.Objects;
 
 public class Nation {
     public String rulerName = "";
@@ -20,4 +20,32 @@ public class Nation {
     public String bonus = "";
     public String email = "";
     public String password = "";
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Nation nation = (Nation) o;
+        return Objects.equals(rulerName, nation.rulerName) &&
+                Objects.equals(title, nation.title) &&
+                Objects.equals(food, nation.food) &&
+                Objects.equals(happiness, nation.happiness) &&
+                Objects.equals(territory, nation.territory) &&
+                Objects.equals(glory, nation.glory) &&
+                Objects.equals(religion, nation.religion) &&
+                Objects.equals(ideology, nation.ideology) &&
+                Objects.equals(security, nation.security) &&
+                Objects.equals(riches, nation.riches) &&
+                Objects.equals(culture, nation.culture) &&
+                Objects.equals(trait1, nation.trait1) &&
+                Objects.equals(trait2, nation.trait2) &&
+                Objects.equals(bonus, nation.bonus) &&
+                Objects.equals(email, nation.email) &&
+                Objects.equals(password, nation.password);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(rulerName, title, food, happiness, territory, glory, religion, ideology, security, riches, culture, trait1, trait2, bonus, email, password);
+    }
 }
