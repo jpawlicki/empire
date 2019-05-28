@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-final class Compressor {
+public final class Compressor {
 	private static final Logger log = Logger.getLogger(Compressor.class.getName());
 
-	static byte[] compress(String str) {
+	public static byte[] compress(String str) {
 		ByteArrayOutputStream s = new ByteArrayOutputStream();
 		try (OutputStreamWriter w = new OutputStreamWriter(new GZIPOutputStream(s), StandardCharsets.UTF_8)) {
 			w.write(str);
@@ -24,7 +24,7 @@ final class Compressor {
 		return s.toByteArray();
 	}
 
-	static String decompress(byte[] in) {
+	public static String decompress(byte[] in) {
 		StringBuilder b = new StringBuilder();
 		try (InputStreamReader r = new InputStreamReader(new GZIPInputStream(new ByteArrayInputStream(in)), StandardCharsets.UTF_8)) {
 			char[] buffer = new char[1024 * 50];
