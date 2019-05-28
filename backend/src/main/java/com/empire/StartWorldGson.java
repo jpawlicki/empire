@@ -6,7 +6,7 @@ import com.google.gson.FieldNamingPolicy;
 import java.util.List;
 import java.util.ArrayList;
 
-class StartWorldGson {
+public class StartWorldGson {
 	public String gmPassword;
 	public String obsPassword;
 	public List<String> kingdoms = new ArrayList<String>(); 

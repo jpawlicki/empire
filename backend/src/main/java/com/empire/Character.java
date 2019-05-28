@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 
-class Character {
+public class Character {
 	String name = "";
 	String kingdom = "";
 	String captor = "";
@@ -61,6 +61,18 @@ class Character {
 
 	void removeTag(String tag) {
 		tags.remove(tag);
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public int getLocation() {
+		return location;
+	}
+
+	public void setLocation(int location) {
+		this.location = location;
 	}
 }
 

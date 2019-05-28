@@ -1,12 +1,7 @@
 package com.empire.store;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Transaction;
-import com.google.appengine.api.datastore.TransactionOptions;
+import com.empire.Character;
+import com.empire.StartWorldGson;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
@@ -19,7 +14,6 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -74,7 +68,7 @@ public class EntryServlet extends HttpServlet {
     public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         Request r = Request.from(req);
         resp.setHeader("Access-Control-Allow-Origin", "*");
-        String json = "";
+        String json;
         if (req.getRequestURI().equals("/entry/orders")) {
             json = getOrders(r, resp);
         } else if (req.getRequestURI().equals("/entry/setup")) {
@@ -154,33 +148,54 @@ public class EntryServlet extends HttpServlet {
         super.doOptions(req, resp);
     }
 
+    /*
     private String getOrders(Request r, HttpServletResponse resp) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         if (!checkPassword(r, service).passesRead()) return null;
-//        try {
-//            Order o = Order.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
-            Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
-            resp.setHeader("SJS-Version", "" + orders.version);
-            return GaeDatastoreClient.gson.toJson(orders.orders);
-//        } catch (EntityNotFoundException e) {
-//            return null;
-//        }
+        try {
+            Order o = Order.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
+            resp.setHeader("SJS-Version", "" + o.version);
+            return o.json;
+        } catch (EntityNotFoundException e) {
+            return null;
+        }
     }
+    */
+
+    private String getOrders(Request r, HttpServletResponse resp) {
+        if (!checkPassword(r).passesRead()) return null;
+        Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
+        resp.setHeader("SJS-Version", "" + orders.version);
+        return GaeDatastoreClient.gson.toJson(orders.orders);
+    }
+
+    /*
+    private String getSetup(Request r) {
+        // TODO - should filter this data or display it.
+        try {
+            return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
+        } catch (EntityNotFoundException e) {
+            return null;
+        }
+    }
+    */
 
     private String getSetup(Request r) {
         // TODO - should filter this data or display it.
-//        try {
-            return GaeDatastoreClient.gson.toJson(dsClient.getNation(r.kingdom, r.gameId));
-//            return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
-//        } catch (EntityNotFoundException e) {
-//            return null;
-//        }
+        return dsClient.getNationJson(r.kingdom, r.gameId);
     }
 
+    /*
     private int getWorldDate(long gameId, DatastoreService service) throws EntityNotFoundException {
         return (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
     }
+    */
 
+    private int getWorldDate(long gameId) {
+        return dsClient.getWorldDate(gameId);
+    }
+
+    /*
     private String getWorld(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         CheckPasswordResult result = checkPassword(r, service);
@@ -189,38 +204,45 @@ public class EntryServlet extends HttpServlet {
         }
         try {
             int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-//            World w = World.load(r.gameId, date, service);
-            World w = dsClient.getWorld(r.gameId, date);
-
-            /* TODO: MUST ADD THESE BACK, they are commented because did not make a complete copy of World
-            if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
+            World w = World.load(r.gameId, date, service);
+            if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
             w.filter(r.kingdom);
-            */
-
             return w.toString();
         } catch (EntityNotFoundException e) {
             log.log(Level.INFO, "No such world.");
             return null;
         }
     }
+    */
 
+    private String getWorld(Request r) {
+        CheckPasswordResult result = checkPassword(r);
+
+        if (!result.passesRead()) return null;
+
+        int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId);
+        World w = dsClient.getWorld(r.gameId, date);
+
+        if (w == null){
+            log.log(Level.INFO, "No such world.");
+            return null;
+        }
+
+        if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
+        w.filter(r.kingdom);
+        return w.toString();
+    }
+
+    /*
     private String getActivity(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
         try {
             int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
             HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
-
-            /* TODO: MUST MAKE THIS WORK WITH World class
             World w = World.load(r.gameId, date, service);
             List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
             List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
-            */
-
-            World w = dsClient.getWorld(r.gameId, date);
-            List<String> emails = Collections.emptyList();
-            List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
-
             List<Map<String, Boolean>> result = new ArrayList<>();
             for (List<Boolean> turnActives : actives) {
                 HashMap<String, Boolean> turn = new HashMap<>();
@@ -235,14 +257,37 @@ public class EntryServlet extends HttpServlet {
             return null;
         }
     }
+    */
 
-    private static class ActiveGames {
-        public ArrayList<Long> activeGameIds;
-        static ActiveGames fromGson(String s) {
-            return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().fromJson(s, ActiveGames.class);
+    private String getActivity(Request r) {
+        if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
+
+        int worldDate = dsClient.getWorldDate(r.gameId);
+
+        if (worldDate == -1) {
+            log.log(Level.WARNING, "No such world.");
+            return null;
         }
+
+        int date = r.turn != 0 ? r.turn : worldDate;
+
+        World w = dsClient.getWorld(r.gameId, date);
+        List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
+        List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
+
+        List<Map<String, Boolean>> result = new ArrayList<>();
+        for (List<Boolean> turnActives : actives) {
+            Map<String, Boolean> turn = new HashMap<>();
+            for (int i = 0; i < emails.size(); i++) {
+                turn.put(emails.get(i), turnActives.get(i));
+            }
+            result.add(turn);
+        }
+
+        return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
     }
 
+    /*
     private String getAdvancePoll() {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         try {
@@ -291,7 +336,46 @@ public class EntryServlet extends HttpServlet {
         }
         return "";
     }
+    */
 
+    // TODO: Include all puts in single transaction inside client
+    private String getAdvancePoll() {
+        for (Long gameId : dsClient.getActiveGames()) {
+            int date = dsClient.getWorldDate(gameId);
+            if (date == -1) continue;
+
+            World w = dsClient.getWorld(gameId, date);
+            if (w == null) continue;
+
+            if (w.nextTurn < Instant.now().toEpochMilli()) {
+                HashMap<String, Orders> orders = new HashMap<>();
+
+                for (String kingdom : w.getNationNames()) {
+                    Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
+                    if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
+                    orders.put(kingdom, ordersKingdom);
+                }
+
+                Map<String, String> emails = w.advance(orders);
+                dsClient.putWorld(gameId, w);
+                dsClient.putWorldDate(gameId, w.date);
+
+                for (String mail : emails.keySet()) {
+                    mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+                }
+
+                if (w.gameover) {
+                    List<Long> activeGames = dsClient.getActiveGames();
+                    activeGames.remove(gameId);
+                    dsClient.putActiveGames(activeGames);
+                }
+            }
+        }
+
+        return "";
+    }
+
+    /*
     // TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
     private boolean postAdvanceWorld(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
@@ -310,7 +394,18 @@ public class EntryServlet extends HttpServlet {
         getAdvancePoll();
         return true;
     }
+    */
 
+    // TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
+    private boolean postAdvanceWorld(Request r) {
+        World w = dsClient.getWorld(r.gameId, r.turn);
+        w.nextTurn = 0;
+        dsClient.putWorld(r.gameId, w);
+        getAdvancePoll();
+        return true;
+    }
+
+    /*
     private boolean postStartWorld(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         StartWorldGson s = StartWorldGson.fromJson(r.body);
@@ -361,6 +456,49 @@ public class EntryServlet extends HttpServlet {
         mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
         return true;
     }
+    */
+
+    private boolean postStartWorld(Request r) {
+        StartWorldGson s = StartWorldGson.fromJson(r.body);
+        String passHash;
+        String obsPassHash;
+
+        try {
+            passHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.gmPassword).getBytes(StandardCharsets.UTF_8)));
+            obsPassHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.obsPassword).getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e) {
+            log.log(Level.SEVERE, "Hash error", e);
+            return false;
+        }
+
+        HashSet<String> addresses = new HashSet<>();
+
+        // Collect setups.
+        HashMap<String, Nation> nations = new HashMap<>();
+
+        for (String kingdom : s.kingdoms) {
+            log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
+            Nation nation = dsClient.getNation(kingdom, r.gameId);
+
+            // Nation is not in the game.
+            if(nation == null) continue;
+
+            nations.put(kingdom, nation);
+            addresses.add(nations.get(kingdom).email);
+        }
+
+        World w = World.startNew(passHash, obsPassHash, nations);
+        dsClient.putWorld(r.gameId, w);
+        dsClient.putWorldDate(r.gameId, 1);
+
+        List<Long> activeGames = dsClient.getActiveGames();
+        if (activeGames == null) activeGames = new ArrayList<>();
+        activeGames.add(r.gameId);
+        dsClient.putActiveGames(activeGames);
+
+        mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
+        return true;
+    }
 
     private enum CheckPasswordResult {
         PASS_GM(true, true),
@@ -372,7 +510,7 @@ public class EntryServlet extends HttpServlet {
         private final boolean passesRead;
         private final boolean passesWrite;
 
-        private CheckPasswordResult(boolean passesRead, boolean passesWrite) {
+        CheckPasswordResult(boolean passesRead, boolean passesWrite) {
             this.passesRead = passesRead;
             this.passesWrite = passesWrite;
         }
@@ -384,6 +522,8 @@ public class EntryServlet extends HttpServlet {
             return passesWrite;
         }
     }
+
+    /*
     private CheckPasswordResult checkPassword(Request r, DatastoreService service) {
         try {
             if (r.password == null) return CheckPasswordResult.FAIL;
@@ -413,7 +553,36 @@ public class EntryServlet extends HttpServlet {
             return CheckPasswordResult.FAIL;
         }
     }
+    */
 
+    private CheckPasswordResult checkPassword(Request r) {
+        try {
+            if (r.password == null) return CheckPasswordResult.FAIL;
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
+            int date = dsClient.getWorldDate(r.gameId);
+
+            if (date == -1){
+                log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
+                return CheckPasswordResult.NO_ENTITY;
+            }
+
+            World w = dsClient.getWorld(r.gameId, date);
+
+            byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
+            byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
+            if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(dsClient.getPlayer(w.getNation(r.kingdom).email).passHash))) return CheckPasswordResult.PASS_PLAYER;
+
+            if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
+            if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
+            return CheckPasswordResult.FAIL;
+        } catch (NoSuchAlgorithmException e) {
+            log.log(Level.SEVERE, "CheckPassword Failure", e);
+            return CheckPasswordResult.FAIL;
+        }
+    }
+
+    /*
     private boolean postOrders(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
@@ -432,7 +601,19 @@ public class EntryServlet extends HttpServlet {
         }
         return true;
     }
+    */
 
+    // TODO: Fix Request so work with Orders new def
+    private boolean postOrders(Request r) {
+        if (!checkPassword(r).passesWrite()) return false;
+        int currentTurn = dsClient.getWorldDate(r.gameId);
+        if (currentTurn == -1 || r.turn != currentTurn) return false;
+//        dsClient.putOrders(new Orders(r.gameId, r.turn, r.version, r.kingdom, r.body));
+        dsClient.putOrders(new Orders(r.gameId, r.turn, r.version, r.kingdom, null));
+        return true;
+    }
+
+    /*
     private boolean postRealTimeCommunication(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
@@ -451,11 +632,22 @@ public class EntryServlet extends HttpServlet {
         }
         return true;
     }
+    */
+
+    private boolean postRealTimeCommunication(Request r) {
+        if (!checkPassword(r).passesWrite()) return false;
+        World w = dsClient.getWorld(r.gameId, r.turn);
+        w.addRtc(r.body, r.kingdom);
+        dsClient.putWorld(r.gameId, w);
+        return true;
+    }
 
     private static final class ChangePlayerRequestBody {
         public String email;
         public String password;
     }
+
+    /*
     private boolean postChangePlayer(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
@@ -478,7 +670,22 @@ public class EntryServlet extends HttpServlet {
         }
         return true;
     }
+    */
 
+    private boolean postChangePlayer(Request r) {
+        if (!checkPassword(r).passesWrite()) return false;
+        int date = r.turn != 0 ? r.turn : dsClient.getWorldDate(r.gameId);
+        World w = dsClient.getWorld(r.gameId, date);
+
+        ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+        Player p = dsClient.getPlayer(body.email);
+        w.getNation(r.kingdom).email = body.email;
+        w.getNation(r.kingdom).password = p.passHash;
+        dsClient.putWorld(r.gameId, w);
+        return true;
+    }
+
+    /*
     // TODO: remove
     private boolean migrate(Request rr) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
@@ -497,8 +704,17 @@ public class EntryServlet extends HttpServlet {
         }
         return true;
     }
+    */
 
+    // TODO: remove
+    private boolean migrate(Request rr) {
+        World w = dsClient.getWorld(4, dsClient.getWorldDate(4));
+        for (Character c : w.characters) if (c.getName().equals("Ea Rjinkuki")) c.setLocation(101);
+        dsClient.putWorld(4, w);
+        return true;
+    }
 
+    /*
     private boolean postSetup(Request r) {
         DatastoreService service = DatastoreServiceFactory.getDatastoreService();
         Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
@@ -519,6 +735,25 @@ public class EntryServlet extends HttpServlet {
         } finally {
             if (txn.isActive()) txn.rollback();
         }
+        return true;
+    }
+    */
+
+    private boolean postSetup(Request r) {
+        Nation nation = dsClient.getNation(r.kingdom, r.gameId);
+        if (nation == null) return false; // We expect nation to not be found
+
+        nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
+
+        try {
+            nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException e){
+            log.log(Level.SEVERE, "postSetup Failure", e);
+            return false;
+        }
+
+        dsClient.putNation(r.gameId, r.kingdom);
+        dsClient.putPlayer(new Player(nation.email, nation.password));
         return true;
     }
 
