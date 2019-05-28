@@ -227,6 +227,32 @@ public class GaeDatastoreClient implements DatastoreClient{
         return "game_" + gameId;
     }
 
+    // Login
+
+    @Override
+    public LoginKey getLogin(long gameId, int date, String email) {
+        try {
+            Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
+            String jsonStr = (String) entity.getProperty(jsonProp);
+            return gson.fromJson(jsonStr, LoginKey.class);
+        } catch (EntityNotFoundException e) {
+            log.severe("Enable to retrieve Login with key " + createLoginKey(gameId, date, email));
+            return null;
+        }
+    }
+
+    @Override
+    public void putLogin(long gameId, int date, String email) {
+        Entity e = new Entity(activeType, createLoginKey(gameId, date, email));
+        e.setProperty(loginProp, true);
+        e.setProperty(jsonProp, gson.toJson(new LoginKey(email, gameId, date)));
+        service.put(e);
+    }
+
+    private String createLoginKey(long gameId, int date, String email){
+        return gameId + "_" + date + "_" + email;
+    }
+
     // Active games
 
     @Override
@@ -255,32 +281,6 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private String createActiveGamesKey(){
         return "_";
-    }
-
-    // Login
-
-    @Override
-    public LoginKey getLogin(long gameId, int date, String email) {
-        try {
-            Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
-            String jsonStr = (String) entity.getProperty(jsonProp);
-            return gson.fromJson(jsonStr, LoginKey.class);
-        } catch (EntityNotFoundException e) {
-            log.severe("Enable to retrieve Login with key " + createLoginKey(gameId, date, email));
-            return null;
-        }
-    }
-
-    @Override
-    public void putLogin(long gameId, int date, String email) {
-        Entity e = new Entity(activeType, createLoginKey(gameId, date, email));
-        e.setProperty(loginProp, true);
-        e.setProperty(jsonProp, gson.toJson(new LoginKey(email, gameId, date)));
-        service.put(e);
-    }
-
-    private String createLoginKey(long gameId, int date, String email){
-        return gameId + "_" + date + "_" + email;
     }
 
     public static void main(String[] args) {
