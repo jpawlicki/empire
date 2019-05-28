@@ -753,7 +753,7 @@ public class EntryServlet extends HttpServlet {
             return false;
         }
 
-        dsClient.putNation(r.gameId, r.kingdom);
+        dsClient.putNation(r.gameId, r.kingdom, nation);
         dsClient.putPlayer(new Player(nation.email, nation.password));
         return true;
     }

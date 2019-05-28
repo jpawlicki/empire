@@ -19,8 +19,8 @@ public interface DatastoreClient {
      int getWorldDate(long gameId);
      boolean putWorldDate(long gameId, int date);
 
-     LoginKey getLogin(long gameId, int date, String email);
-     void putLogin(long gameId, int date, String email);
+     LoginKey getLogin(String email, long gameId, int date);
+     boolean putLogin(String email, long gameId, int date);
 
      Set<Long> getActiveGames();
      boolean putActiveGames(Set<Long> activeGames);
