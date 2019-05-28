@@ -32,7 +32,7 @@ final class LoginCache {
 
         if (!recordedKeys.contains(nu)) {
             recordedKeys.add(nu);
-            client.putLogin(gameId, date, email);
+            client.putLogin(email, gameId, date);
         }
     }
 
@@ -44,7 +44,7 @@ final class LoginCache {
             if (recordedKeys.contains(nu)) {
                 result.add(true);
             } else {
-                result.add(Objects.nonNull(client.getLogin(gameId, date, email)));
+                result.add(Objects.nonNull(client.getLogin(email, gameId, date)));
             }
         }
 

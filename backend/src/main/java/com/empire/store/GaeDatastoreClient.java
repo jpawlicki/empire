@@ -235,7 +235,7 @@ public class GaeDatastoreClient implements DatastoreClient{
     // Login
 
     @Override
-    public LoginKey getLogin(long gameId, int date, String email) {
+    public LoginKey getLogin(String email, long gameId, int date) {
         try {
             Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
             String jsonStr = (String) entity.getProperty(jsonProp);
@@ -247,11 +247,15 @@ public class GaeDatastoreClient implements DatastoreClient{
     }
 
     @Override
-    public void putLogin(long gameId, int date, String email) {
-        Entity e = new Entity(activeType, createLoginKey(gameId, date, email));
-        e.setProperty(loginProp, true);
-        e.setProperty(jsonProp, gson.toJson(new LoginKey(email, gameId, date)));
-        service.put(e);
+    public boolean putLogin(String email, long gameId, int date) {
+        return putEntityInTransaction(loginToEntity(email, gameId, date));
+    }
+
+    private Entity loginToEntity(String email, long gameId, int date){
+        Entity entity = new Entity(activeType, createLoginKey(gameId, date, email));
+        entity.setProperty(jsonProp, gson.toJson(new LoginKey(email, gameId, date)));
+        entity.setProperty(loginProp, true);
+        return entity;
     }
 
     private String createLoginKey(long gameId, int date, String email){
