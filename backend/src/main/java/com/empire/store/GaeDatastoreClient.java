@@ -97,32 +97,32 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Nation
 
-    public Nation getNation(String nation, long gameId) {
-        return gson.fromJson(getNationJson(nation, gameId), Nation.class);
+    public Nation getNation(long gameId, String nation) {
+        return gson.fromJson(getNationJson(gameId, nation), Nation.class);
     }
 
-    public String getNationJson(String nation, long gameId) {
+    public String getNationJson(long gameId, String nation) {
         try {
-            Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(nation, gameId)));
+            Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(gameId, nation)));
             return (String) e.getProperty(jsonProp);
         } catch (EntityNotFoundException e) {
-            log.severe("Enable to retrieve Nation with key " + createNationkey(nation, gameId));
+            log.severe("Enable to retrieve Nation with key " + createNationkey(gameId, nation));
             return null;
         }
     }
 
     @Override
     public boolean putNation(long gameId, String nation) {
-        return putEntityInTransaction(nationToEntity(nation, gameId));
+        return putEntityInTransaction(nationToEntity(gameId, nation));
     }
 
-    private Entity nationToEntity(String nation, long gameId) {
-        Entity e = new Entity(nationType, createNationkey(nation, gameId));
+    private Entity nationToEntity(long gameId, String nation) {
+        Entity e = new Entity(nationType, createNationkey(gameId, nation));
         e.setProperty(jsonProp, gson.toJson(this));
         return e;
     }
 
-    private String createNationkey(String nation, long gameId) {
+    private String createNationkey(long gameId, String nation) {
         return gameId + "_" + nation;
     }
 
