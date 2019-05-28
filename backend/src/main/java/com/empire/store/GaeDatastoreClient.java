@@ -1,5 +1,6 @@
 package com.empire.store;
 
+import com.empire.Compressor;
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -14,8 +15,6 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -277,7 +276,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         return gameId + "_" + date + "_" + email;
     }
 
-    public static void main2(String[] args) {
+    public static void main(String[] args) {
         GaeDatastoreClient client = GaeDatastoreClient.getInstance();
 
         Player p = new Player("email@email.com", "0123456789ABCDEFGF");
