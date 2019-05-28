@@ -27,27 +27,6 @@ public class GaeDatastoreClientTest {
     }
 
     @Test
-    public void basicTest(){
-        GaeDatastoreClient client = GaeDatastoreClient.getInstance();
-        long gameId = -1;
-        int turn = 4;
-        int version = 2;
-        String kingdom = "Test Kingdom";
-        Map<String, String> ordersMap = new HashMap<>();
-        ordersMap.put("Key0", "Order0");
-        ordersMap.put("Key1", "Order1");
-        ordersMap.put("Key2", "Order2");
-
-        Orders ordersRead0 = client.getOrders(gameId, kingdom, turn);
-
-        Orders orders = new Orders(gameId, kingdom, turn, ordersMap, version);
-        boolean resultPut = client.putOrders(orders);
-
-        Orders ordersRead = client.getOrders(gameId, kingdom, turn);
-        System.out.println("Done");
-    }
-
-    @Test
     public void playerPutGetTest(){
         String email = "TEST_EMAIL";
         Player player = new Player(email, "TEST_PASSHASH");
@@ -82,5 +61,21 @@ public class GaeDatastoreClientTest {
         assertNull(null, client.getNation(gameId, nationName));
         assertTrue(client.putNation(gameId, nationName, nation));
         assertEquals(nation, client.getNation(gameId, nationName));
+    }
+
+    @Test
+    public void ordersPutGetTest(){
+        long gameId = 3;
+        String kingdom = "TEST_KINGDOM";
+        int turn = 4;
+        Map<String, String> ordersMap = new HashMap<>();
+        ordersMap.put("Key0", "Order0");
+        ordersMap.put("Key1", "Order1");
+        ordersMap.put("Key2", "Order2");
+        Orders orders = new Orders(gameId, kingdom, turn, ordersMap, 2);
+
+        assertNull(null, client.getOrders(gameId, kingdom, turn));
+        assertTrue(client.putOrders(orders));
+        assertEquals(orders, client.getOrders(gameId, kingdom, turn));
     }
 }

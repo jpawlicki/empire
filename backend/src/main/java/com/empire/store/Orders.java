@@ -1,6 +1,7 @@
 package com.empire.store;
 
 import java.util.Map;
+import java.util.Objects;
 
 public class Orders {
     public final long gameId;
@@ -15,5 +16,22 @@ public class Orders {
         this.turn = turn;
         this.orders = orders;
         this.version = version;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Orders orders1 = (Orders) o;
+        return gameId == orders1.gameId &&
+                turn == orders1.turn &&
+                version == orders1.version &&
+                Objects.equals(kingdom, orders1.kingdom) &&
+                Objects.equals(orders, orders1.orders);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(gameId, kingdom, turn, orders, version);
     }
 }
