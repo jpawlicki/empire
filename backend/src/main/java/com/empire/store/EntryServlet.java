@@ -183,7 +183,7 @@ public class EntryServlet extends HttpServlet {
 
     private String getSetup(Request r) {
         // TODO - should filter this data or display it.
-        return dsClient.getNationJson(r.kingdom, r.gameId);
+        return dsClient.getNationJson(r.gameId, r.kingdom);
     }
 
     /*
@@ -479,7 +479,7 @@ public class EntryServlet extends HttpServlet {
 
         for (String kingdom : s.kingdoms) {
             log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
-            Nation nation = dsClient.getNation(kingdom, r.gameId);
+            Nation nation = dsClient.getNation(r.gameId, kingdom);
 
             // Nation is not in the game.
             if(nation == null) continue;
@@ -741,7 +741,7 @@ public class EntryServlet extends HttpServlet {
     */
 
     private boolean postSetup(Request r) {
-        Nation nation = dsClient.getNation(r.kingdom, r.gameId);
+        Nation nation = dsClient.getNation(r.gameId, r.kingdom);
         if (nation == null) return false; // We expect nation to not be found
 
         nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
