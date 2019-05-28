@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -365,7 +366,7 @@ public class EntryServlet extends HttpServlet {
                 }
 
                 if (w.gameover) {
-                    List<Long> activeGames = dsClient.getActiveGames();
+                    Set<Long> activeGames = dsClient.getActiveGames();
                     activeGames.remove(gameId);
                     dsClient.putActiveGames(activeGames);
                 }
@@ -491,8 +492,8 @@ public class EntryServlet extends HttpServlet {
         dsClient.putWorld(r.gameId, w);
         dsClient.putWorldDate(r.gameId, 1);
 
-        List<Long> activeGames = dsClient.getActiveGames();
-        if (activeGames == null) activeGames = new ArrayList<>();
+        Set<Long> activeGames = dsClient.getActiveGames();
+        if (activeGames == null) activeGames = new HashSet<>();
         activeGames.add(r.gameId);
         dsClient.putActiveGames(activeGames);
 
@@ -707,7 +708,7 @@ public class EntryServlet extends HttpServlet {
     */
 
     // TODO: remove
-    private boolean migrate(Request rr) {
+    private boolean migrate(Request r) {
         World w = dsClient.getWorld(4, dsClient.getWorldDate(4));
         for (Character c : w.characters) if (c.getName().equals("Ea Rjinkuki")) c.setLocation(101);
         dsClient.putWorld(4, w);

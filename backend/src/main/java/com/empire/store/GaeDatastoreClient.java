@@ -15,6 +15,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 public class GaeDatastoreClient implements DatastoreClient{
@@ -223,11 +224,11 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     // Active games
 
-    public List<Long> getActiveGames() {
+    public Set<Long> getActiveGames() {
         try {
             Entity e = service.get(KeyFactory.createKey(activeGamesType, createActiveGamesKey()));
             String jsonStr = (String) e.getProperty(activeGamesProp);
-            Type listType = new TypeToken<List<Long>>(){}.getType();
+            Type listType = new TypeToken<Set<Long>>(){}.getType();
             return gson.fromJson(jsonStr, listType);
         } catch (EntityNotFoundException e) {
             log.severe("Enable to retrieve active games with key " + createActiveGamesKey());
@@ -236,11 +237,11 @@ public class GaeDatastoreClient implements DatastoreClient{
     }
 
     @Override
-    public boolean putActiveGames(List<Long> activeGames) {
+    public boolean putActiveGames(Set<Long> activeGames) {
         return putEntityInTransaction(activeGamesToEntity(activeGames));
     }
 
-    private Entity activeGamesToEntity(List<Long> activeGames){
+    private Entity activeGamesToEntity(Set<Long> activeGames){
         Entity entity = new Entity(activeGamesType, createActiveGamesKey());
         entity.setProperty(activeGamesProp, gson.toJson(activeGames));
         return entity;
@@ -272,7 +273,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         return gameId + "_" + date + "_" + email;
     }
 
-    public static void main(String[] args) {
+    public static void main2(String[] args) {
         GaeDatastoreClient client = GaeDatastoreClient.getInstance();
 
         Player p = new Player("email@email.com", "0123456789ABCDEFGF");
