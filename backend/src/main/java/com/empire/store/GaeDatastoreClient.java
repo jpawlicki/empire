@@ -291,7 +291,7 @@ public class GaeDatastoreClient implements DatastoreClient{
     }
 
     public static void main(String[] args) {
-        GaeDatastoreClient client = GaeDatastoreClient.getInstance();
+//        GaeDatastoreClient client = GaeDatastoreClient.getInstance();
 
         Player p = new Player("email@email.com", "0123456789ABCDEFGF");
         System.out.println(p);
