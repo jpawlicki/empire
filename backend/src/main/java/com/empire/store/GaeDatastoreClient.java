@@ -32,8 +32,8 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String dateProp = "date";
     private static final String jsonProp = "json";
     private static final String jsonGzipProp = "json_gzip";
-    private static final String passhashProp = "passHash";
-    private static final String versionProp = "version";
+//    private static final String passhashProp = "passHash";
+//    private static final String versionProp = "version";
     private static final String loginProp = "login";
     private static final String activeGamesProp = "active_games";
 
@@ -77,8 +77,9 @@ public class GaeDatastoreClient implements DatastoreClient{
     @Override
     public Player getPlayer(String email) {
         try {
-            Entity e = service.get(KeyFactory.createKey(playerType, email));
-            return new Player(email, (String) e.getProperty(passhashProp));
+            Entity e = service.get(KeyFactory.createKey(playerType, createPlayerKey(email)));
+            String jsonStr = (String) e.getProperty(jsonProp);
+            return gson.fromJson(jsonStr, Player.class);
         } catch (EntityNotFoundException e){
             log.severe("Enable to retrieve Player with key " + email);
             return null;
@@ -91,9 +92,13 @@ public class GaeDatastoreClient implements DatastoreClient{
     }
 
     private Entity playerToEntity(Player player) {
-        Entity e = new Entity(playerType, player.email);
-        e.setProperty(passhashProp, player.passHash);
+        Entity e = new Entity(playerType, createPlayerKey(player.email));
+        e.setProperty(jsonProp, gson.toJson(player));
         return e;
+    }
+
+    private String createPlayerKey(String email){
+        return email;
     }
 
     // Nation
@@ -289,10 +294,10 @@ public class GaeDatastoreClient implements DatastoreClient{
         Player p = new Player("email@email.com", "0123456789ABCDEFGF");
         System.out.println(p);
 
-        String s = client.gson.toJson(p);
+        String s = GaeDatastoreClient.gson.toJson(p);
         System.out.println(s);
 
-        Player p2 = client.gson.fromJson(s, Player.class);
+        Player p2 = GaeDatastoreClient.gson.fromJson(s, Player.class);
         System.out.println(p2);
     }
 }
