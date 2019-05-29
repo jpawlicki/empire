@@ -175,15 +175,13 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthStoic(){
-        when(n1.hasTag(Constants.nationStoicTag)).thenReturn(true);
+        when(n1.hasTag(NationData.Tag.STOIC)).thenReturn(true);
         assertEquals(9.1875, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test
     public void calcMinConquestStrengthFortified(){
-        Construction fort = mock(Construction.class);
-        fort.type = Constants.constFort;
-        r.constructions = Arrays.asList(fort, fort);
+        r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
         assertEquals(6.825, r.calcMinConquestStrength(w), DELTA);
     }
 
@@ -195,9 +193,7 @@ public class RegionTest {
 
     @Test
     public void calcFortificationMod(){
-        Construction fort = mock(Construction.class);
-        fort.type = Constants.constFort;
-        r.constructions = Arrays.asList(fort, fort);
+        r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
         assertEquals(0.3, r.calcFortificationMod(), DELTA);
     }
 

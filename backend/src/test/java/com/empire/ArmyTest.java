@@ -73,19 +73,19 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthSteel() {
-		a.addTag(Constants.armySteelTag);
+		a.addTag(Army.Tag.STEEL);
 		assertEquals(1.15, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthSeafaringOnLand() {
-		a.addTag(Constants.armySeafaringTag);
+		a.addTag(Army.Tag.SEAFARING);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthSeafaring() {
-		a.addTag(Constants.armySeafaringTag);
+		a.addTag(Army.Tag.SEAFARING);
 		when(w.regions.get(0).isSea()).thenReturn(true);
 		assertEquals(2.5, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -93,20 +93,20 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthDisciplinedNavy() {
 		a.type = Army.Type.NAVY;
-		when(n1.hasTag(Constants.nationDisciplinedTag)).thenReturn(true);
+		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
 		a.kingdom = Constants.pirateKingdom;
-		w.getNation(k1).addTag(Constants.nationDisciplinedTag);
+		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplined() {
-		when(n1.hasTag(Constants.nationDisciplinedTag)).thenReturn(true);
+		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(1.1, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
@@ -312,9 +312,9 @@ public class ArmyTest {
 		a.kingdom = k2;
 		Region r = w.regions.get(0);
 		r.constructions = new ArrayList<>();
-		r.constructions.add(Construction.makeFortification(40));
-		r.constructions.add(Construction.makeFortification(40));
-		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortifications(40));
+		r.constructions.add(Construction.makeFortifications(40));
+		r.constructions.add(Construction.makeFortifications(40));
 		when(r.isLand()).thenReturn(true);
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
 

@@ -16,10 +16,8 @@ import java.util.function.Function;
 
 class Region {
 	enum Type {
-		@SerializedName("land")
-		LAND,
-		@SerializedName("water")
-		WATER
+		@SerializedName("land") LAND,
+		@SerializedName("water") WATER
 	}
 
 	String name;
@@ -67,32 +65,8 @@ class Region {
 		return legals.contains(target);
 	}
 
-	// TODO - the function this method provides looks like it should reside in the Culture enum class
-	public List<String> getArmyTags() {
-		List<String> t = new ArrayList<>();
-		switch (culture) {
-			case ANPILAYN:
-				t.add(Constants.armySteelTag);
-				t.add(Constants.armyFormationsTag);
-				break;
-			case EOLSUNG:
-				t.add(Constants.armyPillagersTag);
-				t.add(Constants.armyRaidersTag);
-				break;
-			case HANSA:
-				t.add(Constants.armySeafaringTag);
-				t.add(Constants.armyImpressmentTag);
-				break;
-			case TYRGAETAN:
-				t.add(Constants.armyWeatheredTag);
-				t.add(Constants.armyPathfindersTag);
-				break;
-			case TAVIAN:
-				t.add(Constants.armyRidersTag);
-				t.add(Constants.armyCraftsSoldiersTag);
-				break;
-		}
-		return t;
+	public List<Army.Tag> getArmyTags() {
+		return culture.getArmyTags();
 	}
 
 	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
@@ -114,9 +88,9 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
-		if (wKingdom.hasTag(Constants.nationPatrioticTag)) mods += Constants.patrioticMod;
-		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
+		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
+		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * Constants.perConquestWarlikeRecruitmentMod;
@@ -140,7 +114,7 @@ class Region {
 			mods += Constants.perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
 		}
 
-		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Constants.armyPillagersTag)) mods += Constants.armyPillagersRecruitmentMod;
+		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += Constants.armyPillagersRecruitmentMod;
 
 		return Math.max(0, base * mods);
 	}
@@ -167,9 +141,9 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleHoardingTag)) mods += Constants.nobleHoardingMod;
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(Constants.nationCoastDwellingTag) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
-		if (wKingdom.hasTag(Constants.nationMercantileTag)) mods += Constants.mercantileTaxMod;
-		if (wKingdom.hasTag(Constants.nationWarlikeTag) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
+		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
+		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * Constants.perConquestWarlikeTaxMod;
@@ -225,7 +199,7 @@ class Region {
 		HashMap<Ideology, Integer> ideologies = new HashMap<>();
 
 		for (Construction c : constructions) {
-			if (c.type.equals(Constants.constTemple)) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
+			if (c.type == Construction.Type.TEMPLE) ideologies.put(c.religion, ideologies.getOrDefault(c.religion, 0) + 1);
 		}
 		int maxV = ideologies.getOrDefault(bias, -1);
 		Ideology max = bias;
@@ -364,7 +338,7 @@ class Region {
 		double mods = 1;
 		if (noble != null && noble.hasTag(Constants.nobleLoyalTag)) mods += Constants.loyalMinConqMod;
 		if (noble != null && noble.hasTag(Constants.nobleDesperateTag)) mods += Constants.nobleDesperateMod;
-		if (w.getNation(kingdom).hasTag(Constants.nationStoicTag)) mods += Constants.stoicConqStrengthMod;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.STOIC)) mods += Constants.stoicConqStrengthMod;
 		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
 	}
@@ -381,7 +355,7 @@ class Region {
 
 	public double calcFortificationPct() {
 		double fort = 1;
-		for (Construction c : constructions) if (c.type.equals(Constants.constFort)) fort += Constants.perFortMod;
+		for (Construction c : constructions) if (c.type == Construction.Type.FORTIFICATIONS) fort += Constants.perFortMod;
 		return Math.min(Constants.maxFortMod, fort);
 	}
 
@@ -416,22 +390,37 @@ class Region {
 }
 
 class Construction {
-	String type;
-	Ideology religion; // Only for type == "temple".
+	enum Type {
+		@SerializedName("fortifications") FORTIFICATIONS,
+		@SerializedName("temple") TEMPLE,
+		@SerializedName("shipyard") SHIPYARD;
+	}
+	Type type;
+	Ideology religion; // Only for temples.
 	double originalCost;
 
 	static Construction makeTemple(Ideology religion, double cost) {
 		Construction c = new Construction();
-		c.type = "temple";
+		c.type = Type.TEMPLE;
 		c.religion = religion;
 		c.originalCost = cost;
 		return c;
 	}
 
-	static Construction makeFortification(double cost) {
+	static Construction makeFortifications(double cost) {
 		Construction c = new Construction();
-		c.type = "fortifications";
+		c.type = Type.FORTIFICATIONS;
 		c.originalCost = cost;
 		return c;
 	}
+
+	static Construction makeShipyard(double cost) {
+		Construction c = new Construction();
+		c.type = Type.SHIPYARD;
+		c.originalCost = cost;
+		return c;
+	}
+
+	/** A no-args constructor is needed for GSON. */
+	private Construction() {}
 }
