@@ -42,25 +42,25 @@ class Army {
 	String orderhint = "";
 
 	public double calcStrength(World w, Character leader, int inspires, boolean lastStand) {
-		double strength = size * (isArmy() ? Constants.armyBaseStrength : Constants.navyBaseStrength);
+		double strength = size * (isArmy() ? w.rules.armyBaseStrength : w.rules.navyBaseStrength);
 
 		double mods = 1.0;
 		Region r = w.regions.get(location);
 
-		if (hasTag(Tag.STEEL)) mods += Constants.steelMod;
-		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += Constants.seafaringMod;
-		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedMod;
-		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
-		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += Constants.loyalMod;
+		if (hasTag(Tag.STEEL)) mods += w.rules.steelMod;
+		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += w.rules.seafaringMod;
+		if (isArmy() && !w.rules.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += w.rules.disciplinedMod;
+		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod(w.rules);
+		if (isArmy() && r.noble != w.rules.noNoble && r.noble.hasTag(w.rules.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += w.rules.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);
-			if (Ideology.SWORD_OF_TRUTH == sr) mods += Constants.swordOfTruthMod;
-			else if (sr.religion == Religion.IRUHAN) mods += Constants.iruhanMod;
+			if (Ideology.SWORD_OF_TRUTH == sr) mods += w.rules.swordOfTruthMod;
+			else if (sr.religion == Religion.IRUHAN) mods += w.rules.iruhanMod;
 		}
-		if (lastStand) mods += Constants.lastStandMod;
-		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
-		if (leader != Constants.noLeader && Constants.noCaptor.equals(leader.captor)) {
-			mods += leader.calcLevel(isArmy() ? Constants.charDimGeneral : Constants.charDimAdmiral) * Constants.perLevelLeaderMod;
+		if (lastStand) mods += w.rules.lastStandMod;
+		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * w.rules.perInspireMod;
+		if (leader != w.rules.noLeader && w.rules.noCaptor.equals(leader.captor)) {
+			mods += leader.calcLevel(isArmy() ? w.rules.charDimGeneral : w.rules.charDimAdmiral) * w.rules.perLevelLeaderMod;
 		}
 
 		return strength * mods;
@@ -113,7 +113,7 @@ class Army {
 			if (Construction.Type.TEMPLE == bestRaze.type) {
 				region.setReligion(null, w);
 			}
-			gold += bestRaze.originalCost * Constants.razeRefundFactor;
+			gold += bestRaze.originalCost * w.rules.razeRefundFactor;
 		}
 		w.getNation(kingdom).gold += gold;
 		w.notifications.add(new Notification(kingdom, "Razing in " + region.name, "Our army looted and razed " + StringUtil.quantify(targets, target) + ", carrying off assets worth " + Math.round(gold) + " gold."));

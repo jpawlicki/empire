@@ -44,10 +44,10 @@ public class CharacterTest {
     }
 
     private void setExperience(double general, double admiral, double governor, double spy) {
-        c.experience.put(Constants.charDimGeneral, general);
-        c.experience.put(Constants.charDimAdmiral, admiral);
-        c.experience.put(Constants.charDimGovernor, governor);
-        c.experience.put(Constants.charDimSpy, spy);
+        c.experience.put(Rules.charDimGeneral, general);
+        c.experience.put(Rules.charDimAdmiral, admiral);
+        c.experience.put(Rules.charDimGovernor, governor);
+        c.experience.put(Rules.charDimSpy, spy);
     }
 
     private void addHeroicTag() {
@@ -55,10 +55,10 @@ public class CharacterTest {
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {
-        assertEquals(general, c.getExperience(Constants.charDimGeneral), DELTA);
-        assertEquals(admiral, c.getExperience(Constants.charDimAdmiral), DELTA);
-        assertEquals(governor, c.getExperience(Constants.charDimGovernor), DELTA);
-        assertEquals(spy, c.getExperience(Constants.charDimSpy), DELTA);
+        assertEquals(general, c.getExperience(Rules.charDimGeneral), DELTA);
+        assertEquals(admiral, c.getExperience(Rules.charDimAdmiral), DELTA);
+        assertEquals(governor, c.getExperience(Rules.charDimGovernor), DELTA);
+        assertEquals(spy, c.getExperience(Rules.charDimSpy), DELTA);
     }
 
     @Test
@@ -67,76 +67,76 @@ public class CharacterTest {
 
         for(int level = 1; level <= 5; level++) {
             setExperience(expLevel.get(level-1));
-            assertEquals(level, c.calcLevel(Constants.charDimGeneral));
-            assertEquals(level, c.calcLevel(Constants.charDimAdmiral));
-            assertEquals(level, c.calcLevel(Constants.charDimGovernor));
-            assertEquals(level, c.calcLevel(Constants.charDimSpy));
+            assertEquals(level, c.calcLevel(Rules.charDimGeneral));
+            assertEquals(level, c.calcLevel(Rules.charDimAdmiral));
+            assertEquals(level, c.calcLevel(Rules.charDimGovernor));
+            assertEquals(level, c.calcLevel(Rules.charDimSpy));
         }
     }
 
     @Test
     public void addExperienceGeneralRegular() {
-        c.addExperience(Constants.charDimGeneral, w);
+        c.addExperience(Rules.charDimGeneral, w);
         assertDimsExpEqual(1.0, 0.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceAdmirallRegular() {
-        c.addExperience(Constants.charDimAdmiral, w);
+        c.addExperience(Rules.charDimAdmiral, w);
         assertDimsExpEqual(0.0, 1.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceGovernorRegular() {
-        c.addExperience(Constants.charDimGovernor, w);
+        c.addExperience(Rules.charDimGovernor, w);
         assertDimsExpEqual(0.0, 0.0, 1.0, 0.0);
     }
 
     @Test
     public void addExperienceSpyRegular() {
-        c.addExperience(Constants.charDimSpy, w);
+        c.addExperience(Rules.charDimSpy, w);
         assertDimsExpEqual(0.0, 0.0, 0.0, 1.0);
 
     }
 
     @Test
     public void addExperienceAllRegular() {
-        c.addExperience(Constants.charDimAll, w);
+        c.addExperience(Rules.charDimAll, w);
         assertDimsExpEqual(0.25, 0.25, 0.25, 0.25);
     }
 
     @Test
     public void addExperienceGeneralHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimGeneral, w);
+        c.addExperience(Rules.charDimGeneral, w);
         assertDimsExpEqual(2.0, 0.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceAdmiralHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimAdmiral, w);
+        c.addExperience(Rules.charDimAdmiral, w);
         assertDimsExpEqual(0.0, 2.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceGovernorHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimGovernor, w);
+        c.addExperience(Rules.charDimGovernor, w);
         assertDimsExpEqual(0.0, 0.0, 2.0, 0.0);
     }
 
     @Test
     public void addExperienceSpyHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimSpy, w);
+        c.addExperience(Rules.charDimSpy, w);
         assertDimsExpEqual(0.0, 0.0, 0.0, 2.0);
     }
 
     @Test
     public void addExperienceAllHeroic() {
         addHeroicTag();
-        c.addExperience(Constants.charDimAll, w);
+        c.addExperience(Rules.charDimAll, w);
         assertDimsExpEqual(0.5, 0.5, 0.5, 0.5);
     }
 

@@ -26,23 +26,23 @@ class Character {
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = Constants.basePlotStrength;
+		double power = w.rules.basePlotStrength;
 
-		power += calcLevel(Constants.charDimSpy) * Constants.perSpyLevelPlotMod;
+		power += calcLevel(w.rules.charDimSpy) * w.rules.perSpyLevelPlotMod;
 
-		if (boosted) power += Constants.guardAgainstPlotMod;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
-		if (!Constants.noCaptor.equals(captor)) power += Constants.capturedPlotMod;
+		if (boosted) power += w.rules.guardAgainstPlotMod;
+		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += w.rules.lyskrPlotMod;
+		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += w.rules.companyPlotMod;
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * w.rules.perInspirePlotMod;
+		if (!w.rules.noCaptor.equals(captor)) power += w.rules.capturedPlotMod;
 
 		return power;
 	}
 
 	public void addExperience(String dimension, World w) {
-		List<String> dims = Constants.charDimAll.equals(dimension) ? Constants.charDims : Collections.singletonList(dimension);
-		double expBase = Constants.charDimAll.equals(dimension) ? Constants.allDimExpAdd : Constants.oneDimExpAdd;
-		double expMult = w.getNation(kingdom).hasTag(NationData.Tag.HEROIC) ? Constants.heroicExpMultiplier : 1.0;
+		List<String> dims = w.rules.charDimAll.equals(dimension) ? w.rules.charDims : Collections.singletonList(dimension);
+		double expBase = w.rules.charDimAll.equals(dimension) ? w.rules.allDimExpAdd : w.rules.oneDimExpAdd;
+		double expMult = w.getNation(kingdom).hasTag(NationData.Tag.HEROIC) ? w.rules.heroicExpMultiplier : 1.0;
 
 		dims.forEach(d -> experience.put(d, experience.get(d) + expBase * expMult));
 	}

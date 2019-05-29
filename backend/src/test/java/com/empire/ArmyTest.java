@@ -55,7 +55,7 @@ public class ArmyTest {
 
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
-		r2.noble = Mocks.noble(Constants.nobleLoyalTag, 0.0);
+		r2.noble = Mocks.noble(Rules.nobleLoyalTag, 0.0);
 		w.regions = Arrays.asList(r1, r2);
 		return w;
 	}
@@ -99,7 +99,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
-		a.kingdom = Constants.pirateKingdom;
+		a.kingdom = Rules.pirateKingdom;
 		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -210,7 +210,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthGeneral() {
 		Character c = Mocks.character(3.0);
-		when(c.calcLevel(Constants.charDimGeneral)).thenReturn(2);
+		when(c.calcLevel(Rules.charDimGeneral)).thenReturn(2);
 		assertEquals(1.4, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
@@ -218,7 +218,7 @@ public class ArmyTest {
 	public void calcStrengthAdmiral() {
 		a.type = Army.Type.NAVY;
 		Character c = Mocks.character(3.0);
-		when(c.calcLevel(Constants.charDimAdmiral)).thenReturn(2);
+		when(c.calcLevel(Rules.charDimAdmiral)).thenReturn(2);
 		assertEquals(140.0, a.calcStrength(w, c, 0, false), DELTA);
 	}
 

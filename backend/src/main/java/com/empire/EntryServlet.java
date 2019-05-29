@@ -198,6 +198,9 @@ public class EntryServlet extends HttpServlet {
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No such world.");
 			return null;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return null;
 		}
 	}
 
@@ -221,6 +224,9 @@ public class EntryServlet extends HttpServlet {
 			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
 		} catch (EntityNotFoundException e) {
 			log.log(Level.WARNING, "No such world.", e);
+			return null;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return null;
 		}
 	}
@@ -277,6 +283,9 @@ public class EntryServlet extends HttpServlet {
 		} catch (EntityNotFoundException e) {
 			log.log(Level.SEVERE, "Poller failed.", e);
 			return null;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return null;
 		}
 		return "";
 	}
@@ -292,6 +301,9 @@ public class EntryServlet extends HttpServlet {
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
+			return false;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;
 		} finally {
 			if (txn.isActive()) txn.rollback();
@@ -344,6 +356,9 @@ public class EntryServlet extends HttpServlet {
 			games.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(activeGames));
 			service.put(games);
 			txn.commit();
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return false;
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
@@ -400,6 +415,9 @@ public class EntryServlet extends HttpServlet {
 		} catch (NoSuchAlgorithmException e) {
 			log.log(Level.SEVERE, "CheckPassword Failure", e);
 			return CheckPasswordResult.FAIL;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return CheckPasswordResult.FAIL;
 		}
 	}
 
@@ -433,6 +451,10 @@ public class EntryServlet extends HttpServlet {
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
+			return false;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return false;
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();
@@ -460,6 +482,10 @@ public class EntryServlet extends HttpServlet {
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
+			return false;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return false;
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();
@@ -479,6 +505,10 @@ public class EntryServlet extends HttpServlet {
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found!", e);
+			return false;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return false;
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();

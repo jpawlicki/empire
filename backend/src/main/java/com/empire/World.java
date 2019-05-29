@@ -62,6 +62,8 @@ class World implements GoodwillProvider {
 	long nextTurn;
 	boolean gameover;
 
+	transient Rules rules;
+
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 	}
@@ -75,16 +77,20 @@ class World implements GoodwillProvider {
 		}
 	}
 
-	public static World load(long gameId, int turn, DatastoreService service) throws EntityNotFoundException {
+	public static World load(long gameId, int turn, DatastoreService service) throws EntityNotFoundException, IOException {
 		return fromJson(loadJson(gameId, turn, service));
 	}
 
-	public static World fromJson(String json) {
-		return getGson().fromJson(json, World.class);
+	public static World fromJson(String json) throws IOException {
+		World w = getGson().fromJson(json, World.class);
+		w.rules = Rules.loadRules(w.ruleSet);
+		return w;
 	}
 
-	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) {
+	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) throws IOException {
 		World w = new World();
+		w.ruleSet = 5;
+		w.rules = Rules.loadRules(w.ruleSet);
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
 		w.obsPasswordHash = obsPasswordHash;
@@ -195,7 +201,7 @@ class World implements GoodwillProvider {
 				double flexFactor = remaining == 1 ? remainingShare : Math.min(remainingShare / 2, Math.random() * .4 + .8);
 				remainingShare -= flexFactor;
 				w.regions.get(r).population = population * flexFactor / nation.coreRegions.size();
-				w.regions.get(r).crops = w.regions.get(r).population * Constants.setupCropsPerCitizen;
+				w.regions.get(r).crops = w.regions.get(r).population * w.rules.setupCropsPerCitizen;
 				w.regions.get(r).food = food * flexFactor / nation.coreRegions.size();
 				w.regions.get(r).setKingdomNoScore(kingdom);
 				remaining--;
@@ -376,7 +382,7 @@ class World implements GoodwillProvider {
 			for (Region r : w.regions) if (kingdom.equals(r.getKingdom()) && r.isCoastal(w)) regions.add(r);
 			if (!regions.isEmpty()) {
 				for (int i = 0; i < shipyardsPerNation; i++) {
-					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(Constants.baseCostShipyard));
+					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(w.rules.baseCostShipyard));
 				}
 			}
 		}
@@ -1183,7 +1189,7 @@ class World implements GoodwillProvider {
 						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
 						Construction ct;
 						if (action.contains("Shipyard")) {
-							ct = Construction.makeShipyard(Math.max(0, Constants.baseCostShipyard * costMod));
+							ct = Construction.makeShipyard(Math.max(0, rules.baseCostShipyard * costMod));
 						} else if (action.contains("Temple")) {
 							Ideology ideo = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
 							if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) costMod -= .5;
@@ -1194,10 +1200,10 @@ class World implements GoodwillProvider {
 								for (Region r : region.getNeighbors(World.this)) if (r.isLand() && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
 								if (templeBonus) costMod -= 1;
 							}
-							ct = Construction.makeTemple(ideo, Math.max(0, Constants.baseCostTemple * costMod));
+							ct = Construction.makeTemple(ideo, Math.max(0, rules.baseCostTemple * costMod));
 						} else if (action.contains("Fortifications")) {
 							if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
-							ct = Construction.makeFortifications(Math.max(0, Constants.baseCostFortifications * costMod));
+							ct = Construction.makeFortifications(Math.max(0, rules.baseCostFortifications * costMod));
 						} else {
 							continue;
 						}
@@ -1218,7 +1224,7 @@ class World implements GoodwillProvider {
 								if (ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill -= 20;
 								else if (ct.religion != Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += 15;
 							}
-							if (ct.type == Construction.Type.SHIPYARD && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
+							if (ct.type == Construction.Type.SHIPYARD && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, rules.numShipsBuiltPerShipyard * rules.shipBuildingTraitWeeksProduction);
 							builds.add(region);
 							if (ct.type == Construction.Type.TEMPLE) templeBuilds.add(region);
 							if (ct.type == Construction.Type.FORTIFICATIONS && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
@@ -1401,7 +1407,7 @@ class World implements GoodwillProvider {
 					double cf = enemyStrength / totalArmyStrength;
 					if (a.hasTag(Army.Tag.FORMATIONS) && cf > .45 && cf < .9) cf = .45;
 					if (region.getKingdom() != null && NationData.isFriendly(region.getKingdom(), a.kingdom, World.this)) {
-						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortificationMod())));
+						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortificationMod(rules))));
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
@@ -1895,9 +1901,9 @@ class World implements GoodwillProvider {
 			Set<String> stoicNations = new HashSet<>();
 			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag(NationData.Tag.STOIC)) stoicNations.add(k);
 			if (isHarvestTurn()) {
-				for (Region r : regions) r.harvest(stoicNations, World.this);
+				for (Region r : regions) r.harvest(stoicNations, World.this, rules);
 			}
-			for (Region r : regions) r.plant(isHarvestTurn());
+			for (Region r : regions) r.plant(isHarvestTurn(), rules);
 		}
 
 		void cedeRegions() {
@@ -1929,7 +1935,7 @@ class World implements GoodwillProvider {
 				if (shipyards > 0) {
 					Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
 					if (max == null || !NationData.isEnemy(r.getKingdom(), max.kingdom, World.this)) {
-						buildShips(r.getKingdom(), i, shipyards * Constants.numShipsBuiltPerShipyard);
+						buildShips(r.getKingdom(), i, shipyards * rules.numShipsBuiltPerShipyard);
 					}
 				}
 			}
@@ -2017,8 +2023,8 @@ class World implements GoodwillProvider {
 				if (kingdoms.containsKey(r.getKingdom())) {
 					double fed = Math.min(hungry, r.food) / hungry * r.population;
 					double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
-					if (ration > 1) score(r.getKingdom(), "food", fed * Constants.foodFedPlentifulPointFactor);
-					else if (ration == 1) score(r.getKingdom(), "food", fed * Constants.foodFedPointFactor);
+					if (ration > 1) score(r.getKingdom(), "food", fed * rules.foodFedPlentifulPointFactor);
+					else if (ration == 1) score(r.getKingdom(), "food", fed * rules.foodFedPointFactor);
 				}
 				if (hungry <= r.food) {
 					r.food -= hungry;
@@ -2379,7 +2385,7 @@ class World implements GoodwillProvider {
 				double above50 = 0;
 				double pop = 0;
 				for (Region r : regions) if (k.equals(r.getKingdom())) {
-					double unrest = r.calcUnrest(World.this);
+					double unrest = r.calcUnrest(World.this, rules);
 					if (unrest < .25) below25 += r.population;
 					if (unrest < .35) below35 += r.population;
 					if (unrest > .25) above25 += r.population;
@@ -2441,10 +2447,10 @@ class World implements GoodwillProvider {
 				double totalOther = 0;
 				for (Region r : regions) if (r.culture != null) {
 					if (r.culture.equals(getNation(k).culture)) {
-						happyUs += (1 - r.calcUnrest(World.this)) * r.population;
+						happyUs += (1 - r.calcUnrest(World.this, rules)) * r.population;
 						totalUs += r.population;
 					} else {
-						happyOther += (1 - r.calcUnrest(World.this)) * r.population;
+						happyOther += (1 - r.calcUnrest(World.this, rules)) * r.population;
 						totalOther += r.population;
 					}
 				}

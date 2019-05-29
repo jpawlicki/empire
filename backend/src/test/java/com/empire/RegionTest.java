@@ -163,13 +163,13 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthNobleLoyal(){
-        r.noble = mockNoble(Constants.nobleLoyalTag, 0.0);
+        r.noble = mockNoble(Rules.nobleLoyalTag, 0.0);
         assertEquals(10.5, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test
     public void calcMinConquestStrengthDesperate(){
-        r.noble = mockNoble(Constants.nobleDesperateTag, 0.0);
+        r.noble = mockNoble(Rules.nobleDesperateTag, 0.0);
         assertEquals(0, r.calcMinConquestStrength(w), DELTA);
     }
 
@@ -219,13 +219,13 @@ public class RegionTest {
 
     @Test
     public void calcConsumptionNobleRationing(){
-        r.noble = mockNoble(Constants.nobleRationingTag, 0.0);
+        r.noble = mockNoble(Rules.nobleRationingTag, 0.0);
         assertEquals(8E3, r.calcConsumption(w, 1.0), DELTA);
     }
 
     @Test
     public void calcConsumptionNobleWasteful(){
-        r.noble = mockNoble(Constants.nobleWastefulTag, 0.0);
+        r.noble = mockNoble(Rules.nobleWastefulTag, 0.0);
         assertEquals(1.1E4, r.calcConsumption(w, 1.0), DELTA);
     }
 
@@ -260,7 +260,7 @@ public class RegionTest {
 
     @Test
     public void calcPirateThreatNoblePolicingZero(){
-        r.noble = mockNoble(Constants.noblePolicingTag, 0.0);
+        r.noble = mockNoble(Rules.noblePolicingTag, 0.0);
         assertEquals(0.0, r.calcPirateThreat(w), DELTA);
     }
 
@@ -272,7 +272,7 @@ public class RegionTest {
 
     @Test
     public void calcPirateThreatNobleShady(){
-        r.noble = mockNoble(Constants.nobleShadyTag, 0.0);
+        r.noble = mockNoble(Rules.nobleShadyTag, 0.0);
         assertEquals(0.625, r.calcPirateThreat(w), DELTA);
     }
 
