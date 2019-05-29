@@ -103,4 +103,16 @@ public class GaeDatastoreClientTest {
         assertTrue(client.putWorld(gameId, world));
         assertEquals(world, client.getWorld(gameId, turn));
     }
+
+    @Test
+    public void loginNormalRoundtripTest(){
+        String email = "TEST_EMAIL";
+        long gameId = 3;
+        int date = 4;
+        LoginKey login = new LoginKey(email, gameId, date);
+
+        assertNull(null, client.getLogin(email, gameId, date));
+        assertTrue(client.putLogin(email, gameId, date));
+        assertEquals(login, client.getLogin(email, gameId, date));
+    }
 }
