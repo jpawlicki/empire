@@ -106,7 +106,7 @@ class NationData {
 	String colorBg;
 	Culture culture;
 	List<Integer> coreRegions = new ArrayList<>();
-	private ArrayList<Tag> tags = new ArrayList<>();
+	private List<Tag> tags = new ArrayList<>();
 	List<String> previousTributes = new ArrayList<>();
 	String taxratehint = "100";
 	String rationhint = "100";

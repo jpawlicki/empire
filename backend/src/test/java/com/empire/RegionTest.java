@@ -164,7 +164,7 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthFortified(){
-        r.constructions = Arrays.asList(Construction.makeFortification(0), Construction.makeFortification(0));
+        r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
         assertEquals(6.825, r.calcMinConquestStrength(w), DELTA);
     }
 
@@ -176,7 +176,7 @@ public class RegionTest {
 
     @Test
     public void calcFortificationMod(){
-        r.constructions = Arrays.asList(Construction.makeFortification(0), Construction.makeFortification(0));
+        r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
         assertEquals(0.3, r.calcFortificationMod(), DELTA);
     }
 

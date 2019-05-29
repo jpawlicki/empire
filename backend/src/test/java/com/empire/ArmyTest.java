@@ -291,9 +291,9 @@ public class ArmyTest {
 		a.kingdom = k2;
 		Region r = w.regions.get(0);
 		r.constructions = new ArrayList<>();
-		r.constructions.add(Construction.makeFortification(40));
-		r.constructions.add(Construction.makeFortification(40));
-		r.constructions.add(Construction.makeFortification(40));
+		r.constructions.add(Construction.makeFortifications(40));
+		r.constructions.add(Construction.makeFortifications(40));
+		r.constructions.add(Construction.makeFortifications(40));
 		when(r.isLand()).thenReturn(true);
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
 

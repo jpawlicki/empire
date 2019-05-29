@@ -1178,7 +1178,7 @@ class World implements GoodwillProvider {
 							ct = Construction.makeTemple(ideo, Math.max(0, Constants.baseCostTemple * costMod));
 						} else if (action.contains("Fortifications")) {
 							if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
-							ct = Construction.makeFortification(Math.max(0, Constants.baseCostFortifications * costMod));
+							ct = Construction.makeFortifications(Math.max(0, Constants.baseCostFortifications * costMod));
 						} else {
 							continue;
 						}
@@ -1203,7 +1203,7 @@ class World implements GoodwillProvider {
 							builds.add(region);
 							if (ct.type == Construction.Type.TEMPLE) templeBuilds.add(region);
 							if (ct.type == Construction.Type.FORTIFICATIONS && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
-								region.constructions.add(Construction.makeFortification(0));
+								region.constructions.add(Construction.makeFortifications(0));
 							}
 						} else {
 							notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
@@ -2049,7 +2049,7 @@ class World implements GoodwillProvider {
 				for (Region r : regions) r.crops *= .97;
 			}
 			if (tivar.quake) {
-				HashMap<String, HashMap<Construction.Type, Integer>> wreckage = new HashMap<>();
+				Map<String, Map<Construction.Type, Integer>> wreckage = new HashMap<>();
 				for (Region r : regions) {
 					ArrayList<Construction> destroyed = new ArrayList<>();
 					for (Construction c : r.constructions) {

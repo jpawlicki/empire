@@ -26,7 +26,7 @@ enum Culture {
 		return armyTags;
 	}
 	
-	private Culture(Religion religion, double nobleFraction, Army.Tag... tags) {
+	Culture(Religion religion, double nobleFraction, Army.Tag... tags) {
 		this.religion = religion;
 		this.nobleFraction = nobleFraction;
 		armyTags = Collections.unmodifiableList(Arrays.asList(tags));
