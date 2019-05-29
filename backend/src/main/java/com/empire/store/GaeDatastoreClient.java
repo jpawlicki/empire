@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 
 // TODO: Need a method to make multiple puts in the same transaction to maintain consistency if rollback happens
 
+/** DatastoreClient implementation using Google App Engine's DatastoreService */
 public class GaeDatastoreClient implements DatastoreClient{
     private static final Logger log = Logger.getLogger(GaeDatastoreClient.class.getName());
 
