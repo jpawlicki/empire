@@ -1,5 +1,6 @@
 package com.empire;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,12 +10,14 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class RegionTest {
     private static Region r;
     private static World w;
+    private static Rules rules;
     private static NationData n1;
     private static final double DELTA = 1E-5;
 
@@ -29,6 +32,11 @@ public class RegionTest {
 
     @Before
     public void setUpRegion() {
+				try { 
+					rules = Rules.loadRules(5);
+				} catch (IOException e) {
+					fail(e.getMessage());
+				}
         r = new Region();
 				r.type = Region.Type.LAND;
         r.setKingdomNoScore(k1);
@@ -42,6 +50,7 @@ public class RegionTest {
 
     private World mockWorld(Region r){
         World world = mock(World.class);
+				world.rules = rules;
         Region r1 = mockRegion(k1, Region.Type.LAND, Ideology.CHALICE_OF_COMPASSION);
         Region r2 = mockRegion(k1, Region.Type.LAND, Ideology.CHALICE_OF_COMPASSION);
         Region r3 = mockRegion(k1, Region.Type.LAND, Ideology.SWORD_OF_TRUTH);
@@ -115,19 +124,19 @@ public class RegionTest {
     @Test
     public void calcUnrestClericalNonIruhan(){
         r.religion = Ideology.ALYRJA;
-        assertEquals(0.0, r.calcUnrestClerical(unused -> -25), DELTA);
+        assertEquals(0.0, r.calcUnrestClerical(unused -> -25, rules), DELTA);
     }
 
     @Test
     public void calcUnrestVesselOfFaith(){
         r.religion = Ideology.VESSEL_OF_FAITH;
-        assertEquals(0.0, r.calcUnrestClerical(unused -> -25), DELTA);
+        assertEquals(0.0, r.calcUnrestClerical(unused -> -25, rules), DELTA);
     }
 
     @Test
     public void calcUnrestClericalIruhan(){
         r.religion = Ideology.SWORD_OF_TRUTH;
-        assertEquals(0.5, r.calcUnrestClerical(unused -> -50), DELTA);
+        assertEquals(0.5, r.calcUnrestClerical(unused -> -50, rules), DELTA);
     }
 
     @Test
@@ -146,13 +155,13 @@ public class RegionTest {
     @Test
     public void calcUnrestAll(){
         r.unrestPopular = unrestLower;
-        assertEquals(unrestLower, r.calcUnrest(unused -> -25), DELTA);
+        assertEquals(unrestLower, r.calcUnrest(unused -> -25, rules), DELTA);
 
         r.religion = Ideology.SWORD_OF_TRUTH;
         assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
 
         r.noble = mockNoble(null, unrestHigher);
-        assertEquals(unrestHigher, r.calcUnrest((unused -> -25)), DELTA);
+        assertEquals(unrestHigher, r.calcUnrest(unused -> -25, rules), DELTA);
     }
 
     @Test
@@ -163,13 +172,13 @@ public class RegionTest {
 
     @Test
     public void calcMinConquestStrengthNobleLoyal(){
-        r.noble = mockNoble(Rules.nobleLoyalTag, 0.0);
+        r.noble = mockNoble(rules.nobleLoyalTag, 0.0);
         assertEquals(10.5, r.calcMinConquestStrength(w), DELTA);
     }
 
     @Test
     public void calcMinConquestStrengthDesperate(){
-        r.noble = mockNoble(Rules.nobleDesperateTag, 0.0);
+        r.noble = mockNoble(rules.nobleDesperateTag, 0.0);
         assertEquals(0, r.calcMinConquestStrength(w), DELTA);
     }
 
@@ -194,7 +203,7 @@ public class RegionTest {
     @Test
     public void calcFortificationMod(){
         r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
-        assertEquals(0.3, r.calcFortificationMod(), DELTA);
+        assertEquals(0.3, r.calcFortificationMod(rules), DELTA);
     }
 
     @Test
@@ -219,13 +228,13 @@ public class RegionTest {
 
     @Test
     public void calcConsumptionNobleRationing(){
-        r.noble = mockNoble(Rules.nobleRationingTag, 0.0);
+        r.noble = mockNoble(rules.nobleRationingTag, 0.0);
         assertEquals(8E3, r.calcConsumption(w, 1.0), DELTA);
     }
 
     @Test
     public void calcConsumptionNobleWasteful(){
-        r.noble = mockNoble(Rules.nobleWastefulTag, 0.0);
+        r.noble = mockNoble(rules.nobleWastefulTag, 0.0);
         assertEquals(1.1E4, r.calcConsumption(w, 1.0), DELTA);
     }
 
@@ -260,7 +269,7 @@ public class RegionTest {
 
     @Test
     public void calcPirateThreatNoblePolicingZero(){
-        r.noble = mockNoble(Rules.noblePolicingTag, 0.0);
+        r.noble = mockNoble(rules.noblePolicingTag, 0.0);
         assertEquals(0.0, r.calcPirateThreat(w), DELTA);
     }
 
@@ -272,7 +281,7 @@ public class RegionTest {
 
     @Test
     public void calcPirateThreatNobleShady(){
-        r.noble = mockNoble(Rules.nobleShadyTag, 0.0);
+        r.noble = mockNoble(rules.nobleShadyTag, 0.0);
         assertEquals(0.625, r.calcPirateThreat(w), DELTA);
     }
 
@@ -302,7 +311,7 @@ public class RegionTest {
 			r.religion = Ideology.CHALICE_OF_COMPASSION;
 			r.population = 10000;
 			r.crops = 0;
-			r.plant(false);
+			r.plant(false, rules);
 			assertEquals(2000, r.crops, DELTA);
 		}
 
@@ -311,7 +320,7 @@ public class RegionTest {
 			r.religion = Ideology.ALYRJA;
 			r.population = 10000;
 			r.crops = 0;
-			r.plant(false);
+			r.plant(false, rules);
 			assertEquals(0, r.crops, DELTA);
 		}
 
@@ -319,7 +328,7 @@ public class RegionTest {
 		public void plantHarvestTurn() {
 			r.population = 10000;
 			r.crops = 0;
-			r.plant(true);
+			r.plant(true, rules);
 			assertEquals(130000, r.crops, DELTA);
 		}
 

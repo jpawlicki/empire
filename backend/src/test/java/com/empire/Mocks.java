@@ -1,6 +1,8 @@
 package com.empire;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -25,11 +27,11 @@ class Mocks {
 
     public static Character character(double general, double admiral, double governor, double spy) {
         Character c = mock(Character.class);
-        c.captor = Rules.noCaptor;
-        when(c.getExperience(Rules.charDimGeneral)).thenReturn(general);
-        when(c.getExperience(Rules.charDimAdmiral)).thenReturn(admiral);
-        when(c.getExperience(Rules.charDimGovernor)).thenReturn(governor);
-        when(c.getExperience(Rules.charDimSpy)).thenReturn(spy);
+        c.captor = rules.noCaptor;
+        when(c.getExperience(rules.charDimGeneral)).thenReturn(general);
+        when(c.getExperience(rules.charDimAdmiral)).thenReturn(admiral);
+        when(c.getExperience(rules.charDimGovernor)).thenReturn(governor);
+        when(c.getExperience(rules.charDimSpy)).thenReturn(spy);
         return c;
     }
 

@@ -1,5 +1,6 @@
 package com.empire;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -10,6 +11,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -18,6 +20,7 @@ import static org.mockito.Mockito.when;
 public class ArmyTest {
 	private static Army a;
 	private static World w;
+	private static Rules rules;
 	private static NationData n1;
 	private static final double DELTA = 1E-5;
 
@@ -26,6 +29,12 @@ public class ArmyTest {
 
 	@Before
 	public void setUpPlainArmy() {
+		try { 
+			rules = Rules.loadRules(5);
+		} catch (IOException e) {
+			fail(e.getMessage());
+		}
+
 		a = new Army();
 		a.type = Army.Type.ARMY;
 		a.size = 100.0;
@@ -39,6 +48,7 @@ public class ArmyTest {
 
 	private World mockWorld() {
 		World w = mock(World.class);
+		w.rules = rules;
 		w.notifications = new ArrayList<>();
 
 		n1 = mock(NationData.class);
@@ -55,7 +65,7 @@ public class ArmyTest {
 
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
-		r2.noble = Mocks.noble(Rules.nobleLoyalTag, 0.0);
+		r2.noble = Mocks.noble(rules.nobleLoyalTag, 0.0);
 		w.regions = Arrays.asList(r1, r2);
 		return w;
 	}
@@ -99,7 +109,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
-		a.kingdom = Rules.pirateKingdom;
+		a.kingdom = rules.pirateKingdom;
 		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -113,13 +123,13 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthFortificationNavy() {
 		a.type = Army.Type.NAVY;
-		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
 		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortificationWater() {
-		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(false);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -127,13 +137,13 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthFortificationNotFriendly() {
 		a.kingdom = k2;
-		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortification() {
-		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(true);
 		assertEquals(1.3, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -210,7 +220,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthGeneral() {
 		Character c = Mocks.character(3.0);
-		when(c.calcLevel(Rules.charDimGeneral)).thenReturn(2);
+		when(c.calcLevel(rules.charDimGeneral)).thenReturn(2);
 		assertEquals(1.4, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
@@ -218,7 +228,7 @@ public class ArmyTest {
 	public void calcStrengthAdmiral() {
 		a.type = Army.Type.NAVY;
 		Character c = Mocks.character(3.0);
-		when(c.calcLevel(Rules.charDimAdmiral)).thenReturn(2);
+		when(c.calcLevel(rules.charDimAdmiral)).thenReturn(2);
 		assertEquals(140.0, a.calcStrength(w, c, 0, false), DELTA);
 	}
 

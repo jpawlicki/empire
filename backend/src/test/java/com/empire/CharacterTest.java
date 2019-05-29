@@ -1,17 +1,20 @@
 package com.empire;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class CharacterTest {
     private Character c;
     private static World w;
+    private static Rules rules;
     private static NationData n1;
     private static Region r1;
     private static final double DELTA = 1E-5;
@@ -20,6 +23,11 @@ public class CharacterTest {
 
     @Before
     public void createCharacter() {
+				try { 
+					rules = Rules.loadRules(5);
+				} catch (IOException e) {
+					fail(e.getMessage());
+				}
         c = new Character();
         c.kingdom = k1;
         setExperience(0.0);
@@ -29,6 +37,7 @@ public class CharacterTest {
 
     private World mockWorld(){
         World world = mock(World.class);
+				world.rules = rules;
 
         n1 = mock(NationData.class);
         when(world.getNation(k1)).thenReturn(n1);
@@ -44,10 +53,10 @@ public class CharacterTest {
     }
 
     private void setExperience(double general, double admiral, double governor, double spy) {
-        c.experience.put(Rules.charDimGeneral, general);
-        c.experience.put(Rules.charDimAdmiral, admiral);
-        c.experience.put(Rules.charDimGovernor, governor);
-        c.experience.put(Rules.charDimSpy, spy);
+        c.experience.put(rules.charDimGeneral, general);
+        c.experience.put(rules.charDimAdmiral, admiral);
+        c.experience.put(rules.charDimGovernor, governor);
+        c.experience.put(rules.charDimSpy, spy);
     }
 
     private void addHeroicTag() {
@@ -55,10 +64,10 @@ public class CharacterTest {
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {
-        assertEquals(general, c.getExperience(Rules.charDimGeneral), DELTA);
-        assertEquals(admiral, c.getExperience(Rules.charDimAdmiral), DELTA);
-        assertEquals(governor, c.getExperience(Rules.charDimGovernor), DELTA);
-        assertEquals(spy, c.getExperience(Rules.charDimSpy), DELTA);
+        assertEquals(general, c.getExperience(rules.charDimGeneral), DELTA);
+        assertEquals(admiral, c.getExperience(rules.charDimAdmiral), DELTA);
+        assertEquals(governor, c.getExperience(rules.charDimGovernor), DELTA);
+        assertEquals(spy, c.getExperience(rules.charDimSpy), DELTA);
     }
 
     @Test
@@ -67,76 +76,76 @@ public class CharacterTest {
 
         for(int level = 1; level <= 5; level++) {
             setExperience(expLevel.get(level-1));
-            assertEquals(level, c.calcLevel(Rules.charDimGeneral));
-            assertEquals(level, c.calcLevel(Rules.charDimAdmiral));
-            assertEquals(level, c.calcLevel(Rules.charDimGovernor));
-            assertEquals(level, c.calcLevel(Rules.charDimSpy));
+            assertEquals(level, c.calcLevel(rules.charDimGeneral));
+            assertEquals(level, c.calcLevel(rules.charDimAdmiral));
+            assertEquals(level, c.calcLevel(rules.charDimGovernor));
+            assertEquals(level, c.calcLevel(rules.charDimSpy));
         }
     }
 
     @Test
     public void addExperienceGeneralRegular() {
-        c.addExperience(Rules.charDimGeneral, w);
+        c.addExperience(rules.charDimGeneral, w);
         assertDimsExpEqual(1.0, 0.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceAdmirallRegular() {
-        c.addExperience(Rules.charDimAdmiral, w);
+        c.addExperience(rules.charDimAdmiral, w);
         assertDimsExpEqual(0.0, 1.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceGovernorRegular() {
-        c.addExperience(Rules.charDimGovernor, w);
+        c.addExperience(rules.charDimGovernor, w);
         assertDimsExpEqual(0.0, 0.0, 1.0, 0.0);
     }
 
     @Test
     public void addExperienceSpyRegular() {
-        c.addExperience(Rules.charDimSpy, w);
+        c.addExperience(rules.charDimSpy, w);
         assertDimsExpEqual(0.0, 0.0, 0.0, 1.0);
 
     }
 
     @Test
     public void addExperienceAllRegular() {
-        c.addExperience(Rules.charDimAll, w);
+        c.addExperience(rules.charDimAll, w);
         assertDimsExpEqual(0.25, 0.25, 0.25, 0.25);
     }
 
     @Test
     public void addExperienceGeneralHeroic() {
         addHeroicTag();
-        c.addExperience(Rules.charDimGeneral, w);
+        c.addExperience(rules.charDimGeneral, w);
         assertDimsExpEqual(2.0, 0.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceAdmiralHeroic() {
         addHeroicTag();
-        c.addExperience(Rules.charDimAdmiral, w);
+        c.addExperience(rules.charDimAdmiral, w);
         assertDimsExpEqual(0.0, 2.0, 0.0, 0.0);
     }
 
     @Test
     public void addExperienceGovernorHeroic() {
         addHeroicTag();
-        c.addExperience(Rules.charDimGovernor, w);
+        c.addExperience(rules.charDimGovernor, w);
         assertDimsExpEqual(0.0, 0.0, 2.0, 0.0);
     }
 
     @Test
     public void addExperienceSpyHeroic() {
         addHeroicTag();
-        c.addExperience(Rules.charDimSpy, w);
+        c.addExperience(rules.charDimSpy, w);
         assertDimsExpEqual(0.0, 0.0, 0.0, 2.0);
     }
 
     @Test
     public void addExperienceAllHeroic() {
         addHeroicTag();
-        c.addExperience(Rules.charDimAll, w);
+        c.addExperience(rules.charDimAll, w);
         assertDimsExpEqual(0.5, 0.5, 0.5, 0.5);
     }
 
