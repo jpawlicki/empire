@@ -2,6 +2,8 @@ package com.empire.store;
 
 import java.util.Set;
 
+// TODO: consider changing active games to get, add(long), delete(long)
+
 public interface DatastoreClient {
      Player getPlayer(String email);
      boolean putPlayer(Player player);

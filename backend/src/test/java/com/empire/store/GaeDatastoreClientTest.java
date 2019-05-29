@@ -5,7 +5,9 @@ import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,5 +116,14 @@ public class GaeDatastoreClientTest {
         assertNull(null, client.getLogin(email, gameId, date));
         assertTrue(client.putLogin(email, gameId, date));
         assertEquals(login, client.getLogin(email, gameId, date));
+    }
+
+    @Test
+    public void activeGamesNormalRoundtripTest(){
+        Set<Long> activeGames = new HashSet<>(Arrays.asList(0L, 1L, 2L, 3L, 4L));
+
+        assertTrue(client.getActiveGames().isEmpty());
+        assertTrue(client.putActiveGames(activeGames));
+        assertEquals(activeGames, client.getActiveGames());
     }
 }
