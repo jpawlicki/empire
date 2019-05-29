@@ -273,7 +273,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             return gson.fromJson(jsonStr, listType);
         } catch (EntityNotFoundException e) {
             log.info("Unable to retrieve active games with key " + createActiveGamesKey());
-            return null;
+            return Collections.emptySet();
         }
     }
 
