@@ -33,8 +33,8 @@ class Nation {
 		public String security = "";
 		public String riches = "";
 		public String culture = "";
-		public String trait1 = "";
-		public String trait2 = "";
+		public NationData.Tag trait1;
+		public NationData.Tag trait2;
 		public Ideology dominantIdeology;
 		public String bonus = "";
 		public String email = "";

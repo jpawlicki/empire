@@ -31,24 +31,9 @@ public class Constants {
     public static final double armyBaseStrength = 1E-2;
     public static final double navyBaseStrength = 1.0;
 
-    public static final String armySteelTag = "Steel";
     public static final double steelMod = 0.15;
-
-    public static final String armyFormationsTag = "Formations";
-
-    public static final String armyPillagersTag = "Pillagers";
     public static final double armyPillagersRecruitmentMod = -0.75;
-
-    public static final String armyRaidersTag = "Raiders";
-
-    public static final String armySeafaringTag = "Seafaring";
     public static final double seafaringMod = 1.5;
-
-    public static final String armyImpressmentTag = "Impressment";
-    public static final String armyWeatheredTag = "Weathered";
-    public static final String armyPathfindersTag = "Pathfinders";
-    public static final String armyRidersTag = "Riders";
-    public static final String armyCraftsSoldiersTag = "Crafts-soldiers";
 
     public static final String pirateKingdom = "Pirate";
 
@@ -146,27 +131,21 @@ public class Constants {
     public static final String nationHeroicTag = "Heroic";
     public static final double heroicExpMultiplier = 2.0;
 
-    public static final String nationDisciplinedTag = "Disciplined";
     public static final double disciplinedMod = 0.1;
 
-    public static final String nationCoastDwellingTag = "Coast-Dwelling";
     public static final double coastDwellingRecruitMod = 0.12;
     public static final double coastDwellingTaxMod = 0.12;
 
-    public static final String nationPatrioticTag = "Patriotic";
     public static final double patrioticMod = 0.15;
     public static final double patrioticArmyShare = 0.15;
 
-    public static final String nationWarlikeTag = "War-like";
     public static final double perConquestWarlikeRecruitmentMod = 0.05;
     public static final double perConquestWarlikeTaxMod = 0.05;
     public static final double warlikeArmyShare = 0.15;
 
-    public static final String nationMercantileTag = "Mercantile";
     public static final double mercantileTaxMod = 0.15;
     public static final double mercantileGoldShare = 0.5;
 
-    public static final String nationStoicTag = "Stoic";
     public static final double stoicConqStrengthMod = 0.75;
 
     // Regions
@@ -174,7 +153,6 @@ public class Constants {
     public static final double taxPerPop = 1.0 / 10000.0;
     public static final double unrestRecruitmentEffectThresh = 0.25;
     public static final double unrestTaxEffectThresh = 0.25;
-    public static final String constFort = "fortifications";
 
     public static final double harvestPerCitizen = 25;
     public static final double plantsPerCitizen = 13;
@@ -184,7 +162,6 @@ public class Constants {
     public static final double setupCropsPerCitizen = 7.5;
     public static final double perFortMod = 0.15;
     public static final double maxFortMod = 5.0;
-    public static final String constTemple = "temple";
 
     public static final double clericalUnrestGoodwillFactor = 1E-2;
 
@@ -193,4 +170,8 @@ public class Constants {
     public static final double plotDecayNonFriendly = 0.8;
 
     public static final double pirateThreatDoubleGold = 30;
+
+    public static final double baseCostFortifications = 20;
+    public static final double baseCostShipyard = 80;
+    public static final double baseCostTemple = 30;
 }

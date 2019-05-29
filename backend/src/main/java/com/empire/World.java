@@ -375,10 +375,7 @@ class World implements GoodwillProvider {
 			for (Region r : w.regions) if (kingdom.equals(r.getKingdom()) && r.isCoastal(w)) regions.add(r);
 			if (!regions.isEmpty()) {
 				for (int i = 0; i < shipyardsPerNation; i++) {
-					Construction c = new Construction();
-					c.type = "shipyard";
-					c.originalCost = 80;
-					regions.get((int)(Math.random() * regions.size())).constructions.add(c);
+					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(Constants.baseCostShipyard));
 				}
 			}
 		}
@@ -892,7 +889,7 @@ class World implements GoodwillProvider {
 						}
 						if (src == target) continue;
 						if (target == null || src == null || target.location != src.location || !target.kingdom.equals(k) || !src.kingdom.equals(k) || !src.type.equals(target.type)) throw new RuntimeException("Cannot execute " + k + ": " + o + ": " + order);
-						if (src.hasTag("Undead") != target.hasTag("Undead")) continue;
+						if (src.hasTag(Army.Tag.UNDEAD) != target.hasTag(Army.Tag.UNDEAD)) continue;
 						if (!src.tags.equals(target.tags)) {
 							double threatIncrease = src.size * 0.33 * (src.isArmy() ? 1.0 / 100 : 1);
 							pirate.threat += threatIncrease;
@@ -937,7 +934,7 @@ class World implements GoodwillProvider {
 
 		void orderOverrides() {
 			for (Army army : armies) {
-				if (army.hasTag("Higher Power")) {
+				if (army.hasTag(Army.Tag.HIGHER_POWER)) {
 					// If they are adjacent to a special region, move into it, regardless of other orders.
 					String originalOrder = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
 					for (Region r : regions.get(army.location).getNeighbors(World.this)) {
@@ -946,7 +943,7 @@ class World implements GoodwillProvider {
 					if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifications.add(new Notification(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!"));
 				}
 				if (abdications.contains(army.kingdom)) {
-					if (army.hasTag("Higher Power")) {
+					if (army.hasTag(Army.Tag.HIGHER_POWER)) {
 						army.kingdom = "Pirate";
 					} else {
 						orders.get(army.kingdom).put("action_army_" + army.id, "Disband");
@@ -1028,7 +1025,7 @@ class World implements GoodwillProvider {
 						notifications.add(new Notification(army.kingdom, "Soldiers To " + target, target + " has refused to accept responsibility for our soldiers."));
 					}
 				} else if (action.startsWith("Disband")) {
-					if (army.hasTag("Higher Power")) continue;
+					if (army.hasTag(Army.Tag.HIGHER_POWER)) continue;
 					double threatIncrease = 0;
 					if (region.isLand()) {
 						addPopulation(region, army.size * .67);
@@ -1055,7 +1052,7 @@ class World implements GoodwillProvider {
 					}
 					if (stopped) continue;
 					double slain = Math.min(region.population - 1, army.size * 10);
-					if (army.hasTag("Undead")) army.size += slain / 10;
+					if (army.hasTag(Army.Tag.UNDEAD)) army.size += slain / 10;
 					region.unrestPopular = Math.min(1, region.unrestPopular + 3 * slain / region.population);
 					getNation(army.kingdom).goodwill -= 200;
 					addPopulation(region, -slain);
@@ -1081,7 +1078,7 @@ class World implements GoodwillProvider {
 		void armyActionsTravel() {
 			for (Army army : armies) {
 				String action = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
-				if (army.hasTag("Unpredictable")) {
+				if (army.hasTag(Army.Tag.UNPREDICTABLE)) {
 					List<Region> n = new ArrayList<>(regions.get(army.location).getNeighbors(World.this));
 					ArrayList<Region> except = new ArrayList<>();
 					for (Region r : n) if (r.isSea()) except.add(r);
@@ -1104,8 +1101,8 @@ class World implements GoodwillProvider {
 				Preparation prep = null;
 				for (Preparation p : army.preparation) if (p.to == toId) prep = p;
 				int travelAmount = 1;
-				if (army.hasTag("Riders")) travelAmount = 2;
-				if (army.hasTag("Pathfinders") && regions.get(toId).getKingdom() != null && NationData.isFriendly(army.kingdom, regions.get(toId).getKingdom(), World.this)) travelAmount = 3;
+				if (army.hasTag(Army.Tag.RIDERS)) travelAmount = 2;
+				if (army.hasTag(Army.Tag.PATHFINDERS) && regions.get(toId).getKingdom() != null && NationData.isFriendly(army.kingdom, regions.get(toId).getKingdom(), World.this)) travelAmount = 3;
 				if (prep == null) {
 					prep = new Preparation();
 					prep.to = toId;
@@ -1179,39 +1176,36 @@ class World implements GoodwillProvider {
 					if (!c.kingdom.equals(region.getKingdom()) && getNation(region.getKingdom()).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
 						notifications.add(new Notification(c.kingdom, "Construction Failed", region.getKingdom() + " does not permit us to build in " + region.name + "."));
 					} else {
-						double cost = 0;
 						double costMod = 1;
-						Construction ct = new Construction();
+						if (getNation(c.kingdom).hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
+						if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
+						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
+						Construction ct;
 						if (action.contains("Shipyard")) {
-							ct.type = "shipyard";
-							cost = 80;
+							ct = Construction.makeShipyard(Math.max(0, Constants.baseCostShipyard * costMod));
 						} else if (action.contains("Temple")) {
-							ct.type = "temple";
-							ct.religion = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
-							cost = 30;
-							if (getNation(c.kingdom).hasTag("Mystical")) costMod -= .5;
-							if (getNation(c.kingdom).hasTag("Evangelical") && region.religion != NationData.getStateReligion(c.kingdom, World.this)) costMod -= 1;
-							if (ct.religion.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
+							Ideology ideo = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
+							if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) costMod -= .5;
+							if (getNation(c.kingdom).hasTag(NationData.Tag.EVANGELICAL) && region.religion != NationData.getStateReligion(c.kingdom, World.this)) costMod -= 1;
+							if (ideo.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
 							if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
 								boolean templeBonus = true;
 								for (Region r : region.getNeighbors(World.this)) if (r.isLand() && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
 								if (templeBonus) costMod -= 1;
 							}
+							ct = Construction.makeTemple(ideo, Math.max(0, Constants.baseCostTemple * costMod));
 						} else if (action.contains("Fortifications")) {
-							ct.type = "fortifications";
-							cost = 20;
 							if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
+							ct = Construction.makeFortifications(Math.max(0, Constants.baseCostFortifications * costMod));
+						} else {
+							continue;
 						}
-						if (getNation(c.kingdom).hasTag("Industrial")) costMod -= .25;
-						if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
-						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
-						cost *= Math.max(0, costMod);
-						ct.originalCost = cost;
+						double cost = ct.originalCost;
 						if (cost <= getNation(c.kingdom).gold) {
 							getNation(c.kingdom).gold -= cost;
 							incomeSources.getOrDefault(c.kingdom, new Budget()).spentConstruction += cost;
 							region.constructions.add(ct);
-							if (ct.type.equals("temple")) {
+							if (ct.type == Construction.Type.TEMPLE) {
 								Ideology r = region.religion;
 								region.setReligion(ct.religion, World.this);
 								if (r != Ideology.VESSEL_OF_FAITH && region.religion == Ideology.VESSEL_OF_FAITH) {
@@ -1219,18 +1213,15 @@ class World implements GoodwillProvider {
 										for (Region rr : regions) if (kingdom.equals(rr.getKingdom())) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
 									}
 								}
-								if (getNation(c.kingdom).hasTag("Mystical")) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
+								if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
 								if (ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill -= 20;
 								else if (ct.religion != Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += 15;
 							}
-							if (ct.type.equals("shipyard") && getNation(c.kingdom).hasTag("Ship-Building")) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
+							if (ct.type == Construction.Type.SHIPYARD && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
 							builds.add(region);
-							if (ct.type.equals("temple")) templeBuilds.add(region);
-							if (ct.type.equals("fortifications") && getNation(c.kingdom).hasTag("Defensive")) {
-								Construction c2 = new Construction();
-								c2.type = "fortifications";
-								c2.originalCost = 0;
-								region.constructions.add(c2);
+							if (ct.type == Construction.Type.TEMPLE) templeBuilds.add(region);
+							if (ct.type == Construction.Type.FORTIFICATIONS && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
+								region.constructions.add(Construction.makeFortifications(0));
 							}
 						} else {
 							notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
@@ -1273,7 +1264,7 @@ class World implements GoodwillProvider {
 						c.name + " attempted a daring escape at the last moment, but was unable to get free."
 					};
 					notification += flavor[(int)(Math.random() * flavor.length)];
-					if (getNation(c.captor).hasTag("Bloodthirsty") && region.getKingdom().equals(c.captor)) {
+					if (getNation(c.captor).hasTag(NationData.Tag.BLOODTHIRSTY) && region.getKingdom().equals(c.captor)) {
 						getNation(c.captor).gold += 300;
 						incomeSources.getOrDefault(c.captor, new Budget()).incomeExecution += 300;
 						notification += " The inhabitants of " + c.captor + " celebrated the event with offerings to their ruler.";
@@ -1328,8 +1319,8 @@ class World implements GoodwillProvider {
 						a.kingdom = kingdom;
 						a.composition.put("Undead", a.size);
 						a.orderhint = "";
-						a.addTag("Undead");
-						a.addTag("Higher Power");
+						a.addTag(Army.Tag.UNDEAD);
+						a.addTag(Army.Tag.HIGHER_POWER);
 						armies.add(a);
 						notifyAllPlayers(kingdom + " Joins Cult", "Throughout " + kingdom + ", the dead crawl forth from their graves, animated by some ancient magic. Meats of unknown origin begin to appear in butchershops, and the shambling sight of a corpse searching for an unknown quarry becomes commonplace. A skeletal army gathers in " + regions.get(spawnRegion).name + ".");
 					}
@@ -1373,8 +1364,8 @@ class World implements GoodwillProvider {
 						a.kingdom = "Pirate";
 						a.composition.put("Pirate", a.size);
 						a.orderhint = "";
-						a.addTag("Pillagers");
-						a.addTag("Unpredictable");
+						a.addTag(Army.Tag.PILLAGERS);
+						a.addTag(Army.Tag.UNPREDICTABLE);
 						armies.add(a);
 						piratesSpawned += a.size;
 						pirateNotes.add(regions.get(i).name);
@@ -1403,20 +1394,20 @@ class World implements GoodwillProvider {
 				for (Army a : localArmies) {
 					double enemyStrength = 0;
 					for (Army b : localArmies) {
-						if (NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) && (!a.hasTag("Higher Power") || !b.hasTag("Higher Power"))) enemyStrength += Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor);
+						if (NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) && (!a.hasTag(Army.Tag.HIGHER_POWER) || !b.hasTag(Army.Tag.HIGHER_POWER))) enemyStrength += Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor);
 					}
 					if (enemyStrength == 0) continue;
 					double cf = enemyStrength / totalArmyStrength;
-					if (a.hasTag("Formations") && cf > .45 && cf < .9) cf = .45;
+					if (a.hasTag(Army.Tag.FORMATIONS) && cf > .45 && cf < .9) cf = .45;
 					if (region.getKingdom() != null && NationData.isFriendly(region.getKingdom(), a.kingdom, World.this)) {
 						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortificationMod())));
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
 					for (Army b : localArmies) {
-						if (!NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) || (a.hasTag("Higher Power") && b.hasTag("Higher Power"))) continue;
+						if (!NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) || (a.hasTag(Army.Tag.HIGHER_POWER) && b.hasTag(Army.Tag.HIGHER_POWER))) continue;
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
-						if (a.isArmy() && b.hasTag("Impressment")) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
+						if (a.isArmy() && b.hasTag(Army.Tag.IMPRESSMENT)) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
 						if (getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill <= -75) getNation(b.kingdom).goodwill += 3 * a.size / 100 * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
 					}
@@ -1429,7 +1420,7 @@ class World implements GoodwillProvider {
 					if (!"Pirate".equals(c.kingdom)) nonPirateBelligerents.add(c.kingdom);
 					double cf = casualties.get(c);
 					double lost = cf * c.size;
-					if (!c.hasTag("Undead")) dead += lost;
+					if (!c.hasTag(Army.Tag.UNDEAD)) dead += lost;
 					if (cf >= 1) {
 						armies.remove(c);
 					} else {
@@ -1484,7 +1475,7 @@ class World implements GoodwillProvider {
 					}
 				}
 				ArrayList<Army> localUndeadArmies = new ArrayList<>();
-				for (Army a : localArmies) if (a.hasTag("Undead") && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
+				for (Army a : localArmies) if (a.hasTag(Army.Tag.UNDEAD) && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
 				if (localUndeadArmies.size() > 0) {
 					battleDetails += ", " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult";
 					double raised = dead / 2 / localUndeadArmies.size();
@@ -1551,22 +1542,22 @@ class World implements GoodwillProvider {
 				double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
 				if (ration < 0.9) unrestMod += .15;
 				if (ration > 1.1) unrestMod -= .1;
-				if (getNation(r.getKingdom()).hasTag("Republican")) unrestMod -= .03;
+				if (getNation(r.getKingdom()).hasTag(NationData.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.noble != null && r.noble.hasTag("Soothing")) unrestMod -= .06;
 				if (r.noble != null && r.noble.hasTag("Workaholic")) unrestMod += .03;
 				if (r.noble != null && r.noble.hasTag("Generous") && isHarvestTurn()) unrestMod -= .5;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
 				if (Ideology.ALYRJA == r.religion && r.food < turnsUntilHarvest() * r.calcConsumption(World.this, 1)) unrestMod += .03;
 				if (Ideology.RJINKU == r.religion && !battlingNations.contains(r.getKingdom())) unrestMod += .02;
-				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag("Imperialistic")) {
+				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag(NationData.Tag.IMPERIALISTIC)) {
 					int tributeC = 0;
 					for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom())) tributeC++;
 					unrestMod -= 0.03 * tributeC;
 				}
 				if (r.getKingdom() != null && !NationData.UNRULED_NAME.equals(r.getKingdom())) {
-					for (String k : tributes.get(r.getKingdom())) if (getNation(k).hasTag("Imperialistic")) unrestMod -= 0.03;
+					for (String k : tributes.get(r.getKingdom())) if (getNation(k).hasTag(NationData.Tag.IMPERIALISTIC)) unrestMod -= 0.03;
 				}
-				for (Construction c : r.constructions) if (c.type.equals("temple")) unrestMod -= 0.02;
+				for (Construction c : r.constructions) if (c.type == Construction.Type.TEMPLE) unrestMod -= 0.02;
 				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
 
 				if (r.noble != null && r.noble.hasTag("Snubbed")) r.noble.unrest = Math.min(1, r.noble.unrest + .02);
@@ -1591,7 +1582,7 @@ class World implements GoodwillProvider {
 				for (Region n : neighboringEnemies) {
 					if (Math.random() < 0.5) continue;
 					for (Construction c : n.constructions) {
-						if (c.type.equals("fortification")) {
+						if (c.type == Construction.Type.FORTIFICATIONS) {
 							n.constructions.remove(c);
 							notifications.add(new Notification(n.getKingdom(), "Sabotage in " + n.name, k + " saboteurs have destroyed a fortification in " + n.name + ", claiming it was the will of Iruhan."));
 							notifications.add(new Notification(k, "Friendly sabotage in " + n.name, "Civilian saboteurs loyal to us have destroyed a fortification in " + n.name + ", a region of " + n.getKingdom() + ", claiming it was the will of Iruhan."));
@@ -1666,7 +1657,7 @@ class World implements GoodwillProvider {
 					String whoTaxes = r.getKingdom();
 					double income = r.calcTaxIncome(World.this, governors.get(r), taxationRates.getOrDefault(r.getKingdom(), 1.0), rationing.getOrDefault(r.getKingdom(), 1.0));
 					Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
-					if (max != null && !NationData.isFriendly(max.kingdom, r.getKingdom(), World.this) && max.hasTag("Pillagers")) {
+					if (max != null && !NationData.isFriendly(max.kingdom, r.getKingdom(), World.this) && max.hasTag(Army.Tag.PILLAGERS)) {
 						max.gold += income;
 					} else {
 						incomeSources.getOrDefault(r.getKingdom(), new Budget()).incomeTax += income;
@@ -1723,7 +1714,7 @@ class World implements GoodwillProvider {
 			for (String k : kingdoms.keySet()) {
 				double seaMods = 1;
 				if (NationData.getStateReligion(k, World.this) == Ideology.SYRJEN) seaMods += 1;
-				if (getNation(k).hasTag("Seafaring")) seaMods += 1/3.0;
+				if (getNation(k).hasTag(NationData.Tag.SEAFARING)) seaMods += 1/3.0;
 				incomeSources.getOrDefault(k, new Budget()).incomeSea *= seaMods;
 			}
 		}
@@ -1777,8 +1768,8 @@ class World implements GoodwillProvider {
 			HashMap<String, Double> shares = new HashMap<>();
 			for (String k : foodBalance.keySet()) if (foodBalance.get(k) > 0) shares.put(k, shares.getOrDefault(k, 0.0) + foodBalance.get(k) / totalMeasuresDeficit);
 			double totalGoodwill = 0;
-			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) totalGoodwill += getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag("Holy")) ? 2 : 1);
-			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) shares.put(k, shares.getOrDefault(k, 0.0) + getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag("Holy")) ? 2 : 1) * 2 / totalGoodwill);
+			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) totalGoodwill += getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag(NationData.Tag.HOLY)) ? 2 : 1);
+			for (String k : kingdoms.keySet()) if (getNation(k).goodwill > 0) shares.put(k, shares.getOrDefault(k, 0.0) + getNation(k).goodwill * ((getDominantIruhanIdeology().equals(NationData.getStateReligion(k, World.this)) && getNation(k).hasTag(NationData.Tag.HOLY)) ? 2 : 1) * 2 / totalGoodwill);
 			double totalShares = 0;
 			for (String k : shares.keySet()) totalShares += shares.get(k);
 			for (String k : shares.keySet()) incomeSources.getOrDefault(k, new Budget()).incomeChurch += shares.get(k) / totalShares * churchIncome;
@@ -1861,16 +1852,16 @@ class World implements GoodwillProvider {
 			HashMap<String, Double> payments = new HashMap<String, Double>();
 			for (Army a : armies) {
 				if ("Pirate".equals(a.kingdom)) continue;
-				if (a.hasTag("Higher Power")) continue;
+				if (a.hasTag(Army.Tag.HIGHER_POWER)) continue;
 				double cost = a.size;
 				double mods = 1;
 				if (a.isArmy()) cost *= 1.0 / 100;
 				else cost *= 1 / 3.0;
-				if (a.hasTag("Crafts-soldiers") && !orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, "").startsWith("Travel ")) {
+				if (a.hasTag(Army.Tag.CRAFTS_SOLDIERS) && !orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, "").startsWith("Travel ")) {
 					mods -= 0.5;
 				}
 				if (Ideology.COMPANY == NationData.getStateReligion(a.kingdom, World.this)) mods -= 0.5;
-				if (getNation(a.kingdom).hasTag("Rebellious") && getNation(a.kingdom).coreRegions.contains(a.location)) {
+				if (getNation(a.kingdom).hasTag(NationData.Tag.REBELLIOUS) && getNation(a.kingdom).coreRegions.contains(a.location)) {
 					mods -= 0.5;
 				}
 				cost = Math.max(0, cost * mods);
@@ -1883,7 +1874,7 @@ class World implements GoodwillProvider {
 					incomeSources.getOrDefault(k, new Budget()).spentSoldiers = getNation(k).gold;
 					getNation(k).gold = 0;
 					for (Army a : armies) if (a.kingdom.equals(k)) {
-						if (a.hasTag("Higher Power")) continue;
+						if (a.hasTag(Army.Tag.HIGHER_POWER)) continue;
 						double des = a.size * desertion;
 						a.size -= des;
 						double threatIncrease = a.isNavy() ? des : des / 100;
@@ -1901,7 +1892,7 @@ class World implements GoodwillProvider {
 
 		void reapHarvests() {
 			Set<String> stoicNations = new HashSet<>();
-			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag("Stoic")) stoicNations.add(k);
+			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag(NationData.Tag.STOIC)) stoicNations.add(k);
 			if (isHarvestTurn()) {
 				for (Region r : regions) r.harvest(stoicNations, World.this);
 			}
@@ -1932,7 +1923,7 @@ class World implements GoodwillProvider {
 				if (NationData.UNRULED_NAME.equals(r.getKingdom())) continue;
 				int shipyards = 0;
 				for (Construction c: r.constructions) {
-					if ("shipyard".equals(c.type)) shipyards++;
+					if (c.type == Construction.Type.SHIPYARD) shipyards++;
 				}
 				if (shipyards > 0) {
 					Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
@@ -1945,12 +1936,12 @@ class World implements GoodwillProvider {
 				double signingBonus = Double.parseDouble(orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_recruit_bonus", "0"));
 				double soldiers = 0;
 				double likelyRecruits = 0;
-				for (Army a : armies) if (k.equals(a.kingdom) && !a.hasTag("Higher Power")) soldiers += a.size;
+				for (Army a : armies) if (k.equals(a.kingdom) && !a.hasTag(Army.Tag.HIGHER_POWER)) soldiers += a.size;
 				for (Region r : regions) if (k.equals(r.getKingdom())) likelyRecruits += r.calcRecruitment(World.this, governors.get(r), signingBonus, battlingNations.contains(r.getKingdom()), rationing.getOrDefault(r.getKingdom(), 1.0), getMaxArmyInRegion(regions.indexOf(r), leaders, inspires, lastStands));
 				if (signingBonus > 0 && (soldiers + likelyRecruits) / 100 * signingBonus > getNation(k).gold) signingBonus = getNation(k).gold * 100 / (soldiers + likelyRecruits);
 				if (signingBonus > 0 && signingBonus < 1) signingBonus = 0;
 				if (signingBonus > 0) {
-					for (Army a : armies) if (k.equals(a.kingdom) && !a.hasTag("Higher Power")) {
+					for (Army a : armies) if (k.equals(a.kingdom) && !a.hasTag(Army.Tag.HIGHER_POWER)) {
 						getNation(k).gold -= signingBonus * a.size / 100;
 						incomeSources.getOrDefault(k, new Budget()).spentRecruits += signingBonus * a.size / 100;
 					}
@@ -1965,11 +1956,11 @@ class World implements GoodwillProvider {
 						getNation(k).gold -= signingBonus * recruits / 100;
 						incomeSources.getOrDefault(k, new Budget()).spentRecruits += signingBonus * recruits / 100;
 					}
-					List<String> tags = r.getArmyTags();
+					List<Army.Tag> tags = r.getArmyTags();
 					Army merge = null;
 					outer: for (Army a : armies) {
 						if (a.location == i && a.isArmy() && a.kingdom.equals(k)) {
-							for (String t : tags) if (!a.hasTag(t)) continue outer;
+							for (Army.Tag t : tags) if (!a.hasTag(t)) continue outer;
 							merge = a;
 							break;
 						}
@@ -2086,7 +2077,7 @@ class World implements GoodwillProvider {
 				for (Region r : regions) r.crops *= .97;
 			}
 			if (tivar.quake) {
-				HashMap<String, HashMap<String, Integer>> wreckage = new HashMap<>();
+				Map<String, Map<Construction.Type, Integer>> wreckage = new HashMap<>();
 				for (Region r : regions) {
 					ArrayList<Construction> destroyed = new ArrayList<>();
 					for (Construction c : r.constructions) {
@@ -2094,7 +2085,7 @@ class World implements GoodwillProvider {
 					}
 					for (Construction c : destroyed) {
 						r.constructions.remove(c);
-						if (!wreckage.containsKey(r.getKingdom())) wreckage.put(r.getKingdom(), new HashMap<String, Integer>());
+						if (!wreckage.containsKey(r.getKingdom())) wreckage.put(r.getKingdom(), new HashMap<Construction.Type, Integer>());
 						wreckage.get(r.getKingdom()).put(c.type, wreckage.get(r.getKingdom()).getOrDefault(c.type, 0) + 1);
 					}
 					r.setReligion(null, World.this);
@@ -2102,8 +2093,8 @@ class World implements GoodwillProvider {
 				for (Region r : regions) r.crops *= .97;
 				for (String k : wreckage.keySet()) {
 					String notification = "The terrible magical earthquakes triggered by the followers of Rjinku have taken their toll on our nation, destroying:";
-					for (String t : wreckage.get(k).keySet()) {
-						notification += "\n" + wreckage.get(k).get(t) + " " + t + (t.endsWith("s") || wreckage.get(k).get(t) == 1 ? "" : "s");
+					for (Construction.Type t : wreckage.get(k).keySet()) {
+						notification += "\n" + StringUtil.quantify(wreckage.get(k).get(t), t.toString().toLowerCase());
 					}
 					notifications.add(new Notification(k, "Earthquakes", notification));
 				}
@@ -2369,7 +2360,7 @@ class World implements GoodwillProvider {
 					Region r = regions.get(i);
 					if (getNation(r.getKingdom()).loyalToCult) removals.add(i);
 					if (r.noble != null && r.noble.hasTag("Cultist")) removals.add(i);
-					for (Army a : armies) if (a.hasTag("Higher Power") && a.location == i) removals.add(i);
+					for (Army a : armies) if (a.hasTag(Army.Tag.HIGHER_POWER) && a.location == i) removals.add(i);
 				}
 				for (Integer i : removals) cultRegions.remove(i);
 				if (cultRegions.size() <= 3) {
@@ -2551,7 +2542,7 @@ class World implements GoodwillProvider {
 						aremovals.add(a);
 					} else {
 						a.kingdom = NationData.PIRATE_NAME;
-						a.addTag("Unpredictable");
+						a.addTag(Army.Tag.UNPREDICTABLE);
 					}
 				}
 				armies.removeAll(aremovals);
@@ -2654,12 +2645,12 @@ class World implements GoodwillProvider {
 	}
 
 	private boolean getAttrition(Army army, Region region) {
-		if (army.hasTag("Weathered")) return false;
+		if (army.hasTag(Army.Tag.WEATHERED)) return false;
 		if (region.isLand() && NationData.isFriendly(region.getKingdom(), army.kingdom, this)) return false;
 		if (region.climate.equals("treacherous") || (region.climate.equals("seasonal") && getSeason() == Season.WINTER)) return true;
 		if (region.isLand() && tivar.deluge) return true;
 		if (region.type.equals("sea") && tivar.warwinds) return true;
-		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag("Disciplined")) return true;
+		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag(NationData.Tag.DISCIPLINED)) return true;
 		return false;
 	}
 
@@ -2719,11 +2710,11 @@ class World implements GoodwillProvider {
 		for (Region target : destinations) {
 			double targetUnrestFactor = 1;
 			double fromUnrestFactor = 1;
-			if (getNation(target.getKingdom()).hasTag("Nomadic")) {
+			if (getNation(target.getKingdom()).hasTag(NationData.Tag.NOMADIC)) {
 				targetUnrestFactor = 0.2;
 				fromUnrestFactor = 0.2;
 			}
-			for (String k : kingdoms.keySet()) if (getNation(k).hasTag("Ruined") && getNation(k).coreRegions.contains(regions.indexOf(target)) && !getNation(k).coreRegions.contains(regions.indexOf(from))) {
+			for (String k : kingdoms.keySet()) if (getNation(k).hasTag(NationData.Tag.RUINED) && getNation(k).coreRegions.contains(regions.indexOf(target)) && !getNation(k).coreRegions.contains(regions.indexOf(from))) {
 				targetUnrestFactor = 0;
 				fromUnrestFactor = 0;
 			}
@@ -3030,7 +3021,7 @@ class World implements GoodwillProvider {
 			if (isHiddenAlyrjaHelper(a.location, kingdom)) return false;
 		}
 		if (tivar.veil) return true;
-		if (!a.hasTag("Raiders") || regions.get(a.location).getKingdom() == null || kingdom.equals(regions.get(a.location).getKingdom()) || !NationData.isFriendly(a.kingdom, regions.get(a.location).getKingdom(), this)) return false;
+		if (!a.hasTag(Army.Tag.RAIDERS) || regions.get(a.location).getKingdom() == null || kingdom.equals(regions.get(a.location).getKingdom()) || !NationData.isFriendly(a.kingdom, regions.get(a.location).getKingdom(), this)) return false;
 		return true;
 	}
 

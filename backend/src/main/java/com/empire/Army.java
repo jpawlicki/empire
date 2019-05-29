@@ -10,10 +10,24 @@ import java.util.Set;
 
 class Army {
 	enum Type {
-		@SerializedName("army")
-		ARMY,
-		@SerializedName("navy")
-		NAVY
+		@SerializedName("army") ARMY,
+		@SerializedName("navy") NAVY
+	}
+
+	enum Tag {
+		@SerializedName("Steel") STEEL,
+		@SerializedName("Formations") FORMATIONS,
+		@SerializedName("Pillagers") PILLAGERS,
+		@SerializedName("Raiders") RAIDERS,
+		@SerializedName("Seafaring") SEAFARING,
+		@SerializedName("Impressment") IMPRESSMENT,
+		@SerializedName("Riders") RIDERS,
+		@SerializedName("Crafts-soldiers") CRAFTS_SOLDIERS,
+		@SerializedName("Weathered") WEATHERED,
+		@SerializedName("Pathfinders") PATHFINDERS,
+		@SerializedName("Unpredictable") UNPREDICTABLE,
+		@SerializedName("Higher Power") HIGHER_POWER,
+		@SerializedName("Undead") UNDEAD
 	}
 
 	int id = -1;
@@ -23,7 +37,7 @@ class Army {
 	String kingdom = "";
 	int location = -1;
 	List<Preparation> preparation = new ArrayList<>();
-	List<String> tags = new ArrayList<>();
+	List<Tag> tags = new ArrayList<>();
 	Map<String, Double> composition = new HashMap<>();
 	String orderhint = "";
 
@@ -33,9 +47,9 @@ class Army {
 		double mods = 1.0;
 		Region r = w.regions.get(location);
 
-		if (hasTag(Constants.armySteelTag)) mods += Constants.steelMod;
-		if (hasTag(Constants.armySeafaringTag) && r.isSea()) mods += Constants.seafaringMod;
-		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Constants.nationDisciplinedTag)) mods += Constants.disciplinedMod;
+		if (hasTag(Tag.STEEL)) mods += Constants.steelMod;
+		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += Constants.seafaringMod;
+		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (isArmy() && r.noble != Constants.noNoble && r.noble.hasTag(Constants.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += Constants.loyalMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
@@ -52,7 +66,7 @@ class Army {
 		return strength * mods;
 	}
 
-	public boolean hasTag(String tag) {
+	public boolean hasTag(Tag tag) {
 		return tags.contains(tag);
 	}
 
@@ -64,7 +78,7 @@ class Army {
 		return type == Type.NAVY;
 	}
 
-	void addTag(String tag) {
+	void addTag(Army.Tag tag) {
 		tags.add(tag);
 	}
 
@@ -86,7 +100,7 @@ class Army {
 		for (int i = 0; i < razes; i++) {
 			Construction bestRaze = null;
 			for (Construction c : region.constructions) {
-				if (target.contains(c.type) && (!"temple".equals(c.type) || target.contains(c.religion.toString()))) {
+				if (target.contains(c.type.toString().toLowerCase()) && (c.type != Construction.Type.TEMPLE || target.contains(c.religion.toString()))) {
 					if (bestRaze == null || bestRaze.originalCost < c.originalCost) bestRaze = c;
 				}
 			}
@@ -96,7 +110,7 @@ class Army {
 			}
 			targets++;
 			region.constructions.remove(bestRaze);
-			if ("temple".equals(bestRaze.type)) {
+			if (Construction.Type.TEMPLE == bestRaze.type) {
 				region.setReligion(null, w);
 			}
 			gold += bestRaze.originalCost * Constants.razeRefundFactor;
@@ -143,7 +157,7 @@ class Army {
 		}
 		if (target.equals(region.getKingdom())) return;
 		String nobleFate = "";
-		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag("Republican"))) {
+		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(NationData.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
 			region.noble = null;
 		}
@@ -152,7 +166,7 @@ class Army {
 			region.noble.unrest = .15;
 		}
 		if (w.getNation(region.getKingdom()).goodwill <= -75) w.getNation(kingdom).goodwill += 15;
-		region.constructions.removeIf(c -> "fortifications".equals(c.type));
+		region.constructions.removeIf(c -> c.type == Construction.Type.FORTIFICATIONS);
 		w.notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
 		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
 		region.setKingdom(w, target);

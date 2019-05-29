@@ -51,7 +51,7 @@ public class CharacterTest {
     }
 
     private void addHeroicTag() {
-        when(n1.hasTag(Constants.nationHeroicTag)).thenReturn(true);
+        when(n1.hasTag(NationData.Tag.HEROIC)).thenReturn(true);
     }
 
     private void assertDimsExpEqual(double general, double admiral, double governor, double spy) {
