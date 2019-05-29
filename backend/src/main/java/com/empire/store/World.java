@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 class World {
@@ -49,5 +50,26 @@ class World {
 
     public void addRtc(String json, String from) {
         return;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        World world = (World) o;
+        return date == world.date &&
+                inspiresHint == world.inspiresHint &&
+                nextTurn == world.nextTurn &&
+                gameover == world.gameover &&
+                Objects.equals(characters, world.characters) &&
+                Objects.equals(gmPasswordHash, world.gmPasswordHash) &&
+                Objects.equals(obsPasswordHash, world.obsPasswordHash) &&
+                Objects.equals(harvests, world.harvests) &&
+                Objects.equals(cultRegions, world.cultRegions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(date, characters, gmPasswordHash, obsPasswordHash, harvests, cultRegions, inspiresHint, nextTurn, gameover);
     }
 }

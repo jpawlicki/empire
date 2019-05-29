@@ -2,6 +2,8 @@ package com.empire.store;
 
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.After;
@@ -11,6 +13,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+
+// TODO: Important, make certain that true/false returns for put operations have the right behavior when put fails
+// TODO: Tests for the exceptions/fallbacks
 
 public class GaeDatastoreClientTest {
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
@@ -27,7 +32,7 @@ public class GaeDatastoreClientTest {
     }
 
     @Test
-    public void playerPutGetTest(){
+    public void playerNormalRoundtripTest(){
         String email = "TEST_EMAIL";
         Player player = new Player(email, "TEST_PASSHASH");
 
@@ -37,7 +42,7 @@ public class GaeDatastoreClientTest {
     }
 
     @Test
-    public void nationPutGetTest(){
+    public void nationNormalRoundtripTest(){
         long gameId = 3;
         String nationName = "TEST_NATION";
         Nation nation = new Nation();
@@ -64,7 +69,7 @@ public class GaeDatastoreClientTest {
     }
 
     @Test
-    public void ordersPutGetTest(){
+    public void ordersNormalRoundtripTest(){
         long gameId = 3;
         String kingdom = "TEST_KINGDOM";
         int turn = 4;
@@ -77,5 +82,25 @@ public class GaeDatastoreClientTest {
         assertNull(null, client.getOrders(gameId, kingdom, turn));
         assertTrue(client.putOrders(orders));
         assertEquals(orders, client.getOrders(gameId, kingdom, turn));
+    }
+
+    @Test
+    public void worldNormalRoundtripTest(){
+        long gameId = 3;
+        int turn = 4;
+        World world = new World();
+        world.date = turn;
+        world.characters = new ArrayList<>();
+        world.gmPasswordHash = "TEST_PASSHASH_GM";
+        world.obsPasswordHash = "TEST_PASSHASH_OBS";
+        world.harvests = Arrays.asList(1.5, 2.5);
+        world.cultRegions = Arrays.asList(0, 3, 6);
+        world.inspiresHint = 6;
+        world.nextTurn = 3;
+        world.gameover = false;
+
+        assertNull(null, client.getWorld(gameId, turn));
+        assertTrue(client.putWorld(gameId, world));
+        assertEquals(world, client.getWorld(gameId, turn));
     }
 }

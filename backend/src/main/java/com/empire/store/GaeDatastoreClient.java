@@ -18,6 +18,8 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.logging.Logger;
 
+// TODO: Need a method to make multiple puts in the same transaction to maintain consistency if rollback happens
+
 public class GaeDatastoreClient implements DatastoreClient{
     private static final Logger log = Logger.getLogger(GaeDatastoreClient.class.getName());
 
@@ -79,7 +81,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             String jsonStr = (String) e.getProperty(jsonProp);
             return gson.fromJson(jsonStr, Player.class);
         } catch (EntityNotFoundException e){
-            log.severe("Enable to retrieve Player with key " + email);
+            log.info("Unable to retrieve Player with key " + email);
             return null;
         }
     }
@@ -112,7 +114,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(gameId, nation)));
             return (String) e.getProperty(jsonProp);
         } catch (EntityNotFoundException e) {
-            log.severe("Enable to retrieve Nation with key " + createNationkey(gameId, nation));
+            log.info("Unable to retrieve Nation with key " + createNationkey(gameId, nation));
             return null;
         }
     }
@@ -141,7 +143,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             String jsonStr = (String) e.getProperty(jsonProp);
             return gson.fromJson(jsonStr, Orders.class);
         } catch (EntityNotFoundException e){
-            log.severe("Enable to retrieve Orders with key " + createOrderkey(gameId, kingdom, turn));
+            log.info("Unable to retrieve Orders with key " + createOrderkey(gameId, kingdom, turn));
             return null;
         }
     }
@@ -178,7 +180,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
             return gson.fromJson(jsonStr, World.class);
         } catch (EntityNotFoundException e){
-            log.severe("Enable to retrieve World with key " + createWorldKey(gameId, turn));
+            log.info("Unable to retrieve World with key " + createWorldKey(gameId, turn));
             return null;
         }
     }
@@ -210,7 +212,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             return (int) date.longValue();
 
         } catch (EntityNotFoundException e){
-            log.severe("Enable to retrieve Current Date with key " + createCurrentDateKey(gameId));
+            log.info("Unable to retrieve Current Date with key " + createCurrentDateKey(gameId));
             return -1;
         }
     }
@@ -239,7 +241,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             String jsonStr = (String) entity.getProperty(jsonProp);
             return gson.fromJson(jsonStr, LoginKey.class);
         } catch (EntityNotFoundException e) {
-            log.severe("Enable to retrieve Login with key " + createLoginKey(gameId, date, email));
+            log.info("Unable to retrieve Login with key " + createLoginKey(gameId, date, email));
             return null;
         }
     }
@@ -270,7 +272,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             Type listType = new TypeToken<Set<Long>>(){}.getType();
             return gson.fromJson(jsonStr, listType);
         } catch (EntityNotFoundException e) {
-            log.severe("Enable to retrieve active games with key " + createActiveGamesKey());
+            log.info("Unable to retrieve active games with key " + createActiveGamesKey());
             return null;
         }
     }
