@@ -134,14 +134,14 @@ class World implements GoodwillProvider {
 			totalSharesNavy += 1;
 			totalSharesFood += 1;
 			totalSharesPopulation += 1;
-			if ("Mercantile".equals(setup.trait1) || "Mercantile".equals(setup.trait2)) totalSharesGold += 0.5;
-			if ("Patriotic".equals(setup.trait1) || "Patriotic".equals(setup.trait2)) totalSharesArmy += 0.15;
-			if ("Rebellious".equals(setup.trait1) || "Rebellious".equals(setup.trait2)) totalSharesArmy += 0.5;
-			if ("Rebellious".equals(setup.trait1) || "Rebellious".equals(setup.trait2)) totalSharesGold += 5;
-			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) totalSharesPopulation -= 0.5;
-			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) totalSharesGold += 2;
-			if ("Seafaring".equals(setup.trait1) || "Seafaring".equals(setup.trait2)) totalSharesNavy += 0.15;
-			if ("War-like".equals(setup.trait1) || "War-like".equals(setup.trait2)) totalSharesArmy += 0.15;
+			if (setup.hasTag(NationData.Tag.MERCANTILE)) totalSharesGold += 0.5;
+			if (setup.hasTag(NationData.Tag.PATRIOTIC)) totalSharesArmy += 0.15;
+			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesArmy += 0.5;
+			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesGold += 5;
+			if (setup.hasTag(NationData.Tag.RUINED)) totalSharesPopulation -= 0.5;
+			if (setup.hasTag(NationData.Tag.RUINED)) totalSharesGold += 2;
+			if (setup.hasTag(NationData.Tag.SEAFARING)) totalSharesNavy += 0.15;
+			if (setup.hasTag(NationData.Tag.WARLIKE)) totalSharesArmy += 0.15;
 			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
 			else if ("armies".equals(setup.bonus)) totalSharesArmy += 0.5;
 			else if ("navies".equals(setup.bonus)) totalSharesNavy += 0.5;
@@ -156,7 +156,7 @@ class World implements GoodwillProvider {
 			nation.colorBg = con.colorBg;
 			nation.culture = con.culture;
 			nation.coreRegions = Ints.asList(con.coreRegions);
-			nation.goodwill = ("Holy".equals(setup.trait1) || "Holy".equals(setup.trait2)) ? 15 : setup.dominantIdeology.religion == Religion.IRUHAN ? 5 : -55;
+			nation.goodwill = setup.hasTag(NationData.Tag.HOLY) ? 15 : setup.dominantIdeology.religion == Religion.IRUHAN ? 5 : -55;
 			nation.gothi = new HashMap<String, Boolean>();
 			nation.gothi.put("Alyrja", false);
 			nation.gothi.put("Lyskr", false);
@@ -178,10 +178,10 @@ class World implements GoodwillProvider {
 			double sharesGold = 1;
 			double sharesFood = 1;
 			double sharesPopulation = 1;
-			if ("Mercantile".equals(setup.trait1) || "Mercantile".equals(setup.trait2)) sharesGold += 0.5;
-			if ("Rebellious".equals(setup.trait1) || "Rebellious".equals(setup.trait2)) sharesGold += 5;
-			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) sharesPopulation -= 0.5;
-			if ("Ruined".equals(setup.trait1) || "Ruined".equals(setup.trait2)) sharesGold += 2;
+			if (setup.hasTag(NationData.Tag.MERCANTILE)) sharesGold += 0.5;
+			if (setup.hasTag(NationData.Tag.REBELLIOUS)) sharesGold += 5;
+			if (setup.hasTag(NationData.Tag.RUINED)) sharesPopulation -= 0.5;
+			if (setup.hasTag(NationData.Tag.RUINED)) sharesGold += 2;
 			if ("food".equals(setup.bonus)) sharesFood += 0.5;
 			else if ("gold".equals(setup.bonus)) sharesGold += 0.5;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
@@ -238,7 +238,7 @@ class World implements GoodwillProvider {
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			Culture culture = WorldConstantData.kingdoms.get(kingdom).culture;
-			if ("Republican".equals(setup.trait1) || "Republican".equals(setup.trait2)) continue;
+			if (setup.hasTag(NationData.Tag.REPUBLICAN)) continue;
 			// 10 nobles.
 			ArrayList<Noble> nobles = new ArrayList<>();
 			for (String trait : new String[]{ "Inspiring", "Frugal", "Soothing", "Meticulous", "Loyal", "Policing", "Generous", "Pious", "Rationing", "Patronizing"}) {
@@ -312,10 +312,10 @@ class World implements GoodwillProvider {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			double sharesNavy = 1;
 			double sharesArmy = 1;
-			if ("Patriotic".equals(setup.trait1) || "Patriotic".equals(setup.trait2)) sharesArmy += 0.15;
-			if ("Rebellious".equals(setup.trait1) || "Rebellious".equals(setup.trait2)) sharesArmy += 0.5;
-			if ("Seafaring".equals(setup.trait1) || "Seafaring".equals(setup.trait2)) sharesNavy += 0.15;
-			if ("War-like".equals(setup.trait1) || "War-like".equals(setup.trait2)) sharesArmy += 0.15;
+			if (setup.hasTag(NationData.Tag.PATRIOTIC)) sharesArmy += 0.15;
+			if (setup.hasTag(NationData.Tag.REBELLIOUS)) sharesArmy += 0.5;
+			if (setup.hasTag(NationData.Tag.SEAFARING)) sharesNavy += 0.15;
+			if (setup.hasTag(NationData.Tag.WARLIKE)) sharesArmy += 0.15;
 			if ("armies".equals(setup.bonus)) sharesArmy += 0.5;
 			else if ("navies".equals(setup.bonus)) sharesNavy += 0.5;
 			double armies = totalArmy * sharesArmy / totalSharesArmy;
@@ -391,8 +391,8 @@ class World implements GoodwillProvider {
 				numCharacters++;
 				cardinal = true;
 			}
-			if ("Heroic".equals(setup.trait1) || "Heroic".equals(setup.trait2)) numCharacters += 2;
-			if ("Republican".equals(setup.trait1) || "Republican".equals(setup.trait2)) numCharacters += 1;
+			if (setup.hasTag(NationData.Tag.HEROIC)) numCharacters += 2;
+			if (setup.hasTag(NationData.Tag.REPUBLICAN)) numCharacters += 1;
 			for (int i = 0; i < numCharacters; i++) {
 				Character c = new Character();
 				c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
