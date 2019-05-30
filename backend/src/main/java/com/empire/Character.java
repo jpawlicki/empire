@@ -31,12 +31,9 @@ class Character {
 		return Math.sqrt(xp + 1);
 	}
 
-	public double calcArmyLeadMod() {
-		return calcLevel(experience.general) * Constants.perLevelLeaderMod;
-	}
-
-	public double calcNavyLeadMod() {
-		return calcLevel(experience.admiral) * Constants.perLevelLeaderMod;
+	public double calcLeadMod(Army.Type type) {
+		if (type == Army.Type.ARMY) return calcLevel(experience.general) * Constants.perLevelLeaderMod;
+		else return calcLevel(experience.admiral) * Constants.perLevelLeaderMod;
 	}
 
 	public double calcGovernRecruitMod() {

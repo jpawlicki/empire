@@ -202,30 +202,24 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthCaptured() {
-		Character leader = new Character();
-		leader.addExperienceGeneral();
-		leader.addExperienceGeneral();
-		leader.addExperienceGeneral();
+		Character leader = Mocks.character();
+		when(leader.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
 		leader.captor = "DONTCARE";
 		assertEquals(1.0, a.calcStrength(w, leader, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthGeneral() {
-		Character c = new Character();
-		c.addExperienceGeneral();
-		c.addExperienceGeneral();
-		c.addExperienceGeneral();
+		Character c = Mocks.character();
+		when(c.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
 		assertEquals(1.4, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthAdmiral() {
 		a.type = Army.Type.NAVY;
-		Character c = new Character();
-		c.addExperienceAdmiral();
-		c.addExperienceAdmiral();
-		c.addExperienceAdmiral();
+		Character c = Mocks.character();
+		when(c.calcLeadMod(Army.Type.NAVY)).thenReturn(.4);
 		assertEquals(140.0, a.calcStrength(w, c, 0, false), DELTA);
 	}
 

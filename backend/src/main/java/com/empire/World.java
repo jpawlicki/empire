@@ -880,8 +880,7 @@ class World implements GoodwillProvider {
 					for (Army aa : armies) if (aa.id == targetId) target = aa;
 					if (target == null) continue; // ???
 					if (!target.kingdom.equals(c.kingdom) || c.location != target.location) continue;
-					Function<Character, Double> d = target.isArmy() ? cl -> cl.calcArmyLeadMod() : cl -> cl.calcNavyLeadMod();
-					if (leaders.get(target) == null || d.apply(leaders.get(target)) < d.apply(c)) {
+					if (leaders.get(target) == null || leaders.get(target).calcLeadMod(target.type) < c.calcLeadMod(target.type)) {
 						Character prev = leaders.put(target, c);
 						if (prev != null) prev.orderhint = "";
 					}
@@ -924,8 +923,7 @@ class World implements GoodwillProvider {
 
 						if (leaders.get(src) != null) {
 							leaders.get(src).orderhint = "";
-							Function<Character, Double> d = target.isArmy() ? cl -> cl.calcArmyLeadMod() : cl -> cl.calcNavyLeadMod();
-							if (leaders.get(target) == null || d.apply(leaders.get(target)) < d.apply(leaders.get(src))) leaders.put(target, leaders.get(src));
+							if (leaders.get(target) == null || leaders.get(target).calcLeadMod(target.type) < leaders.get(src).calcLeadMod(target.type)) leaders.put(target, leaders.get(src));
 						}
 					}
 				}
