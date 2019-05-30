@@ -1175,9 +1175,6 @@ class OrdersPane extends HTMLElement {
 			if (o.value.startsWith("Travel to ")) {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
-				if (dest != undefined && (dest.type != "land" || dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].calcRelationship(g_data.kingdoms[a.kingdom]) != "friendly") && !contains(a.tags, "Weathered") && (dest.climate == "treacherous" || (dest.climate == "seasonal" && (g_data.date % 52 < 13 || g_data.date % 52 >= 39)))) {
-					warn = "(will suffer 25% attrition due to climate)";
-				}
 				if (a.type == "navy" && dest.type == "land" && g_data.regions[a.location].type == "land" && !g_data.tivar.deluge) {
 					warn += "(navies can only move between land regions during the Deluge)";
 				}

@@ -156,7 +156,6 @@ class Region {
 		this.name = dataEntry.name;
 		this.type = dataEntry.type;
 		this.path = constEntry.path;
-		this.climate = dataEntry.climate;
 		this.culture = dataEntry.culture;
 		this.population = dataEntry.population;
 		this.kingdom = dataEntry.kingdom;

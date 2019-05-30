@@ -23,7 +23,6 @@ class Region {
 	String name;
 	Type type;
 	Culture culture;
-	String climate;
 	double population;
 	Ideology religion;
 	double unrestPopular;
@@ -79,7 +78,7 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + Constants.baseGovernRecruitMod;
+				mods += c.calcGovernRecruitMod();
 			}
 		}
 
@@ -133,7 +132,7 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + Constants.baseGovernTaxMod;
+				mods += c.calcGovernTaxMod();
 			}
 		}
 

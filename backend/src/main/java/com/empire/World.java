@@ -96,10 +96,9 @@ class World implements GoodwillProvider {
 		w.nextTurn = w.turnSchedule.getNextTime();
 		w.regions = new ArrayList<>();
 		w.pirate.threat = 4;
-		// Set up regions (culture, climate, popular unrest).
+		// Set up regions (culture, popular unrest).
 		for (WorldConstantData.Region r : WorldConstantData.regions) {
 			Region rr = new Region();
-			rr.climate = r.climate;
 			rr.type = r.land ? Region.Type.LAND : Region.Type.WATER;
 			rr.name = r.name;
 			if (r.land) {
@@ -386,7 +385,15 @@ class World implements GoodwillProvider {
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
 			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());
 			ArrayList<Character> characters = new ArrayList<>();
-			for (int i = 0; i < (setup.dominantIdeology.religion == Religion.IRUHAN && setup.dominantIdeology != Ideology.VESSEL_OF_FAITH ? 5 : 4); i++) {
+			int numCharacters = 4;
+			boolean cardinal = false;
+			if (setup.dominantIdeology.religion == Religion.IRUHAN && setup.dominantIdeology != Ideology.VESSEL_OF_FAITH) {
+				numCharacters++;
+				cardinal = true;
+			}
+			if ("Heroic".equals(setup.trait1) || "Heroic".equals(setup.trait2)) numCharacters += 2;
+			if ("Republican".equals(setup.trait1) || "Republican".equals(setup.trait2)) numCharacters += 1;
+			for (int i = 0; i < numCharacters; i++) {
 				Character c = new Character();
 				c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
 				if (i == 0) {
@@ -416,11 +423,24 @@ class World implements GoodwillProvider {
 					if (Math.random() < 0.1) c.values.add("riches");
 					if (Math.random() < 0.1) c.values.add("culture");
 				}
-				if (i == 4) c.addTag("Cardinal");
-				c.experience.put("general", i == 2 ? 3.0 : 1.0);
-				c.experience.put("admiral", i == 3 ? 3.0 : 1.0);
-				c.experience.put("governor", i == 0 ? 3.0 : 1.0);
-				c.experience.put("spy", i == 1 ? 3.0 : 1.0);
+				if (i == 4 && cardinal) c.addTag("Cardinal");
+				c.addExperienceGeneral();
+				c.addExperienceAdmiral();
+				c.addExperienceSpy();
+				c.addExperienceGovernor();
+				if (i == 2) {
+					c.addExperienceGeneral();
+					c.addExperienceGeneral();
+				} else if (i == 3) {
+					c.addExperienceAdmiral();
+					c.addExperienceAdmiral();
+				} else if (i == 0) {
+					c.addExperienceGovernor();
+					c.addExperienceGovernor();
+				} else if (i == 1) {
+					c.addExperienceSpy();
+					c.addExperienceSpy();
+				}
 				c.location = regions.get((int)(Math.random() * regions.size()));
 				c.orderhint = "Stay in " + w.regions.get(c.location).name;
 				w.characters.add(c);
@@ -800,7 +820,7 @@ class World implements GoodwillProvider {
 				Region region = regions.get(c.location);
 				if (!"".equals(c.captor)) continue; // inspire can't be done by captives.
 				if (action.equals("Inspire the Faithful") && "Sancta Civitate".equals(region.name)) {
-					c.addExperience("spy", World.this);
+					c.addExperienceSpy();
 					getNation(c.kingdom).goodwill += 5;
 					inspires++;
 				}
@@ -860,8 +880,8 @@ class World implements GoodwillProvider {
 					for (Army aa : armies) if (aa.id == targetId) target = aa;
 					if (target == null) continue; // ???
 					if (!target.kingdom.equals(c.kingdom) || c.location != target.location) continue;
-					String d = target.isArmy() ? "general" : "admiral";
-					if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < c.calcLevel(d)) {
+					Function<Character, Double> d = target.isArmy() ? cl -> cl.calcArmyLeadMod() : cl -> cl.calcNavyLeadMod();
+					if (leaders.get(target) == null || d.apply(leaders.get(target)) < d.apply(c)) {
 						Character prev = leaders.put(target, c);
 						if (prev != null) prev.orderhint = "";
 					}
@@ -904,8 +924,8 @@ class World implements GoodwillProvider {
 
 						if (leaders.get(src) != null) {
 							leaders.get(src).orderhint = "";
-							String d = target.isArmy() ? "general" : "admiral";
-							if (leaders.get(target) == null || leaders.get(target).calcLevel(d) < leaders.get(src).calcLevel(d)) leaders.put(target, leaders.get(src));
+							Function<Character, Double> d = target.isArmy() ? cl -> cl.calcArmyLeadMod() : cl -> cl.calcNavyLeadMod();
+							if (leaders.get(target) == null || d.apply(leaders.get(target)) < d.apply(leaders.get(src))) leaders.put(target, leaders.get(src));
 						}
 					}
 				}
@@ -913,7 +933,8 @@ class World implements GoodwillProvider {
 			for (Army a : armies) if (a.size >= 2 * originalSizes.get(a)) a.preparation.clear();
 			for (Army a : leaders.keySet()) {
 				Character l = leaders.get(a);
-				leaders.get(a).addExperience(a.isArmy() ? "general" : "admiral", World.this);
+				if (a.isArmy()) leaders.get(a).addExperienceGeneral();
+				else leaders.get(a).addExperienceAdmiral();
 				leaders.get(a).leadingArmy = a.id;
 			}
 		}
@@ -1134,16 +1155,16 @@ class World implements GoodwillProvider {
 		void characterActions() {
 			ArrayList<Character> removeCharacters = new ArrayList<>();
 			for (Character c : characters) {
-				if (!"".equals(c.captor)) c.addExperience("spy", World.this);
+				if (!"".equals(c.captor)) c.addExperienceSpy();
 				String action = orders.getOrDefault("".equals(c.captor) ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
 				c.hidden = action.startsWith("Hide in ");
 				if (action.startsWith("Stay in ")) {
-					if ("".equals(c.captor)) c.addExperience("*", World.this);
+					if ("".equals(c.captor)) c.addExperienceAll();
 				} else if (action.startsWith("Hide in ") || action.startsWith("Travel to ")) {
 					if ("".equals(c.captor)) {
-						if (c.hidden) c.addExperience("spy", World.this);
-						else c.addExperience("*", World.this);
+						if (c.hidden) c.addExperienceSpy();
+						else c.addExperienceAll();
 					}
 					String destination = action.replace("Travel to ", "").replace("Hide in ", "");
 					if (region.name.equals(destination)) continue;
@@ -1172,7 +1193,7 @@ class World implements GoodwillProvider {
 						c.preparation.clear();
 					}
 				} else if (action.startsWith("Build ")) {
-					c.addExperience("governor", World.this);
+					c.addExperienceGovernor();
 					if (!c.kingdom.equals(region.getKingdom()) && getNation(region.getKingdom()).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
 						notifications.add(new Notification(c.kingdom, "Construction Failed", region.getKingdom() + " does not permit us to build in " + region.name + "."));
 					} else {
@@ -1236,13 +1257,13 @@ class World implements GoodwillProvider {
 						break;
 					}
 					c.orderhint = "";
-					c.addExperience("governor", World.this);
+					c.addExperienceGovernor();
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
 					ArrayList<Character> gov = governors.getOrDefault(region, new ArrayList<Character>());
 					gov.add(c);
 					governors.put(region, gov);
-					c.addExperience("governor", World.this);
+					c.addExperienceGovernor();
 				} else if (action.startsWith("Transfer character to ")) {
 					String target = action.replace("Transfer character to ", "");
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
@@ -2482,10 +2503,10 @@ class World implements GoodwillProvider {
 				if (Math.random() < 0.1) c.values.add("security");
 				if (Math.random() < 0.1) c.values.add("riches");
 				if (Math.random() < 0.1) c.values.add("culture");
-				c.experience.put("general", Math.floor(Math.random() * 10 + 1));
-				c.experience.put("admiral", Math.floor(Math.random() * 10 + 1));
-				c.experience.put("governor", Math.floor(Math.random() * 10 + 1));
-				c.experience.put("spy", Math.floor(Math.random() * 10 + 1));
+				c.addExperienceGeneral();
+				c.addExperienceAdmiral();
+				c.addExperienceSpy();
+				c.addExperienceGovernor();
 				List<Region> spawnRegions = new ArrayList<>();
 				for (Region r : regions) if (k.equals(r.getKingdom())) spawnRegions.add(r);
 				if (spawnRegions.isEmpty()) spawnRegions = regions;
@@ -2505,7 +2526,6 @@ class World implements GoodwillProvider {
 				for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag("Ruler")) ruler = c;
 				if ("salt_the_earth".equals(final_action)) {
 					for (Region r : regions) if (k.equals(r.getKingdom())) {
-						r.climate = "treacherous";
 						r.food /= 2;
 					}
 					notifyAllPlayers(k + " Salts the Earth", "In a final act of defiance, " + ruler.name + " orders their agents to destroy their lands, making them unfit for inhabitation. In a week of violence and terror, the people rise up and overthrow their rulers, but not before much of " + k + " is ruined beyond recognition.");
@@ -2647,7 +2667,6 @@ class World implements GoodwillProvider {
 	private boolean getAttrition(Army army, Region region) {
 		if (army.hasTag(Army.Tag.WEATHERED)) return false;
 		if (region.isLand() && NationData.isFriendly(region.getKingdom(), army.kingdom, this)) return false;
-		if (region.climate.equals("treacherous") || (region.climate.equals("seasonal") && getSeason() == Season.WINTER)) return true;
 		if (region.isLand() && tivar.deluge) return true;
 		if (region.type.equals("sea") && tivar.warwinds) return true;
 		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag(NationData.Tag.DISCIPLINED)) return true;
