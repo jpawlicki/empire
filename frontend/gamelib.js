@@ -170,12 +170,14 @@ class Region {
 	}
 
 	calcRecruitment(extraMod=0) {
-		let base = new Calc("*", [
+		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}]);
-		let mods = [];
+			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
+		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
+		let base = new Calc("*", baseAmount);
+
+		let mods = [];
 		if (contains(this.noble.tags, "Inspiring")) mods.push({"v": .5, "unit": "%", "why": "Noble"});
 		if (contains(this.noble.tags, "Untrusting")) mods.push({"v": -.35, "unit": "%", "why": "Noble"});
 		if (contains(this.noble.tags, "Tyrannical")) mods.push({"v": -.5, "unit": "%", "why": "Noble"});
@@ -214,12 +216,14 @@ class Region {
 	}
 
 	calcTaxation(extraMod=0) {
-		let base = new Calc("*", [
+		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}]);
-		let mods = [];
+			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
+		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
+		let base = new Calc("*", baseAmount);
+
+		let mods = [];
 		if (contains(this.noble.tags, "Frugal")) mods.push({"v": .5, "unit": "%", "why": "Noble"});
 		if (contains(this.noble.tags, "Hoarding")) mods.push({"v": -.35, "unit": "%", "why": "Noble"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
