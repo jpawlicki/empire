@@ -10,6 +10,7 @@ class Noble {
 	String name;
 	Crisis crisis;
 	double unrest;
+	double experience;
 
 	static Noble makeNoble(Culture culture, int date) {
 		Noble n = new Noble();
@@ -21,11 +22,30 @@ class Noble {
 		return n;
 	}
 
+	double calcLevel() {
+		return Math.sqrt(experience + 1);
+	}
+
+	double calcPlantMod() {
+		return calcLevel() * Constants.noblePlantModPerLevel;
+	}
+
+	double calcRecruitMod() {
+		return calcLevel() * Constants.nobleRecruitModPerLevel;
+	}
+
+	double calcTaxMod() {
+		return calcLevel() * Constants.nobleTaxModPerLevel;
+	}
+
+	void addExperience() {
+		experience++;
+	}
+
 	/**
 	 * Checks the noble's crisis to see if it has been resolved or deadlined, and applies those effects.
 	 * @return a notification that should be added to the world.
-	 */
-		
+	 */	
 	Optional<Notification> resolveCrisis(World w, Region r, Map<Army, Character> leaders, Map<Region, ArrayList<Character>> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 		if (crisis.type.checkSolved(w, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) {
 			crisis.type = Crisis.Type.NONE;

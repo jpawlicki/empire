@@ -46,7 +46,10 @@ public class Constants {
     public static final double noblePirateThreatMod = -0.5;
 		public static final int nobleCrisisFrequency = 6;
 		public static final double nobleCrisisSuccessUnrest = -0.25;
-		public static final double nobleCrisisFailedUnrest = 0.12;
+		public static final double nobleCrisisFailedUnrest = 0.25;
+		public static final double noblePlantModPerLevel = 0.05;
+		public static final double nobleTaxModPerLevel = 0.1;
+		public static final double nobleRecruitModPerLevel = 0.1;
 		public static final double setupNobleFractionAnpilayn = 0.8;
 		public static final double setupNobleFractionEolsung = 0.5;
 		public static final double setupNobleFractionHansa = 0.8;

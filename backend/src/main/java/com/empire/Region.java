@@ -82,6 +82,7 @@ class Region {
 				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + Constants.baseGovernRecruitMod;
 			}
 		}
+		if (noble != null) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
@@ -132,6 +133,7 @@ class Region {
 				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + Constants.baseGovernTaxMod;
 			}
 		}
+		if (noble != null) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
@@ -384,8 +386,10 @@ class Region {
 
 	void plant(boolean isHarvestTurn) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
+		double mod = 1;
+		if (noble != null) mod += noble.calcPlantMod();
 		if (isHarvestTurn) {
-			crops += population * Constants.plantsPerCitizen;
+			crops += population * Constants.plantsPerCitizen * mod;
 		}
 	}
 
