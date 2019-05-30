@@ -188,7 +188,6 @@ class Region {
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
 		}
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
@@ -226,7 +225,6 @@ class Region {
 		let mods = [];
 		if (contains(this.noble.tags, "Frugal")) mods.push({"v": .5, "unit": "%", "why": "Noble"});
 		if (contains(this.noble.tags, "Hoarding")) mods.push({"v": -.35, "unit": "%", "why": "Noble"});
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && getNation(r.kingdom).calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
@@ -674,11 +672,7 @@ class Character {
 	}
 
 	calcLevel(dimension) {
-		if (this.experience[dimension] >= 24) return 5;
-		if (this.experience[dimension] >= 15) return 4;
-		if (this.experience[dimension] >= 8) return 3;
-		if (this.experience[dimension] >= 3) return 2;
-		return 1;
+		return Math.sqrt(this.experience[dimension] + 1);
 	}
 
 	calcPlotPower() {

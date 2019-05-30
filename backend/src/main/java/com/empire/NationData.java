@@ -9,8 +9,6 @@ import java.security.SecureRandom;
 
 class NationData {
 	enum Tag {	
-		@SerializedName("Bloodthirsty") BLOODTHIRSTY,
-		@SerializedName("Coast-Dwelling") COAST_DWELLING,
 		@SerializedName("Defensive") DEFENSIVE,
 		@SerializedName("Disciplined") DISCIPLINED,
 		@SerializedName("Evangelical") EVANGELICAL,

@@ -1060,26 +1060,6 @@ class World implements GoodwillProvider {
 					armies.remove(army);
 				} else if (action.startsWith("Conquer")) {
 					army.conquer(World.this, action, conqueredRegions, tributes, leaders, inspires, lastStands);
-				} else if (action.startsWith("Slay Civilians")) {
-					if (!army.isArmy()) continue;
-					// Must be strongest in region (not counting other armies of the same ruler). Target region must allow refugees.
-					boolean stopped = false;
-					for (Army a : armies) {
-						if (a.isArmy() && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(World.this, leaders.get(a), inspires, lastStands.contains(army.kingdom)) > army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
-							stopped = true;
-							notifications.add(new Notification(army.kingdom, "Forced Relocation Failed", "Army " + army.id + " was prevented from forcibly relocating the population of " + region.name + " by other armies present in the region."));
-							break;
-						}
-					}
-					if (stopped) continue;
-					double slain = Math.min(region.population - 1, army.size * 10);
-					if (army.hasTag(Army.Tag.UNDEAD)) army.size += slain / 10;
-					region.unrestPopular = Math.min(1, region.unrestPopular + 3 * slain / region.population);
-					getNation(army.kingdom).goodwill -= 200;
-					addPopulation(region, -slain);
-					double refugees = Math.min(region.population - 1, army.size * 10);
-					if (refugees > 0) sendRefugees(region, null, refugees, true, null, false);
-					for (Region r : regions) if (r.getKingdom() != null && r.getKingdom().equals(army.kingdom) && r.noble != null) r.noble.unrest = Math.min(1, r.noble.unrest + .2);
 				} else if (action.startsWith("Oust ")) {
 					if (!army.isArmy()) continue;
 					if (region.noble == null) continue;
@@ -1285,11 +1265,6 @@ class World implements GoodwillProvider {
 						c.name + " attempted a daring escape at the last moment, but was unable to get free."
 					};
 					notification += flavor[(int)(Math.random() * flavor.length)];
-					if (getNation(c.captor).hasTag(NationData.Tag.BLOODTHIRSTY) && region.getKingdom().equals(c.captor)) {
-						getNation(c.captor).gold += 300;
-						incomeSources.getOrDefault(c.captor, new Budget()).incomeExecution += 300;
-						notification += " The inhabitants of " + c.captor + " celebrated the event with offerings to their ruler.";
-					}
 					notifyAllPlayers("Execution of " + c.name, notification);
 					removeCharacters.add(c);
 					if (c.hasTag("Ruler")) {

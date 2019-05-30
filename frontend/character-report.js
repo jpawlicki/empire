@@ -96,18 +96,9 @@ class CharacterReport extends HTMLElement {
 		shadow.appendChild(content);
 		// Add skills.
 		for (let skill of ["admiral", "general", "governor", "spy"]) {
-			let l = c.calcLevel(skill);
-			let s = "";
-			for (let i = 0; i < l; i++) {
-				s += "★";
-			}
-			let x = c.experience[skill];
-			let rem = x >= 24 ? -1 : x >= 15 ? 24 - x : x >= 8 ? 15 - x : x >= 3 ? 8 - x : 3 - x;
-			if (rem == -1) rem = "Max level.";
-			else rem = rem + " experience to next level.";
 			let t = document.createElement("tooltip-element");
-			t.innerHTML = s;
-			t.setAttribute("tooltip", getEffect(l, skill) + " " + rem);
+			t.innerHTML = Math.floor(c.calcLevel(skill) * 100) / 100;
+			t.setAttribute("tooltip", getEffect(l, skill));
 			shadow.getElementById("skill_" + skill).appendChild(t);
 		}
 		// If values, show them; else hide them.
