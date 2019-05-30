@@ -7,6 +7,16 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class Mocks {
+    private static Rules rules;
+		static {
+			try {
+			  rules = Rules.loadRules(5);
+			} catch (IOException e) {
+				e.printStackTrace();
+				// Leave Rules as null.
+			}
+		}
+
     public static Region region(String kingdom, Region.Type type, double population, Ideology religion) {
         Region r = mock(Region.class);
         when(r.getKingdom()).thenReturn(kingdom);

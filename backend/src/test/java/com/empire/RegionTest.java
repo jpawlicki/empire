@@ -158,7 +158,7 @@ public class RegionTest {
         assertEquals(unrestLower, r.calcUnrest(unused -> -25, rules), DELTA);
 
         r.religion = Ideology.SWORD_OF_TRUTH;
-        assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
+        assertEquals(0.25, r.calcUnrest(unused -> -25, rules), DELTA);
 
         r.noble = mockNoble(null, unrestHigher);
         assertEquals(unrestHigher, r.calcUnrest(unused -> -25, rules), DELTA);
@@ -337,7 +337,7 @@ public class RegionTest {
 			r.population = 10000;
 			r.crops = 1000000;
 			r.food = 0;
-			r.harvest(new HashSet<>(), unused -> 0);
+			r.harvest(new HashSet<>(), unused -> 0, rules);
 			assertEquals(250000, r.food, DELTA);
 			assertEquals(0, r.crops, DELTA);
 		}
@@ -348,7 +348,7 @@ public class RegionTest {
 			r.crops = 1000000;
 			r.food = 0;
 			r.unrestPopular = .95;
-			r.harvest(new HashSet<>(), unused -> 0);
+			r.harvest(new HashSet<>(), unused -> 0, rules);
 			assertEquals(75000, r.food, DELTA);
 			assertEquals(0, r.crops, DELTA);
 		}
@@ -359,7 +359,7 @@ public class RegionTest {
 			r.crops = 1000000;
 			r.food = 0;
 			r.unrestPopular = .95;
-			r.harvest(Collections.singleton("k1"), unused -> 0);
+			r.harvest(Collections.singleton("k1"), unused -> 0, rules);
 			assertEquals(250000, r.food, DELTA);
 			assertEquals(0, r.crops, DELTA);
 		}

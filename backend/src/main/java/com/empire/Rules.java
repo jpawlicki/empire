@@ -23,7 +23,8 @@ public class Rules {
 	}
 
 	private static Rules readRules(int ruleSetId) throws IOException {
-		try (FileReader r = new FileReader("/resources/rules/" + ruleSetId + "/rules.json")) {
+		System.out.println("?" + String.join(", ", new java.io.File(".").list()));
+		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/rules.json")) {
 			return new GsonBuilder().create().fromJson(r, Rules.class);
 		}
 	}
