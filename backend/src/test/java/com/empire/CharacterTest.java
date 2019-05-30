@@ -45,9 +45,9 @@ public class CharacterTest {
 
     @Test
     public void calcPlotPowerSpyLevel() {
-				c.addExperienceSpy();
-				c.addExperienceSpy();
-				c.addExperienceSpy();
+        c.addExperienceSpy();
+        c.addExperienceSpy();
+        c.addExperienceSpy();
         assertEquals(1.6, c.calcPlotPower(w, false, 0), DELTA);
     }
 
