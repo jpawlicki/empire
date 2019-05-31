@@ -4,6 +4,7 @@ import com.google.common.base.Functions;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,8 +80,12 @@ public class WorldMap {
 
     private WorldMap(){}
 
-    public Map<String, Kingdom> getKingdoms() {
-        return kingdoms;
+    public Collection<Kingdom> getKingdoms() {
+        return kingdoms.values();
+    }
+
+    public Kingdom getKingdom(String kingdom) {
+        return kingdoms.get(kingdom);
     }
 
     public List<Region> getRegions() {

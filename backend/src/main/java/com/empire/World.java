@@ -108,7 +108,7 @@ class World implements GoodwillProvider {
 			}
 			w.regions.add(rr);
 		}
-		for (WorldMap.Kingdom k : w.worldMap.getKingdoms().values()) {
+		for (WorldMap.Kingdom k : w.worldMap.getKingdoms()) {
 			for (Integer i : k.coreRegions) {
 				w.regions.get(i).culture = k.culture;
 			}
@@ -152,7 +152,7 @@ class World implements GoodwillProvider {
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			NationData nation = new NationData();
-			WorldMap.Kingdom con = w.worldMap.getKingdoms().get(kingdom);
+			WorldMap.Kingdom con = w.worldMap.getKingdom(kingdom);
 			nation.email = setup.email;
 			nation.colorFg = con.colorFg;
 			nation.colorBg = con.colorBg;
@@ -239,7 +239,7 @@ class World implements GoodwillProvider {
 		// Allocate nobles as necessary.
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
-			Culture culture = w.worldMap.getKingdoms().get(kingdom).culture;
+			Culture culture = w.worldMap.getKingdom(kingdom).culture;
 			if ("Republican".equals(setup.trait1) || "Republican".equals(setup.trait2)) continue;
 			// 10 nobles.
 			ArrayList<Noble> nobles = new ArrayList<>();
@@ -389,7 +389,7 @@ class World implements GoodwillProvider {
 			ArrayList<Character> characters = new ArrayList<>();
 			for (int i = 0; i < (setup.dominantIdeology.religion == Religion.IRUHAN && setup.dominantIdeology != Ideology.VESSEL_OF_FAITH ? 5 : 4); i++) {
 				Character c = new Character();
-				c.name = Names.getRandomName(w.worldMap.getKingdoms().get(kingdom).culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
+				c.name = Names.getRandomName(w.worldMap.getKingdom(kingdom).culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
 				if (i == 0) {
 					c.name = setup.rulerName;
 					c.honorific = setup.title;
@@ -2470,7 +2470,7 @@ class World implements GoodwillProvider {
 			for (String k : remove) unruled.remove(k);
 			for (String k : unruled) {
 				Character c = new Character();
-				c.name = Names.getRandomName(worldMap.getKingdoms().get(k).culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
+				c.name = Names.getRandomName(worldMap.getKingdom(k).culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
 				c.honorific = "Protector ";
 				c.kingdom = k;
 				c.addTag("Ruler");
