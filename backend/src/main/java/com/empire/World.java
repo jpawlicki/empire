@@ -83,11 +83,12 @@ class World implements GoodwillProvider {
 		return getGson().fromJson(json, World.class);
 	}
 
-	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) {
+	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup, WorldMap worldMap) {
 		World w = new World();
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
 		w.obsPasswordHash = obsPasswordHash;
+		w.worldMap = worldMap;
 		w.turnSchedule.days = new ArrayList<>();
 		w.turnSchedule.days.add(DayOfWeek.MONDAY);
 		w.turnSchedule.days.add(DayOfWeek.WEDNESDAY);
@@ -98,9 +99,8 @@ class World implements GoodwillProvider {
 		w.regions = new ArrayList<>();
 		w.pirate.threat = 4;
 		// Set up regions (culture, climate, popular unrest).
-		for (WorldConstantData.Region r : WorldConstantData.regions) {
+		for (WorldMap.Region r : w.worldMap.getRegions()) {
 			Region rr = new Region();
-			rr.climate = r.climate;
 			rr.type = r.land ? Region.Type.LAND : Region.Type.WATER;
 			rr.name = r.name;
 			if (r.land) {
@@ -108,7 +108,7 @@ class World implements GoodwillProvider {
 			}
 			w.regions.add(rr);
 		}
-		for (WorldConstantData.Kingdom k : WorldConstantData.kingdoms.values()) {
+		for (WorldMap.Kingdom k : w.worldMap.getKingdoms().values()) {
 			for (Integer i : k.coreRegions) {
 				w.regions.get(i).culture = k.culture;
 			}
@@ -126,7 +126,7 @@ class World implements GoodwillProvider {
 		double totalSharesGold = 0;
 		double totalSharesArmy = 0;
 		double totalSharesNavy = 0;
-		int unruledNations = WorldConstantData.kingdoms.size() - nationSetup.keySet().size();
+		int unruledNations = w.worldMap.getKingdoms().size() - nationSetup.keySet().size();
 		double totalSharesFood = unruledNations / 2.0;
 		double totalSharesPopulation = unruledNations / 2.0;
 		for (String kingdom : nationSetup.keySet()) {
@@ -152,12 +152,12 @@ class World implements GoodwillProvider {
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			NationData nation = new NationData();
-			WorldConstantData.Kingdom con = WorldConstantData.kingdoms.get(kingdom);
+			WorldMap.Kingdom con = w.worldMap.getKingdoms().get(kingdom);
 			nation.email = setup.email;
 			nation.colorFg = con.colorFg;
 			nation.colorBg = con.colorBg;
 			nation.culture = con.culture;
-			nation.coreRegions = Ints.asList(con.coreRegions);
+			nation.coreRegions = con.coreRegions;
 			nation.goodwill = ("Holy".equals(setup.trait1) || "Holy".equals(setup.trait2)) ? 15 : setup.dominantIdeology.religion == Religion.IRUHAN ? 5 : -55;
 			nation.gothi = new HashMap<String, Boolean>();
 			nation.gothi.put("Alyrja", false);
@@ -239,13 +239,13 @@ class World implements GoodwillProvider {
 		// Allocate nobles as necessary.
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
-			Culture culture = WorldConstantData.kingdoms.get(kingdom).culture;
+			Culture culture = w.worldMap.getKingdoms().get(kingdom).culture;
 			if ("Republican".equals(setup.trait1) || "Republican".equals(setup.trait2)) continue;
 			// 10 nobles.
 			ArrayList<Noble> nobles = new ArrayList<>();
 			for (String trait : new String[]{ "Inspiring", "Frugal", "Soothing", "Meticulous", "Loyal", "Policing", "Generous", "Pious", "Rationing", "Patronizing"}) {
 				Noble n = new Noble();
-				n.name = WorldConstantData.getRandomName(culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				n.name = Names.getRandomName(culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
 				n.addTag(trait);
 				n.unrest = 0.15;
 				n.crisis = new Crisis();
@@ -274,9 +274,9 @@ class World implements GoodwillProvider {
 		}
 		while (numUnownedRegions > 0) {
 			double totalWeight = 0;
-			ArrayList<WorldConstantData.Border> borders = new ArrayList<>();
+			ArrayList<WorldMap.Border> borders = new ArrayList<>();
 			// Find all borders between owned and unowned land regions.
-			for (WorldConstantData.Border bo : WorldConstantData.borders) {
+			for (WorldMap.Border bo : w.worldMap.getBorders()) {
 				Region a = w.regions.get(bo.a);
 				Region b = w.regions.get(bo.b);
 				if ((a.getKingdom() == null && b.getKingdom() == null) || (a.getKingdom() != null && b.getKingdom() != null)) continue;
@@ -288,7 +288,7 @@ class World implements GoodwillProvider {
 			if (!borders.isEmpty()) {
 				// Pick a random border weighted by 1/border-size.
 				double v = Math.random() * totalWeight;
-				for (WorldConstantData.Border b : borders) {
+				for (WorldMap.Border b : borders) {
 					v -= 1.0 / b.size;
 					if (v > 0) continue;
 					Region ra = w.regions.get(b.a);
@@ -389,7 +389,7 @@ class World implements GoodwillProvider {
 			ArrayList<Character> characters = new ArrayList<>();
 			for (int i = 0; i < (setup.dominantIdeology.religion == Religion.IRUHAN && setup.dominantIdeology != Ideology.VESSEL_OF_FAITH ? 5 : 4); i++) {
 				Character c = new Character();
-				c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				c.name = Names.getRandomName(w.worldMap.getKingdoms().get(kingdom).culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
 				if (i == 0) {
 					c.name = setup.rulerName;
 					c.honorific = setup.title;
@@ -1098,7 +1098,7 @@ class World implements GoodwillProvider {
 				}
 				if (!tivar.deluge && army.isNavy() && region.isLand() && regions.get(toId).isLand()) continue;
 				int crossing = -1;
-				for (WorldConstantData.Border b : WorldConstantData.borders) if ((b.a == army.location && b.b == toId) || (b.b == army.location && b.a == toId)) crossing = b.size;
+				for (WorldMap.Border b : worldMap.getBorders()) if ((b.a == army.location && b.b == toId) || (b.b == army.location && b.a == toId)) crossing = b.size;
 				Preparation prep = null;
 				for (Preparation p : army.preparation) if (p.to == toId) prep = p;
 				int travelAmount = 1;
@@ -1156,7 +1156,7 @@ class World implements GoodwillProvider {
 						if (regions.get(i).name.equals(destination)) toId = i;
 					}
 					int crossing = -1;
-					for (WorldConstantData.Border b : WorldConstantData.borders) if ((b.a == c.location && b.b == toId) || (b.b == c.location && b.a == toId)) crossing = b.size;
+					for (WorldMap.Border b : worldMap.getBorders()) if ((b.a == c.location && b.b == toId) || (b.b == c.location && b.a == toId)) crossing = b.size;
 					Preparation prep = null;
 					for (Preparation p : c.preparation) if (p.to == toId) prep = p;
 					if (prep == null) {
@@ -2278,7 +2278,7 @@ class World implements GoodwillProvider {
 							Node n = queue.poll();
 							if (closeRegions.contains(n.r)) continue;
 							closeRegions.add(n.r);
-							for (WorldConstantData.Border b : WorldConstantData.borders) {
+							for (WorldMap.Border b : worldMap.getBorders()) {
 								if (b.a == n.r && b.size + n.dist < 6) {
 									queue.add(new Node(b.b, b.size + n.dist));
 								} else if (b.b == n.r && b.size + n.dist < 6) {
@@ -2470,7 +2470,7 @@ class World implements GoodwillProvider {
 			for (String k : remove) unruled.remove(k);
 			for (String k : unruled) {
 				Character c = new Character();
-				c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(k).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				c.name = Names.getRandomName(worldMap.getKingdoms().get(k).culture, Math.random() < 0.5 ? Names.Gender.MALE : Names.Gender.FEMALE);
 				c.honorific = "Protector ";
 				c.kingdom = k;
 				c.addTag("Ruler");

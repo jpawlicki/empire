@@ -326,7 +326,7 @@ public class EntryServlet extends HttpServlet {
 					// Nation is not in the game.
 				}
 			}
-			World w = World.startNew(passHash, obsPassHash, nations);
+			World w = World.startNew(passHash, obsPassHash, nations, WorldMap.defaultMap());
 			service.put(w.toEntity(r.gameId));
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
 			g.setProperty("date", 1);
