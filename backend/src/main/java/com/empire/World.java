@@ -44,6 +44,7 @@ class World implements GoodwillProvider {
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
 	int date;
+	WorldMap worldMap;
 	private Map<String, NationData> kingdoms = new HashMap<>();
 	List<Region> regions = new ArrayList<>();
 	List<Army> armies = new ArrayList<>();

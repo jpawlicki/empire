@@ -244,7 +244,7 @@ class Region {
 	public Set<Region> getNeighbors(World w) {
 		int id = w.regions.indexOf(this);
 		Set<Region> neighbors = new HashSet<>();
-		for (WorldConstantData.Border b : WorldConstantData.borders) {
+		for (WorldMap.Border b : w.worldMap.getBorders()) {
 			if (b.a == id) neighbors.add(w.regions.get(b.b));
 			else if (b.b == id) neighbors.add(w.regions.get(b.a));
 		}
