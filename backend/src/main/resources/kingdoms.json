@@ -1,0 +1,127 @@
+[{
+    "name": "Aefoss",
+    "color_bg": "#ffffff",
+    "color_fg": "#288ce5",
+    "culture": "eolsung",
+    "core_regions": [36, 37, 38, 43, 48, 50]
+  },
+  {
+    "name": "Doomstoll",
+    "color_bg": "#000000",
+    "color_fg": "#feb300",
+    "culture": "eolsung",
+    "core_regions": [16, 22, 25, 31, 40, 42]
+  },
+  {
+    "name": "Balyucesu",
+    "color_bg": "#000000",
+    "color_fg": "#e00059",
+    "culture": "anpilayn",
+    "core_regions": [41, 46, 47, 51, 54, 57]
+  },
+  {
+    "name": "Ejymsyn",
+    "color_bg": "#ffffff",
+    "color_fg": "#644c66",
+    "culture": "tavian",
+    "core_regions": [76, 81, 83, 85, 92, 98]
+  },
+  {
+    "name": "Fiskrbaer",
+    "color_bg": "#ffffff",
+    "color_fg": "#008c59",
+    "culture": "eolsung",
+    "core_regions": [12, 18, 23, 28, 32, 35]
+  },
+  {
+    "name": "Celyn",
+    "color_bg": "#ffffff",
+    "color_fg": "#003e00",
+    "culture": "anpilayn",
+    "core_regions": [60, 63, 65, 70, 71, 72]
+  },
+  {
+    "name": "Jaraslatr",
+    "color_bg": "#000000",
+    "color_fg": "#543eff",
+    "culture": "eolsung",
+    "core_regions": [24, 29, 33, 39, 44, 49]
+  },
+  {
+    "name": "Hosshofn",
+    "color_bg": "#ffffff",
+    "color_fg": "#006672",
+    "culture": "eolsung",
+    "core_regions": [17, 20, 21, 26, 27, 34]
+  },
+  {
+    "name": "Isla",
+    "color_bg": "#ffffff",
+    "color_fg": "#007f7f",
+    "culture": "tyrgaetan",
+    "core_regions": [8, 9, 10, 15, 19, 30]
+  },
+  {
+    "name": "Mabe",
+    "color_bg": "#000000",
+    "color_fg": "#fcffbf",
+    "culture": "hansa",
+    "core_regions": [78, 84, 95, 104, 105, 111]
+  },
+  {
+    "name": "Kyaradis",
+    "color_bg": "#000000",
+    "color_fg": "#d04c00",
+    "culture": "hansa",
+    "core_regions": [67, 77, 89, 101, 106, 117]
+  },
+  {
+    "name": "Nysiunarri",
+    "color_bg": "#000000",
+    "color_fg": "#00d800",
+    "culture": "anpilayn",
+    "core_regions": [52, 55, 58, 61, 64, 68]
+  },
+  {
+    "name": "Pernepulse",
+    "color_bg": "#ffffff",
+    "color_fg": "#000059",
+    "culture": "anpilayn",
+    "core_regions": [66, 69, 73, 75, 80, 86]
+  },
+  {
+    "name": "Slail",
+    "color_bg": "#000000",
+    "color_fg": "#bc7fcc",
+    "culture": "anpilayn",
+    "core_regions": [110, 112, 113, 119, 120, 121]
+  },
+  {
+    "name": "Tavia",
+    "color_bg": "#000000",
+    "color_fg": "#9a8c72",
+    "culture": "tavian",
+    "core_regions": [108, 109, 114, 115, 116, 118]
+  },
+  {
+    "name": "Upiceil",
+    "color_bg": "#ffffff",
+    "color_fg": "#6b0000",
+    "culture": "anpilayn",
+    "core_regions": [87, 94, 96, 99, 100, 107]
+  },
+  {
+    "name": "Rettrsvelt",
+    "color_bg": "#000000",
+    "color_fg": "#d9d9e5",
+    "culture": "tyrgaetan",
+    "core_regions": [0, 1, 2, 3, 4, 5, 6, 13, 14]
+  },
+  {
+    "name": "Zemsim",
+    "color_bg": "#ffffff",
+    "color_fg": "#684c00",
+    "culture": "anpilayn",
+    "core_regions": [79, 82, 88, 90, 93, 97]
+  }
+]
