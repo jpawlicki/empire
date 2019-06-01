@@ -15,9 +15,11 @@ import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -161,13 +163,9 @@ public class EntryServlet extends HttpServlet {
 	private String getOrders(Request r, HttpServletResponse resp) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		if (!checkPassword(r, service).passesRead()) return null;
-		try {
-			Order o = Order.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
-			resp.setHeader("SJS-Version", "" + o.version);
-			return o.json;
-		} catch (EntityNotFoundException e) {
-			return null;
-		}
+		Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
+		resp.setHeader("SJS-Version", "" + orders.version);
+		return GaeDatastoreClient.gson.toJson(orders.orders);
 	}
 
 	private String getSetup(Request r) {
@@ -241,11 +239,9 @@ public class EntryServlet extends HttpServlet {
 						HashMap<String, Map<String, String>> orders = new HashMap<>();
 						for (String kingdom : w.getNationNames()) {
 							kingdoms.add(kingdom);
-							try {
-								orders.put(kingdom, Order.loadOrder(gameId, kingdom, w.date, service).getOrders());
-							} catch (EntityNotFoundException e) {
-								// Can't load the relevant orders - tool will make default orders.
-							}
+							Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
+							if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
+							orders.put(kingdom, ordersKingdom.orders);
 						}
 						Map<String, String> emails = w.advance(orders);
 						service.put(w.toEntity(gameId));
@@ -396,13 +392,16 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
+	// TODO: better json conversion
 	private boolean postOrders(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
 			if (r.turn != getWorldDate(r.gameId, service)) return false;
-			service.put(new Order(r.gameId, r.kingdom, r.turn, r.version, r.body).toEntity());
+			Type t = new TypeToken<Map<String, String>>(){}.getType();
+			Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
+			dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
