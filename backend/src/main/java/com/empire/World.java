@@ -1,5 +1,6 @@
 package com.empire;
 
+import com.empire.store.Compressor;
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;

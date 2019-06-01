@@ -1,6 +1,5 @@
 package com.empire.store;
 
-import com.empire.Compressor;
 import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.svc.LoginKey;

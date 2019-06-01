@@ -1,4 +1,4 @@
-package com.empire;
+package com.empire.store;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
