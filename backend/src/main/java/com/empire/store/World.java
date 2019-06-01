@@ -1,6 +1,7 @@
 package com.empire.store;
 
 import com.empire.Character;
+import com.empire.Nation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

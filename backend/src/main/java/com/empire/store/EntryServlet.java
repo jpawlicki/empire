@@ -1,6 +1,7 @@
 package com.empire.store;
 
 import com.empire.Character;
+import com.empire.Nation;
 import com.empire.StartWorldGson;
 import com.empire.svc.LoginCache;
 import com.empire.svc.Player;

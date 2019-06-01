@@ -172,11 +172,7 @@ public class EntryServlet extends HttpServlet {
 
 	private String getSetup(Request r) {
 		// TODO - should filter this data or display it.
-		try {
-			return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
-		} catch (EntityNotFoundException e) {
-			return null;
-		}
+		return dsClient.getNationJson(r.gameId, r.kingdom);
 	}
 
 	private int getWorldDate(long gameId, DatastoreService service) throws EntityNotFoundException {
@@ -316,15 +312,11 @@ public class EntryServlet extends HttpServlet {
 		HashSet<String> addresses = new HashSet<String>();
 		try {
 			// Collect setups.
-			HashMap<String, Nation.NationGson> nations = new HashMap<>();
+			HashMap<String, Nation> nations = new HashMap<>();
 			for (String kingdom : s.kingdoms) {
 				log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
-				try {
-					nations.put(kingdom, Nation.NationGson.loadNation(kingdom, r.gameId, service));
-					addresses.add(nations.get(kingdom).email);
-				} catch (EntityNotFoundException e) {
-					// Nation is not in the game.
-				}
+				nations.put(kingdom, dsClient.getNation(r.gameId, kingdom));
+				addresses.add(nations.get(kingdom).email);
 			}
 			World w = World.startNew(passHash, obsPassHash, nations);
 			service.put(w.toEntity(r.gameId));
@@ -491,26 +483,20 @@ public class EntryServlet extends HttpServlet {
 
 	//TODO: all puts in single transaction: Nation, Player
 	private boolean postSetup(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+		Nation nation = dsClient.getNation(r.gameId, r.kingdom);
+		if (nation == null) return false; // We expect nation to not be found
+
+		nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
+
 		try {
-			Nation.NationGson.loadNation(r.kingdom, r.gameId, service);
-			return false; // We expect an EntityNotFoundException.
-		} catch (EntityNotFoundException e) {
-			try {
-				Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
-				nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
-				service.put(nation.toEntity(r.kingdom, r.gameId));
-//				service.put(new Player(nation.email, nation.password).toEntity());
-				dsClient.putPlayer(new Player(nation.email, nation.password));
-				txn.commit();
-			} catch (NoSuchAlgorithmException ee) {
-				log.log(Level.SEVERE, "postSetup Failure", ee);
-				return false;
-			}
-		} finally {
-			if (txn.isActive()) txn.rollback();
+			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
+		} catch (NoSuchAlgorithmException e){
+			log.log(Level.SEVERE, "postSetup Failure", e);
+			return false;
 		}
+
+		dsClient.putNation(r.gameId, r.kingdom, nation);
+		dsClient.putPlayer(new Player(nation.email, nation.password));
 		return true;
 	}
 

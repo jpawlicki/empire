@@ -1,6 +1,7 @@
 package com.empire.store;
 
 import com.empire.Compressor;
+import com.empire.Nation;
 import com.empire.svc.LoginKey;
 import com.empire.svc.Player;
 import com.google.appengine.api.datastore.Blob;
