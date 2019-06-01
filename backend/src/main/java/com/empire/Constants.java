@@ -84,13 +84,6 @@ public class Constants {
     public static final double perInspirePlotMod = 0.05;
     public static final double capturedPlotMod = -0.5;
 
-    public static final String charDimAll = "*";
-    public static final String charDimGeneral = "general";
-    public static final String charDimAdmiral = "admiral";
-    public static final String charDimSpy = "spy";
-    public static final String charDimGovernor = "governor";
-    public static final List<String> charDims = Arrays.asList(charDimGeneral, charDimAdmiral, charDimSpy, charDimGovernor);
-
     public static final double oneDimExpAdd = 1.0;
     public static final double allDimExpAdd = 0.25;
     public static final double perLevelLeaderMod = 0.2;
