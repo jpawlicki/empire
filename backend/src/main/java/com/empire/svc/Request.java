@@ -1,4 +1,4 @@
-package com.empire.store;
+package com.empire.svc;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -8,13 +8,13 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 
-final class Request {
-    final int turn;
-    final int version;
-    final long gameId;
-    final String password;
-    final String kingdom;
-    final String body;
+public final class Request {
+    public final int turn;
+    public final int version;
+    public final long gameId;
+    public final String password;
+    public final String kingdom;
+    public final String body;
     final boolean skipMail;
 
     private Request(int turn, int version, long gameId, String password, String kingdom, String body, boolean skipMail) {

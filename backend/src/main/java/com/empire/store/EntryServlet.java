@@ -4,6 +4,7 @@ import com.empire.Character;
 import com.empire.StartWorldGson;
 import com.empire.svc.LoginCache;
 import com.empire.svc.Player;
+import com.empire.svc.Request;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
