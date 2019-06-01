@@ -1,4 +1,4 @@
-package com.empire.store;
+package com.empire.svc;
 
 import java.util.Objects;
 
@@ -7,7 +7,7 @@ public class LoginKey {
     private final long gameId;
     private final int date;
 
-    LoginKey(String email, long gameId, int date) {
+    public LoginKey(String email, long gameId, int date) {
         this.email = email;
         this.gameId = gameId;
         this.date = date;

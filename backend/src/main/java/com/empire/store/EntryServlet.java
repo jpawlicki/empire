@@ -2,6 +2,7 @@ package com.empire.store;
 
 import com.empire.Character;
 import com.empire.StartWorldGson;
+import com.empire.svc.LoginCache;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;

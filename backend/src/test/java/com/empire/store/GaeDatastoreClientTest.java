@@ -1,5 +1,6 @@
 package com.empire.store;
 
+import com.empire.svc.LoginKey;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import java.util.ArrayList;
