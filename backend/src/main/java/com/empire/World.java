@@ -239,28 +239,12 @@ class World implements GoodwillProvider {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			Culture culture = WorldConstantData.kingdoms.get(kingdom).culture;
 			if (setup.hasTag(NationData.Tag.REPUBLICAN)) continue;
-			// 10 nobles.
-			ArrayList<Noble> nobles = new ArrayList<>();
-			for (String trait : new String[]{ "Inspiring", "Frugal", "Soothing", "Meticulous", "Loyal", "Policing", "Generous", "Pious", "Rationing", "Patronizing"}) {
-				Noble n = new Noble();
-				n.name = WorldConstantData.getRandomName(culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
-				n.addTag(trait);
-				n.unrest = 0.15;
-				n.crisis = new Crisis();
-				n.crisis.type = Crisis.Type.NONE;
-				nobles.add(n);
-			}
-			Collections.shuffle(nobles);
 			ArrayList<Integer> ownedRegions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) ownedRegions.add(i);
 			Collections.shuffle(ownedRegions);
-			int placements = Math.min(ownedRegions.size(), "anpilayn".equals(culture) ? 6 : "eolsung".equals(culture) || "hansa".equals(culture) ? 3 : 0);
+			int placements = (int) Math.ceil(ownedRegions.size() * culture.nobleFraction);
 			for (int i = 0; i < placements; i++) {
-				w.regions.get(ownedRegions.get(i)).noble = nobles.get(i);
-				nobles.get(i).crisis.deadline = 6;
-			}
-			for (int i = placements; i < 10; i++) {
-				w.getNation(kingdom).court.add(nobles.get(i));
+				w.regions.get(ownedRegions.get(i)).noble = Noble.makeNoble(culture, 0);
 			}
 		}
 		// Allocate unowned regions between non-rebellious nations.
@@ -1177,8 +1161,6 @@ class World implements GoodwillProvider {
 					} else {
 						double costMod = 1;
 						if (getNation(c.kingdom).hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
-						if (region.noble != null && region.noble.hasTag("Patronizing")) costMod -= .5;
-						if (region.noble != null && region.noble.hasTag("Broke")) costMod += 1;
 						Construction ct;
 						if (action.contains("Shipyard")) {
 							ct = Construction.makeShipyard(Math.max(0, Constants.baseCostShipyard * costMod));
@@ -1228,12 +1210,7 @@ class World implements GoodwillProvider {
 					}
 				} else if (action.startsWith("Instate Noble")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom) || region.noble != null) continue;
-					for (Noble n : getNation(c.kingdom).court) if (String.join(", ", n.tags).equals(action.replace("Instate Noble (", "").replace(")", ""))) {
-						getNation(c.kingdom).court.remove(n);
-						region.noble = n;
-						n.crisis.deadline = date + 6;
-						break;
-					}
+					region.noble = Noble.makeNoble(region.culture, date);
 					c.orderhint = "";
 					c.addExperienceGovernor();
 				} else if (action.startsWith("Govern")) {
@@ -1537,9 +1514,6 @@ class World implements GoodwillProvider {
 				if (ration < 0.9) unrestMod += .15;
 				if (ration > 1.1) unrestMod -= .1;
 				if (getNation(r.getKingdom()).hasTag(NationData.Tag.REPUBLICAN)) unrestMod -= .03;
-				if (r.noble != null && r.noble.hasTag("Soothing")) unrestMod -= .06;
-				if (r.noble != null && r.noble.hasTag("Workaholic")) unrestMod += .03;
-				if (r.noble != null && r.noble.hasTag("Generous") && isHarvestTurn()) unrestMod -= .5;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
 				if (Ideology.ALYRJA == r.religion && r.food < turnsUntilHarvest() * r.calcConsumption(World.this, 1)) unrestMod += .03;
 				if (Ideology.RJINKU == r.religion && !battlingNations.contains(r.getKingdom())) unrestMod += .02;
@@ -1554,9 +1528,7 @@ class World implements GoodwillProvider {
 				for (Construction c : r.constructions) if (c.type == Construction.Type.TEMPLE) unrestMod -= 0.02;
 				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
 
-				if (r.noble != null && r.noble.hasTag("Snubbed")) r.noble.unrest = Math.min(1, r.noble.unrest + .02);
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom()) && NationData.isEnemy(k, r.getKingdom(), World.this) && getNation(k).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .04);
-				if (r.noble != null && r.noble.hasTag("Policing")) pirate.bribes.put(r.getKingdom(), pirate.bribes.getOrDefault(r.getKingdom(), 0.0) - 8);
 			}
 			// Syrjen unrest mods.
 			HashMap<Region, Double> popularUnrests = new HashMap<>();
@@ -2105,245 +2077,8 @@ class World implements GoodwillProvider {
 		void nobleCrises() {
 			for (Region r : regions) {
 				if (r.noble == null) continue;
-				switch (r.noble.crisis.type) {
-					case NONE:
-						break;
-					case WEDDING:
-						boolean rulerPresent = false;
-						for (Character c : characters) if (c.hasTag("Ruler") && c.kingdom.equals(r.getKingdom()) && c.location == regions.indexOf(r)) rulerPresent = true;
-						if (rulerPresent) {
-							r.noble.addTag("Loyal");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "The wedding of the daughter of " + r.noble.name + " was a spectacular affair. It is rare for the nobility to find much joy in their political marriage, but in this case the couple's obvious love for one another warmed your heart to witness. " + r.noble.name + " could not thank you enough for attending, and swore never to forget this day."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case RECESSION:
-						if (getNation(r.getKingdom()).gold >= 140) {
-							r.noble.addTag("Frugal");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "By learning from your example (and taking out a small loan from your treasury), " + r.noble.name + " has solved the financial worries in " + r.name + " and has stimulated the local economy."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case BANDITRY:
-						boolean armyPresent = false;
-						for (Army a : armies) if (a.isArmy() && a.calcStrength(World.this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > r.calcMinPatrolStrength(World.this) && a.location == regions.indexOf(r) && a.kingdom.equals(r.getKingdom())) armyPresent = true;
-						if (armyPresent) {
-							r.noble.addTag("Policing");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "With the aid of our troops, " + r.noble.name + " has eliminated the bandit threat from " + r.name + ", and has established a personal police to ensure the region remains secure."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case BORDER:
-						boolean badNeighbor = false;
-						for (Region n : r.getNeighbors(World.this)) if (n.getKingdom() != null && NationData.isEnemy(r.getKingdom(), n.getKingdom(), World.this)) badNeighbor = true;
-						if (!badNeighbor) {
-							r.noble.addTag("Inspiring");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", r.noble.name + " has capitalized on the new security of the borders of " + r.name + ", citing this as an example of the glorious purpose of our armies to potential recruits."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case ENNUI:
-						if (rationing.getOrDefault(r.getKingdom(), 1.0) > 1) {
-							r.noble.addTag("Generous");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", r.noble.name + " was refreshed by witnessing the feasting and jubilation in " + r.name + ", and has discovered a new joy in generousity."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case CULTISM:
-						if (templeBuilds.contains(r)) {
-							r.noble.addTag("Pious");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "With people flocking to the new temple in " + r.name + ", " + r.noble.name + " has been able to turn them away from assisting the Cult."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case OVERWHELMED:
-						if (governors.containsKey(r)) {
-							r.noble.addTag("Meticulous");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "Assisted by our governance of " + r.name + ", " + r.noble.name + " has gotten back on their feet - and picked up a trick or two!"));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case UPRISING:
-						if (r.unrestPopular <= .5) {
-							r.noble.addTag("Soothing");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "As unrest settles in " + r.name + ", " + r.noble.name + " has made a name for themself among the people, listening to concerns and addressing sources of conflict."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case STARVATION:
-						if (r.food > 0) {
-							r.noble.addTag("Rationing");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "With the immediate starvation in " + r.name + " addressed, " + r.noble.name + " has made reforms in how food is handled or wasted to help ensure that starvation does not become a problem again."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-					case GUILD:
-						if (builds.contains(r)) {
-							r.noble.addTag("Patronizing");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Resolved", "By clever hiring of persons to fill our construction order, " + r.noble.name + " has given the guilds in " + r.name + " a reputation of ineffectiveness and curtailed their growth. They have promised to subsidize future constructions in the region as well."));
-							r.noble.crisis.type = Crisis.Type.NONE;
-							r.noble.unrest = Math.max(0, r.noble.unrest - .25);
-						}
-						break;
-				}
-				// Deadlines.
-				if (r.noble.crisis.deadline == date) {
-					switch (r.noble.crisis.type) {
-						case NONE:
-							break;
-						case WEDDING:
-							r.noble.addTag("Snubbed");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", "The wedding " + r.noble.name + " invited you to in " + r.name + " has taken place without you and " + r.noble.name + " is very cross."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case RECESSION:
-							r.noble.addTag("Hoarding");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", "The economic issues in " + r.name + " have been resolved, but " + r.noble.name + " has pledged to never let go of gold so easily again - not even to our tax collectors."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case BANDITRY:
-							r.noble.addTag("Shady Connections");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", "The bandits in " + r.name + " have been legitimized by the " + r.noble.name + ", in a deal to avoid future incidents. Regrettably, in so doing " + r.name + " has become a gathering place of undesireables."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case BORDER:
-							r.noble.addTag("Untrusting");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", r.noble.name + " has dealt with their fears by building up a large personal guard. Unfortunately, they take the best of " + r.name + " recruits, leaving the kingdom with only the bottom quality."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case ENNUI:
-							r.noble.addTag("Workaholic");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", r.noble.name + " has found purpose in their work, but regrettably demands everyone else in " + r.name + " work just as tirelessly."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case CULTISM:
-							r.noble.addTag("Cultist");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", r.noble.name + " has dealt with the cultists by agreeing to grant them access to the section of " + r.name + " they desire."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case OVERWHELMED:
-							r.noble.addTag("Wasteful");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", r.noble.name + " has resolved their troubles " + r.name + " but acquired a habit of accepting wastefulness."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case UPRISING:
-							r.noble.addTag("Tyrannical");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", "The uprising in " + r.name + " came to a head this week when the dissidents stormed the home of " + r.noble.name + " and slew almost all the inhabitants. In grief and rage, " + r.noble.name + " retaliated in kind, wiping out the rebels and their families, and vows to never let this repeat."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case STARVATION:
-							r.noble.addTag("Desperate");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", "Faced with rampant starvation in " + r.name + ", " + r.noble.name + " has despaired of help from our kingdom and solicited other rulers to take over. We should no longer trust the region's natural defenses."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-						case GUILD:
-							r.noble.addTag("Broke");
-							notifications.add(new Notification(r.getKingdom(), "Noble Crisis Expired", r.noble.name + " has dealt with the guilds in " + r.name + " by personally financing a trade war against them. Although successful, they are now thoroughly broke and attempting to rebuild their wealth by high permitting costs. We can expect any construction in the region to be more expensive."));
-							r.noble.unrest = Math.min(1, r.noble.unrest + .12);
-							break;
-					}
-					ArrayList<Crisis.Type> possibleCrises = new ArrayList<>();
-					if (getNation(r.getKingdom()).gold < 20) possibleCrises.add(Crisis.Type.RECESSION);
-					HashSet<Integer> closeRegions = new HashSet<>();
-					{
-						class Node {
-							final int r;
-							final int dist;
-							Node(int r, int dist) { this.r = r; this.dist = dist; }
-						}
-						PriorityQueue<Node> queue = new PriorityQueue<>(100, new Comparator<Node>() {
-							@Override
-							public int compare(Node a, Node b) {
-								return a.dist > b.dist ? 1 : a.dist < b.dist ? -1 : 0;
-							}
-						});
-						queue.add(new Node(regions.indexOf(r), 0));
-						while (!queue.isEmpty()) {
-							Node n = queue.poll();
-							if (closeRegions.contains(n.r)) continue;
-							closeRegions.add(n.r);
-							for (WorldConstantData.Border b : WorldConstantData.borders) {
-								if (b.a == n.r && b.size + n.dist < 6) {
-									queue.add(new Node(b.b, b.size + n.dist));
-								} else if (b.b == n.r && b.size + n.dist < 6) {
-									queue.add(new Node(b.a, b.size + n.dist));
-								}
-							}
-						}
-					}
-					boolean characterInRange = false;
-					boolean rulerInRange = false;
-					for (Character c : characters) {
-						if (c.kingdom.equals(r.getKingdom()) && c.captor.equals("") && closeRegions.contains(c.location)) {
-							characterInRange = true;
-							if (c.hasTag("Ruler")) rulerInRange = true;
-						}
-					}
-					double troopsInRegion = 0;
-					for (Army a : armies) if (a.isArmy() && a.kingdom.equals(r.getKingdom()) && a.location == regions.indexOf(r)) troopsInRegion += a.size;
-					boolean unsafeBorder = false;
-					for (Region n : r.getNeighbors(World.this)) if (n.getKingdom() != null && NationData.isEnemy(r.getKingdom(), n.getKingdom(), World.this)) unsafeBorder = true;
-					if (!r.noble.hasTag("Frugal") && !r.noble.hasTag("Hoarding") && getNation(r.getKingdom()).gold < 20) possibleCrises.add(Crisis.Type.RECESSION);
-					if (!r.noble.hasTag("Loyal") && !r.noble.hasTag("Snubbed") && rulerInRange) possibleCrises.add(Crisis.Type.WEDDING);
-					if (!r.noble.hasTag("Policing") && !r.noble.hasTag("Shady Connections") && troopsInRegion < 1000) possibleCrises.add(Crisis.Type.BANDITRY);
-					if (!r.noble.hasTag("Inspiring") && !r.noble.hasTag("Untrusting") && unsafeBorder) possibleCrises.add(Crisis.Type.BORDER);
-					if (!r.noble.hasTag("Generous") && !r.noble.hasTag("Workaholic") && r.unrestPopular > .15 && characterInRange) possibleCrises.add(Crisis.Type.ENNUI);
-					if (!r.noble.hasTag("Pious") && !r.noble.hasTag("Cultist") && cultRegions.contains(regions.indexOf(r)) && characterInRange) possibleCrises.add(Crisis.Type.CULTISM);
-					if (!r.noble.hasTag("Meticulous") && !r.noble.hasTag("Wasteful") && characterInRange) possibleCrises.add(Crisis.Type.OVERWHELMED);
-					if (!r.noble.hasTag("Soothing") && !r.noble.hasTag("Tyrannical") && r.unrestPopular > .5) possibleCrises.add(Crisis.Type.UPRISING);
-					if (!r.noble.hasTag("Rationing") && !r.noble.hasTag("Desperate") && r.food == 0) possibleCrises.add(Crisis.Type.STARVATION);
-					if (!r.noble.hasTag("Patronizing") && !r.noble.hasTag("Broke") && characterInRange) possibleCrises.add(Crisis.Type.GUILD);
-					if (possibleCrises.isEmpty()) {
-						r.noble.crisis.type = Crisis.Type.NONE;
-						r.noble.crisis.deadline = date + 1;
-					} else {
-						r.noble.crisis.deadline = date + 6;
-						r.noble.crisis.type = possibleCrises.get((int)(Math.random() * possibleCrises.size()));
-						switch (r.noble.crisis.type) {
-							case NONE:
-								break;
-							case WEDDING:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Wedding)", r.noble.name + "'s daughter is being wed in " + r.name + " and they request your presence as ruler."));
-								break;
-							case RECESSION:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Recession)", "Economic issues plague " + r.name + " and " + r.noble.name + " seeks to take out a loan from the kingdom - build up a treasury of at least 140 gold to support them."));
-								break;
-							case BANDITRY:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Banditry)", "Bow-wielding outlaws in " + r.name + " have been attacking merchants and agents of the nobility. " + r.noble.name + " requests the presence of a sizeable army in the region to help eliminate them."));
-								break;
-							case BORDER:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Unsafe Border)", r.noble.name + ", the noble ruling " + r.name + ", has become deeply concerned with the neighboring enemy region, and requests that you deal with the situation one way or another."));
-								break;
-							case ENNUI:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Ennui)", r.noble.name + " has lost the luster of life and sinks into deep depressions. Implement generous rationing to show them the joy in life."));
-								break;
-							case CULTISM:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Cultism)", r.noble.name + " has written you, warning that the Cult is especially active in " + r.name + " and is gradually taking power there. They suggest that construction of a temple might turn the people back toward a safer religion."));
-								break;
-							case OVERWHELMED:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Overwhelmed)", r.noble.name + " can't keep up with the stresses of managing a " + r.name + " and has asked for one of our agents to assist by governing it for a week."));
-								break;
-							case UPRISING:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Uprising)", "The rampant popular unrest " + r.name + " has triggered numerous incidents and " + r.noble.name + " can no longer deal with it on their own. They request the nation take some action, urgently, to decrease popular unrest back to manageable levels."));
-								break;
-							case STARVATION:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Starvation)", r.noble.name + " feels deeply for their subjects in " + r.name + " and has asked the nation to fix the starvation situation immediately."));
-								break;
-							case GUILD:
-								notifications.add(new Notification(r.getKingdom(), "Noble Crisis (Guild)", r.noble.name + " has notified us that the guilds forming in " + r.name + " are becoming economic powerhouses, threatening to cut out the nobility altogether. They request we construct an improvement in " + r.name + " as part of a plan to out-compete the guilds."));
-								break;
-						}
-					}
-				}
+				r.noble.resolveCrisis(World.this, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires).ifPresent(notifications::add);
+				r.noble.createCrisis(World.this, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires).ifPresent(notifications::add);
 			}
 		}
 
@@ -2353,7 +2088,6 @@ class World implements GoodwillProvider {
 				for (int i : cultRegions) {
 					Region r = regions.get(i);
 					if (getNation(r.getKingdom()).loyalToCult) removals.add(i);
-					if (r.noble != null && r.noble.hasTag("Cultist")) removals.add(i);
 					for (Army a : armies) if (a.hasTag(Army.Tag.HIGHER_POWER) && a.location == i) removals.add(i);
 				}
 				for (Integer i : removals) cultRegions.remove(i);
@@ -2676,7 +2410,7 @@ class World implements GoodwillProvider {
 		HashMap<Ideology, Double> pop = new HashMap<>();
 		for (Region r : regions) {
 			if (r.religion != null && r.religion.religion == Religion.IRUHAN) {
-				pop.put(r.religion, pop.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
+				pop.put(r.religion, pop.getOrDefault(r.religion, 0.0) + r.population);
 			}
 		}
 		return getMaxKey(pop);

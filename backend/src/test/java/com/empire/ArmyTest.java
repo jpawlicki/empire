@@ -55,7 +55,6 @@ public class ArmyTest {
 
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
-		r2.noble = Mocks.noble(Constants.nobleLoyalTag, 0.0);
 		w.regions = Arrays.asList(r1, r2);
 		return w;
 	}
@@ -136,26 +135,6 @@ public class ArmyTest {
 		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(true);
 		assertEquals(1.3, a.calcStrength(w, null, 0, false), DELTA);
-	}
-
-	@Test
-	public void calcStrengthLoyalNavy() {
-		a.location = 1;
-		a.type = Army.Type.NAVY;
-		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
-	}
-
-	@Test
-	public void calcStrengthLoyalNotRegionOwner() {
-		a.location = 1;
-		when(w.regions.get(1).getKingdom()).thenReturn(k2);
-		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
-	}
-
-	@Test
-	public void calcStrengthLoyal() {
-		a.location = 1;
-		assertEquals(1.25, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test

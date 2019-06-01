@@ -15,11 +15,10 @@ class Mocks {
 		return r;
 	}
 
-	public static Noble noble(String nobleTag, double unrest) {
+	public static Noble noble(double unrest) {
 		Noble n = mock(Noble.class);
 		n.unrest = unrest;
 		n.name = "DONTCARE";
-		when(n.hasTag(nobleTag)).thenReturn(true);
 		return n;
 	}
 
