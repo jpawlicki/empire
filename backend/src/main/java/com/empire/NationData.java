@@ -78,7 +78,7 @@ class NationData {
 		HashMap<Ideology, Double> weights = new HashMap<>();
 		for (Region r : w.regions) {
 			if (!kingdom.equals(r.getKingdom())) continue;
-			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
+			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population);
 		}
 		Ideology max = Ideology.COMPANY;
 		double maxVal = 0;
