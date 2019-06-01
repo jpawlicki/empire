@@ -52,7 +52,6 @@ class ChurchReport extends HTMLElement {
 					<div>Construct Temple (non-Iruhan)</div><div>-20</div>
 					<div>Battle in Sancta Civitate</div><div>-40</div>
 					<div>Execute a Captive</div><div>-40</div>
-					<div>Slay Civilians</div><div>-200</div>
 				</div>
 			</div>
 		`;

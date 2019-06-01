@@ -59,6 +59,10 @@ class Nation {
 			return e;
 		}
 
+		public boolean hasTag(NationData.Tag tag) {
+			return trait1 == tag || trait2 == tag;
+		}
+
 		@Override
 		public String toString() {
 			return getGson().toJson(this);
