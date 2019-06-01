@@ -23,7 +23,6 @@ class Region {
 	String name;
 	Type type;
 	Culture culture;
-	String climate;
 	double population;
 	Ideology religion;
 	double unrestPopular;
@@ -79,7 +78,7 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + Constants.baseGovernRecruitMod;
+				mods += c.calcGovernRecruitMod();
 			}
 		}
 
@@ -88,7 +87,6 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleTyrannicalTag)) mods += Constants.nobleTyrannicalMod;
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
 		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
@@ -133,7 +131,7 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + Constants.baseGovernTaxMod;
+				mods += c.calcGovernTaxMod();
 			}
 		}
 
@@ -141,7 +139,6 @@ class Region {
 		if (noble != null && noble.hasTag(Constants.nobleHoardingTag)) mods += Constants.nobleHoardingMod;
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
