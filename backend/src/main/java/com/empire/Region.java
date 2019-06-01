@@ -355,8 +355,11 @@ class Region {
 		return type == Type.WATER;
 	}
 
+	/**
+	 * Returns a set of region ids that are within {@code limit} edges of this region.
+	 */
 	Set<Integer> getCloseRegionIds(World w, int limit) {
-		HashSet<Integer> closeRegions = new HashSet<>();
+		Set<Integer> closeRegions = new HashSet<>();
 		class Node {
 			final int r;
 			final int dist;
