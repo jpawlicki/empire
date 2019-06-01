@@ -1,6 +1,7 @@
 package com.empire.store;
 
 import com.empire.svc.LoginKey;
+import com.empire.svc.Player;
 import java.util.Set;
 
 // TODO: consider changing active games to get, add(long), delete(long)

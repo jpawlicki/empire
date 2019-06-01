@@ -2,6 +2,7 @@ package com.empire;
 
 import com.empire.store.DatastoreClient;
 import com.empire.store.GaeDatastoreClient;
+import com.empire.svc.Player;
 import com.empire.svc.LoginCache;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -388,7 +389,8 @@ public class EntryServlet extends HttpServlet {
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
 			// if (w.kingdoms.containsKey(r.kingdom) && w.getNation(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
 			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.getNation(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
-			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
+//			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
+			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(dsClient.getPlayer(w.getNation(r.kingdom).email).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
 			return CheckPasswordResult.FAIL;
@@ -451,7 +453,7 @@ public class EntryServlet extends HttpServlet {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
-			Player p = Player.loadPlayer(body.email, service);
+			Player p = dsClient.getPlayer(body.email);
 			w.getNation(r.kingdom).email = body.email;
 			w.getNation(r.kingdom).password = p.passHash;
 			service.put(w.toEntity(r.gameId));
@@ -486,6 +488,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 
+	//TODO: all puts in single transaction: Nation, Player
 	private boolean postSetup(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
@@ -497,7 +500,8 @@ public class EntryServlet extends HttpServlet {
 				Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
 				nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 				service.put(nation.toEntity(r.kingdom, r.gameId));
-				service.put(new Player(nation.email, nation.password).toEntity());
+//				service.put(new Player(nation.email, nation.password).toEntity());
+				dsClient.putPlayer(new Player(nation.email, nation.password));
 				txn.commit();
 			} catch (NoSuchAlgorithmException ee) {
 				log.log(Level.SEVERE, "postSetup Failure", ee);

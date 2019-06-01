@@ -1,8 +1,8 @@
-package com.empire.store;
+package com.empire.svc;
 
 import java.util.Objects;
 
-final class Player {
+public class Player {
     public final String email;
     public final String passHash;
 
