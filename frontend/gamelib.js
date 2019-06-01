@@ -156,7 +156,6 @@ class Region {
 		this.name = dataEntry.name;
 		this.type = dataEntry.type;
 		this.path = constEntry.path;
-		this.climate = dataEntry.climate;
 		this.culture = dataEntry.culture;
 		this.population = dataEntry.population;
 		this.kingdom = dataEntry.kingdom;
@@ -176,11 +175,14 @@ class Region {
 	}
 
 	calcRecruitment(extraMod=0) {
-		let base = new Calc("*", [
+		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}]);
-		let mods = [];
+			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}];
 		let unrest = this.calcUnrest().v;
+		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
+		let base = new Calc("*", baseAmount);
+
+		let mods = [];
 		if (calcNobleLevel() > 0) mods.push({"v": calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
@@ -190,7 +192,6 @@ class Region {
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
 		}
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
@@ -218,13 +219,14 @@ class Region {
 	}
 
 	calcTaxation(extraMod=0) {
-		let base = new Calc("*", [
+		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}]);
-		let mods = [];
+			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
+		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
+		let base = new Calc("*", baseAmount);
+
+		let mods = [];
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
 		if (calcNobleLevel() > 0) mods.push({"v": calcNobleLevel() * .05, "unit": "%", "why": "Noble"});
 		let neighborKuun = false;
@@ -672,11 +674,7 @@ class Character {
 	}
 
 	calcLevel(dimension) {
-		if (this.experience[dimension] >= 24) return 5;
-		if (this.experience[dimension] >= 15) return 4;
-		if (this.experience[dimension] >= 8) return 3;
-		if (this.experience[dimension] >= 3) return 2;
-		return 1;
+		return Math.sqrt(this.experience[dimension] + 1);
 	}
 
 	calcPlotPower() {

@@ -23,7 +23,6 @@ class Region {
 	String name;
 	Type type;
 	Culture culture;
-	String climate;
 	double population;
 	Ideology religion;
 	double unrestPopular;
@@ -79,13 +78,12 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernRecruitMod + Constants.baseGovernRecruitMod;
+				mods += c.calcGovernRecruitMod();
 			}
 		}
 		if (noble != null) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingRecruitMod;
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
 		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
@@ -130,13 +128,12 @@ class Region {
 
 		if (governors != null) {
 			for (Character c : governors) {
-				mods += c.calcLevel(Constants.charDimGovernor) * Constants.perLevelGovernTaxMod + Constants.baseGovernTaxMod;
+				mods += c.calcGovernTaxMod();
 			}
 		}
 		if (noble != null) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += Constants.coastDwellingTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
@@ -360,8 +357,11 @@ class Region {
 		return type == Type.WATER;
 	}
 
+	/**
+	 * Returns a set of region ids that are within {@code limit} edges of this region.
+	 */
 	Set<Integer> getCloseRegionIds(World w, int limit) {
-		HashSet<Integer> closeRegions = new HashSet<>();
+		Set<Integer> closeRegions = new HashSet<>();
 		class Node {
 			final int r;
 			final int dist;

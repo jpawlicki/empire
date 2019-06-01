@@ -10,12 +10,6 @@ class RegionReport extends HTMLElement {
 
 		let shadow = this.attachShadow({mode: "open"});
 		
-		let climate_tooltips = {
-			"green": "Ideal climate. No special effects.",
-			"seasonal": "During winter only, this region causes 25% attrition to enemy or neutral armies or navies entering it.",
-			"treacherous": "This region causes 25% attrition to enemy or neutral armies or navies entering it."
-		};
-
 		let culture_tooltips = {
 			"eolsung": "Eolsung are hearty northerners. Soldiers recruited in this region make skilled raiders, able to conceal their presence and attack enemy supply lines.",
 			"anpilayn": "Anpilayn are cultured southerners. Soldiers recruited in this region are well-equipped and extremely formidable in battle.",
@@ -42,7 +36,7 @@ class RegionReport extends HTMLElement {
 			html = `
 				<div id="name">${r.name}</div>
 				<div id="kingdom"><report-link href="kingdom/${r.kingdom}">${r.kingdom}</report-link></div>
-				<div id="cct"><tooltip-element tooltip="${climate_tooltips[r.climate]}">${r.climate}</tooltip-element></div>
+				<div id="cct"></div>
 				<div id="content">
 					<h1><tooltip-element tooltip="A region's population determines its tax production, recruitment, maximum harvest size, and food consumption. Population grows slowly, but regions can also attract refugees from neighboring regions that have battles or starvation.">Population</tooltip-element>: <tooltip-element tooltip="${r.population}">${Math.round(r.population / 1000)}k</tooltip-element></h1>
 					<div>
@@ -87,7 +81,7 @@ class RegionReport extends HTMLElement {
 			html = `
 				<div id="name">${r.name}</div>
 				<div id="kingdom">Sea Region</div>
-				<div id="cct"><tooltip-element tooltip="${climate_tooltips[r.climate]}">${r.climate}</tooltip-element></div>
+				<div id="cct"></div>
 				<div id="content">
 					<h1>Contents</h1>
 					<div id="objects"></div>

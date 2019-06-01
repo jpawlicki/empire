@@ -947,7 +947,6 @@ class OrdersPane extends HTMLElement {
 				opts.push("Raze " + c);
 			}
 			if (r.kingdom == unit.kingdom && r.noble.name != undefined) opts.push("Oust Noble");
-			if (r.type == "land") opts.push("Slay Civilians");
 			for (let neighbor of r.getNeighbors()) opts.push("Travel to " + neighbor.name);
 			if (r.population > 1) for (let neighbor of r.getNeighbors()) if (neighbor.type == "land") opts.push("Force civilians to " + neighbor.name);
 		} else {
@@ -1175,9 +1174,6 @@ class OrdersPane extends HTMLElement {
 			if (o.value.startsWith("Travel to ")) {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
-				if (dest != undefined && (dest.type != "land" || dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].calcRelationship(g_data.kingdoms[a.kingdom]) != "friendly") && !contains(a.tags, "Weathered") && (dest.climate == "treacherous" || (dest.climate == "seasonal" && (g_data.date % 52 < 13 || g_data.date % 52 >= 39)))) {
-					warn = "(will suffer 25% attrition due to climate)";
-				}
 				if (a.type == "navy" && dest.type == "land" && g_data.regions[a.location].type == "land" && !g_data.tivar.deluge) {
 					warn += "(navies can only move between land regions during the Deluge)";
 				}
@@ -1188,8 +1184,6 @@ class OrdersPane extends HTMLElement {
 				let ot = undefined;
 				for (let aa of g_data.armies) if (aa.id == parseInt(o.value.replace("Merge into army ", ""))) ot = aa;
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
-			} else if (o.value.startsWith("Slay")) {
-				warn = "(will anger the Church of Iruhan)";
 			} else if (o.value.startsWith("Patrol")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn = "(army may be too small to patrol)";
