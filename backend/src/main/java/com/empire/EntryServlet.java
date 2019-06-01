@@ -1,22 +1,19 @@
 package com.empire;
 
+import com.empire.store.DatastoreClient;
+import com.empire.store.GaeDatastoreClient;
+import com.empire.store.LoginCache;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.EmbeddedEntity;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +34,6 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletException;
@@ -73,6 +69,8 @@ TODO: Will eventually need a changePassword/change-email.
 public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
+
+	private static final DatastoreClient dsClient = GaeDatastoreClient.getInstance();
 
   	@Override
   	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -192,7 +190,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
+			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
 			w.filter(r.kingdom);
 			return w.toString();
 		} catch (EntityNotFoundException e) {
@@ -209,7 +207,7 @@ public class EntryServlet extends HttpServlet {
 			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
 			World w = World.load(r.gameId, date, service);
 			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-			List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
+			List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
 			List<Map<String, Boolean>> result = new ArrayList<>();
 			for (List<Boolean> turnActives : actives) {
 				HashMap<String, Boolean> turn = new HashMap<>();

@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-final class LoginCache {
+public class LoginCache {
     private static LoginCache instance = null;
 
     public static LoginCache getInstance() {
@@ -27,7 +27,7 @@ final class LoginCache {
         this.recordedKeys = new HashSet<>();
     }
 
-    synchronized void recordLogin(long gameId, int date, String email) {
+    public synchronized void recordLogin(long gameId, int date, String email) {
         LoginKey nu = new LoginKey(email, gameId, date);
 
         if (!recordedKeys.contains(nu)) {
@@ -51,7 +51,7 @@ final class LoginCache {
         return result;
     }
 
-    List<List<Boolean>> fetchLoginHistory(long gameId, int finalDate, List<String> emails) {
+    public List<List<Boolean>> fetchLoginHistory(long gameId, int finalDate, List<String> emails) {
         return IntStream.rangeClosed(1, finalDate)
                 .mapToObj(i -> checkLogin(gameId, i, emails))
                 .collect(Collectors.toList());
