@@ -4,6 +4,7 @@ import com.empire.Character;
 import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.StartWorldGson;
+import com.empire.World;
 import com.empire.svc.LoginCache;
 import com.empire.svc.Player;
 import com.empire.svc.Request;
@@ -354,12 +355,12 @@ public class EntryServlet extends HttpServlet {
             if (w == null) continue;
 
             if (w.nextTurn < Instant.now().toEpochMilli()) {
-                HashMap<String, Orders> orders = new HashMap<>();
+                HashMap<String, Map<String, String>> orders = new HashMap<>();
 
                 for (String kingdom : w.getNationNames()) {
                     Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
                     if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
-                    orders.put(kingdom, ordersKingdom);
+                    orders.put(kingdom, ordersKingdom.orders);
                 }
 
                 Map<String, String> emails = w.advance(orders);

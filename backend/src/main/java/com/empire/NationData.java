@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.security.SecureRandom;
 
-class NationData {
+public class NationData {
 	enum Tag {	
 		@SerializedName("Defensive") DEFENSIVE,
 		@SerializedName("Disciplined") DISCIPLINED,
@@ -109,8 +109,8 @@ class NationData {
 	String taxratehint = "100";
 	String rationhint = "100";
 	String signingbonushint = "0";
-	String password;
-	String email;
+	public String password;
+	public String email;
 	String accessToken;
 
 	void resetAccessToken() {

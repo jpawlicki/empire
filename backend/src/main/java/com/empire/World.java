@@ -28,27 +28,27 @@ interface GoodwillProvider {
 	double getGoodwill(String nation);
 }
 
-class World implements GoodwillProvider {
+public class World implements GoodwillProvider {
 	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
-	int date;
+	public int date;
 	private Map<String, NationData> kingdoms = new HashMap<>();
 	List<Region> regions = new ArrayList<>();
 	List<Army> armies = new ArrayList<>();
-	List<Character> characters = new ArrayList<>();
+	public List<Character> characters = new ArrayList<>();
 	List<Communication> communications = new ArrayList<>();
 	Pirate pirate = new Pirate();
 	Tivar tivar = new Tivar();
-	String gmPasswordHash;
-	String obsPasswordHash;
+	public String gmPasswordHash;
+	public String obsPasswordHash;
 	List<Notification> notifications = new ArrayList<>();
 	List<Message> rtc = new ArrayList<>();
 	List<Integer> cultRegions = new ArrayList<>();
 	Schedule turnSchedule = new Schedule();
 	int inspiresHint;
-	long nextTurn;
-	boolean gameover;
+	public long nextTurn;
+	public boolean gameover;
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();

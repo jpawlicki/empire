@@ -2,6 +2,7 @@ package com.empire.store;
 
 import com.empire.Nation;
 import com.empire.Orders;
+import com.empire.World;
 import com.empire.svc.LoginKey;
 import com.empire.svc.Player;
 import com.google.appengine.api.datastore.Blob;
