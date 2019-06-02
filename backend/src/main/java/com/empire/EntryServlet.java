@@ -238,31 +238,34 @@ public class EntryServlet extends HttpServlet {
 
 			World w = worldOpt.get();
 
-			if (w.nextTurn < Instant.now().toEpochMilli()) {
-				Map<String, Map<String, String>> orders = new HashMap<>();
-				for (String kingdom : w.getNationNames()) {
-					Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
+			if (w.nextTurn >= Instant.now().toEpochMilli()) continue;
 
-					if(ordersKingdom.isPresent()) {
-						orders.put(kingdom, ordersKingdom.get().orders);
-					} else {
-						log.warning("Cannot find orders for " + kingdom);
-						orders.put(kingdom,  null);
-					}
+			Map<String, Map<String, String>> orders = new HashMap<>();
+			for (String kingdom : w.getNationNames()) {
+				Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
 
-				}
-				Map<String, String> emails = w.advance(orders);
-				dsClient.putWorld(gameId, w);
-				dsClient.putWorldDate(gameId, w.date);
+				ordersKingdom.ifPresent(o -> orders.put(kingdom, o.orders));
 
-				for (String mail : emails.keySet()) {
-					mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+				if(ordersKingdom.isPresent()) {
+					orders.put(kingdom, ordersKingdom.get().orders);
+				} else {
+					log.warning("Cannot find orders for " + kingdom);
+					orders.put(kingdom,  null);
 				}
-				if (w.gameover) {
-					Set<Long> newActiveGames = dsClient.getActiveGames().orElse(new HashSet<>());
-					newActiveGames.remove(gameId);
-					dsClient.putActiveGames(newActiveGames);
-				}
+			}
+
+			Map<String, String> emails = w.advance(orders);
+			dsClient.putWorld(gameId, w);
+			dsClient.putWorldDate(gameId, w.date);
+
+			for (String mail : emails.keySet()) {
+				mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+			}
+
+			if (w.gameover) {
+				Set<Long> newActiveGames = dsClient.getActiveGames().orElse(new HashSet<>());
+				newActiveGames.remove(gameId);
+				dsClient.putActiveGames(newActiveGames);
 			}
 		}
 
