@@ -198,9 +198,7 @@ public class EntryServlet extends HttpServlet {
 
 	private String getWorld(Request r) {
 		CheckPasswordResult result = checkPassword(r);
-		if (!result.passesRead()) {
-			return null;
-		}
+		if (!result.passesRead()) return null;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
 
@@ -235,16 +233,14 @@ public class EntryServlet extends HttpServlet {
 
 			if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
 				log.log(Level.SEVERE, "World issue.");
-				return "";
+				return null;
 			}
 
 			World w = worldOpt.get();
 
 			if (w.nextTurn < Instant.now().toEpochMilli()) {
-//				HashSet<String> kingdoms = new HashSet<>();
 				Map<String, Map<String, String>> orders = new HashMap<>();
 				for (String kingdom : w.getNationNames()) {
-//					kingdoms.add(kingdom);
 					Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
 
 					if(ordersKingdom.isPresent()) {
