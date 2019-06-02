@@ -19,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -294,7 +295,7 @@ public class EntryServlet extends HttpServlet {
 		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
 		List<Map<String, Boolean>> result = new ArrayList<>();
 		for (List<Boolean> turnActives : actives) {
-			HashMap<String, Boolean> turn = new HashMap<>();
+			Map<String, Boolean> turn = new HashMap<>();
 			for (int i = 0; i < emails.size(); i++) {
 				turn.put(emails.get(i), turnActives.get(i));
 			}
@@ -518,9 +519,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private void mail(String address, String subject, String body) {
-		HashSet<String> s = new HashSet<>();
-		s.add(address);
-		mail(s, subject, body);
+		mail(Collections.singleton(address), subject, body);
 	}
 
 	private void mail(Set<String> addresses, String subject, String body) {
