@@ -2,16 +2,9 @@ package com.empire;
 
 import com.empire.store.DatastoreClient;
 import com.empire.store.GaeDatastoreClient;
-import com.empire.svc.Player;
 import com.empire.svc.LoginCache;
+import com.empire.svc.Player;
 import com.empire.svc.Request;
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Transaction;
-import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
@@ -268,7 +261,6 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private boolean postStartWorld(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		StartWorldGson s = StartWorldGson.fromJson(r.body);
 		String passHash;
 		String obsPassHash;
@@ -279,30 +271,24 @@ public class EntryServlet extends HttpServlet {
 			log.log(Level.SEVERE, "Hash error", e);
 			return false;
 		}
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		HashSet<String> addresses = new HashSet<String>();
-		try {
-			// Collect setups.
-			HashMap<String, Nation> nations = new HashMap<>();
-			for (String kingdom : s.kingdoms) {
-				log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
-				nations.put(kingdom, dsClient.getNation(r.gameId, kingdom));
-				addresses.add(nations.get(kingdom).email);
-			}
-			World w = World.startNew(passHash, obsPassHash, nations);
-			dsClient.putWorld(r.gameId, w);
-			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
-			g.setProperty("date", 1);
-			service.put(g);
 
-			Set<Long> activeGames = dsClient.getActiveGames();
-			if(activeGames == null) activeGames = new HashSet<>();
-			activeGames.add(r.gameId);
-			dsClient.putActiveGames(activeGames);
-			txn.commit();
-		} finally {
-			if (txn.isActive()) txn.rollback();
+		// Collect setups.
+		HashMap<String, Nation> nations = new HashMap<>();
+		for (String kingdom : s.kingdoms) {
+			log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
+			nations.put(kingdom, dsClient.getNation(r.gameId, kingdom));
+			addresses.add(nations.get(kingdom).email);
 		}
+		World w = World.startNew(passHash, obsPassHash, nations);
+		dsClient.putWorld(r.gameId, w);
+		dsClient.putWorldDate(r.gameId, 1);
+
+		Set<Long> activeGames = dsClient.getActiveGames();
+		if(activeGames == null) activeGames = new HashSet<>();
+		activeGames.add(r.gameId);
+		dsClient.putActiveGames(activeGames);
+
 		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
 		return true;
 	}
