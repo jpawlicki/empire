@@ -74,25 +74,35 @@ public class EntryServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
-		String json = "";
-		if (req.getRequestURI().equals("/entry/orders")) {
-			json = getOrders(r, resp);
-		} else if (req.getRequestURI().equals("/entry/setup")) {
-			json = getSetup(r);
-		} else if (req.getRequestURI().equals("/entry/world")) {
-			json = getWorld(r);
-		} else if (req.getRequestURI().equals("/entry/advanceworldpoll")) {
-			json = getAdvancePoll();
-		} else if (req.getRequestURI().equals("/entry/activity")) {
-			json = getActivity(r);
-		} else {
-			resp.sendError(404, "No such path.");
-			return;
+
+		String json;
+
+		switch(req.getRequestURI()){
+			case "/entry/orders":
+				json = getOrders(r, resp);
+				break;
+			case "/entry/setup":
+				json = getSetup(r);
+				break;
+			case "/entry/world":
+				json = getWorld(r);
+				break;
+			case "/entry/advanceworldpoll":
+				json = getAdvancePoll();
+				break;
+			case "/entry/activity":
+				json = getActivity(r);
+				break;
+			default:
+				resp.sendError(404, "No such path.");
+				return;
 		}
+
 		if (json == null) {
 			resp.sendError(404, "No such entity.");
 			return;
 		}
+
 		resp.setHeader("Access-Control-Expose-Headers", "SJS-Version");
 		resp.setContentType("application/json");
 		byte[] ojson = json.getBytes(StandardCharsets.UTF_8);
@@ -102,44 +112,51 @@ public class EntryServlet extends HttpServlet {
 		os.flush();
   }
 
+  // TODO: Does this method need to write the response to OutputStream like doGet does?
 	@Override
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 		Request r = Request.from(req);
-		String err = "";
-		if (req.getRequestURI().equals("/entry/orders")) {
-			if (!postOrders(r)) {
+
+		boolean success = false;
+		String err;
+
+		switch(req.getRequestURI()){
+			case "/entry/orders":
+				success = postOrders(r);
 				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/advanceworld")) {
-			if (!postAdvanceWorld(r)) {
+				break;
+			case "/entry/advanceworld":
+				success = postAdvanceWorld(r);
 				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/startworld")) {
-			if (!postStartWorld(r)) {
+				break;
+			case "/entry/startworld":
+				success = postStartWorld(r);
 				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/migrate")) {
-			if (!migrate(r)) {
+				break;
+			case "/entry/migrate":
+				success = migrate(r);
 				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/setup")) {
-			if (!postSetup(r)) {
+				break;
+			case "/entry/setup":
+				success = postSetup(r);
 				err = "Not allowed.";
-			}
-		} else if (req.getRequestURI().equals("/entry/rtc")) {
-			if (!postRealTimeCommunication(r)) {
+				break;
+			case "/entry/rtc":
+				success = postRealTimeCommunication(r);
 				err = "Not allowed.";
-			}
-		} else if (req.getRequestURI().equals("/entry/changeplayer")) {
-			if (!postChangePlayer(r)) {
+				break;
+			case "/entry/changeplayer":
+				success = postChangePlayer(r);
 				err = "Not allowed.";
-			}
-		} else {
-			err = "No such path.";
+				break;
+			default:
+				err = "No such path.";
+				break;
 		}
-		if ("".equals(err)) {
+
+		if (success) {
 			resp.setStatus(204);
 		} else {
 			resp.sendError(400, err);
