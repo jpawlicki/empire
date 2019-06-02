@@ -226,6 +226,7 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
+	// TODO: single transaction put
 	private String getAdvancePoll() {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		try {
@@ -244,7 +245,7 @@ public class EntryServlet extends HttpServlet {
 							orders.put(kingdom, ordersKingdom.orders);
 						}
 						Map<String, String> emails = w.advance(orders);
-						service.put(w.toEntity(gameId));
+						dsClient.putWorld(gameId, w);
 						Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
 						nudate.setProperty("date", (long)w.date);
 						service.put(nudate);
@@ -282,7 +283,7 @@ public class EntryServlet extends HttpServlet {
       World w = dsClient.getWorld(r.gameId, r.turn);
       if(w == null) return false;
 			w.nextTurn = 0;
-			service.put(w.toEntity(r.gameId));
+			dsClient.putWorld(r.gameId, w);
 			txn.commit();
 		} finally {
 			if (txn.isActive()) txn.rollback();
@@ -314,7 +315,7 @@ public class EntryServlet extends HttpServlet {
 				addresses.add(nations.get(kingdom).email);
 			}
 			World w = World.startNew(passHash, obsPassHash, nations);
-			service.put(w.toEntity(r.gameId));
+			dsClient.putWorld(r.gameId, w);
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
 			g.setProperty("date", 1);
 			service.put(g);
@@ -425,7 +426,7 @@ public class EntryServlet extends HttpServlet {
 			}
 			com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
 			w.addRtc(r.kingdom, msg);
-			service.put(w.toEntity(r.gameId));
+			dsClient.putWorld(r.gameId, w);
 			txn.commit();
 		} finally {
 			if (txn.isActive()) {
@@ -450,7 +451,7 @@ public class EntryServlet extends HttpServlet {
 			Player p = dsClient.getPlayer(body.email);
 			w.getNation(r.kingdom).email = body.email;
 			w.getNation(r.kingdom).password = p.passHash;
-			service.put(w.toEntity(r.gameId));
+			dsClient.putWorld(r.gameId, w);
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
@@ -473,7 +474,7 @@ public class EntryServlet extends HttpServlet {
 				return true;
 			}
 			for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
-			service.put(w.toEntity(4));
+			dsClient.putWorld(4, w);
 			txn.commit();
 		} finally {
 			if (txn.isActive()) {
