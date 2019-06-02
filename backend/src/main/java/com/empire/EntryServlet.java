@@ -442,22 +442,15 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove
 	private boolean migrate(Request rr) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-      World w = dsClient.getWorld(4, dsClient.getWorldDate(4));
-      if (w == null) {
-				log.log(Level.INFO, "Not found!");
-				return true;
-			}
-			for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
-			dsClient.putWorld(4, w);
-			txn.commit();
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
+		World w = dsClient.getWorld(4, dsClient.getWorldDate(4));
+
+		if (w == null) {
+			log.log(Level.INFO, "Not found!");
+			return true;
 		}
+
+		for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
+		dsClient.putWorld(4, w);
 		return true;
 	}
 
