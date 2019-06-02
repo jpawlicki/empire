@@ -417,26 +417,18 @@ public class EntryServlet extends HttpServlet {
 		public String email;
 		public String password;
 	}
+
 	private boolean postChangePlayer(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			if (!checkPassword(r).passesWrite()) return false;
-			int worldDate = dsClient.getWorldDate(r.gameId);
-			if(worldDate == -1) log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
-			int date = r.turn != 0 ? r.turn : worldDate;
-      World w = dsClient.getWorld(r.gameId, date);
-			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
-			Player p = dsClient.getPlayer(body.email);
-			w.getNation(r.kingdom).email = body.email;
-			w.getNation(r.kingdom).password = p.passHash;
-			dsClient.putWorld(r.gameId, w);
-			txn.commit();
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
-		}
+		if (!checkPassword(r).passesWrite()) return false;
+		int worldDate = dsClient.getWorldDate(r.gameId);
+		if(worldDate == -1) log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+		int date = r.turn != 0 ? r.turn : worldDate;
+		World w = dsClient.getWorld(r.gameId, date);
+		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+		Player p = dsClient.getPlayer(body.email);
+		w.getNation(r.kingdom).email = body.email;
+		w.getNation(r.kingdom).password = p.passHash;
+		dsClient.putWorld(r.gameId, w);
 		return true;
 	}
 
