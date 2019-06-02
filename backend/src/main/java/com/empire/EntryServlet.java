@@ -6,7 +6,6 @@ import com.empire.svc.LoginCache;
 import com.empire.svc.Player;
 import com.empire.svc.Request;
 import com.google.common.io.BaseEncoding;
-import com.google.gson.FieldNamingPolicy;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
@@ -220,7 +219,7 @@ public class EntryServlet extends HttpServlet {
 			}
 			result.add(turn);
 		}
-		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
+		return GaeDatastoreClient.gson.toJson(result);
 	}
 
 	// TODO: single transaction put
