@@ -20,7 +20,7 @@ public interface DatastoreClient {
      Optional<Orders> getOrders(long gameId, String kingdom, int turn);
      boolean putOrders(Orders orders);
 
-     World getWorld(long gameId, int turn);
+     Optional<World> getWorld(long gameId, int turn);
      boolean putWorld(long gameId, World world);
 
      int getWorldDate(long gameId);

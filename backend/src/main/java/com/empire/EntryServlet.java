@@ -204,25 +204,35 @@ public class EntryServlet extends HttpServlet {
 
 		int worldDate = dsClient.getWorldDate(r.gameId);
 		if (worldDate == -1) {
-			log.log(Level.INFO, "No such world.");
+			log.severe("No such world.");
 			return null;
 		}
+
 		int date = r.turn != 0 ? r.turn : worldDate;
-		World w = dsClient.getWorld(r.gameId, date);
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+
+		if(!worldOpt.isPresent()) return null;
+		World w = worldOpt.get();
 		if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
 		w.filter(r.kingdom);
-		return w.toString();
+
+		return GaeDatastoreClient.gson.toJson(w);
 	}
 
 	private String getActivity(Request r) {
 		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
+
 		int worldDate = dsClient.getWorldDate(r.gameId);
 		if (worldDate == -1) {
 			log.log(Level.WARNING, "No such world.");
 			return null;
 		}
 		int date = r.turn != 0 ? r.turn : worldDate;
-		World w = dsClient.getWorld(r.gameId, date);
+
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+		if(!worldOpt.isPresent()) return null;
+		World w = worldOpt.get();
+
 		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
 		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
 		List<Map<String, Boolean>> result = new ArrayList<>();
@@ -246,11 +256,14 @@ public class EntryServlet extends HttpServlet {
 
 		for (Long gameId : activeGames) {
 			int date = dsClient.getWorldDate(gameId);
-			World w = dsClient.getWorld(gameId, date);
-			if(date == -1 || w == null) {
+			Optional<World> worldOpt = dsClient.getWorld(gameId, date);
+
+			if(date == -1 || !worldOpt.isPresent()) {
 				log.log(Level.SEVERE, "World issue.");
 				return "";
 			}
+
+			World w = worldOpt.get();
 
 			if (w.nextTurn < Instant.now().toEpochMilli()) {
 //				HashSet<String> kingdoms = new HashSet<>();
@@ -287,8 +300,10 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
 	private boolean postAdvanceWorld(Request r) {
-		World w = dsClient.getWorld(r.gameId, r.turn);
-		if(w == null) return false;
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
+		if(!worldOpt.isPresent()) return false;
+
+		World w = worldOpt.get();
 		w.nextTurn = 0;
 		dsClient.putWorld(r.gameId, w);
 		getAdvancePoll();
@@ -364,12 +379,14 @@ public class EntryServlet extends HttpServlet {
 			if (r.password == null) return CheckPasswordResult.FAIL;
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
+
 			int date = dsClient.getWorldDate(r.gameId);
-      World w = dsClient.getWorld(r.gameId, date);
-      if(date == -1 || w == null) {
+      Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+      if(date == -1 || !worldOpt.isPresent()) {
 				log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
 				return CheckPasswordResult.NO_ENTITY;
 			}
+      World w = worldOpt.get();
 
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
@@ -409,12 +426,14 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postRealTimeCommunication(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
-		World w = dsClient.getWorld(r.gameId, r.turn);
 
-		if (w == null) {
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
+		if (!worldOpt.isPresent()) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
 			return true;
 		}
+
+		World w = worldOpt.get();
 
 		com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
 		w.addRtc(r.kingdom, msg);
@@ -430,12 +449,19 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postChangePlayer(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
-		int worldDate = dsClient.getWorldDate(r.gameId);
-		if(worldDate == -1) log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
-		int date = r.turn != 0 ? r.turn : worldDate;
-		World w = dsClient.getWorld(r.gameId, date);
-		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 
+		int worldDate = dsClient.getWorldDate(r.gameId);
+		int date = r.turn != 0 ? r.turn : worldDate;
+
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+
+		if(worldDate == -1 || !worldOpt.isPresent()) {
+			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+			return false;
+		}
+
+		World w = worldOpt.get();
+		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 		Optional<Player> p = dsClient.getPlayer(body.email);
 
 		if(!p.isPresent()) {
@@ -451,18 +477,19 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove
 	private boolean migrate(Request rr) {
-		World w = dsClient.getWorld(4, dsClient.getWorldDate(4));
+		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4));
 
-		if (w == null) {
+		if (!worldOpt.isPresent()) {
 			log.log(Level.INFO, "Not found!");
 			return true;
 		}
+
+		World w = worldOpt.get();
 
 		for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
 		dsClient.putWorld(4, w);
 		return true;
 	}
-
 
 	//TODO: all puts in single transaction: Nation, Player
 	private boolean postSetup(Request r) {

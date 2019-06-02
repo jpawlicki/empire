@@ -168,22 +168,14 @@ public class GaeDatastoreClient implements DatastoreClient{
     // World
 
     @Override
-    public World getWorld(long gameId, int turn) {
+    public Optional<World> getWorld(long gameId, int turn) {
         try {
             Entity e = service.get(KeyFactory.createKey(worldType, createWorldKey(gameId, turn)));
-            String jsonStr;
-
-            if (e.hasProperty(jsonProp)) {
-                jsonStr = (String) e.getProperty(jsonProp);
-            } else {
-                jsonStr = Compressor.decompress(((Blob) e.getProperty(jsonGzipProp)).getBytes());
-
-            }
-
-            return gson.fromJson(jsonStr, World.class);
+            String jsonStr = e.hasProperty(jsonProp) ? (String) e.getProperty(jsonProp) : Compressor.decompress(((Blob) e.getProperty(jsonGzipProp)).getBytes());
+            return Optional.of(gson.fromJson(jsonStr, World.class));
         } catch (EntityNotFoundException e){
-            log.info("Unable to retrieve World with key " + createWorldKey(gameId, turn));
-            return null;
+            log.info("No World entity having key " + createWorldKey(gameId, turn));
+            return Optional.empty();
         }
     }
 
