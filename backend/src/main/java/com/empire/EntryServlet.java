@@ -218,7 +218,7 @@ public class EntryServlet extends HttpServlet {
 		return GaeDatastoreClient.gson.toJson(w);
 	}
 
-	// TODO: single transaction put
+	// TODO: single transaction put: World, WorldDate, ActiveGames
 	private String getAdvancePoll() {
 		Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
 
@@ -312,9 +312,7 @@ public class EntryServlet extends HttpServlet {
 		if (r.turn != dateOpt.get()) return false;
 		Type t = new TypeToken<Map<String, String>>(){}.getType();
 		Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
-		dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
-
-		return true;
+		return dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
 	}
 
 	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
@@ -329,6 +327,7 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
+	// TODO: single transaction put: World, WorldDate, ActiveGames
 	private boolean postStartWorld(Request r) {
 		StartWorldGson s = StartWorldGson.fromJson(r.body);
 		String passHash;
@@ -369,7 +368,7 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-	//TODO: all puts in single transaction: Nation, Player
+	// TODO: single transaction put: Nation, Player
 	private boolean postSetup(Request r) {
 		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
 
