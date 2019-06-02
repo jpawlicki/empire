@@ -259,15 +259,15 @@ public class GaeDatastoreClient implements DatastoreClient{
     // Active games
 
     @Override
-    public Set<Long> getActiveGames() {
+    public Optional<Set<Long>> getActiveGames() {
         try {
             Entity e = service.get(KeyFactory.createKey(activeGamesType, createActiveGamesKey()));
             String jsonStr = (String) e.getProperty(jsonProp);
             Type listType = new TypeToken<Set<Long>>(){}.getType();
-            return gson.fromJson(jsonStr, listType);
+            return Optional.of(gson.fromJson(jsonStr, listType));
         } catch (EntityNotFoundException e) {
             log.info("Unable to retrieve active games with key " + createActiveGamesKey());
-            return null;
+            return Optional.empty();
         }
     }
 

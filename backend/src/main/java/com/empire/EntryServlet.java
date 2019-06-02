@@ -248,13 +248,14 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: single transaction put
 	private String getAdvancePoll() {
-		Set<Long> activeGames = dsClient.getActiveGames();
-		if(activeGames == null) {
+		Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
+
+		if(!activeGamesOpt.isPresent()) {
 			log.log(Level.SEVERE, "Poller failed.");
 			return null;
 		}
 
-		for (Long gameId : activeGames) {
+		for (Long gameId : activeGamesOpt.get()) {
 			int date = dsClient.getWorldDate(gameId);
 			Optional<World> worldOpt = dsClient.getWorld(gameId, date);
 
@@ -267,7 +268,7 @@ public class EntryServlet extends HttpServlet {
 
 			if (w.nextTurn < Instant.now().toEpochMilli()) {
 //				HashSet<String> kingdoms = new HashSet<>();
-				HashMap<String, Map<String, String>> orders = new HashMap<>();
+				Map<String, Map<String, String>> orders = new HashMap<>();
 				for (String kingdom : w.getNationNames()) {
 //					kingdoms.add(kingdom);
 					Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
@@ -288,7 +289,7 @@ public class EntryServlet extends HttpServlet {
 					mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
 				}
 				if (w.gameover) {
-					Set<Long> newActiveGames = dsClient.getActiveGames();
+					Set<Long> newActiveGames = dsClient.getActiveGames().orElse(new HashSet<>());
 					newActiveGames.remove(gameId);
 					dsClient.putActiveGames(newActiveGames);
 				}
@@ -342,8 +343,7 @@ public class EntryServlet extends HttpServlet {
 		dsClient.putWorld(r.gameId, w);
 		dsClient.putWorldDate(r.gameId, 1);
 
-		Set<Long> activeGames = dsClient.getActiveGames();
-		if(activeGames == null) activeGames = new HashSet<>();
+		Set<Long> activeGames = dsClient.getActiveGames().orElse(new HashSet<>());
 		activeGames.add(r.gameId);
 		dsClient.putActiveGames(activeGames);
 
@@ -476,7 +476,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	// TODO: remove
-	private boolean migrate(Request rr) {
+	private boolean migrate(Request r) {
 		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4));
 
 		if (!worldOpt.isPresent()) {

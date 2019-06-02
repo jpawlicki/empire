@@ -29,6 +29,6 @@ public interface DatastoreClient {
      Optional<LoginKey> getLogin(String email, long gameId, int date);
      boolean putLogin(String email, long gameId, int date);
 
-     Set<Long> getActiveGames();
+     Optional<Set<Long>> getActiveGames();
      boolean putActiveGames(Set<Long> activeGames);
 }
