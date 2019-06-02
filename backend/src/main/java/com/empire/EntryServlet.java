@@ -369,25 +369,19 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: better json conversion
 	private boolean postOrders(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			if (!checkPassword(r).passesWrite()) return false;
-			int worldDate = dsClient.getWorldDate(r.gameId);
-			if (worldDate == -1) {
-				log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
-				return false;
-			}
-			if (r.turn != worldDate) return false;
-			Type t = new TypeToken<Map<String, String>>(){}.getType();
-			Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
-			dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
-			txn.commit();
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
+		if (!checkPassword(r).passesWrite()) return false;
+		int worldDate = dsClient.getWorldDate(r.gameId);
+
+		if (worldDate == -1) {
+			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
+			return false;
 		}
+
+		if (r.turn != worldDate) return false;
+		Type t = new TypeToken<Map<String, String>>(){}.getType();
+		Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
+		dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
+
 		return true;
 	}
 
