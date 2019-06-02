@@ -173,9 +173,15 @@ public class EntryServlet extends HttpServlet {
 
 	private String getOrders(Request r, HttpServletResponse resp) {
 		if (!checkPassword(r).passesRead()) return null;
-		Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
-		resp.setHeader("SJS-Version", "" + orders.version);
-		return GaeDatastoreClient.gson.toJson(orders.orders);
+		Optional<Orders> orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
+
+		if(orders.isPresent()) {
+			resp.setHeader("SJS-Version", "" + orders.get().version);
+			return GaeDatastoreClient.gson.toJson(orders.get().orders);
+		} else {
+			log.severe("Unable to get orders");
+			return null;
+		}
 	}
 
 	private String getSetup(Request r) {
@@ -251,9 +257,15 @@ public class EntryServlet extends HttpServlet {
 				HashMap<String, Map<String, String>> orders = new HashMap<>();
 				for (String kingdom : w.getNationNames()) {
 //					kingdoms.add(kingdom);
-					Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
-					if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
-					orders.put(kingdom, ordersKingdom.orders);
+					Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
+
+					if(ordersKingdom.isPresent()) {
+						orders.put(kingdom, ordersKingdom.get().orders);
+					} else {
+						log.warning("Cannot find orders for " + kingdom);
+						orders.put(kingdom,  null);
+					}
+
 				}
 				Map<String, String> emails = w.advance(orders);
 				dsClient.putWorld(gameId, w);

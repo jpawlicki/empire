@@ -171,7 +171,7 @@ public class EntryServlet extends HttpServlet {
 
     private String getOrders(Request r, HttpServletResponse resp) {
         if (!checkPassword(r).passesRead()) return null;
-        Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
+        Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn).get();
         resp.setHeader("SJS-Version", "" + orders.version);
         return GaeDatastoreClient.gson.toJson(orders.orders);
     }
@@ -189,7 +189,7 @@ public class EntryServlet extends HttpServlet {
 
     private String getSetup(Request r) {
         // TODO - should filter this data or display it.
-        return dsClient.getNationJson(r.gameId, r.kingdom);
+        return dsClient.getNationJson(r.gameId, r.kingdom).;
     }
 
     /*

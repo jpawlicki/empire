@@ -139,14 +139,14 @@ public class GaeDatastoreClient implements DatastoreClient{
     // Order
 
     @Override
-    public Orders getOrders(long gameId, String kingdom, int turn) {
+    public Optional<Orders> getOrders(long gameId, String kingdom, int turn) {
         try {
             Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
             String jsonStr = (String) e.getProperty(jsonProp);
-            return gson.fromJson(jsonStr, Orders.class);
+            return Optional.of(gson.fromJson(jsonStr, Orders.class));
         } catch (EntityNotFoundException e){
-            log.info("Unable to retrieve Orders with key " + createOrderkey(gameId, kingdom, turn));
-            return null;
+            log.info("No Orders entity found having key " + createOrderkey(gameId, kingdom, turn));
+            return Optional.empty();
         }
     }
 
