@@ -202,13 +202,14 @@ public class EntryServlet extends HttpServlet {
 			return null;
 		}
 
-		int worldDate = dsClient.getWorldDate(r.gameId);
-		if (worldDate == -1) {
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+
+		if (!dateOpt.isPresent()) {
 			log.severe("No such world.");
 			return null;
 		}
 
-		int date = r.turn != 0 ? r.turn : worldDate;
+		int date = r.turn != 0 ? r.turn : dateOpt.get();
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
 
 		if(!worldOpt.isPresent()) return null;
@@ -222,12 +223,12 @@ public class EntryServlet extends HttpServlet {
 	private String getActivity(Request r) {
 		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
 
-		int worldDate = dsClient.getWorldDate(r.gameId);
-		if (worldDate == -1) {
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		if (!dateOpt.isPresent()) {
 			log.log(Level.WARNING, "No such world.");
 			return null;
 		}
-		int date = r.turn != 0 ? r.turn : worldDate;
+		int date = r.turn != 0 ? r.turn : dateOpt.get();
 
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
 		if(!worldOpt.isPresent()) return null;
@@ -256,10 +257,10 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		for (Long gameId : activeGamesOpt.get()) {
-			int date = dsClient.getWorldDate(gameId);
-			Optional<World> worldOpt = dsClient.getWorld(gameId, date);
+			Optional<Integer> dateOpt = dsClient.getWorldDate(gameId);
+			Optional<World> worldOpt = dsClient.getWorld(gameId, dateOpt.orElse(-1));
 
-			if(date == -1 || !worldOpt.isPresent()) {
+			if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
 				log.log(Level.SEVERE, "World issue.");
 				return "";
 			}
@@ -380,9 +381,9 @@ public class EntryServlet extends HttpServlet {
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
 
-			int date = dsClient.getWorldDate(r.gameId);
-      Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
-      if(date == -1 || !worldOpt.isPresent()) {
+			Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+      Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
+      if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
 				log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
 				return CheckPasswordResult.NO_ENTITY;
 			}
@@ -409,14 +410,14 @@ public class EntryServlet extends HttpServlet {
 	// TODO: better json conversion
 	private boolean postOrders(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
-		int worldDate = dsClient.getWorldDate(r.gameId);
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
 
-		if (worldDate == -1) {
+		if (!dateOpt.isPresent()) {
 			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
 			return false;
 		}
 
-		if (r.turn != worldDate) return false;
+		if (r.turn != dateOpt.get()) return false;
 		Type t = new TypeToken<Map<String, String>>(){}.getType();
 		Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
 		dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
@@ -450,12 +451,11 @@ public class EntryServlet extends HttpServlet {
 	private boolean postChangePlayer(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
 
-		int worldDate = dsClient.getWorldDate(r.gameId);
-		int date = r.turn != 0 ? r.turn : worldDate;
-
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		int date = r.turn != 0 ? r.turn : dateOpt.orElse(-1);
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
 
-		if(worldDate == -1 || !worldOpt.isPresent()) {
+		if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
 			return false;
 		}
@@ -477,7 +477,7 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove
 	private boolean migrate(Request r) {
-		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4));
+		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4).orElse(-1));
 
 		if (!worldOpt.isPresent()) {
 			log.log(Level.INFO, "Not found!");

@@ -199,15 +199,15 @@ public class GaeDatastoreClient implements DatastoreClient{
     // World Date
 
     @Override
-    public int getWorldDate(long gameId) {
+    public Optional<Integer> getWorldDate(long gameId) {
         try {
             Entity e = service.get(KeyFactory.createKey(currentDateType, createCurrentDateKey(gameId)));
             Long date = (Long) e.getProperty(dateProp);
-            return (int) date.longValue();
+            return Optional.of((int) date.longValue());
 
         } catch (EntityNotFoundException e){
-            log.info("Unable to retrieve Current Date with key " + createCurrentDateKey(gameId));
-            return -1;
+            log.info("CurrentDate entity having key " + createCurrentDateKey(gameId));
+            return Optional.empty();
         }
     }
 

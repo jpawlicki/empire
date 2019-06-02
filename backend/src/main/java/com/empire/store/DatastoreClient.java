@@ -23,7 +23,7 @@ public interface DatastoreClient {
      Optional<World> getWorld(long gameId, int turn);
      boolean putWorld(long gameId, World world);
 
-     int getWorldDate(long gameId);
+     Optional<Integer> getWorldDate(long gameId);
      boolean putWorldDate(long gameId, int date);
 
      Optional<LoginKey> getLogin(String email, long gameId, int date);
