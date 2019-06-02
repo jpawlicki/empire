@@ -209,7 +209,6 @@ public class EntryServlet extends HttpServlet {
 			return null;
 		}
 		int date = r.turn != 0 ? r.turn : worldDate;
-		HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
 		World w = dsClient.getWorld(r.gameId, date);
 		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
 		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
@@ -241,10 +240,10 @@ public class EntryServlet extends HttpServlet {
 			}
 
 			if (w.nextTurn < Instant.now().toEpochMilli()) {
-				HashSet<String> kingdoms = new HashSet<>();
+//				HashSet<String> kingdoms = new HashSet<>();
 				HashMap<String, Map<String, String>> orders = new HashMap<>();
 				for (String kingdom : w.getNationNames()) {
-					kingdoms.add(kingdom);
+//					kingdoms.add(kingdom);
 					Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
 					if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
 					orders.put(kingdom, ordersKingdom.orders);
@@ -288,7 +287,7 @@ public class EntryServlet extends HttpServlet {
 			log.log(Level.SEVERE, "Hash error", e);
 			return false;
 		}
-		HashSet<String> addresses = new HashSet<String>();
+		HashSet<String> addresses = new HashSet<>();
 
 		// Collect setups.
 		HashMap<String, Nation> nations = new HashMap<>();
@@ -320,7 +319,7 @@ public class EntryServlet extends HttpServlet {
 		private final boolean passesRead;
 		private final boolean passesWrite;
 
-		private CheckPasswordResult(boolean passesRead, boolean passesWrite) {
+		CheckPasswordResult(boolean passesRead, boolean passesWrite) {
 			this.passesRead = passesRead;
 			this.passesWrite = passesWrite;
 		}
