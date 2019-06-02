@@ -192,7 +192,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 		return e;
 	}
 
-	private String createWorldKey(long gameId, int turn){
+	  private String createWorldKey(long gameId, int turn){
         return gameId + "_" + turn;
     }
 
@@ -229,14 +229,14 @@ public class GaeDatastoreClient implements DatastoreClient{
     // Login
 
     @Override
-    public LoginKey getLogin(String email, long gameId, int date) {
+    public Optional<LoginKey> getLogin(String email, long gameId, int date) {
         try {
             Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
             String jsonStr = (String) entity.getProperty(jsonProp);
-            return gson.fromJson(jsonStr, LoginKey.class);
+            return Optional.of(gson.fromJson(jsonStr, LoginKey.class));
         } catch (EntityNotFoundException e) {
-            log.info("Unable to retrieve Login with key " + createLoginKey(gameId, date, email));
-            return null;
+            log.info("No LoginKey entity having key " + createLoginKey(gameId, date, email));
+            return Optional.empty();
         }
     }
 
