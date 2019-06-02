@@ -392,24 +392,18 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private boolean postRealTimeCommunication(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			if (!checkPassword(r).passesWrite()) return false;
-      World w = dsClient.getWorld(r.gameId, r.turn);
-      if (w == null) {
-				log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
-				return true;
-			}
-			com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
-			w.addRtc(r.kingdom, msg);
-			dsClient.putWorld(r.gameId, w);
-			txn.commit();
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
+		if (!checkPassword(r).passesWrite()) return false;
+		World w = dsClient.getWorld(r.gameId, r.turn);
+
+		if (w == null) {
+			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+			return true;
 		}
+
+		com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
+		w.addRtc(r.kingdom, msg);
+		dsClient.putWorld(r.gameId, w);
+
 		return true;
 	}
 
