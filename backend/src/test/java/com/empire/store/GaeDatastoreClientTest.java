@@ -1,5 +1,8 @@
 package com.empire.store;
 
+import com.empire.Nation;
+import com.empire.Orders;
+import com.empire.World;
 import com.empire.svc.LoginKey;
 import com.empire.svc.Player;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
@@ -14,7 +17,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -40,9 +43,9 @@ public class GaeDatastoreClientTest {
         String email = "TEST_EMAIL";
         Player player = new Player(email, "TEST_PASSHASH");
 
-        assertNull(null, client.getPlayer(email));
+        assertFalse(client.getPlayer(email).isPresent());
         assertTrue(client.putPlayer(player));
-        assertEquals(player, client.getPlayer(email));
+        assertEquals(player, client.getPlayer(email).get());
     }
 
     @Test
@@ -61,15 +64,15 @@ public class GaeDatastoreClientTest {
         nation.security = "8";
         nation.riches = "9";
         nation.culture = "10";
-        nation.trait1 = "11";
-        nation.trait2 = "12";
+//        nation.trait1 = NationData.Tag.DEFENSIVE;
+//        nation.trait2 = NationData.Tag.DISCIPLINED;
         nation.bonus = "13";
         nation.email = "14";
         nation.password = "15";
 
-        assertNull(null, client.getNation(gameId, nationName));
+        assertFalse(client.getNation(gameId, nationName).isPresent());
         assertTrue(client.putNation(gameId, nationName, nation));
-        assertEquals(nation, client.getNation(gameId, nationName));
+        assertEquals(nation, client.getNation(gameId, nationName).get());
     }
 
     @Test
@@ -83,9 +86,9 @@ public class GaeDatastoreClientTest {
         ordersMap.put("Key2", "Order2");
         Orders orders = new Orders(gameId, kingdom, turn, ordersMap, 2);
 
-        assertNull(null, client.getOrders(gameId, kingdom, turn));
+        assertFalse(client.getOrders(gameId, kingdom, turn).isPresent());
         assertTrue(client.putOrders(orders));
-        assertEquals(orders, client.getOrders(gameId, kingdom, turn));
+        assertEquals(orders, client.getOrders(gameId, kingdom, turn).get());
     }
 
     @Test
@@ -97,15 +100,15 @@ public class GaeDatastoreClientTest {
         world.characters = new ArrayList<>();
         world.gmPasswordHash = "TEST_PASSHASH_GM";
         world.obsPasswordHash = "TEST_PASSHASH_OBS";
-        world.harvests = Arrays.asList(1.5, 2.5);
-        world.cultRegions = Arrays.asList(0, 3, 6);
-        world.inspiresHint = 6;
+//        world.harvests = Arrays.asList(1.5, 2.5);
+//        world.cultRegions = Arrays.asList(0, 3, 6);
+//        world.inspiresHint = 6;
         world.nextTurn = 3;
         world.gameover = false;
 
-        assertNull(null, client.getWorld(gameId, turn));
+        assertFalse(client.getWorld(gameId, turn).isPresent());
         assertTrue(client.putWorld(gameId, world));
-        assertEquals(world, client.getWorld(gameId, turn));
+        assertEquals(world, client.getWorld(gameId, turn).get());
     }
 
     @Test
@@ -115,17 +118,17 @@ public class GaeDatastoreClientTest {
         int date = 4;
         LoginKey login = new LoginKey(email, gameId, date);
 
-        assertNull(null, client.getLogin(email, gameId, date));
+        assertFalse(client.getLogin(email, gameId, date).isPresent());
         assertTrue(client.putLogin(email, gameId, date));
-        assertEquals(login, client.getLogin(email, gameId, date));
+        assertEquals(login, client.getLogin(email, gameId, date).get());
     }
 
     @Test
     public void activeGamesNormalRoundtripTest(){
         Set<Long> activeGames = new HashSet<>(Arrays.asList(0L, 1L, 2L, 3L, 4L));
 
-        assertTrue(client.getActiveGames().isEmpty());
+        assertFalse(client.getActiveGames().isPresent());
         assertTrue(client.putActiveGames(activeGames));
-        assertEquals(activeGames, client.getActiveGames());
+        assertEquals(activeGames, client.getActiveGames().get());
     }
 }
