@@ -161,8 +161,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getOrders(Request r, HttpServletResponse resp) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		if (!checkPassword(r, service).passesRead()) return null;
+		if (!checkPassword(r).passesRead()) return null;
 		Orders orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
 		resp.setHeader("SJS-Version", "" + orders.version);
 		return GaeDatastoreClient.gson.toJson(orders.orders);
@@ -174,8 +173,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getWorld(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		CheckPasswordResult result = checkPassword(r, service);
+		CheckPasswordResult result = checkPassword(r);
 		if (!result.passesRead()) {
 			return null;
 		}
@@ -193,8 +191,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getActivity(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
+		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
 		int worldDate = dsClient.getWorldDate(r.gameId);
 		if (worldDate == -1) {
 			log.log(Level.WARNING, "No such world.");
@@ -358,7 +355,7 @@ public class EntryServlet extends HttpServlet {
 			return passesWrite;
 		}
 	}
-	private CheckPasswordResult checkPassword(Request r, DatastoreService service) {
+	private CheckPasswordResult checkPassword(Request r) {
 		try {
 			if (r.password == null) return CheckPasswordResult.FAIL;
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -387,7 +384,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			if (!checkPassword(r, service).passesWrite()) return false;
+			if (!checkPassword(r).passesWrite()) return false;
 			int worldDate = dsClient.getWorldDate(r.gameId);
 			if (worldDate == -1) {
 				log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
@@ -410,7 +407,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			if (!checkPassword(r, service).passesWrite()) return false;
+			if (!checkPassword(r).passesWrite()) return false;
       World w = dsClient.getWorld(r.gameId, r.turn);
       if (w == null) {
 				log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
@@ -436,7 +433,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			if (!checkPassword(r, service).passesWrite()) return false;
+			if (!checkPassword(r).passesWrite()) return false;
 			int worldDate = dsClient.getWorldDate(r.gameId);
 			if(worldDate == -1) log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
 			int date = r.turn != 0 ? r.turn : worldDate;
