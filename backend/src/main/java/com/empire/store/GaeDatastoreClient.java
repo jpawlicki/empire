@@ -213,10 +213,10 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     @Override
     public boolean putWorldDate(long gameId, int date) {
-        return putEntityInTransaction(dateToEntity(gameId, date));
+        return putEntityInTransaction(worldDateToEntity(gameId, date));
     }
 
-    private Entity dateToEntity(long gameId, int date) {
+    private Entity worldDateToEntity(long gameId, int date) {
         Entity entity = new Entity(currentDateType, createCurrentDateKey(gameId));
         entity.setProperty(dateProp, (long) date);
         return entity;
@@ -284,6 +284,57 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private String createActiveGamesKey(){
         return activeGamesKey;
+    }
+
+    @Override
+    public boolean multiPut(MultiPutRequest m) {
+        Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+        boolean putSuccessful;
+
+        try {
+            for(MultiPutRequest.PutParams k : m.getPuts()) {
+                Entity entity;
+
+                switch(k.getType()) {
+                    case PLAYER:
+                        entity = playerToEntity(k.player);
+                        break;
+                    case NATION:
+                        entity = nationToEntity(k.gameId, k.nationName, k.nation);
+                        break;
+                    case ORDERS:
+                        entity = orderToEntity(k.orders);
+                        break;
+                    case WORLD:
+                        entity = worldToEntity(k.gameId, k.world);
+                        break;
+                    case WORLD_DATE:
+                        entity = worldDateToEntity(k.gameId, k.date);
+                        break;
+                    case LOGIN:
+                        entity = loginToEntity(k.email, k.gameId, k.date);
+                        break;
+                    case ACTIVE_GAMES:
+                        entity = activeGamesToEntity(k.activeGames);
+                        break;
+                    default:
+                        log.info("Malformed request, unknown type " + k.getType() + " in multiput");
+                        continue;
+                }
+
+                service.put(entity);
+            }
+
+            txn.commit();
+            putSuccessful = true;
+        } finally {
+            if (txn.isActive()) {
+                txn.rollback();
+                putSuccessful = false;
+            }
+        }
+
+        return putSuccessful;
     }
 
     public static void main(String[] args) {

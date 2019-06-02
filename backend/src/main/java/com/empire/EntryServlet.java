@@ -2,6 +2,7 @@ package com.empire;
 
 import com.empire.store.DatastoreClient;
 import com.empire.store.GaeDatastoreClient;
+import com.empire.store.MultiPutRequest;
 import com.empire.svc.LoginCache;
 import com.empire.svc.Player;
 import com.empire.svc.Request;
@@ -218,7 +219,6 @@ public class EntryServlet extends HttpServlet {
 		return GaeDatastoreClient.gson.toJson(w);
 	}
 
-	// TODO: single transaction put: World, WorldDate, ActiveGames
 	private String getAdvancePoll() {
 		Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
 
@@ -255,17 +255,21 @@ public class EntryServlet extends HttpServlet {
 			}
 
 			Map<String, String> emails = w.advance(orders);
-			dsClient.putWorld(gameId, w);
-			dsClient.putWorldDate(gameId, w.date);
 
-			for (String mail : emails.keySet()) {
-				mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
-			}
+			MultiPutRequest mp = MultiPutRequest.create()
+					.addWorld(gameId, w)
+					.addWorldDate(gameId, w.date);
 
 			if (w.gameover) {
 				Set<Long> newActiveGames = dsClient.getActiveGames().orElse(new HashSet<>());
 				newActiveGames.remove(gameId);
-				dsClient.putActiveGames(newActiveGames);
+				mp.addActiveGames(newActiveGames);
+			}
+
+			boolean response = mp.put(dsClient);
+
+			if(response) {
+				emails.keySet().forEach(m -> mail(m, "👑 Empire: Turn Advances", emails.get(m).replace("%GAMEID%", "" + gameId)));
 			}
 		}
 
@@ -327,7 +331,6 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-	// TODO: single transaction put: World, WorldDate, ActiveGames
 	private boolean postStartWorld(Request r) {
 		StartWorldGson s = StartWorldGson.fromJson(r.body);
 		String passHash;
@@ -342,8 +345,8 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		// Collect setups.
-		HashSet<String> addresses = new HashSet<>();
-		HashMap<String, Nation> nations = new HashMap<>();
+		Set<String> addresses = new HashSet<>();
+		Map<String, Nation> nations = new HashMap<>();
 
 		for (String kingdom : s.kingdoms) {
 			log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
@@ -357,18 +360,22 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		World w = World.startNew(passHash, obsPassHash, nations);
-		dsClient.putWorld(r.gameId, w);
-		dsClient.putWorldDate(r.gameId, 1);
-
 		Set<Long> activeGames = dsClient.getActiveGames().orElse(new HashSet<>());
 		activeGames.add(r.gameId);
-		dsClient.putActiveGames(activeGames);
 
-		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
-		return true;
+		boolean response = MultiPutRequest.create()
+				.addWorld(r.gameId, w)
+				.addWorldDate(r.gameId, 1)
+				.addActiveGames(activeGames)
+				.put(dsClient);
+
+		if(response) {
+			mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
+		}
+
+		return response;
 	}
 
-	// TODO: single transaction put: Nation, Player
 	private boolean postSetup(Request r) {
 		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
 
@@ -383,9 +390,10 @@ public class EntryServlet extends HttpServlet {
 			return false;
 		}
 
-		dsClient.putNation(r.gameId, r.kingdom, nation);
-		dsClient.putPlayer(new Player(nation.email, nation.password));
-		return true;
+		return MultiPutRequest.create()
+				.addNation(r.gameId, r.kingdom, nation)
+				.addPlayer(new Player(nation.email, nation.password))
+				.put(dsClient);
 	}
 
 	private boolean postRealTimeCommunication(Request r) {
@@ -515,7 +523,7 @@ public class EntryServlet extends HttpServlet {
 		mail(s, subject, body);
 	}
 
-	private void mail(HashSet<String> addresses, String subject, String body) {
+	private void mail(Set<String> addresses, String subject, String body) {
 		try {
 			Message msg = new MimeMessage(Session.getDefaultInstance(new Properties(), null));
 			msg.setFrom(new InternetAddress("gilgarn@gmail.com", "Joshua Pawlicki"));

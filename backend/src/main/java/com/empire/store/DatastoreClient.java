@@ -31,4 +31,6 @@ public interface DatastoreClient {
 
      Optional<Set<Long>> getActiveGames();
      boolean putActiveGames(Set<Long> activeGames);
+
+     boolean multiPut(MultiPutRequest m);
 }
