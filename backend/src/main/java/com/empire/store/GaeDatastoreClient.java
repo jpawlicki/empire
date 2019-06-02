@@ -110,18 +110,14 @@ public class GaeDatastoreClient implements DatastoreClient{
     // Nation
 
     @Override
-    public Nation getNation(long gameId, String nation) {
-        return gson.fromJson(getNationJson(gameId, nation), Nation.class);
-    }
-
-    @Override
-    public String getNationJson(long gameId, String nation) {
+    public Optional<Nation> getNation(long gameId, String nation) {
         try {
             Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(gameId, nation)));
-            return (String) e.getProperty(jsonProp);
+            String jsonStr =  (String) e.getProperty(jsonProp);
+            return Optional.of(gson.fromJson(jsonStr, Nation.class));
         } catch (EntityNotFoundException e) {
-            log.info("Unable to retrieve Nation with key " + createNationkey(gameId, nation));
-            return null;
+            log.info("No Nation entity found having key " + createNationkey(gameId, nation));
+            return Optional.empty();
         }
     }
 

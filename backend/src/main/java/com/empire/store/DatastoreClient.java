@@ -14,8 +14,7 @@ public interface DatastoreClient {
      Optional<Player> getPlayer(String email);
      boolean putPlayer(Player player);
 
-     Nation getNation(long gameId, String nation);
-     String getNationJson(long gameId, String nation);
+     Optional<Nation> getNation(long gameId, String nation);
      boolean putNation(long gameId, String nationName, Nation nation);
 
      Orders getOrders(long gameId, String kingdom, int turn);

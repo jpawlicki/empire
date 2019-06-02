@@ -180,7 +180,14 @@ public class EntryServlet extends HttpServlet {
 
 	private String getSetup(Request r) {
 		// TODO - should filter this data or display it.
-		return dsClient.getNationJson(r.gameId, r.kingdom);
+		Optional<Nation> nation = dsClient.getNation(r.gameId, r.kingdom);
+
+		if(nation.isPresent()) {
+			return GaeDatastoreClient.gson.toJson(nation.get());
+		} else {
+			log.severe("Unable to complete setup request");
+			return null;
+		}
 	}
 
 	private String getWorld(Request r) {
@@ -280,6 +287,7 @@ public class EntryServlet extends HttpServlet {
 		StartWorldGson s = StartWorldGson.fromJson(r.body);
 		String passHash;
 		String obsPassHash;
+
 		try {
 			passHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.gmPassword).getBytes(StandardCharsets.UTF_8)));
 			obsPassHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.obsPassword).getBytes(StandardCharsets.UTF_8)));
@@ -287,15 +295,22 @@ public class EntryServlet extends HttpServlet {
 			log.log(Level.SEVERE, "Hash error", e);
 			return false;
 		}
-		HashSet<String> addresses = new HashSet<>();
 
 		// Collect setups.
+		HashSet<String> addresses = new HashSet<>();
 		HashMap<String, Nation> nations = new HashMap<>();
+
 		for (String kingdom : s.kingdoms) {
 			log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
-			nations.put(kingdom, dsClient.getNation(r.gameId, kingdom));
-			addresses.add(nations.get(kingdom).email);
+			Optional<Nation> nation = dsClient.getNation(r.gameId, kingdom);
+			if(nation.isPresent()){
+				nations.put(kingdom, nation.get());
+				addresses.add(nation.get().email);
+			} else {
+				log.severe(kingdom + " was not added to nation setups");
+			}
 		}
+
 		World w = World.startNew(passHash, obsPassHash, nations);
 		dsClient.putWorld(r.gameId, w);
 		dsClient.putWorldDate(r.gameId, 1);
@@ -439,10 +454,11 @@ public class EntryServlet extends HttpServlet {
 
 	//TODO: all puts in single transaction: Nation, Player
 	private boolean postSetup(Request r) {
-		Nation nation = dsClient.getNation(r.gameId, r.kingdom);
-		if (nation == null) return false; // We expect nation to not be found
+		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
 
-		nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
+		if (!nationCheck.isPresent()) return false; // We expect nation to not be found
+
+		Nation nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
 
 		try {
 			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
