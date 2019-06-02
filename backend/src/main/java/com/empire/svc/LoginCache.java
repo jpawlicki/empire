@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -46,7 +47,7 @@ public class LoginCache {
             if (recordedKeys.contains(nu)) {
                 result.add(true);
             } else {
-                result.add(Objects.nonNull(client.getLogin(email, gameId, date)));
+                result.add(client.getLogin(email, gameId, date).isPresent());
             }
         }
 
