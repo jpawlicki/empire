@@ -77,8 +77,8 @@ public class EntryServlet extends HttpServlet {
 
 	private static final DatastoreClient dsClient = GaeDatastoreClient.getInstance();
 
-  	@Override
-  	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+	@Override
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 		String json = "";
@@ -216,8 +216,6 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: single transaction put
 	private String getAdvancePoll() {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-
 		Set<Long> activeGames = dsClient.getActiveGames();
 		if(activeGames == null) {
 			log.log(Level.SEVERE, "Poller failed.");
@@ -225,38 +223,34 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		for (Long gameId : activeGames) {
-			Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-			try {
-				int date = (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
-				World w = dsClient.getWorld(gameId, date);
-				if (w.nextTurn < Instant.now().toEpochMilli()) {
-					HashSet<String> kingdoms = new HashSet<>();
-					HashMap<String, Map<String, String>> orders = new HashMap<>();
-					for (String kingdom : w.getNationNames()) {
-						kingdoms.add(kingdom);
-						Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
-						if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
-						orders.put(kingdom, ordersKingdom.orders);
-					}
-					Map<String, String> emails = w.advance(orders);
-					dsClient.putWorld(gameId, w);
-					Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
-					nudate.setProperty("date", (long)w.date);
-					service.put(nudate);
-					for (String mail : emails.keySet()) {
-						mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
-					}
-					if (w.gameover) {
-						Set<Long> newActiveGames = dsClient.getActiveGames();
-						newActiveGames.remove(gameId);
-						dsClient.putActiveGames(newActiveGames);
-					}
+			int date = dsClient.getWorldDate(gameId);
+			World w = dsClient.getWorld(gameId, date);
+			if(date == -1 || w == null) {
+				log.log(Level.SEVERE, "World issue.");
+				return "";
+			}
+
+			if (w.nextTurn < Instant.now().toEpochMilli()) {
+				HashSet<String> kingdoms = new HashSet<>();
+				HashMap<String, Map<String, String>> orders = new HashMap<>();
+				for (String kingdom : w.getNationNames()) {
+					kingdoms.add(kingdom);
+					Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
+					if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
+					orders.put(kingdom, ordersKingdom.orders);
 				}
-				txn.commit();
-			} catch (EntityNotFoundException e) {
-				log.log(Level.SEVERE, "World issue.", e);
-			} finally {
-				if (txn.isActive()) txn.rollback();
+				Map<String, String> emails = w.advance(orders);
+				dsClient.putWorld(gameId, w);
+				dsClient.putWorldDate(gameId, w.date);
+
+				for (String mail : emails.keySet()) {
+					mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+				}
+				if (w.gameover) {
+					Set<Long> newActiveGames = dsClient.getActiveGames();
+					newActiveGames.remove(gameId);
+					dsClient.putActiveGames(newActiveGames);
+				}
 			}
 		}
 
@@ -335,6 +329,7 @@ public class EntryServlet extends HttpServlet {
 			return passesWrite;
 		}
 	}
+
 	private CheckPasswordResult checkPassword(Request r) {
 		try {
 			if (r.password == null) return CheckPasswordResult.FAIL;
