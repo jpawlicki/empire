@@ -65,6 +65,10 @@ POST /entry/startworld?gid=1234
 TODO: Will eventually need a changePassword/change-email.
 */
 
+// TODO: Eliminate gson references from this class
+// TODO: Move EntryServlet to svc package
+// TODO: Unit tests for EntryServlet
+
 @WebServlet(name = "EntryServlet", value = "/entry/*")
 public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
