@@ -265,18 +265,10 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
 	private boolean postAdvanceWorld(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		HashSet<String> kingdoms = new HashSet<>();
-		try {
-      World w = dsClient.getWorld(r.gameId, r.turn);
-      if(w == null) return false;
-			w.nextTurn = 0;
-			dsClient.putWorld(r.gameId, w);
-			txn.commit();
-		} finally {
-			if (txn.isActive()) txn.rollback();
-		}
+		World w = dsClient.getWorld(r.gameId, r.turn);
+		if(w == null) return false;
+		w.nextTurn = 0;
+		dsClient.putWorld(r.gameId, w);
 		getAdvancePoll();
 		return true;
 	}
