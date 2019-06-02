@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -213,58 +214,52 @@ public class EntryServlet extends HttpServlet {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
 	}
 
-	private static class ActiveGames {
-		public ArrayList<Long> activeGameIds;
-		static ActiveGames fromGson(String s) {
-			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().fromJson(s, ActiveGames.class);
-		}
-	}
-
 	// TODO: single transaction put
 	private String getAdvancePoll() {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		try {
-			for (Long gameId : ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games")).activeGameIds) {
-				Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-				try {
-					int date = (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
-          World w = dsClient.getWorld(gameId, date);
-					if (w.nextTurn < Instant.now().toEpochMilli()) {
-						HashSet<String> kingdoms = new HashSet<>();
-						HashMap<String, Map<String, String>> orders = new HashMap<>();
-						for (String kingdom : w.getNationNames()) {
-							kingdoms.add(kingdom);
-							Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
-							if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
-							orders.put(kingdom, ordersKingdom.orders);
-						}
-						Map<String, String> emails = w.advance(orders);
-						dsClient.putWorld(gameId, w);
-						Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
-						nudate.setProperty("date", (long)w.date);
-						service.put(nudate);
-						for (String mail : emails.keySet()) {
-							mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
-						}
-						if (w.gameover) {
-							ActiveGames newActiveGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
-							newActiveGames.activeGameIds.remove(gameId);
-							Entity activeGames = new Entity("ACTIVEGAMES", "_");
-							activeGames.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(newActiveGames));
-							service.put(activeGames);
-						}
-					}
-					txn.commit();
-				} catch (EntityNotFoundException e) {
-					log.log(Level.SEVERE, "World issue.", e);
-				} finally {
-					if (txn.isActive()) txn.rollback();
-				}
-			}
-		} catch (EntityNotFoundException e) {
-			log.log(Level.SEVERE, "Poller failed.", e);
+
+		Set<Long> activeGames = dsClient.getActiveGames();
+		if(activeGames == null) {
+			log.log(Level.SEVERE, "Poller failed.");
 			return null;
 		}
+
+		for (Long gameId : activeGames) {
+			Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+			try {
+				int date = (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
+				World w = dsClient.getWorld(gameId, date);
+				if (w.nextTurn < Instant.now().toEpochMilli()) {
+					HashSet<String> kingdoms = new HashSet<>();
+					HashMap<String, Map<String, String>> orders = new HashMap<>();
+					for (String kingdom : w.getNationNames()) {
+						kingdoms.add(kingdom);
+						Orders ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
+						if (ordersKingdom == null) log.warning("Cannot find orders for " + kingdom);
+						orders.put(kingdom, ordersKingdom.orders);
+					}
+					Map<String, String> emails = w.advance(orders);
+					dsClient.putWorld(gameId, w);
+					Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
+					nudate.setProperty("date", (long)w.date);
+					service.put(nudate);
+					for (String mail : emails.keySet()) {
+						mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+					}
+					if (w.gameover) {
+						Set<Long> newActiveGames = dsClient.getActiveGames();
+						newActiveGames.remove(gameId);
+						dsClient.putActiveGames(newActiveGames);
+					}
+				}
+				txn.commit();
+			} catch (EntityNotFoundException e) {
+				log.log(Level.SEVERE, "World issue.", e);
+			} finally {
+				if (txn.isActive()) txn.rollback();
+			}
+		}
+
 		return "";
 	}
 
@@ -313,18 +308,11 @@ public class EntryServlet extends HttpServlet {
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
 			g.setProperty("date", 1);
 			service.put(g);
-			ActiveGames activeGames;
-			try {
-				activeGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
-			} catch (EntityNotFoundException e) {
-				// No active game registry - create it.
-				activeGames = new ActiveGames();
-				activeGames.activeGameIds = new ArrayList<>();
-			}
-			activeGames.activeGameIds.add(r.gameId);
-			Entity games = new Entity("ACTIVEGAMES", "_");
-			games.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(activeGames));
-			service.put(games);
+
+			Set<Long> activeGames = dsClient.getActiveGames();
+			if(activeGames == null) activeGames = new HashSet<>();
+			activeGames.add(r.gameId);
+			dsClient.putActiveGames(activeGames);
 			txn.commit();
 		} finally {
 			if (txn.isActive()) txn.rollback();
