@@ -644,7 +644,8 @@ public class EntryServlet extends HttpServlet {
     private boolean postRealTimeCommunication(Request r) {
         if (!checkPassword(r).passesWrite()) return false;
         World w = dsClient.getWorld(r.gameId, r.turn);
-        w.addRtc(r.body, r.kingdom);
+        com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
+        w.addRtc(r.kingdom, msg);
         dsClient.putWorld(r.gameId, w);
         return true;
     }

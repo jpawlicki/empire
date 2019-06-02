@@ -1,16 +1,9 @@
 package com.empire;
 
-import com.empire.store.Compressor;
-import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Text;
 import com.google.common.primitives.Ints;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +22,7 @@ interface GoodwillProvider {
 }
 
 public class World implements GoodwillProvider {
-	private static final String TYPE = "World";
+//	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
 	public int date;
@@ -50,6 +43,7 @@ public class World implements GoodwillProvider {
 	public long nextTurn;
 	public boolean gameover;
 
+	/*
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 	}
@@ -70,6 +64,28 @@ public class World implements GoodwillProvider {
 	public static World fromJson(String json) {
 		return getGson().fromJson(json, World.class);
 	}
+
+	@Override
+	public String toString() {
+		return getGson().toJson(this);
+	}
+
+	public Entity toEntity(long gameId) {
+		Entity e = new Entity(TYPE, gameId + "_" + date);
+		e.setProperty("json_gzip", new Blob(Compressor.compress(getGson().toJson(this))));
+		return e;
+	}
+
+	public void addRtc(String json, String from) {
+		Message m = getGson().fromJson(json, Message.class);
+		// TODO - test legality of message.
+		m.from = from;
+		rtc.add(m);
+	}
+	*/
+
+//	public static World load(long gameId, int turn, DatastoreService service) throws EntityNotFoundException { return new World(); }
+	public Entity toEntity(long gameId) { return new Entity("", ""); }
 
 	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation> nationSetup) {
 		World w = new World();
@@ -146,7 +162,7 @@ public class World implements GoodwillProvider {
 			nation.culture = con.culture;
 			nation.coreRegions = Ints.asList(con.coreRegions);
 			nation.goodwill = setup.hasTag(NationData.Tag.HOLY) ? 15 : setup.dominantIdeology.religion == Religion.IRUHAN ? 5 : -55;
-			nation.gothi = new HashMap<String, Boolean>();
+			nation.gothi = new HashMap<>();
 			nation.gothi.put("Alyrja", false);
 			nation.gothi.put("Lyskr", false);
 			nation.gothi.put("Rjinku", false);
@@ -432,22 +448,10 @@ public class World implements GoodwillProvider {
 		return kingdoms.keySet();
 	}
 
-	public void addRtc(String json, String from) {
-		Message m = getGson().fromJson(json, Message.class);
+	public void addRtc(String from, Message msg) {
 		// TODO - test legality of message.
-		m.from = from;
-		rtc.add(m);
-	}
-
-	public Entity toEntity(long gameId) {
-		Entity e = new Entity(TYPE, gameId + "_" + date);
-		e.setProperty("json_gzip", new Blob(Compressor.compress(getGson().toJson(this))));
-		return e;
-	}
-
-	@Override
-	public String toString() {
-		return getGson().toJson(this);
+		msg.from = from;
+		rtc.add(msg);
 	}
 
 	/**
@@ -2868,10 +2872,4 @@ final class Notification {
 		this.title = title;
 		this.text = text;
 	}
-}
-
-final class Message {
-	String from;
-	List<String> to;
-	String text;
 }

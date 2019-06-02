@@ -185,7 +185,7 @@ public class EntryServlet extends HttpServlet {
 		}
 		try {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
+      World w = dsClient.getWorld(r.gameId, date);
 			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
 			w.filter(r.kingdom);
 			return w.toString();
@@ -201,7 +201,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
 			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
-			World w = World.load(r.gameId, date, service);
+      World w = dsClient.getWorld(r.gameId, date);
 			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
 			List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
 			List<Map<String, Boolean>> result = new ArrayList<>();
@@ -233,7 +233,7 @@ public class EntryServlet extends HttpServlet {
 				Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 				try {
 					int date = (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
-					World	w = World.load(gameId, date, service);
+          World w = dsClient.getWorld(gameId, date);
 					if (w.nextTurn < Instant.now().toEpochMilli()) {
 						HashSet<String> kingdoms = new HashSet<>();
 						HashMap<String, Map<String, String>> orders = new HashMap<>();
@@ -279,12 +279,11 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		HashSet<String> kingdoms = new HashSet<>();
 		try {
-			World	w = World.load(r.gameId, r.turn, service);
+      World w = dsClient.getWorld(r.gameId, r.turn);
+      if(w == null) return false;
 			w.nextTurn = 0;
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
-		} catch (EntityNotFoundException e) {
-			return false;
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
@@ -373,7 +372,7 @@ public class EntryServlet extends HttpServlet {
 			// 	// Do nothing.
 			// }
 			int date = getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
+      World w = dsClient.getWorld(r.gameId, date);
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
 			// if (w.kingdoms.containsKey(r.kingdom) && w.getNation(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
@@ -419,12 +418,15 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
-			World w = World.load(r.gameId, r.turn, service);
-			w.addRtc(r.body, r.kingdom);
+      World w = dsClient.getWorld(r.gameId, r.turn);
+      if (w == null) {
+				log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+				return true;
+			}
+			com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
+			w.addRtc(r.kingdom, msg);
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();
@@ -443,7 +445,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
 			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
+      World w = dsClient.getWorld(r.gameId, date);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 			Player p = dsClient.getPlayer(body.email);
 			w.getNation(r.kingdom).email = body.email;
@@ -465,12 +467,14 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			World w = World.load(4, getWorldDate(4, service), service);
+      World w = dsClient.getWorld(4, dsClient.getWorldDate(4));
+      if (w == null) {
+				log.log(Level.INFO, "Not found!");
+				return true;
+			}
 			for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
 			service.put(w.toEntity(4));
 			txn.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found!", e);
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();
