@@ -135,10 +135,6 @@ public class EntryServlet extends HttpServlet {
 				success = postStartWorld(r);
 				err = "Failure.";
 				break;
-			case "/entry/migrate":
-				success = migrate(r);
-				err = "Failure.";
-				break;
 			case "/entry/setup":
 				success = postSetup(r);
 				err = "Not allowed.";
@@ -150,6 +146,10 @@ public class EntryServlet extends HttpServlet {
 			case "/entry/changeplayer":
 				success = postChangePlayer(r);
 				err = "Not allowed.";
+				break;
+			case "/entry/migrate":
+				success = migrate(r);
+				err = "Failure.";
 				break;
 			default:
 				err = "No such path.";
@@ -220,33 +220,6 @@ public class EntryServlet extends HttpServlet {
 		return GaeDatastoreClient.gson.toJson(w);
 	}
 
-	private String getActivity(Request r) {
-		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
-
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-		if (!dateOpt.isPresent()) {
-			log.log(Level.WARNING, "No such world.");
-			return null;
-		}
-		int date = r.turn != 0 ? r.turn : dateOpt.get();
-
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
-		if(!worldOpt.isPresent()) return null;
-		World w = worldOpt.get();
-
-		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
-		List<Map<String, Boolean>> result = new ArrayList<>();
-		for (List<Boolean> turnActives : actives) {
-			HashMap<String, Boolean> turn = new HashMap<>();
-			for (int i = 0; i < emails.size(); i++) {
-				turn.put(emails.get(i), turnActives.get(i));
-			}
-			result.add(turn);
-		}
-		return GaeDatastoreClient.gson.toJson(result);
-	}
-
 	// TODO: single transaction put
 	private String getAdvancePoll() {
 		Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
@@ -298,6 +271,51 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		return "";
+	}
+
+	private String getActivity(Request r) {
+		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
+
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		if (!dateOpt.isPresent()) {
+			log.log(Level.WARNING, "No such world.");
+			return null;
+		}
+		int date = r.turn != 0 ? r.turn : dateOpt.get();
+
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+		if(!worldOpt.isPresent()) return null;
+		World w = worldOpt.get();
+
+		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
+		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
+		List<Map<String, Boolean>> result = new ArrayList<>();
+		for (List<Boolean> turnActives : actives) {
+			HashMap<String, Boolean> turn = new HashMap<>();
+			for (int i = 0; i < emails.size(); i++) {
+				turn.put(emails.get(i), turnActives.get(i));
+			}
+			result.add(turn);
+		}
+		return GaeDatastoreClient.gson.toJson(result);
+	}
+
+	// TODO: better json conversion
+	private boolean postOrders(Request r) {
+		if (!checkPassword(r).passesWrite()) return false;
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+
+		if (!dateOpt.isPresent()) {
+			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
+			return false;
+		}
+
+		if (r.turn != dateOpt.get()) return false;
+		Type t = new TypeToken<Map<String, String>>(){}.getType();
+		Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
+		dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
+
+		return true;
 	}
 
 	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
@@ -352,6 +370,92 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
+	//TODO: all puts in single transaction: Nation, Player
+	private boolean postSetup(Request r) {
+		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
+
+		if (!nationCheck.isPresent()) return false; // We expect nation to not be found
+
+		Nation nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
+
+		try {
+			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
+		} catch (NoSuchAlgorithmException e){
+			log.log(Level.SEVERE, "postSetup Failure", e);
+			return false;
+		}
+
+		dsClient.putNation(r.gameId, r.kingdom, nation);
+		dsClient.putPlayer(new Player(nation.email, nation.password));
+		return true;
+	}
+
+	private boolean postRealTimeCommunication(Request r) {
+		if (!checkPassword(r).passesWrite()) return false;
+
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
+		if (!worldOpt.isPresent()) {
+			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+			return true;
+		}
+
+		World w = worldOpt.get();
+
+		com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
+		w.addRtc(r.kingdom, msg);
+		dsClient.putWorld(r.gameId, w);
+
+		return true;
+	}
+
+	private boolean postChangePlayer(Request r) {
+		if (!checkPassword(r).passesWrite()) return false;
+
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		int date = r.turn != 0 ? r.turn : dateOpt.orElse(-1);
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+
+		if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
+			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+			return false;
+		}
+
+		World w = worldOpt.get();
+		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+		Optional<Player> p = dsClient.getPlayer(body.email);
+
+		if(!p.isPresent()) {
+			log.severe("Player not found, request to change player failed");
+			return false;
+		}
+
+		w.getNation(r.kingdom).email = body.email;
+		w.getNation(r.kingdom).password = p.get().passHash;
+		dsClient.putWorld(r.gameId, w);
+		return true;
+	}
+
+	private static final class ChangePlayerRequestBody {
+		public String email;
+		public String password;
+	}
+
+	// TODO: remove
+	private boolean migrate(Request r) {
+		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4).orElse(-1));
+
+		if (!worldOpt.isPresent()) {
+			log.log(Level.INFO, "Not found!");
+			return true;
+		}
+
+		World w = worldOpt.get();
+
+		for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
+		dsClient.putWorld(4, w);
+		return true;
+	}
+
 	private enum CheckPasswordResult {
 		PASS_GM(true, true),
 		PASS_OBS(true, false),
@@ -382,12 +486,12 @@ public class EntryServlet extends HttpServlet {
 			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
 
 			Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-      Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
-      if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
+			Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
+			if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
 				log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
 				return CheckPasswordResult.NO_ENTITY;
 			}
-      World w = worldOpt.get();
+			World w = worldOpt.get();
 
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
@@ -405,110 +509,6 @@ public class EntryServlet extends HttpServlet {
 			log.log(Level.SEVERE, "CheckPassword Failure", e);
 			return CheckPasswordResult.FAIL;
 		}
-	}
-
-	// TODO: better json conversion
-	private boolean postOrders(Request r) {
-		if (!checkPassword(r).passesWrite()) return false;
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-
-		if (!dateOpt.isPresent()) {
-			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
-			return false;
-		}
-
-		if (r.turn != dateOpt.get()) return false;
-		Type t = new TypeToken<Map<String, String>>(){}.getType();
-		Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
-		dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
-
-		return true;
-	}
-
-	private boolean postRealTimeCommunication(Request r) {
-		if (!checkPassword(r).passesWrite()) return false;
-
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
-		if (!worldOpt.isPresent()) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
-			return true;
-		}
-
-		World w = worldOpt.get();
-
-		com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
-		w.addRtc(r.kingdom, msg);
-		dsClient.putWorld(r.gameId, w);
-
-		return true;
-	}
-
-	private static final class ChangePlayerRequestBody {
-		public String email;
-		public String password;
-	}
-
-	private boolean postChangePlayer(Request r) {
-		if (!checkPassword(r).passesWrite()) return false;
-
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-		int date = r.turn != 0 ? r.turn : dateOpt.orElse(-1);
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
-
-		if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
-			return false;
-		}
-
-		World w = worldOpt.get();
-		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
-		Optional<Player> p = dsClient.getPlayer(body.email);
-
-		if(!p.isPresent()) {
-			log.severe("Player not found, request to change player failed");
-			return false;
-		}
-
-		w.getNation(r.kingdom).email = body.email;
-		w.getNation(r.kingdom).password = p.get().passHash;
-		dsClient.putWorld(r.gameId, w);
-		return true;
-	}
-
-	// TODO: remove
-	private boolean migrate(Request r) {
-		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4).orElse(-1));
-
-		if (!worldOpt.isPresent()) {
-			log.log(Level.INFO, "Not found!");
-			return true;
-		}
-
-		World w = worldOpt.get();
-
-		for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
-		dsClient.putWorld(4, w);
-		return true;
-	}
-
-	//TODO: all puts in single transaction: Nation, Player
-	private boolean postSetup(Request r) {
-		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
-
-		if (!nationCheck.isPresent()) return false; // We expect nation to not be found
-
-		Nation nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
-
-		try {
-			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e){
-			log.log(Level.SEVERE, "postSetup Failure", e);
-			return false;
-		}
-
-		dsClient.putNation(r.gameId, r.kingdom, nation);
-		dsClient.putPlayer(new Player(nation.email, nation.password));
-		return true;
 	}
 
 	private void mail(String address, String subject, String body) {
