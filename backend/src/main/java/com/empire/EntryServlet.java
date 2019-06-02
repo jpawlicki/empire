@@ -173,50 +173,47 @@ public class EntryServlet extends HttpServlet {
 		return dsClient.getNationJson(r.gameId, r.kingdom);
 	}
 
-	private int getWorldDate(long gameId, DatastoreService service) throws EntityNotFoundException {
-		return (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
-	}
-
 	private String getWorld(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		CheckPasswordResult result = checkPassword(r, service);
 		if (!result.passesRead()) {
 			return null;
 		}
-		try {
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-      World w = dsClient.getWorld(r.gameId, date);
-			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
-			w.filter(r.kingdom);
-			return w.toString();
-		} catch (EntityNotFoundException e) {
+
+		int worldDate = dsClient.getWorldDate(r.gameId);
+		if (worldDate == -1) {
 			log.log(Level.INFO, "No such world.");
 			return null;
 		}
+		int date = r.turn != 0 ? r.turn : worldDate;
+		World w = dsClient.getWorld(r.gameId, date);
+		if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
+		w.filter(r.kingdom);
+		return w.toString();
 	}
 
 	private String getActivity(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
-		try {
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
-			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
-      World w = dsClient.getWorld(r.gameId, date);
-			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-			List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
-			List<Map<String, Boolean>> result = new ArrayList<>();
-			for (List<Boolean> turnActives : actives) {
-				HashMap<String, Boolean> turn = new HashMap<>();
-				for (int i = 0; i < emails.size(); i++) {
-					turn.put(emails.get(i), turnActives.get(i));
-				}
-				result.add(turn);
-			}
-			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
-		} catch (EntityNotFoundException e) {
-			log.log(Level.WARNING, "No such world.", e);
+		int worldDate = dsClient.getWorldDate(r.gameId);
+		if (worldDate == -1) {
+			log.log(Level.WARNING, "No such world.");
 			return null;
 		}
+		int date = r.turn != 0 ? r.turn : worldDate;
+		HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
+		World w = dsClient.getWorld(r.gameId, date);
+		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
+		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
+		List<Map<String, Boolean>> result = new ArrayList<>();
+		for (List<Boolean> turnActives : actives) {
+			HashMap<String, Boolean> turn = new HashMap<>();
+			for (int i = 0; i < emails.size(); i++) {
+				turn.put(emails.get(i), turnActives.get(i));
+			}
+			result.add(turn);
+		}
+		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
 	}
 
 	private static class ActiveGames {
@@ -366,26 +363,19 @@ public class EntryServlet extends HttpServlet {
 			if (r.password == null) return CheckPasswordResult.FAIL;
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
-			// try {
-			// 	byte[] passHash = BaseEncoding.base16().decode(Nation.NationGson.loadNation(r.kingdom, r.gameId, service).password);
-			// 	if (Arrays.equals(attemptHash, passHash)) return CheckPasswordResult.PASS;
-			// } catch (EntityNotFoundException e) {
-			// 	// Do nothing.
-			// }
-			int date = getWorldDate(r.gameId, service);
+			int date = dsClient.getWorldDate(r.gameId);
       World w = dsClient.getWorld(r.gameId, date);
+      if(date == -1 || w == null) {
+				log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
+				return CheckPasswordResult.NO_ENTITY;
+			}
+
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
-			// if (w.kingdoms.containsKey(r.kingdom) && w.getNation(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
-			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.getNation(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
-//			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(dsClient.getPlayer(w.getNation(r.kingdom).email).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
 			return CheckPasswordResult.FAIL;
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
-			return CheckPasswordResult.NO_ENTITY;
 		} catch (NoSuchAlgorithmException e) {
 			log.log(Level.SEVERE, "CheckPassword Failure", e);
 			return CheckPasswordResult.FAIL;
@@ -398,14 +388,16 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
-			if (r.turn != getWorldDate(r.gameId, service)) return false;
+			int worldDate = dsClient.getWorldDate(r.gameId);
+			if (worldDate == -1) {
+				log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
+				return false;
+			}
+			if (r.turn != worldDate) return false;
 			Type t = new TypeToken<Map<String, String>>(){}.getType();
 			Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
 			dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
 			txn.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
-			return false;
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();
@@ -445,7 +437,9 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			int worldDate = dsClient.getWorldDate(r.gameId);
+			if(worldDate == -1) log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+			int date = r.turn != 0 ? r.turn : worldDate;
       World w = dsClient.getWorld(r.gameId, date);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 			Player p = dsClient.getPlayer(body.email);
@@ -453,8 +447,6 @@ public class EntryServlet extends HttpServlet {
 			w.getNation(r.kingdom).password = p.passHash;
 			dsClient.putWorld(r.gameId, w);
 			txn.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
 		} finally {
 			if (txn.isActive()) {
 				txn.rollback();
