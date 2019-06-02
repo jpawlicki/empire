@@ -5,12 +5,13 @@ import com.empire.Orders;
 import com.empire.World;
 import com.empire.svc.LoginKey;
 import com.empire.svc.Player;
+import java.util.Optional;
 import java.util.Set;
 
 // TODO: consider changing active games to get, add(long), delete(long)
 
 public interface DatastoreClient {
-     Player getPlayer(String email);
+     Optional<Player> getPlayer(String email);
      boolean putPlayer(Player player);
 
      Nation getNation(long gameId, String nation);

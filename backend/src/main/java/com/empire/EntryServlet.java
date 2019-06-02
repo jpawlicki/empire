@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
@@ -345,7 +346,13 @@ public class EntryServlet extends HttpServlet {
 
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
-			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(dsClient.getPlayer(w.getNation(r.kingdom).email).passHash))) return CheckPasswordResult.PASS_PLAYER;
+			Optional<Player> player = dsClient.getPlayer(w.getNation(r.kingdom).email);
+			if(!player.isPresent()) {
+				log.severe("Player not found, password check failed");
+				return CheckPasswordResult.NO_ENTITY;
+			}
+
+			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(player.get().passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
 			return CheckPasswordResult.FAIL;
@@ -401,9 +408,16 @@ public class EntryServlet extends HttpServlet {
 		int date = r.turn != 0 ? r.turn : worldDate;
 		World w = dsClient.getWorld(r.gameId, date);
 		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
-		Player p = dsClient.getPlayer(body.email);
+
+		Optional<Player> p = dsClient.getPlayer(body.email);
+
+		if(!p.isPresent()) {
+			log.severe("Player not found, request to change player failed");
+			return false;
+		}
+
 		w.getNation(r.kingdom).email = body.email;
-		w.getNation(r.kingdom).password = p.passHash;
+		w.getNation(r.kingdom).password = p.get().passHash;
 		dsClient.putWorld(r.gameId, w);
 		return true;
 	}

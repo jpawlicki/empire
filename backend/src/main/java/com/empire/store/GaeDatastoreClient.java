@@ -19,6 +19,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Collections;
+import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -80,14 +81,14 @@ public class GaeDatastoreClient implements DatastoreClient{
     // Player
 
     @Override
-    public Player getPlayer(String email) {
+    public Optional<Player> getPlayer(String email) {
         try {
             Entity e = service.get(KeyFactory.createKey(playerType, createPlayerKey(email)));
             String jsonStr = (String) e.getProperty(jsonProp);
-            return gson.fromJson(jsonStr, Player.class);
+            return Optional.of(gson.fromJson(jsonStr, Player.class));
         } catch (EntityNotFoundException e){
-            log.info("Unable to retrieve Player with key " + email);
-            return null;
+            log.info("No Player entity found having key " + createPlayerKey(email));
+            return Optional.empty();
         }
     }
 
