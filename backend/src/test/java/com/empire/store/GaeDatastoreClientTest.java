@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 public class GaeDatastoreClientTest {
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
-    private GaeDatastoreClient client;
+    private DatastoreClient client;
 
     @Before
     public void setUp(){

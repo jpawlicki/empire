@@ -1,5 +1,6 @@
 package com.empire.store;
 
+import com.empire.util.JsonUtils;
 import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.World;
@@ -13,9 +14,6 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
-import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Optional;
@@ -42,7 +40,6 @@ public class GaeDatastoreClient implements DatastoreClient{
     private static final String activeGamesKey = "_";
 
     private static GaeDatastoreClient instance = null;
-    public static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
     private final DatastoreService service;
 
@@ -79,7 +76,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         try {
             Entity e = service.get(KeyFactory.createKey(playerType, createPlayerKey(email)));
             String jsonStr = (String) e.getProperty(jsonProp);
-            return Optional.of(gson.fromJson(jsonStr, Player.class));
+            return Optional.of(JsonUtils.fromJson(jsonStr, Player.class));
         } catch (EntityNotFoundException e){
             log.info("No Player entity found having key " + createPlayerKey(email));
             return Optional.empty();
@@ -93,7 +90,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity playerToEntity(Player player) {
         Entity e = new Entity(playerType, createPlayerKey(player.email));
-        e.setProperty(jsonProp, gson.toJson(player));
+        e.setProperty(jsonProp, JsonUtils.toJson(player));
         return e;
     }
 
@@ -108,7 +105,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         try {
             Entity e = service.get(KeyFactory.createKey(nationType, createNationkey(gameId, nation)));
             String jsonStr =  (String) e.getProperty(jsonProp);
-            return Optional.of(gson.fromJson(jsonStr, Nation.class));
+            return Optional.of(JsonUtils.fromJson(jsonStr, Nation.class));
         } catch (EntityNotFoundException e) {
             log.info("No Nation entity found having key " + createNationkey(gameId, nation));
             return Optional.empty();
@@ -122,7 +119,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity nationToEntity(long gameId, String nationName, Nation nation) {
         Entity e = new Entity(nationType, createNationkey(gameId, nationName));
-        e.setProperty(jsonProp, gson.toJson(nation));
+        e.setProperty(jsonProp, JsonUtils.toJson(nation));
         return e;
     }
 
@@ -137,7 +134,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         try {
             Entity e = service.get(KeyFactory.createKey(orderType, createOrderkey(gameId, kingdom, turn)));
             String jsonStr = (String) e.getProperty(jsonProp);
-            return Optional.of(gson.fromJson(jsonStr, Orders.class));
+            return Optional.of(JsonUtils.fromJson(jsonStr, Orders.class));
         } catch (EntityNotFoundException e){
             log.info("No Orders entity found having key " + createOrderkey(gameId, kingdom, turn));
             return Optional.empty();
@@ -151,7 +148,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity orderToEntity(Orders orders) {
         Entity e = new Entity(orderType, createOrderkey(orders.gameId, orders.kingdom, orders.turn));
-        e.setProperty(jsonProp, gson.toJson(orders));
+        e.setProperty(jsonProp, JsonUtils.toJson(orders));
         return e;
     }
 
@@ -166,7 +163,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         try {
             Entity e = service.get(KeyFactory.createKey(worldType, createWorldKey(gameId, turn)));
             String jsonStr = e.hasProperty(jsonProp) ? (String) e.getProperty(jsonProp) : Compressor.decompress(((Blob) e.getProperty(jsonGzipProp)).getBytes());
-            return Optional.of(gson.fromJson(jsonStr, World.class));
+            return Optional.of(JsonUtils.fromJson(jsonStr, World.class));
         } catch (EntityNotFoundException e){
             log.info("No World entity having key " + createWorldKey(gameId, turn));
             return Optional.empty();
@@ -180,7 +177,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity worldToEntity(long gameId, World world) {
 		Entity e = new Entity(worldType, createWorldKey(gameId, world.date));
-		String jsonStr = gson.toJson(world);
+		String jsonStr = JsonUtils.toJson(world);
 		Blob jsonBlob = new Blob(Compressor.compress(jsonStr));
 		e.setProperty(jsonGzipProp, jsonBlob);
 		return e;
@@ -227,7 +224,7 @@ public class GaeDatastoreClient implements DatastoreClient{
         try {
             Entity entity = service.get(KeyFactory.createKey(activeType, createLoginKey(gameId, date, email)));
             String jsonStr = (String) entity.getProperty(jsonProp);
-            return Optional.of(gson.fromJson(jsonStr, LoginKey.class));
+            return Optional.of(JsonUtils.fromJson(jsonStr, LoginKey.class));
         } catch (EntityNotFoundException e) {
             log.info("No LoginKey entity having key " + createLoginKey(gameId, date, email));
             return Optional.empty();
@@ -241,7 +238,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity loginToEntity(String email, long gameId, int date){
         Entity entity = new Entity(activeType, createLoginKey(gameId, date, email));
-        entity.setProperty(jsonProp, gson.toJson(new LoginKey(email, gameId, date)));
+        entity.setProperty(jsonProp, JsonUtils.toJson(new LoginKey(email, gameId, date)));
         entity.setProperty(loginProp, true);
         return entity;
     }
@@ -258,7 +255,7 @@ public class GaeDatastoreClient implements DatastoreClient{
             Entity e = service.get(KeyFactory.createKey(activeGamesType, createActiveGamesKey()));
             String jsonStr = (String) e.getProperty(jsonProp);
             Type listType = new TypeToken<Set<Long>>(){}.getType();
-            return Optional.of(gson.fromJson(jsonStr, listType));
+            return Optional.of(JsonUtils.fromJson(jsonStr, listType));
         } catch (EntityNotFoundException e) {
             log.info("Unable to retrieve active games with key " + createActiveGamesKey());
             return Optional.empty();
@@ -272,7 +269,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private Entity activeGamesToEntity(Set<Long> activeGames){
         Entity entity = new Entity(activeGamesType, createActiveGamesKey());
-        entity.setProperty(jsonProp, gson.toJson(activeGames));
+        entity.setProperty(jsonProp, JsonUtils.toJson(activeGames));
         return entity;
     }
 

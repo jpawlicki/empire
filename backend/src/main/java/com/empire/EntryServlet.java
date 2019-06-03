@@ -6,13 +6,13 @@ import com.empire.store.MultiPutRequest;
 import com.empire.svc.LoginCache;
 import com.empire.svc.Player;
 import com.empire.svc.Request;
+import com.empire.util.JsonUtils;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -183,7 +183,7 @@ public class EntryServlet extends HttpServlet {
 
 		if(orders.isPresent()) {
 			resp.setHeader("SJS-Version", "" + orders.get().version);
-			return GaeDatastoreClient.gson.toJson(orders.get().orders);
+			return JsonUtils.toJson(orders.get().orders);
 		} else {
 			log.severe("Unable to get orders");
 			return null;
@@ -195,7 +195,7 @@ public class EntryServlet extends HttpServlet {
 		Optional<Nation> nation = dsClient.getNation(r.gameId, r.kingdom);
 
 		if(nation.isPresent()) {
-			return GaeDatastoreClient.gson.toJson(nation.get());
+			return JsonUtils.toJson(nation.get());
 		} else {
 			log.severe("Unable to complete setup request");
 			return null;
@@ -221,7 +221,7 @@ public class EntryServlet extends HttpServlet {
 		if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
 		w.filter(r.kingdom);
 
-		return GaeDatastoreClient.gson.toJson(w);
+		return JsonUtils.toJson(w);
 	}
 
 	private String getAdvancePoll() {
@@ -305,7 +305,7 @@ public class EntryServlet extends HttpServlet {
 			}
 			result.add(turn);
 		}
-		return GaeDatastoreClient.gson.toJson(result);
+		return JsonUtils.toJson(result);
 	}
 
 	// TODO: better json conversion
@@ -319,8 +319,7 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		if (r.turn != dateOpt.get()) return false;
-		Type t = new TypeToken<Map<String, String>>(){}.getType();
-		Map<String, String> orders = GaeDatastoreClient.gson.fromJson(r.body, t);
+		Map<String, String> orders = JsonUtils.fromJson(r.body, new TypeToken<Map<String, String>>(){}.getType());
 		return dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
 	}
 
@@ -386,7 +385,7 @@ public class EntryServlet extends HttpServlet {
 
 		if (!nationCheck.isPresent()) return false; // We expect nation to not be found
 
-		Nation nation = GaeDatastoreClient.gson.fromJson(r.body, Nation.class);
+		Nation nation = JsonUtils.fromJson(r.body, Nation.class);
 
 		try {
 			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
@@ -412,7 +411,7 @@ public class EntryServlet extends HttpServlet {
 
 		World w = worldOpt.get();
 
-		com.empire.Message msg = GaeDatastoreClient.gson.fromJson(r.body, com.empire.Message.class);
+		com.empire.Message msg = JsonUtils.fromJson(r.body, com.empire.Message.class);
 		w.addRtc(r.kingdom, msg);
 		dsClient.putWorld(r.gameId, w);
 
