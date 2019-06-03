@@ -46,7 +46,7 @@ public class GaeDatastoreClient implements DatastoreClient{
 
     private final DatastoreService service;
 
-    public static GaeDatastoreClient getInstance() {
+    public static DatastoreClient getInstance() {
         if(instance == null) {
             instance = new GaeDatastoreClient(DatastoreServiceFactory.getDatastoreService());
         }
