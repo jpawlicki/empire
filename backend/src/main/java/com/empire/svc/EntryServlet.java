@@ -1,11 +1,13 @@
-package com.empire;
+package com.empire.svc;
 
+import com.empire.Character;
+import com.empire.Nation;
+import com.empire.Orders;
+import com.empire.StartWorld;
+import com.empire.World;
 import com.empire.store.DatastoreClient;
 import com.empire.store.GaeDatastoreClient;
 import com.empire.store.MultiPutRequest;
-import com.empire.svc.LoginCache;
-import com.empire.svc.Player;
-import com.empire.svc.Request;
 import com.empire.util.JsonUtils;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.reflect.TypeToken;
@@ -461,7 +463,7 @@ public class EntryServlet extends HttpServlet {
 
 		World w = worldOpt.get();
 
-		for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
+		for (Character c : w.characters) if (c.getName().equals("Ea Rjinkuki")) c.setLocation(101);
 		dsClient.putWorld(4, w);
 		return true;
 	}
