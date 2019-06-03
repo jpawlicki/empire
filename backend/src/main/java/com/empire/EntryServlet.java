@@ -64,7 +64,6 @@ POST /entry/startworld?gid=1234
 TODO: Will eventually need a changePassword/change-email.
 */
 
-// TODO: Eliminate gson references from this class
 // TODO: Move EntryServlet to svc package
 // TODO: Unit tests for EntryServlet
 
@@ -189,8 +188,8 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
+	// TODO - should filter this data or display it.
 	private String getSetup(Request r) {
-		// TODO - should filter this data or display it.
 		Optional<Nation> nation = dsClient.getNation(r.gameId, r.kingdom);
 
 		if(nation.isPresent()) {
@@ -307,7 +306,6 @@ public class EntryServlet extends HttpServlet {
 		return JsonUtils.toJson(result);
 	}
 
-	// TODO: better json conversion
 	private boolean postOrders(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
