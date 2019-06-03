@@ -6,6 +6,7 @@ import com.google.gson.GsonBuilder;
 import java.lang.reflect.Type;
 
 public class JsonUtils {
+  private static Gson gsonCamel = new GsonBuilder().create();
   private static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 
   public static <T> String toJson(T obj) {
@@ -18,5 +19,9 @@ public class JsonUtils {
 
   public static <T> T fromJson(String s, Type t) {
     return gson.fromJson(s, t);
+  }
+
+  public static <T> T fromJsonCamel(String s, Class<T> clazz) {
+    return gsonCamel.fromJson(s, clazz);
   }
 }

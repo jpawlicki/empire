@@ -8,7 +8,6 @@ import com.empire.svc.Player;
 import com.empire.svc.Request;
 import com.empire.util.JsonUtils;
 import com.google.common.io.BaseEncoding;
-import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -431,7 +430,7 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		World w = worldOpt.get();
-		ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+		ChangePlayerRequestBody body = JsonUtils.fromJsonCamel(r.body, ChangePlayerRequestBody.class);
 		Optional<Player> p = dsClient.getPlayer(body.email);
 
 		if(!p.isPresent()) {
