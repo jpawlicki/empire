@@ -41,6 +41,9 @@ filesystem. Start a local instance of the backend:
 cd backend && gradle appengineRun
 ```
 
+You can test that the service is running with the command line using:  
+`curl -XGET http://localhost:8080/entry/ping`
+
 The frontend can be run against a local server or against the production
 server. By default, if you open a local file (i.e. use the `file:` protocol),
 the frontend will connect to localhost:8080. If you use `http:` or `https:`, it
