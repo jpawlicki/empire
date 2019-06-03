@@ -333,7 +333,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private boolean postStartWorld(Request r) {
-		StartWorldGson s = StartWorldGson.fromJson(r.body);
+		StartWorld s = JsonUtils.fromJson(r.body, StartWorld.class);
 		String passHash;
 		String obsPassHash;
 
