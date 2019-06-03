@@ -18,12 +18,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
-// TODO: Need a method to make multiple puts in the same transaction to maintain consistency if rollback happens
 
 /** DatastoreClient implementation using Google App Engine's DatastoreService */
 public class GaeDatastoreClient implements DatastoreClient{
@@ -60,11 +58,11 @@ public class GaeDatastoreClient implements DatastoreClient{
         this.service = service;
     }
 
-    private boolean putEntitiesInTransaction(Iterable<Entity> entities){
+    private boolean putEntityInTransaction(Entity entity){
         Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 
         try {
-            service.put(entities);
+            service.put(entity);
             txn.commit();
             return true;
         } finally {
@@ -72,10 +70,6 @@ public class GaeDatastoreClient implements DatastoreClient{
                 txn.rollback();
             }
         }
-    }
-
-    private boolean putEntityInTransaction(Entity entity){
-        return putEntitiesInTransaction(Collections.singletonList(entity));
     }
 
     // Player
@@ -335,18 +329,5 @@ public class GaeDatastoreClient implements DatastoreClient{
         }
 
         return putSuccessful;
-    }
-
-    public static void main(String[] args) {
-//        GaeDatastoreClient client = GaeDatastoreClient.getInstance();
-
-        Player p = new Player("email@email.com", "0123456789ABCDEFGF");
-        System.out.println(p);
-
-        String s = GaeDatastoreClient.gson.toJson(p);
-        System.out.println(s);
-
-        Player p2 = GaeDatastoreClient.gson.fromJson(s, Player.class);
-        System.out.println(p2);
     }
 }

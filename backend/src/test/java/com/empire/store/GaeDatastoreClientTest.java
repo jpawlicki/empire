@@ -21,16 +21,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
-// TODO: Important, make certain that true/false returns for put operations have the right behavior when put fails
-// TODO: Tests for the exceptions/fallbacks
-
 public class GaeDatastoreClientTest {
     private final LocalServiceTestHelper helper = new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
-    private final DatastoreClient client = GaeDatastoreClient.getInstance();
+    private GaeDatastoreClient client;
 
     @Before
     public void setUp(){
         helper.setUp();
+        client = GaeDatastoreClient.getInstance();
     }
 
     @After
