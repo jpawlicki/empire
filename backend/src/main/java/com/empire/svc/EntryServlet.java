@@ -81,6 +81,7 @@ public class EntryServlet extends HttpServlet {
 		this(GaeDatastoreClient.getInstance(), LoginCache.getInstance());
 	}
 
+	/* This constructor is needed to enable testing */
 	EntryServlet(DatastoreClient dsClient, LoginCache cache){
 		super();
 		this.dsClient = dsClient;
@@ -514,9 +515,9 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private PasswordCheck checkPassword(Request r) {
-		if (r.password == null) return PasswordCheck.FAIL;
+		if (r.getPassword() == null) return PasswordCheck.FAIL;
 
-		byte[] pwHash = hashPassword(r.password);
+		byte[] pwHash = hashPassword(r.getPassword());
 		if (pwHash == null) return PasswordCheck.FAIL;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);

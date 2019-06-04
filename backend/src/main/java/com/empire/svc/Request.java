@@ -12,7 +12,7 @@ public final class Request {
     public final int turn;
     public final int version;
     public final long gameId;
-    public final String password;
+    private final String password;
     public final String kingdom;
     public final String body;
     final boolean skipMail;
@@ -25,6 +25,10 @@ public final class Request {
         this.kingdom = kingdom;
         this.body = body;
         this.skipMail = skipMail;
+    }
+
+    public String getPassword() {
+        return password;
     }
 
     public static Request from(HttpServletRequest req) throws IOException {
