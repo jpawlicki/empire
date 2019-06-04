@@ -18,7 +18,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,6 +31,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
@@ -67,7 +67,6 @@ POST /entry/startworld?gid=1234
 TODO: Will eventually need a changePassword/change-email.
 */
 
-// TODO: Move EntryServlet to svc package
 // TODO: Unit tests for EntryServlet
 
 @WebServlet(name = "EntryServlet", value = "/entry/*")
@@ -237,16 +236,15 @@ public class EntryServlet extends HttpServlet {
 		Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
 
 		if(!activeGamesOpt.isPresent()) {
-			log.log(Level.SEVERE, "Poller failed.");
+			log.severe("Poller failed, could not retrieve active games");
 			return null;
 		}
 
 		for (Long gameId : activeGamesOpt.get()) {
-			Optional<Integer> dateOpt = dsClient.getWorldDate(gameId);
-			Optional<World> worldOpt = dsClient.getWorld(gameId, dateOpt.orElse(-1));
+			Optional<World> worldOpt = dsClient.getWorld(gameId, dsClient.getWorldDate(gameId).orElse(-1));
 
-			if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
-				log.log(Level.SEVERE, "World issue.");
+			if(!worldOpt.isPresent()) {
+				log.log(Level.SEVERE, "Poller failed, unable to retrieve current world for gameId=" + gameId);
 				return null;
 			}
 
@@ -258,12 +256,10 @@ public class EntryServlet extends HttpServlet {
 			for (String kingdom : w.getNationNames()) {
 				Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
 
-				ordersKingdom.ifPresent(o -> orders.put(kingdom, o.orders));
-
 				if(ordersKingdom.isPresent()) {
 					orders.put(kingdom, ordersKingdom.get().orders);
 				} else {
-					log.warning("Cannot find orders for " + kingdom);
+					log.warning("Cannot find orders for gameId=" + gameId + ", kingdom=" + kingdom + ", turn=" + w.date);
 					orders.put(kingdom,  null);
 				}
 			}
@@ -283,7 +279,7 @@ public class EntryServlet extends HttpServlet {
 			boolean response = mp.put(dsClient);
 
 			if(response) {
-				emails.keySet().forEach(m -> mail(m, "👑 Empire: Turn Advances", emails.get(m).replace("%GAMEID%", "" + gameId)));
+				emails.forEach((k, v) -> mail(k, "👑 Empire: Turn Advances", v.replace("%GAMEID%", "" + gameId)));
 			}
 		}
 
@@ -294,26 +290,28 @@ public class EntryServlet extends HttpServlet {
 		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+
 		if (!dateOpt.isPresent()) {
-			log.log(Level.WARNING, "No such world.");
+			log.warning("Unable to retrieve date for gameId=" + r.gameId);
 			return null;
 		}
-		int date = r.turn != 0 ? r.turn : dateOpt.get();
 
+		int date = r.turn != 0 ? r.turn : dateOpt.get();
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
-		if(!worldOpt.isPresent()) return null;
+
+		if(!worldOpt.isPresent()){
+			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
+			return null;
+		}
+
 		World w = worldOpt.get();
 
 		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
 		List<List<Boolean>> actives = cache.fetchLoginHistory(r.gameId, date, emails);
-		List<Map<String, Boolean>> result = new ArrayList<>();
-		for (List<Boolean> turnActives : actives) {
-			Map<String, Boolean> turn = new HashMap<>();
-			for (int i = 0; i < emails.size(); i++) {
-				turn.put(emails.get(i), turnActives.get(i));
-			}
-			result.add(turn);
-		}
+		List<Map<String, Boolean>> result = actives.stream()
+				.map(a -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, a::get)))
+				.collect(Collectors.toList());
+
 		return JsonUtils.toJson(result);
 	}
 
