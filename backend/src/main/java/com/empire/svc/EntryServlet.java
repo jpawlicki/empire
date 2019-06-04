@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -185,7 +186,7 @@ public class EntryServlet extends HttpServlet {
 		Optional<Orders> orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
 
 		if(orders.isPresent()) {
-			resp.setHeader("SJS-Version", "" + orders.get().version);
+			resp.setHeader("SJS-Version", String.valueOf(orders.get().version));
 			return JsonUtils.toJson(orders.get().orders);
 		} else {
 			log.severe("Unable to get orders");
@@ -339,14 +340,11 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postStartWorld(Request r) {
 		StartWorld s = JsonUtils.fromJson(r.body, StartWorld.class);
-		String passHash;
-		String obsPassHash;
+		String passHash = encodePassword(s.gmPassword);
+		String obsPassHash = encodePassword(s.obsPassword);
 
-		try {
-			passHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.gmPassword).getBytes(StandardCharsets.UTF_8)));
-			obsPassHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.obsPassword).getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e) {
-			log.log(Level.SEVERE, "Hash error", e);
+		if (Objects.isNull(passHash) || Objects.isNull(obsPassHash)) {
+			log.severe("Error while encoding GM and/or observer passwords, unable to start game");
 			return false;
 		}
 
@@ -355,8 +353,9 @@ public class EntryServlet extends HttpServlet {
 		Map<String, Nation> nations = new HashMap<>();
 
 		for (String kingdom : s.kingdoms) {
-			log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
+			log.info("Checking kingdom '" + kingdom + "'...");
 			Optional<Nation> nation = dsClient.getNation(r.gameId, kingdom);
+
 			if(nation.isPresent()){
 				nations.put(kingdom, nation.get());
 				addresses.add(nation.get().email);
@@ -388,11 +387,10 @@ public class EntryServlet extends HttpServlet {
 		if (!nationCheck.isPresent()) return false; // We expect nation to not be found
 
 		Nation nation = JsonUtils.fromJson(r.body, Nation.class);
+		nation.password = encodePassword(nation.password);
 
-		try {
-			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e){
-			log.log(Level.SEVERE, "postSetup Failure", e);
+		if(nation.password == null) {
+			log.severe("postSetup Failure");
 			return false;
 		}
 
@@ -492,35 +490,31 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private CheckPasswordResult checkPassword(Request r) {
-		try {
-			if (r.password == null) return CheckPasswordResult.FAIL;
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
+		if (r.password == null) return CheckPasswordResult.FAIL;
 
-			Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-			Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
-			if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
-				log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
-				return CheckPasswordResult.NO_ENTITY;
-			}
-			World w = worldOpt.get();
+		byte[] pwHash = hashPassword(r.password);
+		if (pwHash == null) return CheckPasswordResult.FAIL;
 
-			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
-			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
-			Optional<Player> player = dsClient.getPlayer(w.getNation(r.kingdom).email);
-			if(!player.isPresent()) {
-				log.severe("Player not found, password check failed");
-				return CheckPasswordResult.NO_ENTITY;
-			}
-
-			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(player.get().passHash))) return CheckPasswordResult.PASS_PLAYER;
-			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
-			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
-			return CheckPasswordResult.FAIL;
-		} catch (NoSuchAlgorithmException e) {
-			log.log(Level.SEVERE, "CheckPassword Failure", e);
-			return CheckPasswordResult.FAIL;
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
+		if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
+			log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
+			return CheckPasswordResult.NO_ENTITY;
 		}
+		World w = worldOpt.get();
+
+		byte[] gmPassHash = decodePassword(w.gmPasswordHash);
+		byte[] obsPassHash = decodePassword(w.obsPasswordHash);
+		Optional<Player> player = dsClient.getPlayer(w.getNation(r.kingdom).email);
+		if(!player.isPresent()) {
+			log.severe("Player not found, password check failed");
+			return CheckPasswordResult.NO_ENTITY;
+		}
+
+		if (w.getNationNames().contains(r.kingdom) && Arrays.equals(pwHash, decodePassword(player.get().passHash))) return CheckPasswordResult.PASS_PLAYER;
+		if (Arrays.equals(pwHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
+		if (Arrays.equals(pwHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
+		return CheckPasswordResult.FAIL;
 	}
 
 	private void mail(String address, String subject, String body) {
@@ -539,6 +533,24 @@ public class EntryServlet extends HttpServlet {
 			Transport.send(msg);
 		} catch (MessagingException | UnsupportedEncodingException | NoClassDefFoundError e) {
 			log.log(Level.SEVERE, "Failed to send mail", e);
+		}
+	}
+
+	private String encodePassword(String pw){
+		byte[] hashPw = hashPassword(pw);
+		return hashPw != null ? BaseEncoding.base16().encode(hashPw) : null;
+	}
+
+	private byte[] decodePassword(String pw){
+		return BaseEncoding.base16().decode(pw);
+	}
+
+	private byte[] hashPassword(String pw){
+		try {
+			return MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + pw).getBytes(StandardCharsets.UTF_8));
+		} catch (NoSuchAlgorithmException e) {
+			log.log(Level.SEVERE, "Unable to hash password", e);
+			return null;
 		}
 	}
 }
