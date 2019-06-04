@@ -320,11 +320,12 @@ public class EntryServlet extends HttpServlet {
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
 
 		if (!dateOpt.isPresent()) {
-			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
+			log.severe("Unable to retrieve date for gameId=" + r.gameId);
 			return false;
 		}
 
 		if (r.turn != dateOpt.get()) return false;
+
 		Map<String, String> orders = JsonUtils.fromJson(r.body, new TypeToken<Map<String, String>>(){}.getType());
 		return dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
 	}
@@ -332,7 +333,11 @@ public class EntryServlet extends HttpServlet {
 	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
 	private boolean postAdvanceWorld(Request r) {
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
-		if(!worldOpt.isPresent()) return false;
+
+		if(!worldOpt.isPresent()) {
+			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + r.turn);
+			return false;
+		}
 
 		World w = worldOpt.get();
 		w.nextTurn = 0;
@@ -347,7 +352,7 @@ public class EntryServlet extends HttpServlet {
 		String obsPassHash = encodePassword(s.obsPassword);
 
 		if (Objects.isNull(passHash) || Objects.isNull(obsPassHash)) {
-			log.severe("Error while encoding GM and/or observer passwords, unable to start game");
+			log.severe("Error while encoding GM and/or observer passwords, unable to start game (gameId=" + r.gameId + ")");
 			return false;
 		}
 
@@ -362,8 +367,9 @@ public class EntryServlet extends HttpServlet {
 			if(nation.isPresent()){
 				nations.put(kingdom, nation.get());
 				addresses.add(nation.get().email);
+				log.info("Kingdom '" + kingdom + "' successfully included");
 			} else {
-				log.severe(kingdom + " was not added to nation setups");
+				log.severe("Unable to include kingdom '" + kingdom + "' in nation setups");
 			}
 		}
 
