@@ -206,7 +206,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getWorld(Request r) {
-		CheckPasswordResult result = checkPassword(r);
+		PasswordCheck result = checkPassword(r);
 		if (!result.passesRead()) return null;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
@@ -225,7 +225,7 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		World w = worldOpt.get();
-		if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) cache.recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
+		if (result == PasswordCheck.PASS_PLAYER && r.turn == 0) cache.recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
 		w.filter(r.kingdom);
 
 		return JsonUtils.toJson(w);
@@ -286,7 +286,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getActivity(Request r) {
-		if (checkPassword(r) != CheckPasswordResult.PASS_GM) return null;
+		if (checkPassword(r) != PasswordCheck.PASS_GM) return null;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
 
@@ -479,7 +479,7 @@ public class EntryServlet extends HttpServlet {
 	}
 	*/
 
-	private enum CheckPasswordResult {
+	private enum PasswordCheck {
 		PASS_GM(true, true),
 		PASS_OBS(true, false),
 		PASS_PLAYER(true, true),
@@ -489,7 +489,7 @@ public class EntryServlet extends HttpServlet {
 		private final boolean passesRead;
 		private final boolean passesWrite;
 
-		CheckPasswordResult(boolean passesRead, boolean passesWrite) {
+		PasswordCheck(boolean passesRead, boolean passesWrite) {
 			this.passesRead = passesRead;
 			this.passesWrite = passesWrite;
 		}
@@ -502,17 +502,17 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private CheckPasswordResult checkPassword(Request r) {
-		if (r.password == null) return CheckPasswordResult.FAIL;
+	private PasswordCheck checkPassword(Request r) {
+		if (r.password == null) return PasswordCheck.FAIL;
 
 		byte[] pwHash = hashPassword(r.password);
-		if (pwHash == null) return CheckPasswordResult.FAIL;
+		if (pwHash == null) return PasswordCheck.FAIL;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
 		if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
 			log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
-			return CheckPasswordResult.NO_ENTITY;
+			return PasswordCheck.NO_ENTITY;
 		}
 		World w = worldOpt.get();
 
@@ -521,13 +521,13 @@ public class EntryServlet extends HttpServlet {
 		Optional<Player> player = dsClient.getPlayer(w.getNation(r.kingdom).email);
 		if(!player.isPresent()) {
 			log.severe("Player not found, password check failed");
-			return CheckPasswordResult.NO_ENTITY;
+			return PasswordCheck.NO_ENTITY;
 		}
 
-		if (w.getNationNames().contains(r.kingdom) && Arrays.equals(pwHash, decodePassword(player.get().passHash))) return CheckPasswordResult.PASS_PLAYER;
-		if (Arrays.equals(pwHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
-		if (Arrays.equals(pwHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
-		return CheckPasswordResult.FAIL;
+		if (w.getNationNames().contains(r.kingdom) && Arrays.equals(pwHash, decodePassword(player.get().passHash))) return PasswordCheck.PASS_PLAYER;
+		if (Arrays.equals(pwHash, gmPassHash)) return PasswordCheck.PASS_GM;
+		if (Arrays.equals(pwHash, obsPassHash)) return PasswordCheck.PASS_OBS;
+		return PasswordCheck.FAIL;
 	}
 
 	private void mail(String address, String subject, String body) {
