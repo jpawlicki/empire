@@ -76,6 +76,7 @@ public class EntryServlet extends HttpServlet {
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
 
 	private static final DatastoreClient dsClient = GaeDatastoreClient.getInstance();
+	private static final LoginCache cache = LoginCache.getInstance();
 
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -189,7 +190,7 @@ public class EntryServlet extends HttpServlet {
 			resp.setHeader("SJS-Version", String.valueOf(orders.get().version));
 			return JsonUtils.toJson(orders.get().orders);
 		} else {
-			log.severe("Unable to get orders");
+			log.severe("Unable to get orders for gameId=" + r.gameId + ", kingdom=" + r.kingdom + ", turn=" + r.turn);
 			return null;
 		}
 	}
@@ -201,7 +202,7 @@ public class EntryServlet extends HttpServlet {
 		if(nation.isPresent()) {
 			return JsonUtils.toJson(nation.get());
 		} else {
-			log.severe("Unable to complete setup request");
+			log.severe("Unable to complete setup request for gameId=" + r.gameId + ", kingdom=" + r.kingdom);
 			return null;
 		}
 	}
@@ -213,16 +214,20 @@ public class EntryServlet extends HttpServlet {
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
 
 		if (!dateOpt.isPresent()) {
-			log.severe("No such world.");
+			log.severe("Unable to retrieve date for gameId=" + r.gameId);
 			return null;
 		}
 
 		int date = r.turn != 0 ? r.turn : dateOpt.get();
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
 
-		if(!worldOpt.isPresent()) return null;
+		if(!worldOpt.isPresent()) {
+			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
+			return null;
+		}
+
 		World w = worldOpt.get();
-		if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getInstance().recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
+		if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) cache.recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
 		w.filter(r.kingdom);
 
 		return JsonUtils.toJson(w);
@@ -300,7 +305,7 @@ public class EntryServlet extends HttpServlet {
 		World w = worldOpt.get();
 
 		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-		List<List<Boolean>> actives = LoginCache.getInstance().fetchLoginHistory(r.gameId, date, emails);
+		List<List<Boolean>> actives = cache.fetchLoginHistory(r.gameId, date, emails);
 		List<Map<String, Boolean>> result = new ArrayList<>();
 		for (List<Boolean> turnActives : actives) {
 			Map<String, Boolean> turn = new HashMap<>();
