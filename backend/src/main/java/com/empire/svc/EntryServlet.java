@@ -1,6 +1,5 @@
 package com.empire.svc;
 
-import com.empire.Character;
 import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.StartWorld;
@@ -157,10 +156,10 @@ public class EntryServlet extends HttpServlet {
 				success = postChangePlayer(r);
 				err = "Not allowed.";
 				break;
-			case "/entry/migrate":
+			/*case "/entry/migrate":
 				success = migrate(r);
 				err = "Failure.";
-				break;
+				break;*/
 			default:
 				err = "No such path.";
 				break;
@@ -244,7 +243,7 @@ public class EntryServlet extends HttpServlet {
 			Optional<World> worldOpt = dsClient.getWorld(gameId, dsClient.getWorldDate(gameId).orElse(-1));
 
 			if(!worldOpt.isPresent()) {
-				log.log(Level.SEVERE, "Poller failed, unable to retrieve current world for gameId=" + gameId);
+				log.severe("Poller failed, unable to retrieve current world for gameId=" + gameId);
 				return null;
 			}
 
@@ -393,13 +392,13 @@ public class EntryServlet extends HttpServlet {
 	private boolean postSetup(Request r) {
 		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
 
-		if (!nationCheck.isPresent()) return false; // We expect nation to not be found
+		if (nationCheck.isPresent()) return false; // We expect nation to not be found
 
 		Nation nation = JsonUtils.fromJson(r.body, Nation.class);
 		nation.password = encodePassword(nation.password);
 
 		if(nation.password == null) {
-			log.severe("postSetup Failure");
+			log.severe("Failure during post-setup, unable to encode password");
 			return false;
 		}
 
@@ -414,16 +413,13 @@ public class EntryServlet extends HttpServlet {
 
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
 		if (!worldOpt.isPresent()) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
-			return true;
+			log.severe("Could not add real-tome communication, unable to retrieve world for gameId=" + r.gameId + ", turn=" + r.turn);
+			return false;
 		}
 
 		World w = worldOpt.get();
-
-		com.empire.Message msg = JsonUtils.fromJson(r.body, com.empire.Message.class);
-		w.addRtc(r.kingdom, msg);
+		w.addRtc(r.kingdom, JsonUtils.fromJson(r.body, com.empire.Message.class));
 		dsClient.putWorld(r.gameId, w);
-
 		return true;
 	}
 
@@ -431,25 +427,31 @@ public class EntryServlet extends HttpServlet {
 		if (!checkPassword(r).passesWrite()) return false;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-		int date = r.turn != 0 ? r.turn : dateOpt.orElse(-1);
+
+		if (!dateOpt.isPresent()) {
+			log.severe("Unable to retrieve date for gameId=" + r.gameId);
+			return false;
+		}
+
+		int date = r.turn != 0 ? r.turn : dateOpt.get();
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
 
-		if(!(dateOpt.isPresent() && worldOpt.isPresent())) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom);
+		if(!worldOpt.isPresent()) {
+			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
 			return false;
 		}
 
 		World w = worldOpt.get();
 		ChangePlayerRequestBody body = JsonUtils.fromJsonCamel(r.body, ChangePlayerRequestBody.class);
-		Optional<Player> p = dsClient.getPlayer(body.email);
+		Optional<Player> playerOpt = dsClient.getPlayer(body.email);
 
-		if(!p.isPresent()) {
-			log.severe("Player not found, request to change player failed");
+		if(!playerOpt.isPresent()) {
+			log.severe("Player not found for email=" + body.email);
 			return false;
 		}
 
 		w.getNation(r.kingdom).email = body.email;
-		w.getNation(r.kingdom).password = p.get().passHash;
+		w.getNation(r.kingdom).password = playerOpt.get().passHash;
 		dsClient.putWorld(r.gameId, w);
 		return true;
 	}
@@ -459,12 +461,13 @@ public class EntryServlet extends HttpServlet {
 		public String password;
 	}
 
+	/*
 	// TODO: remove
 	private boolean migrate(Request r) {
 		Optional<World> worldOpt = dsClient.getWorld(4, dsClient.getWorldDate(4).orElse(-1));
 
 		if (!worldOpt.isPresent()) {
-			log.log(Level.INFO, "Not found!");
+			log.severe( "Could not migrate, world not found!");
 			return true;
 		}
 
@@ -474,6 +477,7 @@ public class EntryServlet extends HttpServlet {
 		dsClient.putWorld(4, w);
 		return true;
 	}
+	*/
 
 	private enum CheckPasswordResult {
 		PASS_GM(true, true),
