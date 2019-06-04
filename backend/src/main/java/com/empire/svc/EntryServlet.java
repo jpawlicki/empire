@@ -73,8 +73,19 @@ public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
 
-	private static final DatastoreClient dsClient = GaeDatastoreClient.getInstance();
-	private static final LoginCache cache = LoginCache.getInstance();
+	private final DatastoreClient dsClient;
+	private final LoginCache cache;
+
+	/* This constructor is needed in order to start the service with GoogleAppEngine */
+	public EntryServlet(){
+		this(GaeDatastoreClient.getInstance(), LoginCache.getInstance());
+	}
+
+	EntryServlet(DatastoreClient dsClient, LoginCache cache){
+		super();
+		this.dsClient = dsClient;
+		this.cache = cache;
+	}
 
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
