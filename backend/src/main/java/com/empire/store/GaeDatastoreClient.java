@@ -89,7 +89,7 @@ public class GaeDatastoreClient implements DatastoreClient{
     }
 
     private Entity playerToEntity(Player player) {
-        Entity e = new Entity(playerType, createPlayerKey(player.email));
+        Entity e = new Entity(playerType, createPlayerKey(player.getEmail()));
         e.setProperty(jsonProp, JsonUtils.toJson(player));
         return e;
     }

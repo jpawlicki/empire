@@ -463,7 +463,7 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		w.getNation(r.getKingdom()).email = body.email;
-		w.getNation(r.getKingdom()).password = playerOpt.get().passHash;
+		w.getNation(r.getKingdom()).password = playerOpt.get().getPassHash();
 		dsClient.putWorld(r.getGameId(), w);
 		return true;
 	}
@@ -545,7 +545,7 @@ public class EntryServlet extends HttpServlet {
 			return PasswordCheck.NO_ENTITY;
 		}
 
-		if (w.getNationNames().contains(r.getKingdom()) && Arrays.equals(pwHash, decodePassword(player.get().passHash))) return PasswordCheck.PASS_PLAYER;
+		if (w.getNationNames().contains(r.getKingdom()) && Arrays.equals(pwHash, decodePassword(player.get().getPassHash()))) return PasswordCheck.PASS_PLAYER;
 		if (Arrays.equals(pwHash, gmPassHash)) return PasswordCheck.PASS_GM;
 		if (Arrays.equals(pwHash, obsPassHash)) return PasswordCheck.PASS_OBS;
 		return PasswordCheck.FAIL;

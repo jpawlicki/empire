@@ -11,6 +11,14 @@ public class Player {
         this.passHash = passHash;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
+    public String getPassHash() {
+        return passHash;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
