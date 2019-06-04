@@ -83,7 +83,7 @@ public class EntryServlet extends HttpServlet {
 
 		String json;
 
-		switch(req.getRequestURI()){
+		switch(req.getRequestURI()) {
 			case "/entry/ping":
 				json = "{\"status\": \"success\"}";
 				break;
@@ -131,7 +131,7 @@ public class EntryServlet extends HttpServlet {
 		boolean success = false;
 		String err;
 
-		switch(req.getRequestURI()){
+		switch(req.getRequestURI()) {
 			case "/entry/orders":
 				success = postOrders(r);
 				err = "Failure.";
@@ -298,7 +298,7 @@ public class EntryServlet extends HttpServlet {
 		int date = r.turn != 0 ? r.turn : dateOpt.get();
 		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
 
-		if(!worldOpt.isPresent()){
+		if(!worldOpt.isPresent()) {
 			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
 			return null;
 		}
@@ -363,7 +363,7 @@ public class EntryServlet extends HttpServlet {
 			log.info("Checking kingdom '" + kingdom + "'...");
 			Optional<Nation> nation = dsClient.getNation(r.gameId, kingdom);
 
-			if(nation.isPresent()){
+			if(nation.isPresent()) {
 				nations.put(kingdom, nation.get());
 				addresses.add(nation.get().email);
 				log.info("Kingdom '" + kingdom + "' successfully included");
@@ -549,16 +549,16 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private String encodePassword(String pw){
+	private String encodePassword(String pw) {
 		byte[] hashPw = hashPassword(pw);
 		return hashPw != null ? BaseEncoding.base16().encode(hashPw) : null;
 	}
 
-	private byte[] decodePassword(String pw){
+	private byte[] decodePassword(String pw) {
 		return BaseEncoding.base16().decode(pw);
 	}
 
-	private byte[] hashPassword(String pw){
+	private byte[] hashPassword(String pw) {
 		try {
 			return MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + pw).getBytes(StandardCharsets.UTF_8));
 		} catch (NoSuchAlgorithmException e) {
