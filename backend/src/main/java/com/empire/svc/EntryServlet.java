@@ -90,7 +90,7 @@ public class EntryServlet extends HttpServlet {
 
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-		Request r = Request.from(req);
+		Request r = RequestFactory.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 
 		String json;
@@ -138,7 +138,7 @@ public class EntryServlet extends HttpServlet {
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-		Request r = Request.from(req);
+		Request r = RequestFactory.from(req);
 
 		boolean success = false;
 		String err;
@@ -194,25 +194,25 @@ public class EntryServlet extends HttpServlet {
 
 	private String getOrders(Request r, HttpServletResponse resp) {
 		if (!checkPassword(r).passesRead()) return null;
-		Optional<Orders> orders = dsClient.getOrders(r.gameId, r.kingdom, r.turn);
+		Optional<Orders> orders = dsClient.getOrders(r.getGameId(), r.getKingdom(), r.getTurn());
 
 		if(orders.isPresent()) {
 			resp.setHeader("SJS-Version", String.valueOf(orders.get().version));
 			return JsonUtils.toJson(orders.get().orders);
 		} else {
-			log.severe("Unable to get orders for gameId=" + r.gameId + ", kingdom=" + r.kingdom + ", turn=" + r.turn);
+			log.severe("Unable to get orders for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom() + ", turn=" + r.getTurn());
 			return null;
 		}
 	}
 
 	// TODO - should filter this data or display it.
 	private String getSetup(Request r) {
-		Optional<Nation> nation = dsClient.getNation(r.gameId, r.kingdom);
+		Optional<Nation> nation = dsClient.getNation(r.getGameId(), r.getKingdom());
 
 		if(nation.isPresent()) {
 			return JsonUtils.toJson(nation.get());
 		} else {
-			log.severe("Unable to complete setup request for gameId=" + r.gameId + ", kingdom=" + r.kingdom);
+			log.severe("Unable to complete setup request for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom());
 			return null;
 		}
 	}
@@ -221,24 +221,24 @@ public class EntryServlet extends HttpServlet {
 		PasswordCheck result = checkPassword(r);
 		if (!result.passesRead()) return null;
 
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
 		if (!dateOpt.isPresent()) {
-			log.severe("Unable to retrieve date for gameId=" + r.gameId);
+			log.severe("Unable to retrieve date for gameId=" + r.getGameId());
 			return null;
 		}
 
-		int date = r.turn != 0 ? r.turn : dateOpt.get();
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+		int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
+		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), date);
 
 		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
+			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
 			return null;
 		}
 
 		World w = worldOpt.get();
-		if (result == PasswordCheck.PASS_PLAYER && r.turn == 0) cache.recordLogin(r.gameId, date, w.getNation(r.kingdom).email);
-		w.filter(r.kingdom);
+		if (result == PasswordCheck.PASS_PLAYER && r.getTurn() == 0) cache.recordLogin(r.getGameId(), date, w.getNation(r.getKingdom()).email);
+		w.filter(r.getKingdom());
 
 		return JsonUtils.toJson(w);
 	}
@@ -300,25 +300,25 @@ public class EntryServlet extends HttpServlet {
 	private String getActivity(Request r) {
 		if (checkPassword(r) != PasswordCheck.PASS_GM) return null;
 
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
 		if (!dateOpt.isPresent()) {
-			log.warning("Unable to retrieve date for gameId=" + r.gameId);
+			log.warning("Unable to retrieve date for gameId=" + r.getGameId());
 			return null;
 		}
 
-		int date = r.turn != 0 ? r.turn : dateOpt.get();
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+		int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
+		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), date);
 
 		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
+			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
 			return null;
 		}
 
 		World w = worldOpt.get();
 
 		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-		List<List<Boolean>> actives = cache.fetchLoginHistory(r.gameId, date, emails);
+		List<List<Boolean>> actives = cache.fetchLoginHistory(r.getGameId(), date, emails);
 		List<Map<String, Boolean>> result = actives.stream()
 				.map(a -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, a::get)))
 				.collect(Collectors.toList());
@@ -328,42 +328,42 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postOrders(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
 		if (!dateOpt.isPresent()) {
-			log.severe("Unable to retrieve date for gameId=" + r.gameId);
+			log.severe("Unable to retrieve date for gameId=" + r.getGameId());
 			return false;
 		}
 
-		if (r.turn != dateOpt.get()) return false;
+		if (r.getTurn() != dateOpt.get()) return false;
 
-		Map<String, String> orders = JsonUtils.fromJson(r.body, new TypeToken<Map<String, String>>(){}.getType());
-		return dsClient.putOrders(new Orders(r.gameId, r.kingdom, r.turn, orders, r.version));
+		Map<String, String> orders = JsonUtils.fromJson(r.getBody(), new TypeToken<Map<String, String>>(){}.getType());
+		return dsClient.putOrders(new Orders(r.getGameId(), r.getKingdom(), r.getTurn(), orders, r.getVersion()));
 	}
 
 	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
 	private boolean postAdvanceWorld(Request r) {
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
+		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
 
 		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + r.turn);
+			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + r.getTurn());
 			return false;
 		}
 
 		World w = worldOpt.get();
 		w.nextTurn = 0;
-		dsClient.putWorld(r.gameId, w);
+		dsClient.putWorld(r.getGameId(), w);
 		getAdvancePoll();
 		return true;
 	}
 
 	private boolean postStartWorld(Request r) {
-		StartWorld s = JsonUtils.fromJson(r.body, StartWorld.class);
+		StartWorld s = JsonUtils.fromJson(r.getBody(), StartWorld.class);
 		String passHash = encodePassword(s.gmPassword);
 		String obsPassHash = encodePassword(s.obsPassword);
 
 		if (Objects.isNull(passHash) || Objects.isNull(obsPassHash)) {
-			log.severe("Error while encoding GM and/or observer passwords, unable to start game (gameId=" + r.gameId + ")");
+			log.severe("Error while encoding GM and/or observer passwords, unable to start game (gameId=" + r.getGameId() + ")");
 			return false;
 		}
 
@@ -373,7 +373,7 @@ public class EntryServlet extends HttpServlet {
 
 		for (String kingdom : s.kingdoms) {
 			log.info("Checking kingdom '" + kingdom + "'...");
-			Optional<Nation> nation = dsClient.getNation(r.gameId, kingdom);
+			Optional<Nation> nation = dsClient.getNation(r.getGameId(), kingdom);
 
 			if(nation.isPresent()) {
 				nations.put(kingdom, nation.get());
@@ -386,27 +386,27 @@ public class EntryServlet extends HttpServlet {
 
 		World w = World.startNew(passHash, obsPassHash, nations);
 		Set<Long> activeGames = dsClient.getActiveGames().orElse(new HashSet<>());
-		activeGames.add(r.gameId);
+		activeGames.add(r.getGameId());
 
 		boolean response = MultiPutRequest.create()
-				.addWorld(r.gameId, w)
-				.addWorldDate(r.gameId, 1)
+				.addWorld(r.getGameId(), w)
+				.addWorldDate(r.getGameId(), 1)
 				.addActiveGames(activeGames)
 				.put(dsClient);
 
 		if(response) {
-			mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
+			mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.getGameId() + ".");
 		}
 
 		return response;
 	}
 
 	private boolean postSetup(Request r) {
-		Optional<Nation> nationCheck = dsClient.getNation(r.gameId, r.kingdom);
+		Optional<Nation> nationCheck = dsClient.getNation(r.getGameId(), r.getKingdom());
 
 		if (nationCheck.isPresent()) return false; // We expect nation to not be found
 
-		Nation nation = JsonUtils.fromJson(r.body, Nation.class);
+		Nation nation = JsonUtils.fromJson(r.getBody(), Nation.class);
 		nation.password = encodePassword(nation.password);
 
 		if(nation.password == null) {
@@ -415,7 +415,7 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		return MultiPutRequest.create()
-				.addNation(r.gameId, r.kingdom, nation)
+				.addNation(r.getGameId(), r.getKingdom(), nation)
 				.addPlayer(new Player(nation.email, nation.password))
 				.put(dsClient);
 	}
@@ -423,38 +423,38 @@ public class EntryServlet extends HttpServlet {
 	private boolean postRealTimeCommunication(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
 
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, r.turn);
+		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
 		if (!worldOpt.isPresent()) {
-			log.severe("Could not add real-tome communication, unable to retrieve world for gameId=" + r.gameId + ", turn=" + r.turn);
+			log.severe("Could not add real-tome communication, unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + r.getTurn());
 			return false;
 		}
 
 		World w = worldOpt.get();
-		w.addRtc(r.kingdom, JsonUtils.fromJson(r.body, com.empire.Message.class));
-		dsClient.putWorld(r.gameId, w);
+		w.addRtc(r.getKingdom(), JsonUtils.fromJson(r.getBody(), com.empire.Message.class));
+		dsClient.putWorld(r.getGameId(), w);
 		return true;
 	}
 
 	private boolean postChangePlayer(Request r) {
 		if (!checkPassword(r).passesWrite()) return false;
 
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
 		if (!dateOpt.isPresent()) {
-			log.severe("Unable to retrieve date for gameId=" + r.gameId);
+			log.severe("Unable to retrieve date for gameId=" + r.getGameId());
 			return false;
 		}
 
-		int date = r.turn != 0 ? r.turn : dateOpt.get();
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, date);
+		int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
+		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), date);
 
 		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + date);
+			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
 			return false;
 		}
 
 		World w = worldOpt.get();
-		ChangePlayerRequestBody body = JsonUtils.fromJsonCamel(r.body, ChangePlayerRequestBody.class);
+		ChangePlayerRequestBody body = JsonUtils.fromJsonCamel(r.getBody(), ChangePlayerRequestBody.class);
 		Optional<Player> playerOpt = dsClient.getPlayer(body.email);
 
 		if(!playerOpt.isPresent()) {
@@ -462,9 +462,9 @@ public class EntryServlet extends HttpServlet {
 			return false;
 		}
 
-		w.getNation(r.kingdom).email = body.email;
-		w.getNation(r.kingdom).password = playerOpt.get().passHash;
-		dsClient.putWorld(r.gameId, w);
+		w.getNation(r.getKingdom()).email = body.email;
+		w.getNation(r.getKingdom()).password = playerOpt.get().passHash;
+		dsClient.putWorld(r.getGameId(), w);
 		return true;
 	}
 
@@ -520,17 +520,17 @@ public class EntryServlet extends HttpServlet {
 		byte[] pwHash = hashPassword(r.getPassword());
 		if (pwHash == null) return PasswordCheck.FAIL;
 
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
+		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
 		if (!dateOpt.isPresent()) {
-			log.severe("Unable to retrieve date for gameId=" + r.gameId);
+			log.severe("Unable to retrieve date for gameId=" + r.getGameId());
 			return PasswordCheck.NO_ENTITY;
 		}
 
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.get());
+		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), dateOpt.get());
 
 		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + dateOpt.get());
+			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + dateOpt.get());
 			return PasswordCheck.NO_ENTITY;
 		}
 
@@ -538,14 +538,14 @@ public class EntryServlet extends HttpServlet {
 
 		byte[] gmPassHash = decodePassword(w.gmPasswordHash);
 		byte[] obsPassHash = decodePassword(w.obsPasswordHash);
-		Optional<Player> player = dsClient.getPlayer(w.getNation(r.kingdom).email);
+		Optional<Player> player = dsClient.getPlayer(w.getNation(r.getKingdom()).email);
 
 		if(!player.isPresent()) {
-			log.severe("Unable to retrieve for for email=" + w.getNation(r.kingdom).email);
+			log.severe("Unable to retrieve for for email=" + w.getNation(r.getKingdom()).email);
 			return PasswordCheck.NO_ENTITY;
 		}
 
-		if (w.getNationNames().contains(r.kingdom) && Arrays.equals(pwHash, decodePassword(player.get().passHash))) return PasswordCheck.PASS_PLAYER;
+		if (w.getNationNames().contains(r.getKingdom()) && Arrays.equals(pwHash, decodePassword(player.get().passHash))) return PasswordCheck.PASS_PLAYER;
 		if (Arrays.equals(pwHash, gmPassHash)) return PasswordCheck.PASS_GM;
 		if (Arrays.equals(pwHash, obsPassHash)) return PasswordCheck.PASS_OBS;
 		return PasswordCheck.FAIL;
