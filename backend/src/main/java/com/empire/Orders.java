@@ -18,6 +18,10 @@ public class Orders {
 		this.version = version;
 	}
 
+	public Map<String, String> getOrders() {
+		return orders;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;

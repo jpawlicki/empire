@@ -198,7 +198,7 @@ public class EntryServlet extends HttpServlet {
 
 		if(orders.isPresent()) {
 			resp.setHeader("SJS-Version", String.valueOf(orders.get().version));
-			return JsonUtils.toJson(orders.get().orders);
+			return JsonUtils.toJson(orders.get().getOrders());
 		} else {
 			log.severe("Unable to get orders for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom() + ", turn=" + r.getTurn());
 			return null;
@@ -268,7 +268,7 @@ public class EntryServlet extends HttpServlet {
 				Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
 
 				if(ordersKingdom.isPresent()) {
-					orders.put(kingdom, ordersKingdom.get().orders);
+					orders.put(kingdom, ordersKingdom.get().getOrders());
 				} else {
 					log.warning("Cannot find orders for gameId=" + gameId + ", kingdom=" + kingdom + ", turn=" + w.date);
 					orders.put(kingdom,  null);
