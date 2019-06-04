@@ -509,18 +509,27 @@ public class EntryServlet extends HttpServlet {
 		if (pwHash == null) return PasswordCheck.FAIL;
 
 		Optional<Integer> dateOpt = dsClient.getWorldDate(r.gameId);
-		Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.orElse(-1));
-		if(!(dateOpt.isPresent() & worldOpt.isPresent())) {
-			log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
+
+		if (!dateOpt.isPresent()) {
+			log.severe("Unable to retrieve date for gameId=" + r.gameId);
 			return PasswordCheck.NO_ENTITY;
 		}
+
+		Optional<World> worldOpt = dsClient.getWorld(r.gameId, dateOpt.get());
+
+		if(!worldOpt.isPresent()) {
+			log.severe("Unable to retrieve world for gameId=" + r.gameId + ", turn=" + dateOpt.get());
+			return PasswordCheck.NO_ENTITY;
+		}
+
 		World w = worldOpt.get();
 
 		byte[] gmPassHash = decodePassword(w.gmPasswordHash);
 		byte[] obsPassHash = decodePassword(w.obsPasswordHash);
 		Optional<Player> player = dsClient.getPlayer(w.getNation(r.kingdom).email);
+
 		if(!player.isPresent()) {
-			log.severe("Player not found, password check failed");
+			log.severe("Unable to retrieve for for email=" + w.getNation(r.kingdom).email);
 			return PasswordCheck.NO_ENTITY;
 		}
 
