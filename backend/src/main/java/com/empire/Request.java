@@ -50,7 +50,7 @@ final class Request {
 		} catch (NumberFormatException e) {
 			throw new IOException(e);
 		}
-  }
+	}
 
 	private static byte[] getBody(InputStream i) throws IOException {
 		ByteArrayOutputStream o = new ByteArrayOutputStream();

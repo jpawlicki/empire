@@ -73,7 +73,7 @@ public class RegionTest {
 		assertEquals(3, Region.numUniqueIdeologies(k1, w));
 	}
 
-	// TODO(s):  The can transfer food tests rely on making a test w that is too complex at the moment, these should
+	// TODO(s):	The can transfer food tests rely on making a test w that is too complex at the moment, these should
 	// be revisited if/once refactoring has made this more feasible
 
 	@Test
