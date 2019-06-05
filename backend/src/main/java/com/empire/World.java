@@ -761,33 +761,50 @@ class World implements GoodwillProvider {
 				}
 				if (voting) getNation(k).goodwill -= 30;
 			}
+			// Spell tickers.
 			if (passedSpells.contains("Rjinku")) {
-				if (!tivar.quake)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi of Rjinku have agreed to call forth the Quake. Buildings and crops will be destroyed every week until the earthquakes end.");
-				tivar.quake = true;
-			} else if (tivar.quake) {
-				tivar.quake = Math.random() < 0.5;
-				if (!tivar.quake) notifyAllPlayers("Earthquakes End", "The magical earthquakes wracking the land have finally been ended.");
+				if (tivar.quake == 0)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi of Rjinku have agreed to call forth the Quake. Buildings and crops will be destroyed every week until the earthquakes end.");
+				tivar.quake++;
+			} else if (tivar.quake > 0) {
+				if (Math.random() > Constants.tivarSpellContinueChance) {
+					tivar.quake = 0;
+					notifyAllPlayers("Earthquakes End", "The magical earthquakes wracking the land have finally been ended.");
+				} else {
+					tivar.quake++;
+				}
 			}
 			if (passedSpells.contains("Syrjen")) {
-				if (!tivar.deluge) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi of Syrjen have agreed to call forth the Deluge. Terrible floods make all land regions treacherous (if navigable by fleets), and more crops are drowned in the muddy waters every week.");
-				tivar.deluge = true;
-			} else if (tivar.deluge) {
-				tivar.deluge = Math.random() < 0.5;
-				if (!tivar.deluge) notifyAllPlayers("Deluge Ends", "The magical deluge drowning the land has finally ceased.");
+				if (tivar.deluge == 0) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi of Syrjen have agreed to call forth the Deluge. Terrible floods make all land regions treacherous (if navigable by fleets), and more crops are drowned in the muddy waters every week.");
+				tivar.deluge++;
+			} else if (tivar.deluge > 0) {
+				if (Math.random() > Constants.tivarSpellContinueChance) {
+					tivar.deluge = 0;
+					notifyAllPlayers("Deluge Ends", "The magical deluge drowning the land has finally ceased.");
+				} else {
+					tivar.deluge++;
+				}
 			}
 			if (passedSpells.contains("Lyskr")) {
-				if (!tivar.veil) notifyAllPlayers("The Veil Falls", "The necessary number of gothi of Lyskr have agreed to call forth the Veil. Heavy fog chokes out the sun and reduces visibility severely. Barred from the sunlight, crops will be lost every week until the fog lifts.");
-				tivar.veil = true;
-			} else if (tivar.veil) {
-				tivar.veil = Math.random() < 0.5;
-				if (!tivar.veil) notifyAllPlayers("Veil Ends", "The magical fog blanketing the land has finally lifted.");
+				if (tivar.veil == 0) notifyAllPlayers("The Veil Falls", "The necessary number of gothi of Lyskr have agreed to call forth the Veil. Heavy fog chokes out the sun and reduces visibility severely. Barred from the sunlight, crops will be lost every week until the fog lifts.");
+				tivar.veil++;
+			} else if (tivar.veil > 0) {
+				if (Math.random() > Constants.tivarSpellContinueChance) {
+					tivar.veil = 0;
+					notifyAllPlayers("Veil Ends", "The magical fog blanketing the land has finally lifted.");
+				} else {
+					tivar.veil++;
+				}
 			}
 			if (passedSpells.contains("Alyrja")) {
-				if (!tivar.warwinds) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi of Alyrja have agreed to call forth the Warwinds. Titanic waves make seagoing treacherous, and powerful winds blow all vessels at sea off course. The temperature plummets, killing crops every week until the storm ceases.");
-				tivar.warwinds = true;
-			} else if (tivar.warwinds) {
-				tivar.warwinds = Math.random() < 0.5;
-				if (!tivar.warwinds) notifyAllPlayers("Warwinds End", "The magical storms devastating the land have finally calmed.");
+				if (tivar.warwinds == 0) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi of Alyrja have agreed to call forth the Warwinds. Titanic waves make seagoing treacherous, and powerful winds blow all vessels at sea off course. The temperature plummets, killing crops every week until the storm ceases.");
+				tivar.warwinds++;
+			} else if (tivar.warwinds > 0) {
+				if (Math.random() > Constants.tivarSpellContinueChance) {
+					tivar.warwinds = 0;
+					notifyAllPlayers("Warwinds End", "The magical storms devastating the land have finally calmed.");
+				} else {
+					tivar.warwinds++;
+				}
 			}
 		}
 
@@ -1078,7 +1095,7 @@ class World implements GoodwillProvider {
 				for (int i = 0; i < regions.size(); i++) {
 					if (regions.get(i).name.equals(destination)) toId = i;
 				}
-				if (!tivar.deluge && army.isNavy() && region.isLand() && regions.get(toId).isLand()) continue;
+				if (tivar.deluge < 2 && army.isNavy() && region.isLand() && regions.get(toId).isLand()) continue;
 				int crossing = -1;
 				for (WorldConstantData.Border b : WorldConstantData.borders) if ((b.a == army.location && b.b == toId) || (b.b == army.location && b.a == toId)) crossing = b.size;
 				Preparation prep = null;
@@ -1353,7 +1370,7 @@ class World implements GoodwillProvider {
 				Region region = regions.get(i);
 				ArrayList<Army> localArmies = new ArrayList<>();
 				for (Army a : armies) if (a.location == i) {
-					if (a.isNavy() && region.isLand() && !tivar.deluge) continue;
+					if (a.isNavy() && region.isLand() && tivar.deluge == 0) continue;
 					localArmies.add(a);
 				}
 				double combatFactor = Math.random() * .3 + 1.7;
@@ -1473,7 +1490,7 @@ class World implements GoodwillProvider {
 		}
 
 		void captureNavies() {
-			if (!tivar.deluge) {
+			if (tivar.deluge == 0) {
 				ArrayList<Army> removals = new ArrayList<>();
 				for (int i = 0; i < regions.size(); i++) {
 					Region region = regions.get(i);
@@ -1629,7 +1646,7 @@ class World implements GoodwillProvider {
 						incomeSources.getOrDefault(r.getKingdom(), new Budget()).incomeTax += income;
 					}
 				} else {
-					if (tivar.warwinds) continue; // No naval income while warwinds are active.
+					if (tivar.warwinds != 0) continue; // No naval income while warwinds are active.
 					// Get navy powers, 20 gold to biggest, 10 to runner-up; if tie; split 30 between all tied
 					ArrayList<Army> localNavies = new ArrayList<>();
 					for (Army a : armies) if (a.location == i && a.isNavy()) localNavies.add(a);
@@ -2014,16 +2031,24 @@ class World implements GoodwillProvider {
 			for (Region r : regions) r.population *= 1.001;
 		}
 
+		private void damageCrops(int spellDuration) {
+			spellDuration -= Constants.tivarSpellGracePeriod;
+			if (spellDuration <= 0) return;
+			double destruction = spellDuration * Constants.tivarSpellCropDestruction;
+			if (destruction > 1) destruction = 1;
+			for (Region r : regions) r.crops *= 1 - destruction;
+		}
+
 		void evaluateGothiSpells() {
-			if (tivar.warwinds) {
+			if (tivar.warwinds != 0) {
 				HashSet<Character> moved = new HashSet<>();
 				for (Army a : armies) {
 					Region r = regions.get(a.location);
 					if (r.isSea()) {
+						a.size *= 0.75;
 						List<Region> n = new ArrayList<>(r.getNeighbors(World.this));
 						Region d = n.get((int)(Math.random() * n.size()));
 						a.location = regions.indexOf(d);
-						if (getAttrition(a, d)) a.size *= .75;
 						Character leader = leaders.get(a);
 						if (leader != null) {
 							moved.add(leader);
@@ -2040,9 +2065,8 @@ class World implements GoodwillProvider {
 						c.location = regions.indexOf(n.get((int)(Math.random() * n.size())));
 					}
 				}
-				for (Region r : regions) r.crops *= .97;
 			}
-			if (tivar.quake) {
+			if (tivar.quake != 0) {
 				Map<String, Map<Construction.Type, Integer>> wreckage = new HashMap<>();
 				for (Region r : regions) {
 					ArrayList<Construction> destroyed = new ArrayList<>();
@@ -2056,7 +2080,6 @@ class World implements GoodwillProvider {
 					}
 					r.setReligion(null, World.this);
 				}
-				for (Region r : regions) r.crops *= .97;
 				for (String k : wreckage.keySet()) {
 					String notification = "The terrible magical earthquakes triggered by the followers of Rjinku have taken their toll on our nation, destroying:";
 					for (Construction.Type t : wreckage.get(k).keySet()) {
@@ -2065,13 +2088,10 @@ class World implements GoodwillProvider {
 					notifications.add(new Notification(k, "Earthquakes", notification));
 				}
 			}
-			if (tivar.veil) {
-				for (Region r : regions) r.crops *= .97;
-			}
-			if (tivar.deluge) {
-				for (Region r : regions) r.crops *= .97;
-				
-			}
+			damageCrops(tivar.deluge);
+			damageCrops(tivar.quake);
+			damageCrops(tivar.veil);
+			damageCrops(tivar.warwinds);
 		}
 
 		void nobleCrises() {
@@ -2374,8 +2394,7 @@ class World implements GoodwillProvider {
 	private boolean getAttrition(Army army, Region region) {
 		if (army.hasTag(Army.Tag.WEATHERED)) return false;
 		if (region.isLand() && NationData.isFriendly(region.getKingdom(), army.kingdom, this)) return false;
-		if (region.isLand() && tivar.deluge) return true;
-		if (region.type.equals("sea") && tivar.warwinds) return true;
+		if (region.isLand() && tivar.deluge != 0) return true;
 		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag(NationData.Tag.DISCIPLINED)) return true;
 		return false;
 	}
@@ -2746,7 +2765,7 @@ class World implements GoodwillProvider {
 		if (NationData.getStateReligion(kingdom, this) == Ideology.ALYRJA) {
 			if (isHiddenAlyrjaHelper(a.location, kingdom)) return false;
 		}
-		if (tivar.veil) return true;
+		if (tivar.veil != 0) return true;
 		if (!a.hasTag(Army.Tag.RAIDERS) || regions.get(a.location).getKingdom() == null || kingdom.equals(regions.get(a.location).getKingdom()) || !NationData.isFriendly(a.kingdom, regions.get(a.location).getKingdom(), this)) return false;
 		return true;
 	}
@@ -2763,7 +2782,7 @@ class World implements GoodwillProvider {
 			for (Army i : armies) if (i.id == c.leadingArmy) a = i;
 			if (a != null && isHidden(a, kingdom)) return true;
 		}
-		if (tivar.veil) return true;
+		if (tivar.veil != 0) return true;
 		return false;
 	}
 
@@ -2863,10 +2882,10 @@ class Pirate {
 }
 
 final class Tivar {
-	boolean warwinds;
-	boolean deluge;
-	boolean quake;
-	boolean veil;
+	int warwinds;
+	int deluge;
+	int quake;
+	int veil;
 }
 
 final class Notification {
