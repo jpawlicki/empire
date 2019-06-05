@@ -138,8 +138,6 @@ class World implements GoodwillProvider {
 			if (setup.hasTag(NationData.Tag.PATRIOTIC)) totalSharesArmy += 0.15;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesArmy += 0.5;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesGold += 5;
-			if (setup.hasTag(NationData.Tag.RUINED)) totalSharesPopulation -= 0.5;
-			if (setup.hasTag(NationData.Tag.RUINED)) totalSharesGold += 2;
 			if (setup.hasTag(NationData.Tag.SEAFARING)) totalSharesNavy += 0.15;
 			if (setup.hasTag(NationData.Tag.WARLIKE)) totalSharesArmy += 0.15;
 			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
@@ -180,8 +178,6 @@ class World implements GoodwillProvider {
 			double sharesPopulation = 1;
 			if (setup.hasTag(NationData.Tag.MERCANTILE)) sharesGold += 0.5;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) sharesGold += 5;
-			if (setup.hasTag(NationData.Tag.RUINED)) sharesPopulation -= 0.5;
-			if (setup.hasTag(NationData.Tag.RUINED)) sharesGold += 2;
 			if ("food".equals(setup.bonus)) sharesFood += 0.5;
 			else if ("gold".equals(setup.bonus)) sharesGold += 0.5;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
@@ -360,6 +356,13 @@ class World implements GoodwillProvider {
 				for (int i = 0; i < shipyardsPerNation; i++) {
 					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(Constants.baseCostShipyard));
 				}
+			}
+		}
+		// Place defensive fortifications.
+		for (Region r : w.regions) {
+			if (nationSetup.containsKey(r.getKingdom()) && nationSetup.get(r.getKingdom()).hasTag(NationData.Tag.DEFENSIVE)) {
+				r.constructions.add(Construction.makeFortifications(Constants.baseCostFortifications));
+				r.constructions.add(Construction.makeFortifications(Constants.baseCostFortifications));
 			}
 		}
 		// Add characters, incl Cardinals
@@ -1515,8 +1518,6 @@ class World implements GoodwillProvider {
 				if (ration > 1.1) unrestMod -= .1;
 				if (getNation(r.getKingdom()).hasTag(NationData.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
-				if (Ideology.ALYRJA == r.religion && r.food < turnsUntilHarvest() * r.calcConsumption(World.this, 1)) unrestMod += .03;
-				if (Ideology.RJINKU == r.religion && !battlingNations.contains(r.getKingdom())) unrestMod += .02;
 				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag(NationData.Tag.IMPERIALISTIC)) {
 					int tributeC = 0;
 					for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom())) tributeC++;
@@ -1529,16 +1530,6 @@ class World implements GoodwillProvider {
 				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
 
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom()) && NationData.isEnemy(k, r.getKingdom(), World.this) && getNation(k).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .04);
-			}
-			// Syrjen unrest mods.
-			HashMap<Region, Double> popularUnrests = new HashMap<>();
-			for (Region r : regions) if (r.isLand()) popularUnrests.put(r, r.unrestPopular);
-			for (Region r : regions) if (Ideology.SYRJEN == r.religion) {
-				double maxNeighborUnrest = 0;
-				for (Region n : r.getNeighbors(World.this)) if (popularUnrests.getOrDefault(n, 0.1) > maxNeighborUnrest) maxNeighborUnrest = popularUnrests.getOrDefault(n, 0.1);
-				if (maxNeighborUnrest > r.unrestPopular) {
-					r.unrestPopular = Math.min(maxNeighborUnrest, r.unrestPopular + 0.05);
-				}
 			}
 			// Sword of Truth destruction
 			for (String k : kingdoms.keySet()) {
@@ -2377,7 +2368,6 @@ class World implements GoodwillProvider {
 		if (region.isLand() && NationData.isFriendly(region.getKingdom(), army.kingdom, this)) return false;
 		if (region.isLand() && tivar.deluge) return true;
 		if (region.type.equals("sea") && tivar.warwinds) return true;
-		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag(NationData.Tag.DISCIPLINED)) return true;
 		return false;
 	}
 
@@ -2440,10 +2430,6 @@ class World implements GoodwillProvider {
 			if (getNation(target.getKingdom()).hasTag(NationData.Tag.NOMADIC)) {
 				targetUnrestFactor = 0.2;
 				fromUnrestFactor = 0.2;
-			}
-			for (String k : kingdoms.keySet()) if (getNation(k).hasTag(NationData.Tag.RUINED) && getNation(k).coreRegions.contains(regions.indexOf(target)) && !getNation(k).coreRegions.contains(regions.indexOf(from))) {
-				targetUnrestFactor = 0;
-				fromUnrestFactor = 0;
 			}
 			if (Ideology.CHALICE_OF_COMPASSION == getDominantIruhanIdeology()) {
 				if (target.religion.religion == Religion.IRUHAN) targetUnrestFactor = 0;
@@ -2697,11 +2683,6 @@ class World implements GoodwillProvider {
 				}
 			}
 			notifications.add(new Notification(perpetrator, "Our " + title, "We were discovered by " + String.join(", ", knows) + ". Other nations likely suspect us but lack proof."));
-			if (knows.size() >= 5) {
-				for (Region r : regions) {
-					if (perpetrator.equals(r.getKingdom()) && Ideology.LYSKR == r.religion) r.unrestPopular = Math.min(1, r.unrestPopular + .1);
-				}
-			}
 		}
 	}
 

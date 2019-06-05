@@ -49,7 +49,7 @@ class Army {
 
 		if (hasTag(Tag.STEEL)) mods += Constants.steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += Constants.seafaringMod;
-		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedMod;
+		if (isArmy() && !Constants.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedArmyStrengthMod;
 		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);

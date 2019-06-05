@@ -318,7 +318,7 @@ class Region {
 
 	calcMinConquestSize() {
 		let mods = [];
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": 1.5, "unit": "%", "why": "Stoic Nation"});
 		mods.push({"v": this.calcFortification().v - 1, "unit": "%", "why": "Fortification"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
 		return Calc.moddedNum(
@@ -332,6 +332,7 @@ class Region {
 
 	calcMinPatrolSize() {
 		let mods = [];
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Disciplined")) mods.push({"v": -.5, "unit": "%", "why": "Disciplined Nation"});
 		mods.push({"v": this.calcUnrest().v * 2 - 0.7, "unit": "%", "why": "Unrest"});
 		// √(the population of the region) × 3%
 		return Calc.moddedNum(
