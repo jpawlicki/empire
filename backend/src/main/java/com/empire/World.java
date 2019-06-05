@@ -763,7 +763,7 @@ class World implements GoodwillProvider {
 			}
 			// Spell tickers.
 			if (passedSpells.contains("Rjinku")) {
-				if (tivar.quake == 0)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi of Rjinku have agreed to call forth the Quake. Buildings and crops will be destroyed every week until the earthquakes end.");
+				if (tivar.quake == 0)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi of Rjinku have agreed to call forth the Quake. Buildings will be destroyed every week until the earthquakes end. If they do not end soon, destruction of crops will follow.");
 				tivar.quake++;
 			} else if (tivar.quake > 0) {
 				if (Math.random() > Constants.tivarSpellContinueChance) {
@@ -774,7 +774,7 @@ class World implements GoodwillProvider {
 				}
 			}
 			if (passedSpells.contains("Syrjen")) {
-				if (tivar.deluge == 0) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi of Syrjen have agreed to call forth the Deluge. Terrible floods make all land regions treacherous (if navigable by fleets), and more crops are drowned in the muddy waters every week.");
+				if (tivar.deluge == 0) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi of Syrjen have agreed to call forth the Deluge. Swollen rivers and lakes cause land regions to be navigable by warships, but flash floods wash away a quarter of any ships or soldiers trying to traverse them. As the floods intensify, crops will be lost to the rising waters.");
 				tivar.deluge++;
 			} else if (tivar.deluge > 0) {
 				if (Math.random() > Constants.tivarSpellContinueChance) {
@@ -785,7 +785,7 @@ class World implements GoodwillProvider {
 				}
 			}
 			if (passedSpells.contains("Lyskr")) {
-				if (tivar.veil == 0) notifyAllPlayers("The Veil Falls", "The necessary number of gothi of Lyskr have agreed to call forth the Veil. Heavy fog chokes out the sun and reduces visibility severely. Barred from the sunlight, crops will be lost every week until the fog lifts.");
+				if (tivar.veil == 0) notifyAllPlayers("The Veil Falls", "The necessary number of gothi of Lyskr have agreed to call forth the Veil. Heavy fog chokes out the sun and reduces visibility severely. If the fog does not lift soon, crops will starve.");
 				tivar.veil++;
 			} else if (tivar.veil > 0) {
 				if (Math.random() > Constants.tivarSpellContinueChance) {
@@ -796,7 +796,7 @@ class World implements GoodwillProvider {
 				}
 			}
 			if (passedSpells.contains("Alyrja")) {
-				if (tivar.warwinds == 0) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi of Alyrja have agreed to call forth the Warwinds. Titanic waves make seagoing treacherous, and powerful winds blow all vessels at sea off course. The temperature plummets, killing crops every week until the storm ceases.");
+				if (tivar.warwinds == 0) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi of Alyrja have agreed to call forth the Warwinds. Titanic waves destroy a quarter of any ship or army at sea, and powerful winds blow all vessels at sea off course. The temperature begins to plummet, threating to freeze crops worldwide.");
 				tivar.warwinds++;
 			} else if (tivar.warwinds > 0) {
 				if (Math.random() > Constants.tivarSpellContinueChance) {
