@@ -316,9 +316,9 @@ let getNobleBlock = function(r) {
 		crisis = `<tooltip-element tooltip="All nobles experience crises every six weeks. If resolved positively within six weeks, a crisis decreases noble unrest by 25 percentage points. If unresolved within the deadline, the noble gains 25 percentage points of unrest.">Crisis:</tooltip-element><tooltip-element id="crisis" tooltip="${crisisDescription}">${capitalizeForce(r.noble.crisis.type)}</tooltip-element>`
 	}
 	let levelDetail = "Nobles gain an experience point each turn, and have a level equal to the square root of one plus their experience. This noble's level gives the region:";
-	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.1 * 100) + "% regional tax";
-	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.1 * 100) + "% regional recruitment";
-	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.05 * 100) + "% crops planted after each harvest";
+	levelDetail += "\n +${Math.round(r.calcNobleLevel() * 0.1 * 100)}% regional tax";
+	levelDetail += "\n +${Math.round(r.calcNobleLevel() * 0.1 * 100)}% regional recruitment";
+	levelDetail += "\n +${Math.round(r.calcNobleLevel() * 0.05 * 100)}% crops planted after each harvest";
 	return `
 		<h1>Noble: ${r.noble.name}</h1>
 		<div>Level: <tooltip-element tooltip="${levelDetail}">${Math.round(r.calcNobleLevel() * 100) / 100}</tooltip-element></div>
