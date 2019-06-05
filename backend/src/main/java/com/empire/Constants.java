@@ -97,6 +97,7 @@ public class Constants {
 	public static final double heroicExpMultiplier = 2.0;
 
 	public static final double disciplinedMod = 0.1;
+	public static final double disciplinedPatrolStrengthMod = -.5;
 
 	public static final double coastDwellingRecruitMod = 0.12;
 	public static final double coastDwellingTaxMod = 0.12;
@@ -111,7 +112,7 @@ public class Constants {
 	public static final double mercantileTaxMod = 0.15;
 	public static final double mercantileGoldShare = 0.5;
 
-	public static final double stoicConqStrengthMod = 0.75;
+	public static final double stoicConqStrengthMod = 1.5;
 
 	// Regions
 	public static final double recruitmentPerPop = 1.0 / 2000.0;

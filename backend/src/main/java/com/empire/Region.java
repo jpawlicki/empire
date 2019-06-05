@@ -334,7 +334,10 @@ class Region {
 
 	// TODO: This is a game rule/equation
 	public double calcMinPatrolStrength(World w) {
-		return 0.03 * Math.sqrt(population) * (1 + (2 * calcUnrest(w) - 0.7));
+		double mods = 1;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedPatrolStrengthMod;
+		mods += (2 * calcUnrest(w) - 0.7);
+		return 0.03 * Math.sqrt(population) * mods;
 	}
 
 	public double calcFortificationPct() {
