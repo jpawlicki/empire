@@ -291,6 +291,25 @@ public class RegionTest {
 	}
 
 	@Test
+	public void plantHarvestTurnNoble() {
+		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0);
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(true);
+		assertEquals(130000 * (1 + 0.05), r.crops, DELTA);
+	}
+
+	@Test
+	public void plantHarvestTurnNobleHighLevel() {
+		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0);
+		for (int i = 0; i < 24; i++) r.noble.addExperience();
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(true);
+		assertEquals(130000 * (1 + 0.25), r.crops, DELTA);
+	}
+
+	@Test
 	public void harvest() {
 		r.population = 10000;
 		r.crops = 1000000;

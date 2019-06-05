@@ -81,6 +81,7 @@ class Region {
 				mods += c.calcGovernRecruitMod();
 			}
 		}
+		if (noble != null) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
@@ -130,6 +131,7 @@ class Region {
 				mods += c.calcGovernTaxMod();
 			}
 		}
+		if (noble != null) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
@@ -387,8 +389,10 @@ class Region {
 
 	void plant(boolean isHarvestTurn) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
+		double mod = 1;
+		if (noble != null) mod += noble.calcPlantMod();
 		if (isHarvestTurn) {
-			crops += population * Constants.plantsPerCitizen;
+			crops += population * Constants.plantsPerCitizen * mod;
 		}
 	}
 
