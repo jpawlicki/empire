@@ -1515,8 +1515,6 @@ class World implements GoodwillProvider {
 				if (ration > 1.1) unrestMod -= .1;
 				if (getNation(r.getKingdom()).hasTag(NationData.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
-				if (Ideology.ALYRJA == r.religion && r.food < turnsUntilHarvest() * r.calcConsumption(World.this, 1)) unrestMod += .03;
-				if (Ideology.RJINKU == r.religion && !battlingNations.contains(r.getKingdom())) unrestMod += .02;
 				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag(NationData.Tag.IMPERIALISTIC)) {
 					int tributeC = 0;
 					for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom())) tributeC++;
@@ -1529,16 +1527,6 @@ class World implements GoodwillProvider {
 				r.unrestPopular = Math.min(1, Math.max(0, r.unrestPopular + unrestMod));
 
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom()) && NationData.isEnemy(k, r.getKingdom(), World.this) && getNation(k).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .04);
-			}
-			// Syrjen unrest mods.
-			HashMap<Region, Double> popularUnrests = new HashMap<>();
-			for (Region r : regions) if (r.isLand()) popularUnrests.put(r, r.unrestPopular);
-			for (Region r : regions) if (Ideology.SYRJEN == r.religion) {
-				double maxNeighborUnrest = 0;
-				for (Region n : r.getNeighbors(World.this)) if (popularUnrests.getOrDefault(n, 0.1) > maxNeighborUnrest) maxNeighborUnrest = popularUnrests.getOrDefault(n, 0.1);
-				if (maxNeighborUnrest > r.unrestPopular) {
-					r.unrestPopular = Math.min(maxNeighborUnrest, r.unrestPopular + 0.05);
-				}
 			}
 			// Sword of Truth destruction
 			for (String k : kingdoms.keySet()) {
@@ -2696,11 +2684,6 @@ class World implements GoodwillProvider {
 				}
 			}
 			notifications.add(new Notification(perpetrator, "Our " + title, "We were discovered by " + String.join(", ", knows) + ". Other nations likely suspect us but lack proof."));
-			if (knows.size() >= 5) {
-				for (Region r : regions) {
-					if (perpetrator.equals(r.getKingdom()) && Ideology.LYSKR == r.religion) r.unrestPopular = Math.min(1, r.unrestPopular + .1);
-				}
-			}
 		}
 	}
 
