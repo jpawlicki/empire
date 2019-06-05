@@ -10,7 +10,7 @@ class Noble {
 	String name;
 	Crisis crisis;
 	double unrest;
-	double experience;
+	private double experience;
 
 	static Noble makeNoble(Culture culture, int date) {
 		Noble n = new Noble();
