@@ -48,10 +48,10 @@ class OrdersPane extends HTMLElement {
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
 					<expandable-snippet text="In exchange for loyalty, the Cult will give us an army of 5000 undead soldiers and 2 weeks of food in every region we control. However, the Cult will gain access to any regions we control, and we do not fully understand their objectives."></expandable-snippet>
 					<hr/>
-					<label id="gothi_Alyrja"><input type="checkbox" name="gothi_Alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds make all sea regions treacherous, blows vessels in sea regions to random adjacent regions, and destroy 3% of all crops each week they are active.">Warwinds</tooltip-element></label>
-					<label id="gothi_Rjinku"><input type="checkbox" name="gothi_Rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. The quake destroys 3% of all crops each week it is active.">Quake</tooltip-element></label>
-					<label id="gothi_Syrjen"><input type="checkbox" name="gothi_Syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge makes all land regions treacherous, allows navies to traverse land regions and participate in battles there (and prevents them from being captured). It also destroys 3% of all crops each week while active.">Deluge</tooltip-element></label>
-					<label id="gothi_Lyskr"><input type="checkbox" name="gothi_Lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It also destroys 3% of crops worldwide each week while active.">Veil</tooltip-element></label>
+					<label id="gothi_Alyrja"><input type="checkbox" name="gothi_Alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
+					<label id="gothi_Rjinku"><input type="checkbox" name="gothi_Rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
+					<label id="gothi_Syrjen"><input type="checkbox" name="gothi_Syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge makes all land regions treacherous, allows navies to traverse land regions and participate in battles there (and prevents them from being captured). It will start to destroy crops worldwide after 2 weeks of activity.">Deluge</tooltip-element></label>
+					<label id="gothi_Lyskr"><input type="checkbox" name="gothi_Lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It will start to destroy crops worldwide after 2 weeks of activity.">Veil</tooltip-element></label>
 				</div>
 				<div id="content_nations">
 					<h1><tooltip-element tooltip="These communications are usually delayed by 0 to 30 seconds.">Real-Time</tooltip-element> Communications</h1>
@@ -952,7 +952,7 @@ class OrdersPane extends HTMLElement {
 		} else {
 			opts.push("Stay in " + r.name);
 			let nopts = [];
-			for (let neighbor of r.getNeighbors()) nopts.push(neighbor.name);
+			for (let neighbor of r.getNeighbors()) if (r.type == "water" || neighbor.type == "water" || g_data.tivar.deluge > 0) nopts.push(neighbor.name);
 			for (let neighbor of nopts.sort()) {
 				opts.push("Travel to " + neighbor);
 			}
@@ -1174,10 +1174,7 @@ class OrdersPane extends HTMLElement {
 			if (o.value.startsWith("Travel to ")) {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
-				if (a.type == "navy" && dest.type == "land" && g_data.regions[a.location].type == "land" && !g_data.tivar.deluge) {
-					warn += "(navies can only move between land regions during the Deluge)";
-				}
-				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && !g_data.tivar.deluge) {
+				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && g_data.tivar.deluge == 0) {
 					warn += "(navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
 			} else if (o.value.startsWith("Merge into army")) {
