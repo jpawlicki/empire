@@ -1415,51 +1415,17 @@ class World implements GoodwillProvider {
 				for (Army h : goldThefts.keySet()) {
 					h.gold += goldThefts.get(h);
 				}
-				String battleDetails = "During the fighting";
-				double foodWrecked = 1;
-				double cropsWrecked = 1;
-				double popKilled = 1;
-				double unrest = 0;
-				if (region.isLand()) {
-					for (int p = 1000; p < dead; p += 1000) {
-						if (Math.random() < 1 / 4.0) {
-							// Nothing happens.	
-						} else if (Math.random() < 1 / 3.0) {
-							foodWrecked *= .85;
-						} else if (Math.random() < 1 / 2.0) {
-							cropsWrecked *= .7;
-						} else {
-							popKilled *= .98;
-							unrest += .1;
-						}
-					}
-					if (foodWrecked < 1) {
-						battleDetails += ", " + Math.round((1 - foodWrecked) * region.food / 1000) + "k measures of food were spoiled";
-						region.food *= foodWrecked;
-					}
-					if (cropsWrecked < 1) {
-						battleDetails += ", " + Math.round((1 - cropsWrecked) * 100) + "% of the crops were destroyed";
-						region.crops *= cropsWrecked;
-					}
-					if (popKilled < 1) {
-						battleDetails += ", " + Math.round((1 - popKilled) * region.population) + " civilians were mistakenly killed, and as many more fled for their lives to surrounding regions";
-						region.population *= popKilled;
-						region.unrestPopular = Math.min(1, region.unrestPopular + unrest);
-						sendRefugees(region, null, region.population * (1 - popKilled), true, null, false);
-					}
-				}
+				String battleDetails = "";
 				ArrayList<Army> localUndeadArmies = new ArrayList<>();
 				for (Army a : localArmies) if (a.hasTag(Army.Tag.UNDEAD) && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
 				if (localUndeadArmies.size() > 0) {
-					battleDetails += ", " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult";
+					battleDetails += "After the fighting, " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult.";
 					double raised = dead / 2 / localUndeadArmies.size();
 					for (Army u : localUndeadArmies) {
 						u.size += raised;
 						u.composition.put("Undead", u.composition.getOrDefault("Undead", 0.0) + raised);
 					}
 				}
-				battleDetails += ".";
-				if (battleDetails.equals("During the fighting.")) battleDetails = "";
 				HashSet<String> localKingdoms = new HashSet<>();
 				for (Army a : localArmies) localKingdoms.add(a.kingdom);
 				if (!casualties.isEmpty()) {
