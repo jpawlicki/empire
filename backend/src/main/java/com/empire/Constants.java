@@ -96,7 +96,7 @@ public class Constants {
 	public static final String nationHeroicTag = "Heroic";
 	public static final double heroicExpMultiplier = 2.0;
 
-	public static final double disciplinedMod = 0.1;
+	public static final double disciplinedArmyStrengthMod = 0.1;
 	public static final double disciplinedPatrolStrengthMod = -.5;
 
 	public static final double coastDwellingRecruitMod = 0.12;
