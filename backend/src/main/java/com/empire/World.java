@@ -2079,6 +2079,7 @@ class World implements GoodwillProvider {
 				if (r.noble == null) continue;
 				r.noble.resolveCrisis(World.this, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires).ifPresent(notifications::add);
 				r.noble.createCrisis(World.this, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires).ifPresent(notifications::add);
+				r.noble.addExperience();
 			}
 		}
 

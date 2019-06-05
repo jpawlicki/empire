@@ -183,7 +183,7 @@ class Region {
 		let base = new Calc("*", baseAmount);
 
 		let mods = [];
-		if (calcNobleLevel() > 0) mods.push({"v": calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
 		if (this.religion == "Iruhan (Sword of Truth)") mods.push({"v": 1, "unit": "%", "why": "Sword of Truth ideology"});
@@ -228,7 +228,7 @@ class Region {
 
 		let mods = [];
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
-		if (calcNobleLevel() > 0) mods.push({"v": calcNobleLevel() * .05, "unit": "%", "why": "Noble"});
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && getNation(r.kingdom).calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
@@ -271,7 +271,7 @@ class Region {
 
 	calcNextHarvest() {
 		let mods = [];
-		if (calcNobleLevel() > 0) mods.push({"v": calcNobleLevel() * .05, "unit": "%", "why": "Noble"});
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .05, "unit": "%", "why": "Noble"});
 		let base = Calc.moddedNum(
 			new Calc("*", [
 				{"v": this.population, "unit": " citizens", "why": "Regional Population"},
