@@ -138,8 +138,6 @@ class World implements GoodwillProvider {
 			if (setup.hasTag(NationData.Tag.PATRIOTIC)) totalSharesArmy += 0.15;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesArmy += 0.5;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesGold += 5;
-			if (setup.hasTag(NationData.Tag.RUINED)) totalSharesPopulation -= 0.5;
-			if (setup.hasTag(NationData.Tag.RUINED)) totalSharesGold += 2;
 			if (setup.hasTag(NationData.Tag.SEAFARING)) totalSharesNavy += 0.15;
 			if (setup.hasTag(NationData.Tag.WARLIKE)) totalSharesArmy += 0.15;
 			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
@@ -180,8 +178,6 @@ class World implements GoodwillProvider {
 			double sharesPopulation = 1;
 			if (setup.hasTag(NationData.Tag.MERCANTILE)) sharesGold += 0.5;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) sharesGold += 5;
-			if (setup.hasTag(NationData.Tag.RUINED)) sharesPopulation -= 0.5;
-			if (setup.hasTag(NationData.Tag.RUINED)) sharesGold += 2;
 			if ("food".equals(setup.bonus)) sharesFood += 0.5;
 			else if ("gold".equals(setup.bonus)) sharesGold += 0.5;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
@@ -360,6 +356,13 @@ class World implements GoodwillProvider {
 				for (int i = 0; i < shipyardsPerNation; i++) {
 					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(Constants.baseCostShipyard));
 				}
+			}
+		}
+		// Place defensive fortifications.
+		for (Region r : w.regions) {
+			if (nationSetup.containsKey(r.getKingdom()) && nationSetup.get(r.getKingdom()).hasTag(NationData.Tag.DEFENSIVE)) {
+				r.constructions.add(Construction.makeFortifications(Constants.baseCostFortifications));
+				r.constructions.add(Construction.makeFortifications(Constants.baseCostFortifications));
 			}
 		}
 		// Add characters, incl Cardinals
@@ -2364,7 +2367,6 @@ class World implements GoodwillProvider {
 		if (region.isLand() && NationData.isFriendly(region.getKingdom(), army.kingdom, this)) return false;
 		if (region.isLand() && tivar.deluge) return true;
 		if (region.type.equals("sea") && tivar.warwinds) return true;
-		if ("Pirate".equals(army.kingdom) && region.getKingdom() != null && getNation(region.getKingdom()).hasTag(NationData.Tag.DISCIPLINED)) return true;
 		return false;
 	}
 
@@ -2427,10 +2429,6 @@ class World implements GoodwillProvider {
 			if (getNation(target.getKingdom()).hasTag(NationData.Tag.NOMADIC)) {
 				targetUnrestFactor = 0.2;
 				fromUnrestFactor = 0.2;
-			}
-			for (String k : kingdoms.keySet()) if (getNation(k).hasTag(NationData.Tag.RUINED) && getNation(k).coreRegions.contains(regions.indexOf(target)) && !getNation(k).coreRegions.contains(regions.indexOf(from))) {
-				targetUnrestFactor = 0;
-				fromUnrestFactor = 0;
 			}
 			if (Ideology.CHALICE_OF_COMPASSION == getDominantIruhanIdeology()) {
 				if (target.religion.religion == Religion.IRUHAN) targetUnrestFactor = 0;

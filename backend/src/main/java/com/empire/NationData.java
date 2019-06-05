@@ -22,7 +22,6 @@ class NationData {
 		@SerializedName("Patriotic") PATRIOTIC,
 		@SerializedName("Rebellious") REBELLIOUS,
 		@SerializedName("Republican") REPUBLICAN,
-		@SerializedName("Ruined") RUINED,
 		@SerializedName("Seafaring") SEAFARING,
 		@SerializedName("Ship-Building") SHIP_BUILDING,
 		@SerializedName("Stoic") STOIC,
