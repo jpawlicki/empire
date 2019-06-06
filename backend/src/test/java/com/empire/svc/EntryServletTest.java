@@ -96,6 +96,18 @@ public class EntryServletTest {
   }
 
   @Test
+  public void pingReturnsSuccess(){
+    when(httpReq.getRequestURI()).thenReturn("/entry/ping");
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(httpResp).getOutputStream();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
   public void getOrdersPasswordFailReturnsNull() {
     when(httpReq.getRequestURI()).thenReturn("/entry/orders");
     when(req.getPassword()).thenReturn(null);

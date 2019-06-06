@@ -97,7 +97,7 @@ public class EntryServlet extends HttpServlet {
 
 		switch(req.getRequestURI()) {
 			case "/entry/ping":
-				json = "{\"status\": \"success\"}";
+				json = "";
 				break;
 			case "/entry/orders":
 				json = getOrders(r, resp);
