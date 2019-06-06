@@ -1,5 +1,6 @@
 package com.empire.svc;
 
+import com.empire.Nation;
 import com.empire.NationData;
 import com.empire.Orders;
 import com.empire.World;
@@ -45,7 +46,7 @@ public class EntryServletTest {
 
     try {
       when(RequestFactory.factory.fromHttpServletRequest(httpReq)).thenReturn(req);
-    } catch (IOException e){
+    } catch (IOException e) {
       fail("IOException when mocking RequestFactory.factory.fromHttpServletRequest()");
     }
 
@@ -62,7 +63,7 @@ public class EntryServletTest {
     servlet = new EntryServlet(dsClient, cache);
   }
 
-  private void passPasswordCheck(){
+  private void passPasswordCheck() {
     when(req.getPassword()).thenReturn(pwTest);
     when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
     when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
@@ -83,7 +84,7 @@ public class EntryServletTest {
   }
 
   @Test
-  public void getWithBadPathReturnsError404(){
+  public void getWithBadPathReturnsError404() {
     when(httpReq.getRequestURI()).thenReturn("BOGUS");
 
     try {
@@ -95,7 +96,7 @@ public class EntryServletTest {
   }
 
   @Test
-  public void getOrdersPasswordFailReturnsNull(){
+  public void getOrdersPasswordFailReturnsNull() {
     when(httpReq.getRequestURI()).thenReturn("/entry/orders");
     when(req.getPassword()).thenReturn(null);
 
@@ -108,7 +109,7 @@ public class EntryServletTest {
   }
 
   @Test
-  public void getOrdersDatastoreNoOrdersReturnsNull(){
+  public void getOrdersDatastoreNoOrdersReturnsNull() {
     when(httpReq.getRequestURI()).thenReturn("/entry/orders");
     passPasswordCheck();
 
@@ -124,7 +125,7 @@ public class EntryServletTest {
   }
 
   @Test
-  public void getOrdersDatastoreFoundOrders(){
+  public void getOrdersDatastoreFoundOrders() {
     when(httpReq.getRequestURI()).thenReturn("/entry/orders");
     passPasswordCheck();
 
@@ -135,6 +136,36 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
+      verify(httpResp).getOutputStream();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getSetupDatastoreNoNationReturnsNull() {
+    when(httpReq.getRequestURI()).thenReturn("/entry/setup");
+    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(dsClient).getNation(gameIdTest, kingdomTest);
+      verify(httpResp).sendError(404, "No such entity.");
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getSetupDatastoreFoundNation() {
+    when(httpReq.getRequestURI()).thenReturn("/entry/setup");
+
+    Nation nation = new Nation();
+    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.of(nation));
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(dsClient).getNation(gameIdTest, kingdomTest);
       verify(httpResp).getOutputStream();
     } catch (IOException e) {
       fail("IOException occurred");
