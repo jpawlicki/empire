@@ -102,7 +102,7 @@ final class Crisis {
 		WEDDING("%NOBLENAME%'s daughter is being wed in %REGIONNAME% and they request your presence as ruler.", "The wedding of the daughter of %NOBLENAME% was a spectacular affair. It is rare for the nobility to find much joy in their political marriage, but in this case the couple's obvious love for one another warmed your heart to witness. %NOBLENAME% could not thank you enough for attending, and swore never to forget this day.", "The wedding %NOBLENAME% invited you to in %REGIONNAME% has taken place without you and %NOBLENAME% is very cross.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, ArrayList<Character>> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				for (Character c : w.characters) if (c.hasTag("Ruler") && c.kingdom.equals(r.getKingdom()) && c.location == w.regions.indexOf(r)) return true;
+				for (Character c : w.characters) if (c.hasTag(Character.Tag.RULER) && c.kingdom.equals(r.getKingdom()) && c.location == w.regions.indexOf(r)) return true;
 				return false;
 			}
 
@@ -110,7 +110,7 @@ final class Crisis {
 			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, ArrayList<Character>> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				Set<Integer> closeRegions = r.getCloseRegionIds(w, Constants.nobleCrisisFrequency);
 				for (Character c : w.characters) {
-					if (c.kingdom.equals(r.getKingdom()) && c.captor.equals("") && c.hasTag("Ruler") && closeRegions.contains(c.location)) {
+					if (c.kingdom.equals(r.getKingdom()) && c.captor.equals("") && c.hasTag(Character.Tag.RULER) && closeRegions.contains(c.location)) {
 						return true;
 					}
 				}

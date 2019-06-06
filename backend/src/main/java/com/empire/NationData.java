@@ -44,7 +44,7 @@ class NationData {
 	}
 
 	static boolean rulerValues(String kingdom, String value, World w) {
-		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.hasTag("Ruler")) {
+		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.hasTag(Character.Tag.RULER)) {
 			return c.values.contains(value);
 		}
 		return false;
@@ -71,6 +71,10 @@ class NationData {
 		if (region != null && region.getKingdom() != null && region.getKingdom().equals(a) && Relationship.War.NEUTRAL == aa.getRelationship(b).battle) return true;
 		if (region != null && region.getKingdom() != null && region.getKingdom().equals(b) && Relationship.War.NEUTRAL == bb.getRelationship(a).battle) return true;
 		return false;
+	}
+
+	static boolean isAttackingOnSight(String a, String b, World w) {
+		return !a.equals(b) && w.getNation(a).getRelationship(b).battle == Relationship.War.ATTACK;
 	}
 
 	static Ideology getStateReligion(String kingdom, World w) {

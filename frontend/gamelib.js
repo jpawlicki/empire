@@ -736,3 +736,17 @@ class Army {
 		return Calc.moddedNum(base, mods);
 	}
 }
+
+// ============ CHURCH CONSTANTS ============
+let doctrineDescriptions = {
+	"ANTIAPOSTASY": ["-10 opinion each turn for nations loyal to the Cult."],
+	"ANTIECUMENISM": ["-20 opinion for constructing a non-Iruhan temple.", "-5 opinion each turn for having a non-Iruhan, non-Company state ideology."],
+	"ANTISCHISMATICISM": ["-10 opinion for constructing a Vessel of Faith temple."],
+	"ANTITERRORISM": ["-30 opinion for voting to summon any Gothi spell."],
+	"CRUSADE": ["-35 opinion each turn for any Iruhan nation not attacking every non-Iruhan nation (except Companies)."],
+	"DEFENDERS_OF_FAITH": ["+3 opinion per 100 casualties inflicted on nations with negative opinion.", "+15 opinion for conquering a region belonging to a ruler with negative opinion."],
+	"FRATERNITY": ["-35 opinion each turn for any Iruhan nation attacking another Iruhan nation."],
+	"INQUISITION": ["-35 opinion each turn for any Iruhan nation not attacking every Vessel of Faith nation."],
+	"MANDATORY_MINISTRY": ["-35 opinion each turn for any nation controlling an unimprisoned Cardinal not in the Holy City."],
+	"WORKS_OF_IRUHAN": ["+10 opinion for constructing an Iruhan temple."]
+};

@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 interface GoodwillProvider {
 	double getGoodwill(String nation);
@@ -56,6 +57,7 @@ class World implements GoodwillProvider {
 	List<Notification> notifications = new ArrayList<>();
 	List<Message> rtc = new ArrayList<>();
 	List<Integer> cultRegions = new ArrayList<>();
+	Church church = new Church();
 	Schedule turnSchedule = new Schedule();
 	int inspiresHint;
 	long nextTurn;
@@ -96,6 +98,12 @@ class World implements GoodwillProvider {
 		w.nextTurn = w.turnSchedule.getNextTime();
 		w.regions = new ArrayList<>();
 		w.pirate.threat = 4;
+		w.church.setDoctrine(Church.Doctrine.ANTIAPOSTASY);
+		w.church.setDoctrine(Church.Doctrine.ANTIECUMENISM);
+		w.church.setDoctrine(Church.Doctrine.ANTISCHISMATICISM);
+		w.church.setDoctrine(Church.Doctrine.ANTITERRORISM);
+		w.church.setDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH);
+		w.church.setDoctrine(Church.Doctrine.WORKS_OF_IRUHAN);
 		// Set up regions (culture, popular unrest).
 		for (WorldConstantData.Region r : WorldConstantData.regions) {
 			Region rr = new Region();
@@ -154,7 +162,7 @@ class World implements GoodwillProvider {
 			nation.colorBg = con.colorBg;
 			nation.culture = con.culture;
 			nation.coreRegions = Ints.asList(con.coreRegions);
-			nation.goodwill = setup.hasTag(NationData.Tag.HOLY) ? 15 : setup.dominantIdeology.religion == Religion.IRUHAN ? 5 : -55;
+			nation.goodwill = setup.hasTag(NationData.Tag.HOLY) ? 15 : 5;
 			nation.gothi = new HashMap<String, Boolean>();
 			nation.gothi.put("Alyrja", false);
 			nation.gothi.put("Lyskr", false);
@@ -389,7 +397,7 @@ class World implements GoodwillProvider {
 				}
 				c.kingdom = kingdom;
 				if (i == 0) {
-					c.addTag("Ruler");
+					c.addTag(Character.Tag.RULER);
 					if ("checked".equals(setup.food)) c.values.add("food");
 					if ("checked".equals(setup.happiness)) c.values.add("happiness");
 					if ("checked".equals(setup.territory)) c.values.add("territory");
@@ -410,7 +418,7 @@ class World implements GoodwillProvider {
 					if (Math.random() < 0.1) c.values.add("riches");
 					if (Math.random() < 0.1) c.values.add("culture");
 				}
-				if (i == 4 && cardinal) c.addTag("Cardinal");
+				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
 				c.addExperienceGeneral();
 				c.addExperienceAdmiral();
 				c.addExperienceSpy();
@@ -532,6 +540,7 @@ class World implements GoodwillProvider {
 			markLeaders();
 			mergeArmies();
 			resolveIntrigue();
+			doctrineChanges();
 			orderOverrides();
 			armyActionsNonTravel();
 			armyActionsTravel();
@@ -634,7 +643,7 @@ class World implements GoodwillProvider {
 			if (date % 7 == 0) {
 				for (String k : orders.keySet()) {
 					Character ruler = null;
-					for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag("Ruler")) ruler = c;
+					for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c;
 					Map<String, String> kOrders = orders.get(k);
 					ruler.values.clear();
 					for (String o : kOrders.keySet()) {
@@ -762,7 +771,7 @@ class World implements GoodwillProvider {
 				for (String g : new String[]{"Alyrja", "Rjinku", "Lyskr", "Syrjen"}) {
 					if (getNation(k).gothi.get(g)) voting = true;
 				}
-				if (voting) getNation(k).goodwill -= 30;
+				if (church.hasDoctrine(Church.Doctrine.ANTITERRORISM) && voting) getNation(k).goodwill += Constants.antiterrorismOpinion;
 			}
 			// Spell tickers.
 			if (passedSpells.contains("Rjinku")) {
@@ -955,6 +964,24 @@ class World implements GoodwillProvider {
 			for (Plot p : kingdomPlotsToResolve) p.evaluate(orders);
 		}
 
+		void doctrineChanges() {
+			characters.stream().filter(c -> c.hasTag(Character.Tag.TIECEL)).findAny().ifPresent(tiecel -> {
+				Map<String, String> kOrders = orders.get(tiecel.kingdom);
+				for (Church.Doctrine policy : Church.Doctrine.values()) {
+					String orderKey = "church_" + policy;
+					if (kOrders.containsKey(orderKey)) {
+						if ("checked".equals(kOrders.get(orderKey))) {
+							if (!church.hasDoctrine(policy)) notifyAllPlayers("Doctrine Invoked", policy.getSetNotification(tiecel.name, tiecel.kingdom));
+							church.setDoctrine(policy);
+						} else {
+							if (church.hasDoctrine(policy)) notifyAllPlayers("Doctrine Repealed", policy.getUnsetNotification(tiecel.name, tiecel.kingdom));
+							church.unsetDoctrine(policy);
+						}
+					}
+				}
+			});
+		}
+
 		void orderOverrides() {
 			for (Army army : armies) {
 				if (army.hasTag(Army.Tag.HIGHER_POWER)) {
@@ -1035,7 +1062,7 @@ class World implements GoodwillProvider {
 					double populationMoved = Math.min(region.population - 1, army.size * 10);
 					if (!target.getKingdom().equals(army.kingdom)) notifications.add(new Notification(target.getKingdom(), "Refugees from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + "."));
 					if (!region.getKingdom().equals(army.kingdom) && !region.getKingdom().equals(target.getKingdom())) notifications.add(new Notification(target.getKingdom(), "Forced Relocation from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + "."));
-					sendRefugees(region, target, populationMoved, false, army.kingdom, false);
+					sendRefugees(region, target, populationMoved, false, false);
 				} else if (action.startsWith("Transfer ")) {
 					String target = action.substring("Transfer army to ".length(), action.length());
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
@@ -1215,8 +1242,9 @@ class World implements GoodwillProvider {
 									}
 								}
 								if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
-								if (ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill -= 20;
-								else if (ct.religion != Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += 15;
+								if (church.hasDoctrine(Church.Doctrine.ANTIECUMENISM) && ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill += Constants.antiecumenismConstructionOpinion;
+								if (church.hasDoctrine(Church.Doctrine.ANTISCHISMATICISM) && ct.religion == Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += Constants.antischismaticismConstructionOpinion;
+								if (church.hasDoctrine(Church.Doctrine.WORKS_OF_IRUHAN) && ct.religion.religion == Religion.IRUHAN) getNation(c.kingdom).goodwill += Constants.worksOfIruhanConstructionOpinion;
 							}
 							if (ct.type == Construction.Type.SHIPYARD && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
 							builds.add(region);
@@ -1252,7 +1280,6 @@ class World implements GoodwillProvider {
 					c.orderhint = "";
 				} else if (action.startsWith("Execute")) {
 					String notification = "The sovereign power " + c.captor + " has tried, convicted, and executed " + c.name + ".";
-					getNation(c.captor).goodwill -= 50;
 					if (region.getKingdom() == null || region.getKingdom().equals(c.captor)) notification += " " + c.name + " was not present at their trial.";
 					String[] flavor = new String[]{
 						c.name + "'s last words were loving reassurances to their family.",
@@ -1262,7 +1289,7 @@ class World implements GoodwillProvider {
 					notification += flavor[(int)(Math.random() * flavor.length)];
 					notifyAllPlayers("Execution of " + c.name, notification);
 					removeCharacters.add(c);
-					if (c.hasTag("Ruler")) {
+					if (c.hasTag(Character.Tag.RULER)) {
 						notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
 					}
 				} else if (action.startsWith("Set Free")) {
@@ -1399,16 +1426,14 @@ class World implements GoodwillProvider {
 						if (!NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) || (a.hasTag(Army.Tag.HIGHER_POWER) && b.hasTag(Army.Tag.HIGHER_POWER))) continue;
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
 						if (a.isArmy() && b.hasTag(Army.Tag.IMPRESSMENT)) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
-						if (getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill <= -75) getNation(b.kingdom).goodwill += 3 * a.size / 100 * casualtyRateCaused;
+						if (church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill < 0) getNation(b.kingdom).goodwill += Constants.defendersOfFaithCasualtyOpinion * a.size * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
 					}
 				}
 				double dead = 0;
-				HashSet<String> nonPirateBelligerents = new HashSet<>();
 				for (Army c : casualties.keySet()) {
 					battlingArmies.add(c);
 					battlingNations.add(c.kingdom);
-					if (!"Pirate".equals(c.kingdom)) nonPirateBelligerents.add(c.kingdom);
 					double cf = casualties.get(c);
 					double lost = cf * c.size;
 					if (!c.hasTag(Army.Tag.UNDEAD)) dead += lost;
@@ -1421,9 +1446,6 @@ class World implements GoodwillProvider {
 					for (String s : c.composition.keySet()) {
 						c.composition.put(s, c.composition.get(s) * (1 - cf));
 					}
-				}
-				if (nonPirateBelligerents.size() > 1 && region.name.equals("Sancta Civitate")) {
-					for (String k : nonPirateBelligerents) getNation(k).goodwill -= 40;
 				}
 				for (Army h : hansaImpressment.keySet()) {
 					h.size += hansaImpressment.get(h);
@@ -1660,19 +1682,44 @@ class World implements GoodwillProvider {
 		}
 
 		void churchOpinionChangesDueToStateReligion() {
+			Map<String, Ideology> stateIdeologies = kingdoms.keySet().stream().collect(Collectors.toMap(k -> k, k -> NationData.getStateReligion(k, World.this)));
 			for (String k : kingdoms.keySet()) {
-				if (NationData.getStateReligion(k, World.this).religion != Religion.IRUHAN) getNation(k).goodwill -= 5;
-				if (getNation(k).loyalToCult) getNation(k).goodwill -= 10;
+				Religion religion = stateIdeologies.get(k).religion;
+				if (church.hasDoctrine(Church.Doctrine.ANTIECUMENISM) && religion != Religion.IRUHAN && religion != Religion.NONE) getNation(k).goodwill += Constants.antiecumenismStateOpinion;
+				if (church.hasDoctrine(Church.Doctrine.ANTIAPOSTASY) && getNation(k).loyalToCult) getNation(k).goodwill += Constants.antiapostasyOpinion;
+			}
+			Set<String> iruhanNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue().religion == Religion.IRUHAN).map(e -> e.getKey()).collect(Collectors.toSet());
+			if (church.hasDoctrine(Church.Doctrine.INQUISITION)) {
+				Set<String> vesselNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue() == Ideology.VESSEL_OF_FAITH).map(e -> e.getKey()).collect(Collectors.toSet());
+				for (String k : iruhanNations) {
+					if (vesselNations.stream().anyMatch(v -> !NationData.isAttackingOnSight(k, v, World.this))) getNation(k).goodwill += Constants.inquisitionOpinion;
+				}
+			}
+			if (church.hasDoctrine(Church.Doctrine.CRUSADE)) {
+				Set<String> targetNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue().religion != Religion.NONE && e.getValue().religion != Religion.IRUHAN).map(e -> e.getKey()).collect(Collectors.toSet());
+				for (String k : iruhanNations) {
+					if (!targetNations.stream().allMatch(t -> NationData.isAttackingOnSight(k, t, World.this))) getNation(k).goodwill += Constants.crusadeOpinion;
+				}
+			}
+			if (church.hasDoctrine(Church.Doctrine.FRATERNITY)) {
+				for (String k : iruhanNations) {
+					if (iruhanNations.stream().anyMatch(t -> NationData.isAttackingOnSight(k, t, World.this))) getNation(k).goodwill += Constants.fraternityOpinion;
+				}
+			}
+			if (church.hasDoctrine(Church.Doctrine.MANDATORY_MINISTRY)) {
+				for (String k : iruhanNations) {
+					if (characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && !c.captive() && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate")) getNation(k).goodwill += Constants.mandatoryMinistryOpinion;
+				}
 			}
 		}
 
 		void selectTiecel() {
 			boolean isTiecel = false;
-			for (Character c : characters) if (c.hasTag("Tiecel")) isTiecel = true;
+			for (Character c : characters) if (c.hasTag(Character.Tag.TIECEL)) isTiecel = true;
 			if (!isTiecel) {
 				HashMap<Integer, ArrayList<Character>> cardinalCount = new HashMap<>();
 				int totalCardinals = 0;
-				for (Character c: characters) if (c.hasTag("Cardinal")) {
+				for (Character c: characters) if (c.hasTag(Character.Tag.CARDINAL)) {
 					totalCardinals++;
 					if (!cardinalCount.containsKey(c.location)) cardinalCount.put(c.location, new ArrayList<Character>());
 					cardinalCount.get(c.location).add(c);
@@ -1688,7 +1735,7 @@ class World implements GoodwillProvider {
 								maxFavor = getNation(t.kingdom).goodwill;
 							}
 						}
-						max.addTag("Tiecel");
+						max.addTag(Character.Tag.TIECEL);
 						notifyAllPlayers("Tiecel Elected", "The Cardinals of the Church of Iruhan have elected " + max.name + " as Tiecel. Consequently, " + max.kingdom + " is expected to play a much larger role in the Church than they have in the past.");
 					}
 				}
@@ -1973,7 +2020,7 @@ class World implements GoodwillProvider {
 				}
 			}
 			for (Region r : starvation.keySet()) {
-				sendRefugees(r, null, starvation.get(r), false, null, true);
+				sendRefugees(r, null, starvation.get(r), false, true);
 			}
 			for (String k : kingdoms.keySet()) {
 				String notification = "";
@@ -2160,14 +2207,14 @@ class World implements GoodwillProvider {
 		void appointHeirs() {
 			HashSet<String> unruled = new HashSet<>();
 			for (String k : kingdoms.keySet()) unruled.add(k);
-			for (Character c : characters) if (c.hasTag("Ruler")) unruled.remove(c.kingdom);
+			for (Character c : characters) if (c.hasTag(Character.Tag.RULER)) unruled.remove(c.kingdom);
 			ArrayList<String> remove = new ArrayList<>();
 			for (String k : unruled) {
 				ArrayList<Character> cc = new ArrayList<Character>();
 				for (Character c : characters) if (c.kingdom.equals(k)) cc.add(c);
 				if (!cc.isEmpty()) {
 					Character c = cc.get((int)(Math.random() * cc.size()));
-					c.addTag("Ruler");
+					c.addTag(Character.Tag.RULER);
 					notifyAllPlayers(k + " Succession", c.name + " has emerged as the new de facto ruler of " + k + ".");
 					remove.add(k);
 				}
@@ -2178,7 +2225,7 @@ class World implements GoodwillProvider {
 				c.name = WorldConstantData.getRandomName(WorldConstantData.kingdoms.get(k).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
 				c.honorific = "Protector ";
 				c.kingdom = k;
-				c.addTag("Ruler");
+				c.addTag(Character.Tag.RULER);
 				c.values.add("food");
 				if (Math.random() < 0.1) c.values.add("happiness");
 				if (Math.random() < 0.1) c.values.add("territory");
@@ -2208,7 +2255,7 @@ class World implements GoodwillProvider {
 					continue;
 				}
 				Character ruler = null;
-				for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag("Ruler")) ruler = c;
+				for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c;
 				if ("salt_the_earth".equals(final_action)) {
 					for (Region r : regions) if (k.equals(r.getKingdom())) {
 						r.food /= 2;
@@ -2319,7 +2366,7 @@ class World implements GoodwillProvider {
 			HashMap<String, String> emails = new HashMap<>();
 			for (String kingdom : kingdoms.keySet()) {
 				String ruler = null;
-				for (Character c : characters) if (c.kingdom.equals(kingdom) && c.hasTag("Ruler")) ruler = c.honorific + " " + c.name;
+				for (Character c : characters) if (c.kingdom.equals(kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c.honorific + " " + c.name;
 				if (ruler == null) ruler = "Ruler of " + kingdom;
 				String email = ruler + ", a week has passed and your people again need your leadership.\n\nYour advisers wish to notify you of: ";
 				for (Notification n : notifications) if (kingdom.equals(n.who)) email += "\n " + n.title;
@@ -2399,7 +2446,7 @@ class World implements GoodwillProvider {
 		return max;
 	}
 
-	private void sendRefugees(Region from, Region to, double amount, boolean notify, String whoBlame, boolean foodOnly) {
+	private void sendRefugees(Region from, Region to, double amount, boolean notify, boolean foodOnly) {
 		ArrayList<Region> destinations = new ArrayList<>();
 		amount = Math.min(amount, from.population - 1);
 		if (amount <= 0) return;
@@ -2424,9 +2471,6 @@ class World implements GoodwillProvider {
 			addPopulation(target, amount / destinations.size());
 			addPopulation(from, -amount / destinations.size());
 			if (notify) notifications.add(new Notification(target.getKingdom(), "Refugees Arrive in " + target.name, "Refugees from " + from.name + " have arrived in " + target.name + "." + (targetUnrestFactor > 0 ? " They are distraught and upset, causing increased popular unrest." : "")));
-			if (whoBlame != null) {
-				getNation(whoBlame).goodwill -= (targetUnrestFactor + fromUnrestFactor) / 2 / 5000 * amount;
-			}
 		}
 	}
 
@@ -2463,7 +2507,7 @@ class World implements GoodwillProvider {
 					}
 					break;
 				case INTERNATIONAL:
-					for (Character c : characters) if (c.kingdom.equals(target) && c.hasTag("Ruler")) {
+					for (Character c : characters) if (c.kingdom.equals(target) && c.hasTag(Character.Tag.RULER)) {
 						targetRegion = c.location;
 					}
 					break;
@@ -2604,7 +2648,7 @@ class World implements GoodwillProvider {
 							if (partialSuccess) {
 								notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
 								characters.remove(c);
-								if (c.hasTag("Ruler")) {
+								if (c.hasTag(Character.Tag.RULER)) {
 									notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
 								}
 							} else {
@@ -2616,19 +2660,17 @@ class World implements GoodwillProvider {
 					throw new RuntimeException("Unreocognized plot action: " + action);
 				} 
 			} else if (type == PlotType.CHURCH) {
-				double amount = 10;
-				if (Ideology.VESSEL_OF_FAITH != getDominantIruhanIdeology()) for (Character c : characters) if (c.hasTag("Tiecel") && c.kingdom.equals(perpetrator)) amount = 50;
 				if ("praise".equals(action)) {
 					title += "Praise " + target + " in Sancta Civitate";
 					details += "sing the praises of " + target + " among the clergy of Iruhan.";
 					if (success) {
-						getNation(target).goodwill += amount;
+						getNation(target).goodwill += Constants.plotPraiseOpinion;
 					}
 				} else if ("denounce".equals(action)) {
 					title += "Denounce " + target + " in Sancta Civitate";
 					details += "announce and condemn the crimes of " + target + " among the clergy of Iruhan.";
 					if (success) {
-						getNation(target).goodwill -= amount;
+						getNation(target).goodwill += Constants.plotCondemnOpinion;
 					}
 				} else {
 					throw new RuntimeException("Unreocognized plot action: " + action);
@@ -2684,7 +2726,7 @@ class World implements GoodwillProvider {
 	}
 
 	void score(String kingdom, String profile, double amount) {
-		for (Character c : characters) if (kingdom.equals(c.kingdom) && c.hasTag("Ruler") && c.values.contains(profile)) getNation(kingdom).score.put(profile, getNation(kingdom).score.getOrDefault(profile, 0.0) + amount);
+		for (Character c : characters) if (kingdom.equals(c.kingdom) && c.hasTag(Character.Tag.RULER) && c.values.contains(profile)) getNation(kingdom).score.put(profile, getNation(kingdom).score.getOrDefault(profile, 0.0) + amount);
 	}
 
 	private Army getMaxArmyInRegion(int location, Map<Army, Character> leaders, int inspires, HashSet<String> lastStands) {

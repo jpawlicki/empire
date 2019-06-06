@@ -164,7 +164,7 @@ class Army {
 			nobleFate = " " + region.noble.name + " swore fealty to their new rulers.";
 			region.noble.unrest = .15;
 		}
-		if (w.getNation(region.getKingdom()).goodwill <= -75) w.getNation(kingdom).goodwill += 15;
+		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && w.getNation(region.getKingdom()).goodwill <= 0) w.getNation(kingdom).goodwill += Constants.defendersOfFaithConquestOpinion;
 		region.constructions.removeIf(c -> c.type == Construction.Type.FORTIFICATIONS);
 		w.notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
 		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);

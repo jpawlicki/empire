@@ -33,6 +33,7 @@ public class ArmyTest {
 		a.location = 0;
 
 		w = mockWorld();
+		w.church = new Church();
 		w.armies = Collections.singletonList(a);
 	}
 

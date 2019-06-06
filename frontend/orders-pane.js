@@ -17,6 +17,7 @@ class OrdersPane extends HTMLElement {
 			<div id="tabs">
 				<div id="tab_units" class="tab_units">Units</div>
 				<div id="tab_plots" class="tab_plots">Plots</div>
+				<div id="tab_tiecel" class="tab_tiecel">Tiecel</div>
 				<div id="tab_nations" class="tab_nations">Nations</div>
 				<div id="tab_economy" class="tab_economy">Economy</div>
 				<div id="tab_game" class="tab_game">Game</div>
@@ -73,6 +74,10 @@ class OrdersPane extends HTMLElement {
 						<tr><td colspan="2" id="nations_newgift">Send Gold</td></tr>
 					</table>
 					<zip-div id="nations_cede" title="Cede Regions"></zip-div>
+				</div>
+				<div id="content_tiecel">
+					<h1 id="doctrine_header">Church Doctrine</h1>
+					<div id="doctrine_switches"></div>
 				</div>
 				<div id="content_economy">
 					<h1>Economic Controls</h1>
@@ -168,6 +173,11 @@ class OrdersPane extends HTMLElement {
 				border-left: 1.5px solid white;
 				border-right: 1.5px solid white;
 			}
+			.tab_tiecel {
+				border-bottom: 3px solid purple;
+				border-left: 1.5px solid white;
+				border-right: 1.5px solid white;
+			}
 			.tab_nations {
 				border-bottom: 3px solid gold;
 				border-left: 1.5px solid white;
@@ -217,6 +227,10 @@ class OrdersPane extends HTMLElement {
 			}
 			table tr td:last-child {
 				text-align: right;
+			}
+			#doctrine_switches ul {
+				margin-top: 0;
+				font-size: 90%;
 			}
 			#nations_nations > div {
 				font-family: sans-serif;
@@ -278,10 +292,10 @@ class OrdersPane extends HTMLElement {
 		content.innerHTML = html;
 		shadow.appendChild(content);
 		let form = shadow.getElementById("form");
-		for (let t of ["units", "plots", "nations", "economy", "game"]) shadow.getElementById("content_" + t).style.display = "none";
+		const tabList = ["units", "plots", "tiecel", "nations", "economy", "game"];
 		let changeTab = function (tab) {
 			shadow.getElementById("tabs").className = "tab_" + tab;
-			for (let t of ["units", "plots", "nations", "economy", "game"]) {
+			for (let t of tabList) {
 				shadow.getElementById("content_" + t).style.display = "none";
 				shadow.getElementById("tab_" + t).style.paddingBottom = "0.5em";
 				shadow.getElementById("tab_" + t).style.color = "#777";
@@ -292,11 +306,10 @@ class OrdersPane extends HTMLElement {
 			shadow.getElementById("tab_" + tab).style.paddingTop = "0.5em";
 			shadow.getElementById("tab_" + tab).style.color = "#000";
 		};
-		shadow.getElementById("tab_units").addEventListener("click", ()=>(changeTab("units")));
-		shadow.getElementById("tab_plots").addEventListener("click", ()=>(changeTab("plots")));
-		shadow.getElementById("tab_nations").addEventListener("click", ()=>(changeTab("nations")));
-		shadow.getElementById("tab_economy").addEventListener("click", ()=>(changeTab("economy")));
-		shadow.getElementById("tab_game").addEventListener("click", ()=>(changeTab("game")));
+		for (let t of tabList) {
+			shadow.getElementById("content_" + t).style.display = "none";
+			shadow.getElementById("tab_" + t).addEventListener("click", ((tt)=>()=>changeTab(tt))(t));
+		}
 		let addRow = function(ele, link, div, selec, before = undefined) {
 			let r = document.createElement("tr");
 			let t = document.createElement("td");
@@ -551,6 +564,33 @@ class OrdersPane extends HTMLElement {
 			stateDetailsAndRisk();
 		});
 		plotTypeSel.dispatchEvent(new Event("change"));
+
+		// TIECEL TAB
+		{
+			let doctrines = shadow.getElementById("doctrine_switches");
+			for (let doctrine in doctrineDescriptions) {
+				let l = document.createElement("label");
+				let c = document.createElement("input");
+				c.setAttribute("type", "checkbox");
+				c.setAttribute("name", "church_" + doctrine);
+				c.setAttribute("id", "church_" + doctrine);
+				l.appendChild(c);
+				l.appendChild(document.createTextNode(titleCase(doctrine)));
+				doctrines.appendChild(l);
+				let d = document.createElement("ul");
+				for (let desc of doctrineDescriptions[doctrine]) {
+					let li = document.createElement("li");
+					li.appendChild(document.createTextNode(desc));
+					d.appendChild(li);
+				}
+				doctrines.appendChild(d);
+			}
+			let tiecel = undefined;
+			for (let c of g_data.characters) {
+				if (c.tags.includes("Tiecel")) tiecel = c;
+			}
+			if (tiecel == undefined || tiecel.kingdom != whoami) shadow.getElementById("tab_tiecel").style.display = "none";
+		}
 
 		// NATIONS
 		let o = this;
@@ -849,6 +889,9 @@ class OrdersPane extends HTMLElement {
 					if (g_data.kingdoms[whoami].gothi.hasOwnProperty(gothi) && g_data.kingdoms[whoami].gothi[gothi]) {
 						shadow.querySelector("[name=gothi_" + gothi + "]").checked = true;
 					}
+				}
+				for (let doctrine of g_data.church.doctrines) {
+					shadow.querySelector("[name=church_" + doctrine + "]").checked = true;
 				}
 				op.checkWarnings(shadow);
 				op.plannedMotions(shadow);
