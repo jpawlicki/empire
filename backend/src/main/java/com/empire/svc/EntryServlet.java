@@ -75,17 +75,19 @@ public class EntryServlet extends HttpServlet {
 
 	private final DatastoreClient dsClient;
 	private final LoginCache cache;
+	private final EntryServletBackend backend;
 
 	/* This constructor is needed in order to start the service with GoogleAppEngine */
 	public EntryServlet(){
-		this(GaeDatastoreClient.getInstance(), LoginCache.getInstance());
+		this(GaeDatastoreClient.getInstance(), LoginCache.getInstance(), EntryServletBackend.create());
 	}
 
 	/* This constructor is needed to enable testing */
-	EntryServlet(DatastoreClient dsClient, LoginCache cache){
+	EntryServlet(DatastoreClient dsClient, LoginCache cache, EntryServletBackend backend){
 		super();
 		this.dsClient = dsClient;
 		this.cache = cache;
+		this.backend = backend;
 	}
 
 	@Override
