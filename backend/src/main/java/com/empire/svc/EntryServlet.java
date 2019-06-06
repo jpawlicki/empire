@@ -147,7 +147,6 @@ public class EntryServlet extends HttpServlet {
 		os.flush();
   }
 
-  // TODO: Does this method need to write the response to OutputStream like doGet does?
 	@Override
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
