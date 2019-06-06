@@ -21,6 +21,7 @@ import static org.mockito.Mockito.when;
 
 public class EntryServletTest {
   private EntryServlet servlet;
+  private EntryServletBackend backend;
   private DatastoreClient dsClient;
   private LoginCache cache;
   private HttpServletRequest httpReq;
@@ -60,7 +61,8 @@ public class EntryServletTest {
 
     dsClient = mock(DatastoreClient.class);
     cache = mock(LoginCache.class);
-    servlet = new EntryServlet(dsClient, cache);
+    backend = mock(EntryServletBackend.class);
+    servlet = new EntryServlet(dsClient, cache, backend);
   }
 
   private void passPasswordCheck() {
@@ -97,7 +99,7 @@ public class EntryServletTest {
 
   @Test
   public void pingReturnsSuccess(){
-    when(httpReq.getRequestURI()).thenReturn("/entry/ping");
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.pingRoute);
 
     try {
       servlet.doGet(httpReq, httpResp);
@@ -109,7 +111,7 @@ public class EntryServletTest {
 
   @Test
   public void getOrdersPasswordFailReturnsNull() {
-    when(httpReq.getRequestURI()).thenReturn("/entry/orders");
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
     when(req.getPassword()).thenReturn(null);
 
     try {
@@ -122,7 +124,7 @@ public class EntryServletTest {
 
   @Test
   public void getOrdersDatastoreNoOrdersReturnsNull() {
-    when(httpReq.getRequestURI()).thenReturn("/entry/orders");
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
     passPasswordCheck();
 
     when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
@@ -138,7 +140,7 @@ public class EntryServletTest {
 
   @Test
   public void getOrdersDatastoreFoundOrders() {
-    when(httpReq.getRequestURI()).thenReturn("/entry/orders");
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
     passPasswordCheck();
 
     Orders orders = mock(Orders.class);
@@ -156,7 +158,7 @@ public class EntryServletTest {
 
   @Test
   public void getSetupDatastoreNoNationReturnsNull() {
-    when(httpReq.getRequestURI()).thenReturn("/entry/setup");
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
     when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
 
     try {
@@ -170,7 +172,7 @@ public class EntryServletTest {
 
   @Test
   public void getSetupDatastoreFoundNation() {
-    when(httpReq.getRequestURI()).thenReturn("/entry/setup");
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
 
     Nation nation = new Nation();
     when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.of(nation));

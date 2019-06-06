@@ -73,6 +73,18 @@ public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
 
+	static final String routePrefix = "/entry";
+	static final String pingRoute = routePrefix + "/ping";
+	static final String ordersRoute = routePrefix + "/orders";
+	static final String setupRoute = routePrefix + "/setup";
+	static final String worldRoute = routePrefix + "/world";
+	static final String startWorldRoute = routePrefix + "/startworld";
+	static final String advanceWorldRoute = routePrefix + "/advanceworld";
+	static final String advanceWorldPollRoute = routePrefix + "/advanceworldpoll";
+	static final String rtcRoute = routePrefix + "/rtc";
+	static final String activityRoute = routePrefix + "/activity";
+	static final String changePlayerRoute = routePrefix + "/changeplayer";
+
 	private final DatastoreClient dsClient;
 	private final LoginCache cache;
 	private final EntryServletBackend backend;
@@ -98,22 +110,22 @@ public class EntryServlet extends HttpServlet {
 		String json;
 
 		switch(req.getRequestURI()) {
-			case "/entry/ping":
+			case EntryServlet.pingRoute:
 				json = "";
 				break;
-			case "/entry/orders":
+			case EntryServlet.ordersRoute:
 				json = getOrders(r, resp);
 				break;
-			case "/entry/setup":
+			case EntryServlet.setupRoute:
 				json = getSetup(r);
 				break;
-			case "/entry/world":
+			case EntryServlet.worldRoute:
 				json = getWorld(r);
 				break;
-			case "/entry/advanceworldpoll":
+			case EntryServlet.advanceWorldPollRoute:
 				json = getAdvancePoll();
 				break;
-			case "/entry/activity":
+			case EntryServlet.activityRoute:
 				json = getActivity(r);
 				break;
 			default:
@@ -146,27 +158,27 @@ public class EntryServlet extends HttpServlet {
 		String err;
 
 		switch(req.getRequestURI()) {
-			case "/entry/orders":
+			case EntryServlet.ordersRoute:
 				success = postOrders(r);
 				err = "Failure.";
 				break;
-			case "/entry/advanceworld":
+			case EntryServlet.advanceWorldRoute:
 				success = postAdvanceWorld(r);
 				err = "Failure.";
 				break;
-			case "/entry/startworld":
+			case EntryServlet.startWorldRoute:
 				success = postStartWorld(r);
 				err = "Failure.";
 				break;
-			case "/entry/setup":
+			case EntryServlet.setupRoute:
 				success = postSetup(r);
 				err = "Not allowed.";
 				break;
-			case "/entry/rtc":
+			case EntryServlet.rtcRoute:
 				success = postRealTimeCommunication(r);
 				err = "Not allowed.";
 				break;
-			case "/entry/changeplayer":
+			case EntryServlet.changePlayerRoute:
 				success = postChangePlayer(r);
 				err = "Not allowed.";
 				break;
