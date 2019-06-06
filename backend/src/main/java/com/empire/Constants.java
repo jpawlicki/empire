@@ -75,6 +75,10 @@ public class Constants {
 	public static final double riverOfKuunRecruitmentMod = 0.5;
 	public static final double riverOfKuunNeighborTaxMod = 0.5;
 
+	public static final double tivarSpellContinueChance = 0.66;
+	public static final int tivarSpellGracePeriod = 2;
+	public static final double tivarSpellCropDestruction = 0.01;
+
 	public static final String noCaptor = "";
 	public static final Noble noNoble = null;
 	public static final Character noLeader = null;
