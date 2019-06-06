@@ -81,6 +81,7 @@ class Region {
 				mods += c.calcGovernRecruitMod();
 			}
 		}
+		if (noble != null) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
@@ -130,6 +131,7 @@ class Region {
 				mods += c.calcGovernTaxMod();
 			}
 		}
+		if (noble != null) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
@@ -334,7 +336,10 @@ class Region {
 
 	// TODO: This is a game rule/equation
 	public double calcMinPatrolStrength(World w) {
-		return 0.03 * Math.sqrt(population) * (1 + (2 * calcUnrest(w) - 0.7));
+		double mods = 1;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += Constants.disciplinedPatrolStrengthMod;
+		mods += (2 * calcUnrest(w) - 0.7);
+		return 0.03 * Math.sqrt(population) * mods;
 	}
 
 	public double calcFortificationPct() {
@@ -384,8 +389,10 @@ class Region {
 
 	void plant(boolean isHarvestTurn) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
+		double mod = 1;
+		if (noble != null) mod += noble.calcPlantMod();
 		if (isHarvestTurn) {
-			crops += population * Constants.plantsPerCitizen;
+			crops += population * Constants.plantsPerCitizen * mod;
 		}
 	}
 

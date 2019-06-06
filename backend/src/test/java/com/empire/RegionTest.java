@@ -159,7 +159,7 @@ public class RegionTest {
 	@Test
 	public void calcMinConquestStrengthStoic(){
 		when(n1.hasTag(NationData.Tag.STOIC)).thenReturn(true);
-		assertEquals(9.1875, r.calcMinConquestStrength(w), DELTA);
+		assertEquals(5.25 * 2.5, r.calcMinConquestStrength(w), DELTA);
 	}
 
 	@Test
@@ -172,6 +172,13 @@ public class RegionTest {
 	public void calcMinPatrolStrength(){
 		r.unrestPopular = 0.4;
 		assertEquals(3.3, r.calcMinPatrolStrength(w), DELTA);
+	}
+
+	@Test
+	public void calcMinPatrolStrengthDisciplined(){
+		r.unrestPopular = 0.4;
+		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
+		assertEquals(1.8, r.calcMinPatrolStrength(w), DELTA);
 	}
 
 	@Test
@@ -281,6 +288,25 @@ public class RegionTest {
 		r.crops = 0;
 		r.plant(true);
 		assertEquals(130000, r.crops, DELTA);
+	}
+
+	@Test
+	public void plantHarvestTurnNoble() {
+		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0);
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(true);
+		assertEquals(130000 * (1 + 0.05), r.crops, DELTA);
+	}
+
+	@Test
+	public void plantHarvestTurnNobleHighLevel() {
+		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0);
+		for (int i = 0; i < 24; i++) r.noble.addExperience();
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(true);
+		assertEquals(130000 * (1 + 0.25), r.crops, DELTA);
 	}
 
 	@Test
