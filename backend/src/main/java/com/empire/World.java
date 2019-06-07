@@ -32,6 +32,7 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -822,16 +823,16 @@ class World implements GoodwillProvider {
 
 		void setDefaultOrderHints() {
 			for (Character c : characters) {
-				c.orderhint = orders.getOrDefault(!c.captive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				c.orderhint = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				c.leadingArmy = 0;
 			}
 		}
 
 		void countInspires() {
 			for (Character c : characters) {
-				String action = orders.getOrDefault(!c.captive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				String action = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
-				if (c.captive()) continue; // inspire can't be done by captives.
+				if (c.isCaptive()) continue; // inspire can't be done by captives.
 				if (action.equals("Inspire the Faithful") && "Sancta Civitate".equals(region.name)) {
 					c.addExperienceSpy();
 					getNation(c.kingdom).goodwill += 5;
@@ -883,9 +884,9 @@ class World implements GoodwillProvider {
 
 		void markLeaders() {
 			for (Character c : characters) {
-				String action = orders.getOrDefault(!c.captive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				String action = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
-				if (c.captive()) continue; // lead cannot be done by captives.
+				if (c.isCaptive()) continue; // lead cannot be done by captives.
 				if (action.startsWith("Lead ")) {
 					c.orderhint = action;
 					int targetId = Integer.parseInt(action.substring(action.lastIndexOf(" ") + 1, action.length()));
@@ -1023,8 +1024,8 @@ class World implements GoodwillProvider {
 					ArrayList<String> who = new ArrayList<>();
 					for (Character c : characters) {
 						if (c.location == army.location) {
-							who.add(c.name + " (" + c.kingdom + ")" + (!c.captive() ? "" : " (captive of " + c.captor + ")"));
-							if (NationData.isEnemy(c.kingdom, army.kingdom, World.this) && !c.captive()) {
+							who.add(c.name + " (" + c.kingdom + ")" + (!c.isCaptive() ? "" : " (captive of " + c.captor + ")"));
+							if (NationData.isEnemy(c.kingdom, army.kingdom, World.this) && !c.isCaptive()) {
 								boolean guard = false;
 								for (Army a : armies) if (a.isArmy() && a.location == c.location && NationData.isFriendly(a.kingdom, c.kingdom, World.this)) guard = true;
 								if (!guard) {
@@ -1164,14 +1165,14 @@ class World implements GoodwillProvider {
 		void characterActions() {
 			ArrayList<Character> removeCharacters = new ArrayList<>();
 			for (Character c : characters) {
-				if (c.captive()) c.addExperienceSpy();
-				String action = orders.getOrDefault(!c.captive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				if (c.isCaptive()) c.addExperienceSpy();
+				String action = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
 				c.hidden = action.startsWith("Hide in ");
 				if (action.startsWith("Stay in ")) {
-					if (!c.captive()) c.addExperienceAll();
+					if (!c.isCaptive()) c.addExperienceAll();
 				} else if (action.startsWith("Hide in ") || action.startsWith("Travel to ")) {
-					if (!c.captive()) {
+					if (!c.isCaptive()) {
 						if (c.hidden) c.addExperienceSpy();
 						else c.addExperienceAll();
 					}
@@ -1270,7 +1271,7 @@ class World implements GoodwillProvider {
 				} else if (action.startsWith("Transfer character to ")) {
 					String target = action.replace("Transfer character to ", "");
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
-					if (!c.captive()) {
+					if (!c.isCaptive()) {
 						notifications.add(new Notification(target, "Hero from " + c.kingdom, c.name + ", formerly a hero of " + c.kingdom + " has sworn fealty and loyalty to us."));
 						c.kingdom = target;
 					} else {
@@ -1690,30 +1691,32 @@ class World implements GoodwillProvider {
 			}
 			Set<String> iruhanNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue().religion == Religion.IRUHAN).map(Map.Entry::getKey).collect(Collectors.toSet());
 			if (church.hasDoctrine(Church.Doctrine.INQUISITION)) {
+				Predicate<String> isNotAttackingSomeVesselOfFaith =
+						k -> 
+								stateIdeologies
+										.entrySet()
+										.stream()
+										.filter(e -> e.getValue() == Ideology.VESSEL_OF_FAITH)
+										.map(Map.Entry::getKey)
+										.anyMatch(v -> !NationData.isAttackingOnSight(k, v, World.this));
 				iruhanNations
 						.stream()
-						.filter(
-								k -> 
-										stateIdeologies
-												.entrySet()
-												.stream()
-												.filter(e -> e.getValue() == Ideology.VESSEL_OF_FAITH)
-												.map(Map.Entry::getKey)
-												.anyMatch(v -> !NationData.isAttackingOnSight(k, v, World.this)))
+						.filter(isNotAttackingSomeVesselOfFaith)
 						.map(World.this::getNation)
 						.forEach(n -> n.goodwill += Constants.inquisitionOpinion);
 			}
 			if (church.hasDoctrine(Church.Doctrine.CRUSADE)) {
+				Predicate<String> isNotAttackingSomeHeathen =
+						k -> 
+								stateIdeologies
+										.entrySet()
+										.stream()
+										.filter(e -> e.getValue().religion != Religion.NONE && e.getValue().religion != Religion.IRUHAN)
+										.map(Map.Entry::getKey)
+										.anyMatch(t -> !NationData.isAttackingOnSight(k, t, World.this));
 				iruhanNations
 						.stream()
-						.filter(
-								k -> 
-										!stateIdeologies
-												.entrySet()
-												.stream()
-												.filter(e -> e.getValue().religion != Religion.NONE && e.getValue().religion != Religion.IRUHAN)
-												.map(Map.Entry::getKey)
-												.allMatch(t -> NationData.isAttackingOnSight(k, t, World.this)))
+						.filter(isNotAttackingSomeHeathen)
 						.map(World.this::getNation)
 						.forEach(n -> n.goodwill += Constants.crusadeOpinion);
 			}
@@ -1731,7 +1734,7 @@ class World implements GoodwillProvider {
 				iruhanNations
 						.stream()
 						.filter(k ->
-								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && !c.captive() && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate"))
+								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && !c.isCaptive() && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate"))
 						.map(World.this::getNation)
 						.forEach(n -> n.goodwill += Constants.mandatoryMinistryOpinion);
 			}
@@ -2555,7 +2558,7 @@ class World implements GoodwillProvider {
 			switch (type) {
 				case CHARACTER:
 					for (Character c : characters) if (c.name.equals(target)) {
-						defender = !c.captive() ? c.kingdom : c.captor;
+						defender = !c.isCaptive() ? c.kingdom : c.captor;
 					}
 					if ("".equals(defender)) {
 						notifications.add(new Notification(perpetrator, "Plot Pre-empted", target + " was killed and therefore our plot could not be enacted."));
@@ -2654,7 +2657,7 @@ class World implements GoodwillProvider {
 					if (success) {
 						if (c == null) {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else if (!c.captive()) {
+						} else if (!c.isCaptive()) {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were not in captivity. " + order));
 						} else {
 							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));

@@ -61,7 +61,7 @@ class Character {
 		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
 		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
-		if (captive()) power += Constants.capturedPlotMod;
+		if (isCaptive()) power += Constants.capturedPlotMod;
 
 		return power;
 	}
@@ -101,7 +101,7 @@ class Character {
 		tags.remove(tag);
 	}
 
-	boolean captive() {
+	boolean isCaptive() {
 		return !"".equals(captor);
 	}
 }
