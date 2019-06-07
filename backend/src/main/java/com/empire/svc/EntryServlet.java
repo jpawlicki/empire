@@ -123,7 +123,8 @@ public class EntryServlet extends HttpServlet {
 				json = JsonUtils.toJson(nation);
 				break;
 			case EntryServlet.worldRoute:
-				json = getWorld(r);
+				World world = backend.getWorld(r);
+				json = JsonUtils.toJson(world);
 				break;
 			case EntryServlet.advanceWorldPollRoute:
 				json = getAdvancePoll();
