@@ -39,17 +39,16 @@ class EntryServletBackend {
   private static final String emailRecipPersonal = "Empire Player";
   private static final String emailsubject = "👑 Empire: Turn Advances";
 
-
   private final DatastoreClient dsClient;
   private final PasswordValidator passVal;
   private final LoginCache cache;
 
-  static EntryServletBackend create(){
+  static EntryServletBackend create() {
     DatastoreClient dsClient = GaeDatastoreClient.getInstance();
     return new EntryServletBackend(dsClient, new PasswordValidator(dsClient), LoginCache.getInstance());
   }
 
-  EntryServletBackend(DatastoreClient dsClient, PasswordValidator passVal, LoginCache cache){
+  EntryServletBackend(DatastoreClient dsClient, PasswordValidator passVal, LoginCache cache) {
     this.dsClient = dsClient;
     this.passVal = passVal;
     this.cache = cache;

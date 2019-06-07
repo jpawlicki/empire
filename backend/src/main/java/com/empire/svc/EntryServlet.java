@@ -35,8 +35,6 @@ POST /entry/startworld?gid=1234
 TODO: Will eventually need a changePassword/change-email.
 */
 
-// TODO: Unit tests for EntryServlet
-
 @WebServlet(name = "EntryServlet", value = "/entry/*")
 public class EntryServlet extends HttpServlet {
 //	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
@@ -56,12 +54,12 @@ public class EntryServlet extends HttpServlet {
 	private final EntryServletBackend backend;
 
 	/* This constructor is needed in order to start the service with GoogleAppEngine */
-	public EntryServlet(){
+	public EntryServlet() {
 		this(EntryServletBackend.create());
 	}
 
 	/* This constructor is needed to enable testing */
-	EntryServlet(EntryServletBackend backend){
+	EntryServlet(EntryServletBackend backend) {
 		super();
 		this.backend = backend;
 	}
