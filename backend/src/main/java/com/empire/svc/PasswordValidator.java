@@ -59,7 +59,7 @@ class PasswordValidator {
     return PasswordCheck.FAIL;
   }
 
-  private String encodePassword(String pw) {
+  public String encodePassword(String pw) {
     byte[] hashPw = hashPassword(pw);
     return hashPw != null ? BaseEncoding.base16().encode(hashPw) : null;
   }

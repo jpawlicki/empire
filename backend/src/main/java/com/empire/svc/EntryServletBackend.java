@@ -2,10 +2,13 @@ package com.empire.svc;
 
 import com.empire.Nation;
 import com.empire.Orders;
+import com.empire.StartWorld;
 import com.empire.World;
 import com.empire.store.DatastoreClient;
 import com.empire.store.GaeDatastoreClient;
 import com.empire.store.MultiPutRequest;
+import com.empire.util.JsonUtils;
+import com.google.gson.reflect.TypeToken;
 import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.util.Collections;
@@ -13,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -26,7 +30,6 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import javax.servlet.http.HttpServletResponse;
 
 class EntryServletBackend {
   private static final Logger log = Logger.getLogger(EntryServletBackend.class.getName());
@@ -183,6 +186,153 @@ class EntryServletBackend {
         .collect(Collectors.toList());
 
     return result;
+  }
+
+  private boolean postOrders(Request r) {
+    if (!passVal.checkPassword(r).passesWrite()) return false;
+    Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
+
+    if (!dateOpt.isPresent()) {
+      log.severe("Unable to retrieve date for gameId=" + r.getGameId());
+      return false;
+    }
+
+    if (r.getTurn() != dateOpt.get()) return false;
+
+    Map<String, String> orders = JsonUtils.fromJson(r.getBody(), new TypeToken<Map<String, String>>(){}.getType());
+    return dsClient.putOrders(new Orders(r.getGameId(), r.getKingdom(), r.getTurn(), orders, r.getVersion()));
+  }
+
+  // TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
+  private boolean postAdvanceWorld(Request r) {
+    Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
+
+    if(!worldOpt.isPresent()) {
+      log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + r.getTurn());
+      return false;
+    }
+
+    World w = worldOpt.get();
+    w.nextTurn = 0;
+    dsClient.putWorld(r.getGameId(), w);
+    getAdvancePoll();
+    return true;
+  }
+
+  private boolean postStartWorld(Request r) {
+    StartWorld s = JsonUtils.fromJson(r.getBody(), StartWorld.class);
+    String passHash = passVal.encodePassword(s.gmPassword);
+    String obsPassHash = passVal.encodePassword(s.obsPassword);
+
+    if (Objects.isNull(passHash) || Objects.isNull(obsPassHash)) {
+      log.severe("Error while encoding GM and/or observer passwords, unable to start game (gameId=" + r.getGameId() + ")");
+      return false;
+    }
+
+    // Collect setups.
+    Set<String> addresses = new HashSet<>();
+    Map<String, Nation> nations = new HashMap<>();
+
+    for (String kingdom : s.kingdoms) {
+      log.info("Checking kingdom '" + kingdom + "'...");
+      Optional<Nation> nation = dsClient.getNation(r.getGameId(), kingdom);
+
+      if(nation.isPresent()) {
+        nations.put(kingdom, nation.get());
+        addresses.add(nation.get().email);
+        log.info("Kingdom '" + kingdom + "' successfully included");
+      } else {
+        log.severe("Unable to include kingdom '" + kingdom + "' in nation setups");
+      }
+    }
+
+    World w = World.startNew(passHash, obsPassHash, nations);
+    Set<Long> activeGames = dsClient.getActiveGames().orElse(new HashSet<>());
+    activeGames.add(r.getGameId());
+
+    boolean response = MultiPutRequest.create()
+        .addWorld(r.getGameId(), w)
+        .addWorldDate(r.getGameId(), 1)
+        .addActiveGames(activeGames)
+        .put(dsClient);
+
+    if(response) {
+      mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.getGameId() + ".");
+    }
+
+    return response;
+  }
+
+  private boolean postSetup(Request r) {
+    Optional<Nation> nationCheck = dsClient.getNation(r.getGameId(), r.getKingdom());
+
+    if (nationCheck.isPresent()) return false; // We expect nation to not be found
+
+    Nation nation = JsonUtils.fromJson(r.getBody(), Nation.class);
+    nation.password = passVal.encodePassword(nation.password);
+
+    if(nation.password == null) {
+      log.severe("Failure during post-setup, unable to encode password");
+      return false;
+    }
+
+    return MultiPutRequest.create()
+        .addNation(r.getGameId(), r.getKingdom(), nation)
+        .addPlayer(new Player(nation.email, nation.password))
+        .put(dsClient);
+  }
+
+  private boolean postRealTimeCommunication(Request r) {
+    if (!passVal.checkPassword(r).passesWrite()) return false;
+
+    Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
+    if (!worldOpt.isPresent()) {
+      log.severe("Could not add real-tome communication, unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + r.getTurn());
+      return false;
+    }
+
+    World w = worldOpt.get();
+    w.addRtc(r.getKingdom(), JsonUtils.fromJson(r.getBody(), com.empire.Message.class));
+    dsClient.putWorld(r.getGameId(), w);
+    return true;
+  }
+
+  private boolean postChangePlayer(Request r) {
+    if (!passVal.checkPassword(r).passesWrite()) return false;
+
+    Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
+
+    if (!dateOpt.isPresent()) {
+      log.severe("Unable to retrieve date for gameId=" + r.getGameId());
+      return false;
+    }
+
+    int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
+    Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), date);
+
+    if(!worldOpt.isPresent()) {
+      log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
+      return false;
+    }
+
+    World w = worldOpt.get();
+    ChangePlayerRequestBody body = JsonUtils.fromJsonCamel(r.getBody(), ChangePlayerRequestBody.class);
+    Optional<Player> playerOpt = dsClient.getPlayer(body.email);
+
+    if(!playerOpt.isPresent()) {
+      log.severe("Player not found for email=" + body.email);
+      return false;
+    }
+
+    w.getNation(r.getKingdom()).email = body.email;
+    w.getNation(r.getKingdom()).password = playerOpt.get().getPassHash();
+    dsClient.putWorld(r.getGameId(), w);
+    return true;
+  }
+
+  private static final class ChangePlayerRequestBody {
+    public String email;
+    public String password;
   }
 
   private void mail(String address, String subject, String body) {
