@@ -62,9 +62,15 @@ public class EntryServletTest {
     verify(os).flush();
   }
 
+  /** This is our definition of success for the post methods */
+  private void assertPostSuccess() throws IOException {
+    verify(httpResp, never()).sendError(Mockito.anyInt(), Mockito.anyString());
+    verify(httpResp).setStatus(204);
+  }
+
   /** This is our definition of failure for the get methods */
-  private void assertGetFailure() throws IOException {
-    verify(httpResp).sendError(eq(404), Mockito.anyString());
+  private void assertRequestFailure() throws IOException {
+    verify(httpResp).sendError(eq( 404), Mockito.anyString());
   }
 
   @Test
@@ -73,7 +79,7 @@ public class EntryServletTest {
 
     try {
       servlet.doGet(httpReq, httpResp);
-      assertGetFailure();
+      assertRequestFailure();
     } catch (IOException e) {
       fail("IOException occurred during test");
     }
@@ -99,7 +105,7 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getOrders(req);
-      assertGetFailure();
+      assertRequestFailure();
     } catch (IOException e) {
       fail("IOException occurred during test");
     }
@@ -131,7 +137,7 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getSetup(req);
-      assertGetFailure();
+      assertRequestFailure();
     } catch (IOException e) {
       fail("IOException occurred");
     }
@@ -161,7 +167,7 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getWorld(req);
-      assertGetFailure();
+      assertRequestFailure();
     } catch (IOException e) {
       fail("IOException occurred");
     }
@@ -191,7 +197,7 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getAdvancePoll();
-      assertGetFailure();
+      assertRequestFailure();
     } catch (IOException e) {
       fail("IOException occurred");
     }
@@ -219,7 +225,7 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getActivity(req);
-      assertGetFailure();
+      assertRequestFailure();
     } catch (IOException e) {
       fail("IOException occurred");
     }
@@ -234,6 +240,34 @@ public class EntryServletTest {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getActivity(req);
       assertGetSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postOrdersBackendFailReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+    when(backend.postOrders(req)).thenReturn(false);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postOrders(req);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postOrdersBackendFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+    when(backend.postOrders(req)).thenReturn(true);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postOrders(req);
+      assertPostSuccess();
     } catch (IOException e) {
       fail("IOException occurred");
     }

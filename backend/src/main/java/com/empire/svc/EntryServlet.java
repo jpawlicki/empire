@@ -119,7 +119,7 @@ public class EntryServlet extends HttpServlet {
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 		Request r = RequestFactory.from(req);
 
-		boolean success = false;
+		boolean success;
 		String err;
 
 		switch(req.getRequestURI()) {
@@ -148,15 +148,12 @@ public class EntryServlet extends HttpServlet {
 				err = "Not allowed.";
 				break;
 			default:
+				success = false;
 				err = "No such path.";
 				break;
 		}
 
-		if (success) {
-			resp.setStatus(204);
-		} else {
-			resp.sendError(400, err);
-		}
+		if (success) resp.setStatus(204); else resp.sendError(404, err);
 	}
 
 	@Override
