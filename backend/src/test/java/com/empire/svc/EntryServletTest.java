@@ -1,12 +1,9 @@
 package com.empire.svc;
 
 import com.empire.Nation;
-import com.empire.NationData;
 import com.empire.Orders;
 import com.empire.World;
-import com.empire.store.DatastoreClient;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Optional;
 import javax.servlet.ServletOutputStream;
@@ -179,6 +176,34 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getWorld(req);
+      assertGetSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getAdvancePollBackendEmptyReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.advanceWorldPollRoute);
+    when(backend.getAdvancePoll()).thenReturn(Optional.empty());
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getAdvancePoll();
+      assertGetFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getAdvancePollBackendFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.advanceWorldPollRoute);
+    when(backend.getAdvancePoll()).thenReturn(Optional.of(""));
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getAdvancePoll();
       assertGetSuccess();
     } catch (IOException e) {
       fail("IOException occurred");
