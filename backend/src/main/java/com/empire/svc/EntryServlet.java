@@ -127,10 +127,11 @@ public class EntryServlet extends HttpServlet {
 				json = JsonUtils.toJson(world);
 				break;
 			case EntryServlet.advanceWorldPollRoute:
-				json = getAdvancePoll();
+				json = backend.getAdvancePoll();
 				break;
 			case EntryServlet.activityRoute:
-				json = getActivity(r);
+				List<Map<String, Boolean>> activity = backend.getActivity(r);
+				json = JsonUtils.toJson(activity);
 				break;
 			default:
 				resp.sendError(404, "No such path.");
@@ -209,32 +210,6 @@ public class EntryServlet extends HttpServlet {
 		super.doOptions(req, resp);
 	}
 
-	private String getWorld(Request r) {
-		PasswordCheck result = checkPassword(r);
-		if (!result.passesRead()) return null;
-
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
-
-		if (!dateOpt.isPresent()) {
-			log.severe("Unable to retrieve date for gameId=" + r.getGameId());
-			return null;
-		}
-
-		int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
-		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), date);
-
-		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
-			return null;
-		}
-
-		World w = worldOpt.get();
-		if (result == PasswordCheck.PASS_PLAYER && r.getTurn() == 0) cache.recordLogin(r.getGameId(), date, w.getNation(r.getKingdom()).email);
-		w.filter(r.getKingdom());
-
-		return JsonUtils.toJson(w);
-	}
-
 	private String getAdvancePoll() {
 		Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
 
@@ -287,35 +262,6 @@ public class EntryServlet extends HttpServlet {
 		}
 
 		return "";
-	}
-
-	private String getActivity(Request r) {
-		if (checkPassword(r) != PasswordCheck.PASS_GM) return null;
-
-		Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
-
-		if (!dateOpt.isPresent()) {
-			log.warning("Unable to retrieve date for gameId=" + r.getGameId());
-			return null;
-		}
-
-		int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
-		Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), date);
-
-		if(!worldOpt.isPresent()) {
-			log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
-			return null;
-		}
-
-		World w = worldOpt.get();
-
-		List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-		List<List<Boolean>> actives = cache.fetchLoginHistory(r.getGameId(), date, emails);
-		List<Map<String, Boolean>> result = actives.stream()
-				.map(a -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, a::get)))
-				.collect(Collectors.toList());
-
-		return JsonUtils.toJson(result);
 	}
 
 	private boolean postOrders(Request r) {
