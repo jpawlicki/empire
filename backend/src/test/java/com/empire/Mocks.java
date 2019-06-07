@@ -24,7 +24,7 @@ class Mocks {
 
 	public static Character character() {
 		Character c = mock(Character.class);
-		c.captor = Constants.noCaptor;
+		when(c.isCaptive()).thenReturn(false);
 		return c;
 	}
 }

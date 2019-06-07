@@ -1,5 +1,7 @@
 package com.empire;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -7,6 +9,12 @@ import java.util.HashMap;
 import java.util.Collections;
 
 class Character {
+	enum Tag {
+		@SerializedName("Cardinal") CARDINAL,
+		@SerializedName("Ruler") RULER,
+		@SerializedName("Tiecel") TIECEL;
+	}
+
 	static class Experience {
 		double general;
 		double admiral;
@@ -21,7 +29,7 @@ class Character {
 	int location = -1;
 	boolean hidden = false;
 	List<Preparation> preparation = new ArrayList<>();
-	private List<String> tags = new ArrayList<>();
+	private List<Tag> tags = new ArrayList<>();
 	private Experience experience = new Experience();
 	List<String> values = new ArrayList<>();
 	int leadingArmy = -1;
@@ -53,7 +61,7 @@ class Character {
 		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
 		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
-		if (!Constants.noCaptor.equals(captor)) power += Constants.capturedPlotMod;
+		if (isCaptive()) power += Constants.capturedPlotMod;
 
 		return power;
 	}
@@ -81,16 +89,20 @@ class Character {
 		experience.governor += Constants.oneDimExpAdd;
 	}
 
-	public boolean hasTag(String tag) {
+	public boolean hasTag(Tag tag) {
 		return tags.contains(tag);
 	}
 
-	void addTag(String tag) {
+	void addTag(Tag tag) {
 		tags.add(tag);
 	}
 
-	void removeTag(String tag) {
+	void removeTag(Tag tag) {
 		tags.remove(tag);
+	}
+
+	boolean isCaptive() {
+		return !"".equals(captor);
 	}
 }
 

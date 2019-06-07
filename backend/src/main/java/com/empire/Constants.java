@@ -79,7 +79,6 @@ public class Constants {
 	public static final int tivarSpellGracePeriod = 2;
 	public static final double tivarSpellCropDestruction = 0.01;
 
-	public static final String noCaptor = "";
 	public static final Noble noNoble = null;
 	public static final Character noLeader = null;
 
@@ -147,4 +146,20 @@ public class Constants {
 	public static final double baseCostFortifications = 20;
 	public static final double baseCostShipyard = 80;
 	public static final double baseCostTemple = 30;
+
+	// Church
+	public static final double antiapostasyOpinion = -10;
+	public static final double antiecumenismConstructionOpinion = -20;
+	public static final double antiecumenismStateOpinion = -5;
+	public static final double antischismaticismConstructionOpinion = -10;
+	public static final double defendersOfFaithCasualtyOpinion = .03;
+	public static final double defendersOfFaithConquestOpinion = 15;
+	public static final double worksOfIruhanConstructionOpinion = 10;
+	public static final double antiterrorismOpinion = -30;
+	public static final double plotPraiseOpinion = 10;
+	public static final double plotCondemnOpinion = -10;
+	public static final double inquisitionOpinion = -35;
+	public static final double crusadeOpinion = -35;
+	public static final double fraternityOpinion = -35;
+	public static final double mandatoryMinistryOpinion = -35;
 }
