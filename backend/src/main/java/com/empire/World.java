@@ -1688,28 +1688,52 @@ class World implements GoodwillProvider {
 				if (church.hasDoctrine(Church.Doctrine.ANTIECUMENISM) && religion != Religion.IRUHAN && religion != Religion.NONE) getNation(k).goodwill += Constants.antiecumenismStateOpinion;
 				if (church.hasDoctrine(Church.Doctrine.ANTIAPOSTASY) && getNation(k).loyalToCult) getNation(k).goodwill += Constants.antiapostasyOpinion;
 			}
-			Set<String> iruhanNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue().religion == Religion.IRUHAN).map(e -> e.getKey()).collect(Collectors.toSet());
+			Set<String> iruhanNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue().religion == Religion.IRUHAN).map(Map.Entry::getKey).collect(Collectors.toSet());
 			if (church.hasDoctrine(Church.Doctrine.INQUISITION)) {
-				Set<String> vesselNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue() == Ideology.VESSEL_OF_FAITH).map(e -> e.getKey()).collect(Collectors.toSet());
-				for (String k : iruhanNations) {
-					if (vesselNations.stream().anyMatch(v -> !NationData.isAttackingOnSight(k, v, World.this))) getNation(k).goodwill += Constants.inquisitionOpinion;
-				}
+				iruhanNations
+						.stream()
+						.filter(
+								k -> 
+										stateIdeologies
+												.entrySet()
+												.stream()
+												.filter(e -> e.getValue() == Ideology.VESSEL_OF_FAITH)
+												.map(Map.Entry::getKey)
+												.anyMatch(v -> !NationData.isAttackingOnSight(k, v, World.this)))
+						.map(World.this::getNation)
+						.forEach(n -> n.goodwill += Constants.inquisitionOpinion);
 			}
 			if (church.hasDoctrine(Church.Doctrine.CRUSADE)) {
-				Set<String> targetNations = stateIdeologies.entrySet().stream().filter(e -> e.getValue().religion != Religion.NONE && e.getValue().religion != Religion.IRUHAN).map(e -> e.getKey()).collect(Collectors.toSet());
-				for (String k : iruhanNations) {
-					if (!targetNations.stream().allMatch(t -> NationData.isAttackingOnSight(k, t, World.this))) getNation(k).goodwill += Constants.crusadeOpinion;
-				}
+				iruhanNations
+						.stream()
+						.filter(
+								k -> 
+										!stateIdeologies
+												.entrySet()
+												.stream()
+												.filter(e -> e.getValue().religion != Religion.NONE && e.getValue().religion != Religion.IRUHAN)
+												.map(Map.Entry::getKey)
+												.allMatch(t -> NationData.isAttackingOnSight(k, t, World.this)))
+						.map(World.this::getNation)
+						.forEach(n -> n.goodwill += Constants.crusadeOpinion);
 			}
 			if (church.hasDoctrine(Church.Doctrine.FRATERNITY)) {
-				for (String k : iruhanNations) {
-					if (iruhanNations.stream().anyMatch(t -> NationData.isAttackingOnSight(k, t, World.this))) getNation(k).goodwill += Constants.fraternityOpinion;
-				}
+				iruhanNations
+						.stream()
+						.filter(k -> 
+								iruhanNations
+										.stream()
+										.anyMatch(t -> NationData.isAttackingOnSight(k, t, World.this)))
+						.map(World.this::getNation)
+						.forEach(n -> n.goodwill += Constants.fraternityOpinion);
 			}
 			if (church.hasDoctrine(Church.Doctrine.MANDATORY_MINISTRY)) {
-				for (String k : iruhanNations) {
-					if (characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && !c.captive() && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate")) getNation(k).goodwill += Constants.mandatoryMinistryOpinion;
-				}
+				iruhanNations
+						.stream()
+						.filter(k ->
+								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && !c.captive() && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate"))
+						.map(World.this::getNation)
+						.forEach(n -> n.goodwill += Constants.mandatoryMinistryOpinion);
 			}
 		}
 
