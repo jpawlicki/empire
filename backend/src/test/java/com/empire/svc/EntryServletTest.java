@@ -312,4 +312,116 @@ public class EntryServletTest {
       fail("IOException occurred");
     }
   }
+
+  @Test
+  public void postStartWorldBackendFailReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.startWorldRoute);
+    when(backend.postStartWorld(req)).thenReturn(false);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postStartWorld(req);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postStartWorldFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.startWorldRoute);
+    when(backend.postStartWorld(req)).thenReturn(true);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postStartWorld(req);
+      assertPostSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postSetupBackendFailReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
+    when(backend.postSetup(req)).thenReturn(false);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postSetup(req);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postSetupFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
+    when(backend.postSetup(req)).thenReturn(true);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postSetup(req);
+      assertPostSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postRtcBackendFailReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.rtcRoute);
+    when(backend.postRealTimeCommunication(req)).thenReturn(false);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postRealTimeCommunication(req);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postRtcFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.rtcRoute);
+    when(backend.postRealTimeCommunication(req)).thenReturn(true);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postRealTimeCommunication(req);
+      assertPostSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postChangePlayerBackendFailReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.changePlayerRoute);
+    when(backend.postChangePlayer(req)).thenReturn(false);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postChangePlayer(req);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postChangePlayerReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.changePlayerRoute);
+    when(backend.postChangePlayer(req)).thenReturn(true);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postChangePlayer(req);
+      assertPostSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
 }
