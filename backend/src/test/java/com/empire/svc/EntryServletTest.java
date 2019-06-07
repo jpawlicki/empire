@@ -4,6 +4,7 @@ import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.World;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 import javax.servlet.ServletOutputStream;
@@ -204,6 +205,34 @@ public class EntryServletTest {
     try {
       servlet.doGet(httpReq, httpResp);
       verify(backend).getAdvancePoll();
+      assertGetSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getActivityBackendEmptyReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.activityRoute);
+    when(backend.getActivity(req)).thenReturn(Optional.empty());
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getActivity(req);
+      assertGetFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getActivityBackendFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.activityRoute);
+    when(backend.getActivity(req)).thenReturn(Optional.of(new ArrayList<>()));
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getActivity(req);
       assertGetSuccess();
     } catch (IOException e) {
       fail("IOException occurred");
