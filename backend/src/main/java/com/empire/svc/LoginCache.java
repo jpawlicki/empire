@@ -2,7 +2,6 @@ package com.empire.svc;
 
 import com.empire.store.DatastoreClient;
 import com.empire.store.GaeDatastoreClient;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,18 +50,10 @@ class LoginCache {
             .collect(Collectors.toList());
     }
 
-    synchronized List<Boolean> checkLogin(Iterable<String> emails, long gameId, int date) {
-        List<Boolean> result = new ArrayList<>();
-
-        for (String email : emails) {
-            LoginKey nu = new LoginKey(email, gameId, date);
-            if (recordedKeys.contains(nu)) {
-                result.add(true);
-            } else {
-                result.add(client.getLogin(email, gameId, date).isPresent());
-            }
-        }
-
-        return result;
+    synchronized List<Boolean> checkLogin(List<String> emails, long gameId, int date) {
+        return emails.stream().
+            map(email -> new LoginKey(email, gameId, date)).
+            map(k -> recordedKeys.contains(k) || client.getLogin(k.getEmail(), gameId, date).isPresent()).
+            collect(Collectors.toList());
     }
 }

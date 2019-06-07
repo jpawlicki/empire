@@ -17,6 +17,10 @@ public class LoginKey {
         this.date = date;
     }
 
+    public String getEmail() {
+        return email;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(email, gameId, date);
