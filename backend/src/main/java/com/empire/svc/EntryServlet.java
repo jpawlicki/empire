@@ -119,7 +119,8 @@ public class EntryServlet extends HttpServlet {
 				json = JsonUtils.toJson(orders.getOrders());
 				break;
 			case EntryServlet.setupRoute:
-				json = getSetup(r);
+				Nation nation = backend.getSetup(r);
+				json = JsonUtils.toJson(nation);
 				break;
 			case EntryServlet.worldRoute:
 				json = getWorld(r);
@@ -205,18 +206,6 @@ public class EntryServlet extends HttpServlet {
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 		resp.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
 		super.doOptions(req, resp);
-	}
-
-	// TODO - should filter this data or display it.
-	private String getSetup(Request r) {
-		Optional<Nation> nation = dsClient.getNation(r.getGameId(), r.getKingdom());
-
-		if(nation.isPresent()) {
-			return JsonUtils.toJson(nation.get());
-		} else {
-			log.severe("Unable to complete setup request for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom());
-			return null;
-		}
 	}
 
 	private String getWorld(Request r) {
