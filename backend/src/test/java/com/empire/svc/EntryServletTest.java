@@ -272,4 +272,32 @@ public class EntryServletTest {
       fail("IOException occurred");
     }
   }
+
+  @Test
+  public void postAdvanceWorldBackendFailReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.advanceWorldRoute);
+    when(backend.postAdvanceWorld(req)).thenReturn(false);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postAdvanceWorld(req);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void postAdvanceWorldFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.advanceWorldRoute);
+    when(backend.postAdvanceWorld(req)).thenReturn(true);
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      verify(backend).postAdvanceWorld(req);
+      assertPostSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
 }
