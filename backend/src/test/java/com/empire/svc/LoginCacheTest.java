@@ -107,4 +107,17 @@ public class LoginCacheTest {
     assertThat(cache.checkLogin(emails, gameIdTest, dateTest), Matchers.contains(false, false, false));
     emails.forEach(email -> verify(dsClient).getLogin(email, gameIdTest, dateTest));
   }
+
+  @Test
+  public void fetchLoginHistoryReturnsCompleteForAllEmails() {
+    List<String> emails = Arrays.asList(emailTest + 0, emailTest + 1);
+    IntStream.rangeClosed(1, 2).forEach(n -> emails.forEach(email -> cache.recordLogin(email, gameIdTest, n)));
+    emails.forEach(email -> when(dsClient.getLogin(email, gameIdTest, 3)).thenReturn(Optional.empty()));
+
+    List<List<Boolean>> result = cache.fetchLoginHistory(emails, gameIdTest, 3);
+    assertThat(result, Matchers.hasSize(3));
+    assertThat(result.get(0), Matchers.contains(true, true));
+    assertThat(result.get(1), Matchers.contains(true, true));
+    assertThat(result.get(2), Matchers.contains(false, false));
+  }
 }
