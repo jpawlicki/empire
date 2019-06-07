@@ -188,7 +188,7 @@ class EntryServletBackend {
     return result;
   }
 
-  private boolean postOrders(Request r) {
+  public boolean postOrders(Request r) {
     if (!passVal.checkPassword(r).passesWrite()) return false;
     Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
@@ -204,7 +204,7 @@ class EntryServletBackend {
   }
 
   // TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
-  private boolean postAdvanceWorld(Request r) {
+  public boolean postAdvanceWorld(Request r) {
     Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
 
     if(!worldOpt.isPresent()) {
@@ -219,7 +219,7 @@ class EntryServletBackend {
     return true;
   }
 
-  private boolean postStartWorld(Request r) {
+  public boolean postStartWorld(Request r) {
     StartWorld s = JsonUtils.fromJson(r.getBody(), StartWorld.class);
     String passHash = passVal.encodePassword(s.gmPassword);
     String obsPassHash = passVal.encodePassword(s.obsPassword);
@@ -263,7 +263,7 @@ class EntryServletBackend {
     return response;
   }
 
-  private boolean postSetup(Request r) {
+  public boolean postSetup(Request r) {
     Optional<Nation> nationCheck = dsClient.getNation(r.getGameId(), r.getKingdom());
 
     if (nationCheck.isPresent()) return false; // We expect nation to not be found
@@ -282,7 +282,7 @@ class EntryServletBackend {
         .put(dsClient);
   }
 
-  private boolean postRealTimeCommunication(Request r) {
+  public boolean postRealTimeCommunication(Request r) {
     if (!passVal.checkPassword(r).passesWrite()) return false;
 
     Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
@@ -297,7 +297,7 @@ class EntryServletBackend {
     return true;
   }
 
-  private boolean postChangePlayer(Request r) {
+  public boolean postChangePlayer(Request r) {
     if (!passVal.checkPassword(r).passesWrite()) return false;
 
     Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
