@@ -70,7 +70,6 @@ public class EntryServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = RequestFactory.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
-
 		Optional<String> jsonOpt;
 
 		switch(req.getRequestURI()) {
@@ -79,7 +78,7 @@ public class EntryServlet extends HttpServlet {
 				break;
 			case EntryServlet.ordersRoute:
 				Optional<Orders> ordersOpt = backend.getOrders(r);
-				ordersOpt.ifPresent(o -> resp.setHeader("SJS-Version", String.valueOf(ordersOpt.get().getVersion())));
+				ordersOpt.ifPresent(o -> resp.setHeader("SJS-Version", String.valueOf(o.getVersion())));
 				jsonOpt = ordersOpt.map(Orders::getOrders).map(JsonUtils::toJson);
 				break;
 			case EntryServlet.setupRoute:
@@ -104,6 +103,7 @@ public class EntryServlet extends HttpServlet {
 			return;
 		}
 
+		resp.setStatus(200);
 		resp.setHeader("Access-Control-Expose-Headers", "SJS-Version");
 		resp.setContentType("application/json");
 		byte[] jsonBytes = jsonOpt.get().getBytes(StandardCharsets.UTF_8);

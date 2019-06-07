@@ -14,36 +14,27 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class EntryServletTest {
   private EntryServlet servlet;
   private EntryServletBackend backend;
-  private DatastoreClient dsClient;
-  private LoginCache cache;
   private HttpServletRequest httpReq;
   private HttpServletResponse httpResp;
+  private ServletOutputStream os;
   private Request req;
-
-  private final String emailTest = "test@email.com";
-  private final long gameIdTest = -1;
-  private final int turnTest = 5;
-  private final String kingdomTest = "TEST_KINGDOM";
-  private final String pwTest = "0123456789ABCDEF";
-  private final String pwEncTest = "CB469D8CFBD5CB38935AD4C8CBAE397A41A42ADCB85D2D5858550465F7BD31FC";
 
   @Before
   public void setup() {
-    req = mock(Request.class);
-    when(req.getGameId()).thenReturn(gameIdTest);
-    when(req.getKingdom()).thenReturn(kingdomTest);
-    when(req.getTurn()).thenReturn(turnTest);
-
     httpReq = mock(HttpServletRequest.class);
     RequestFactory.factory = mock(RequestFactory.class);
+    req = mock(Request.class);
 
     try {
       when(RequestFactory.factory.fromHttpServletRequest(httpReq)).thenReturn(req);
@@ -52,37 +43,23 @@ public class EntryServletTest {
     }
 
     httpResp = mock(HttpServletResponse.class);
+    os = mock(ServletOutputStream.class);
 
     try {
-      when(httpResp.getOutputStream()).thenReturn(mock(ServletOutputStream.class));
+      when(httpResp.getOutputStream()).thenReturn(os);
     } catch (IOException e) {
       fail("IOException when mocking httpResp.getOutputStream");
     }
 
-    dsClient = mock(DatastoreClient.class);
-    cache = mock(LoginCache.class);
     backend = mock(EntryServletBackend.class);
-    servlet = new EntryServlet(dsClient, cache, backend);
+    servlet = new EntryServlet(backend);
   }
 
-  private void passPasswordCheck() {
-    when(req.getPassword()).thenReturn(pwTest);
-    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
-    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
-
-    NationData k = mock(NationData.class);
-    k.email = emailTest;
-
-    World w = mock(World.class);
-    w.gmPasswordHash = pwTest;
-    w.obsPasswordHash = pwTest;
-    when(w.getNation(kingdomTest)).thenReturn(k);
-    when(w.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
-    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(w));
-
-    Player p = mock(Player.class);
-    when(p.getPassHash()).thenReturn(pwEncTest);
-    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
+  /** This is our defnition of success for the get methods */
+  private void assertGetSuccess() throws IOException {
+    verify(httpResp, never()).sendError(Mockito.anyInt(), Mockito.anyString());
+    verify(httpResp).setStatus(200);
+    verify(os).flush();
   }
 
   @Test
@@ -91,98 +68,98 @@ public class EntryServletTest {
 
     try {
       servlet.doGet(httpReq, httpResp);
-      verify(httpResp).sendError(404, "No such path.");
+      verify(httpResp).sendError(eq(404), Mockito.anyString());
     } catch (IOException e) {
-      fail("IOException occurred");
+      fail("IOException occurred during test");
     }
   }
 
   @Test
-  public void pingReturnsSuccess(){
+  public void successfulPingRequestReturnsSuccessfulResponse(){
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.pingRoute);
 
     try {
       servlet.doGet(httpReq, httpResp);
-      verify(httpResp).getOutputStream();
+      assertGetSuccess();
     } catch (IOException e) {
       fail("IOException occurred");
     }
   }
 
-  @Test
-  public void getOrdersPasswordFailReturnsNull() {
-    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
-    when(req.getPassword()).thenReturn(null);
-
-    try {
-      servlet.doGet(httpReq, httpResp);
-      verify(httpResp).sendError(404, "No such entity.");
-    } catch (IOException e) {
-      fail("IOException occurred");
-    }
-  }
-
-  @Test
-  public void getOrdersDatastoreNoOrdersReturnsNull() {
-    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
-    passPasswordCheck();
-
-    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
-
-    try {
-      servlet.doGet(httpReq, httpResp);
-      verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
-      verify(httpResp).sendError(404, "No such entity.");
-    } catch (IOException e) {
-      fail("IOException occurred");
-    }
-  }
-
-  @Test
-  public void getOrdersDatastoreFoundOrders() {
-    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
-    passPasswordCheck();
-
-    Orders orders = mock(Orders.class);
-    when(orders.getOrders()).thenReturn(new HashMap<>());
-    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.of(orders));
-
-    try {
-      servlet.doGet(httpReq, httpResp);
-      verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
-      verify(httpResp).getOutputStream();
-    } catch (IOException e) {
-      fail("IOException occurred");
-    }
-  }
-
-  @Test
-  public void getSetupDatastoreNoNationReturnsNull() {
-    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
-    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
-
-    try {
-      servlet.doGet(httpReq, httpResp);
-      verify(dsClient).getNation(gameIdTest, kingdomTest);
-      verify(httpResp).sendError(404, "No such entity.");
-    } catch (IOException e) {
-      fail("IOException occurred");
-    }
-  }
-
-  @Test
-  public void getSetupDatastoreFoundNation() {
-    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
-
-    Nation nation = new Nation();
-    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.of(nation));
-
-    try {
-      servlet.doGet(httpReq, httpResp);
-      verify(dsClient).getNation(gameIdTest, kingdomTest);
-      verify(httpResp).getOutputStream();
-    } catch (IOException e) {
-      fail("IOException occurred");
-    }
-  }
+//  @Test
+//  public void getOrdersPasswordFailReturnsNull() {
+//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+//    when(req.getPassword()).thenReturn(null);
+//
+//    try {
+//      servlet.doGet(httpReq, httpResp);
+//      verify(httpResp).sendError(404, "No such entity.");
+//    } catch (IOException e) {
+//      fail("IOException occurred");
+//    }
+//  }
+//
+//  @Test
+//  public void getOrdersDatastoreNoOrdersReturnsNull() {
+//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+//    passPasswordCheck();
+//
+//    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
+//
+//    try {
+//      servlet.doGet(httpReq, httpResp);
+//      verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
+//      verify(httpResp).sendError(404, "No such entity.");
+//    } catch (IOException e) {
+//      fail("IOException occurred");
+//    }
+//  }
+//
+//  @Test
+//  public void getOrdersDatastoreFoundOrders() {
+//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+//    passPasswordCheck();
+//
+//    Orders orders = mock(Orders.class);
+//    when(orders.getOrders()).thenReturn(new HashMap<>());
+//    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.of(orders));
+//
+//    try {
+//      servlet.doGet(httpReq, httpResp);
+//      verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
+//      verify(httpResp).getOutputStream();
+//    } catch (IOException e) {
+//      fail("IOException occurred");
+//    }
+//  }
+//
+//  @Test
+//  public void getSetupDatastoreNoNationReturnsNull() {
+//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
+//    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
+//
+//    try {
+//      servlet.doGet(httpReq, httpResp);
+//      verify(dsClient).getNation(gameIdTest, kingdomTest);
+//      verify(httpResp).sendError(404, "No such entity.");
+//    } catch (IOException e) {
+//      fail("IOException occurred");
+//    }
+//  }
+//
+//  @Test
+//  public void getSetupDatastoreFoundNation() {
+//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
+//
+//    Nation nation = new Nation();
+//    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.of(nation));
+//
+//    try {
+//      servlet.doGet(httpReq, httpResp);
+//      verify(dsClient).getNation(gameIdTest, kingdomTest);
+//      verify(httpResp).getOutputStream();
+//    } catch (IOException e) {
+//      fail("IOException occurred");
+//    }
+//  }
 }
