@@ -52,13 +52,12 @@ class EntryServletBackend {
     this.cache = cache;
   }
 
-  public Map<String, String> getOrders(Request r, HttpServletResponse resp) {
+  public Orders getOrders(Request r) {
     if (!passVal.checkPassword(r).passesRead()) return null;
     Optional<Orders> orders = dsClient.getOrders(r.getGameId(), r.getKingdom(), r.getTurn());
 
     if(orders.isPresent()) {
-      resp.setHeader("SJS-Version", String.valueOf(orders.get().version));
-      return orders.get().getOrders();
+      return orders.get();
     } else {
       log.severe("Unable to get orders for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom() + ", turn=" + r.getTurn());
       return null;

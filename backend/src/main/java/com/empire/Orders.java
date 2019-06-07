@@ -22,6 +22,10 @@ public class Orders {
 		return orders;
 	}
 
+	public int getVersion() {
+		return version;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o) return true;

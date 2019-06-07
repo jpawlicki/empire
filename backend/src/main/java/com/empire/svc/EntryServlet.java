@@ -114,7 +114,9 @@ public class EntryServlet extends HttpServlet {
 				json = "";
 				break;
 			case EntryServlet.ordersRoute:
-				json = getOrders(r, resp);
+				Orders orders = backend.getOrders(r);
+				resp.setHeader("SJS-Version", String.valueOf(orders.getVersion()));
+				json = JsonUtils.toJson(orders.getOrders());
 				break;
 			case EntryServlet.setupRoute:
 				json = getSetup(r);
@@ -203,19 +205,6 @@ public class EntryServlet extends HttpServlet {
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 		resp.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
 		super.doOptions(req, resp);
-	}
-
-	private String getOrders(Request r, HttpServletResponse resp) {
-		if (!checkPassword(r).passesRead()) return null;
-		Optional<Orders> orders = dsClient.getOrders(r.getGameId(), r.getKingdom(), r.getTurn());
-
-		if(orders.isPresent()) {
-			resp.setHeader("SJS-Version", String.valueOf(orders.get().version));
-			return JsonUtils.toJson(orders.get().getOrders());
-		} else {
-			log.severe("Unable to get orders for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom() + ", turn=" + r.getTurn());
-			return null;
-		}
 	}
 
 	// TODO - should filter this data or display it.
