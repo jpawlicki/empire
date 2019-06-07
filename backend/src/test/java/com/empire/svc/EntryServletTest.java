@@ -86,6 +86,18 @@ public class EntryServletTest {
   }
 
   @Test
+  public void postWithBadPathReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn("BOGUS");
+
+    try {
+      servlet.doPost(httpReq, httpResp);
+      assertRequestFailure();
+    } catch (IOException e) {
+      fail("IOException occurred during test");
+    }
+  }
+
+  @Test
   public void successfulPingRequestReturnsSuccessResponse(){
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.pingRoute);
 
