@@ -62,77 +62,66 @@ public class EntryServletTest {
     verify(os).flush();
   }
 
+  private void assertGetFailure() throws IOException {
+    verify(httpResp).sendError(eq(404), Mockito.anyString());
+  }
+
   @Test
-  public void getWithBadPathReturnsError404() {
+  public void getWithBadPathReturnsFailureResponse() {
     when(httpReq.getRequestURI()).thenReturn("BOGUS");
 
     try {
       servlet.doGet(httpReq, httpResp);
-      verify(httpResp).sendError(eq(404), Mockito.anyString());
+      assertGetFailure();
     } catch (IOException e) {
       fail("IOException occurred during test");
     }
   }
 
   @Test
-  public void successfulPingRequestReturnsSuccessfulResponse(){
+  public void successfulPingRequestReturnsSuccessResponse(){
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.pingRoute);
 
     try {
       servlet.doGet(httpReq, httpResp);
       assertGetSuccess();
     } catch (IOException e) {
+      fail("IOException occurred during test");
+    }
+  }
+
+  @Test
+  public void getOrdersBackendEmptyReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+    when(backend.getOrders(req)).thenReturn(Optional.empty());
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getOrders(req);
+      assertGetFailure();
+    } catch (IOException e) {
+      fail("IOException occurred during test");
+    }
+  }
+
+  @Test
+  public void getOrdersBackendFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
+
+    Orders orders = mock(Orders.class);
+    when(orders.getVersion()).thenReturn(42);
+    when(orders.getOrders()).thenReturn(new HashMap<>());
+    when(backend.getOrders(req)).thenReturn(Optional.of(orders));
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getOrders(req);
+      assertGetSuccess();
+    } catch (IOException e) {
       fail("IOException occurred");
     }
   }
 
-//  @Test
-//  public void getOrdersPasswordFailReturnsNull() {
-//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
-//    when(req.getPassword()).thenReturn(null);
-//
-//    try {
-//      servlet.doGet(httpReq, httpResp);
-//      verify(httpResp).sendError(404, "No such entity.");
-//    } catch (IOException e) {
-//      fail("IOException occurred");
-//    }
-//  }
-//
-//  @Test
-//  public void getOrdersDatastoreNoOrdersReturnsNull() {
-//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
-//    passPasswordCheck();
-//
-//    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
-//
-//    try {
-//      servlet.doGet(httpReq, httpResp);
-//      verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
-//      verify(httpResp).sendError(404, "No such entity.");
-//    } catch (IOException e) {
-//      fail("IOException occurred");
-//    }
-//  }
-//
-//  @Test
-//  public void getOrdersDatastoreFoundOrders() {
-//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
-//    passPasswordCheck();
-//
-//    Orders orders = mock(Orders.class);
-//    when(orders.getOrders()).thenReturn(new HashMap<>());
-//    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.of(orders));
-//
-//    try {
-//      servlet.doGet(httpReq, httpResp);
-//      verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
-//      verify(httpResp).getOutputStream();
-//    } catch (IOException e) {
-//      fail("IOException occurred");
-//    }
-//  }
-//
 //  @Test
 //  public void getSetupDatastoreNoNationReturnsNull() {
 //    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
