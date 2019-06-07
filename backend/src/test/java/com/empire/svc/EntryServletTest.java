@@ -3,9 +3,14 @@ package com.empire.svc;
 import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.World;
+import com.empire.util.JsonUtilsTest;
+import com.empire.util.JsonUtils;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
@@ -27,11 +32,16 @@ public class EntryServletTest {
   private HttpServletResponse httpResp;
   private ServletOutputStream os;
   private Request req;
+  private JsonUtils json;
 
   private final String jsonTestResp = "{\"status\": \"success\"}";
+  private final byte[] jsonTestBytes = jsonTestResp.getBytes(StandardCharsets.UTF_8);
 
   @Before
   public void setup() {
+    backend = mock(EntryServletBackend.class);
+    servlet = new EntryServlet(backend);
+
     httpReq = mock(HttpServletRequest.class);
     RequestFactory.factory = mock(RequestFactory.class);
     req = mock(Request.class);
@@ -51,14 +61,21 @@ public class EntryServletTest {
       fail("IOException when mocking httpResp.getOutputStream");
     }
 
-    backend = mock(EntryServletBackend.class);
-    servlet = new EntryServlet(backend);
+    json = mock(JsonUtils.class);
+    JsonUtilsTest.setJsonUtilInstance(json);
   }
 
-  /** This is our definition of success for the get methods */
+  /**
+   * This is our definition of success for the get methods:
+   *  No errors are sent
+   *  A status of 200 is sent
+   *  The return body is added to the Response
+   */
   private void assertGetSuccess() throws IOException {
     verify(httpResp, never()).sendError(Mockito.anyInt(), Mockito.anyString());
     verify(httpResp).setStatus(200);
+    verify(os).flush();
+    verify(os).write(jsonTestBytes);
     verify(os).flush();
   }
 
@@ -103,7 +120,8 @@ public class EntryServletTest {
 
     try {
       servlet.doGet(httpReq, httpResp);
-      assertGetSuccess();
+      verify(httpResp, never()).sendError(Mockito.anyInt(), Mockito.anyString());
+      verify(httpResp).setStatus(200);
     } catch (IOException e) {
       fail("IOException occurred during test");
     }
@@ -127,10 +145,13 @@ public class EntryServletTest {
   public void getOrdersBackendFoundReturnsSuccessResponse() {
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.ordersRoute);
 
+    Map<String, String> ordersMap = new HashMap<>();
     Orders orders = mock(Orders.class);
     when(orders.getVersion()).thenReturn(42);
-    when(orders.getOrders()).thenReturn(new HashMap<>());
+    when(orders.getOrders()).thenReturn(ordersMap);
     when(backend.getOrders(req)).thenReturn(Optional.of(orders));
+
+    JsonUtilsTest.mockToJson(json, ordersMap, jsonTestResp);
 
     try {
       servlet.doGet(httpReq, httpResp);
@@ -159,8 +180,10 @@ public class EntryServletTest {
   public void getSetupBackendFoundReturnsSuccessResponse() {
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
 
-    Nation nation = new Nation();
+    Nation nation = mock(Nation.class);
     when(backend.getSetup(req)).thenReturn(Optional.of(nation));
+
+    JsonUtilsTest.mockToJson(json, nation, jsonTestResp);
 
     try {
       servlet.doGet(httpReq, httpResp);
@@ -189,8 +212,10 @@ public class EntryServletTest {
   public void getWorldBackendFoundReturnsSuccessResponse() {
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.worldRoute);
 
-    World world = new World();
+    World world = mock(World.class);
     when(backend.getWorld(req)).thenReturn(Optional.of(world));
+
+    JsonUtilsTest.mockToJson(json, world, jsonTestResp);
 
     try {
       servlet.doGet(httpReq, httpResp);
@@ -218,7 +243,7 @@ public class EntryServletTest {
   @Test
   public void getAdvancePollBackendFoundReturnsSuccessResponse() {
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.advanceWorldPollRoute);
-    when(backend.getAdvancePoll()).thenReturn(Optional.of(""));
+    when(backend.getAdvancePoll()).thenReturn(Optional.of(jsonTestResp));
 
     try {
       servlet.doGet(httpReq, httpResp);
@@ -246,7 +271,11 @@ public class EntryServletTest {
   @Test
   public void getActivityBackendFoundReturnsSuccessResponse() {
     when(httpReq.getRequestURI()).thenReturn(EntryServlet.activityRoute);
-    when(backend.getActivity(req)).thenReturn(Optional.of(new ArrayList<>()));
+
+    List<Map<String, Boolean>> activityList = new ArrayList<>();
+    when(backend.getActivity(req)).thenReturn(Optional.of(activityList));
+
+    JsonUtilsTest.mockToJson(json, activityList, jsonTestResp);
 
     try {
       servlet.doGet(httpReq, httpResp);

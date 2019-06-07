@@ -8,14 +8,14 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletRequest;
 
-public class RequestFactory {
+class RequestFactory {
   static RequestFactory factory = new RequestFactory();
 
   public static Request from(HttpServletRequest req) throws IOException {
     return factory.fromHttpServletRequest(req);
   }
 
-  public Request fromHttpServletRequest(HttpServletRequest req) throws IOException {
+  Request fromHttpServletRequest(HttpServletRequest req) throws IOException {
     try {
       // Manual parsing is necessary: req.getParameter consumes the req inputstream.
       String path = req.getQueryString();

@@ -6,22 +6,30 @@ import com.google.gson.GsonBuilder;
 import java.lang.reflect.Type;
 
 public class JsonUtils {
-  private static Gson gsonCamel = new GsonBuilder().create();
-  private static Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+  private static final Gson gson = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+  static JsonUtils factory = new JsonUtils();
 
   public static <T> String toJson(T obj) {
-    return gson.toJson(obj);
+    return factory.objToJson(obj);
   }
 
   public static <T> T fromJson(String s, Class<T> clazz) {
-    return gson.fromJson(s, clazz);
+    return factory.jsonToObj(s, clazz);
   }
 
   public static <T> T fromJson(String s, Type t) {
-    return gson.fromJson(s, t);
+    return factory.jsonToObj(s, t);
   }
 
-  public static <T> T fromJsonCamel(String s, Class<T> clazz) {
-    return gsonCamel.fromJson(s, clazz);
+  <T> String objToJson(T obj) {
+    return gson.toJson(obj);
+  }
+
+  <T> T jsonToObj(String s, Class<T> clazz) {
+    return gson.fromJson(s, clazz);
+  }
+
+  <T> T jsonToObj(String s, Type t) {
+    return gson.fromJson(s, t);
   }
 }

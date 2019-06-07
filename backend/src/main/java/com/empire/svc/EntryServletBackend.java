@@ -315,7 +315,7 @@ class EntryServletBackend {
     }
 
     World w = worldOpt.get();
-    ChangePlayerRequestBody body = JsonUtils.fromJsonCamel(r.getBody(), ChangePlayerRequestBody.class);
+    ChangePlayerRequestBody body = JsonUtils.fromJson(r.getBody(), ChangePlayerRequestBody.class);
     Optional<Player> playerOpt = dsClient.getPlayer(body.email);
 
     if(!playerOpt.isPresent()) {
