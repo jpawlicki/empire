@@ -44,7 +44,7 @@ class EntryServletBackend {
   private final PasswordValidator passVal;
   private final LoginCache cache;
 
-  public static EntryServletBackend create(){
+  static EntryServletBackend create(){
     DatastoreClient dsClient = GaeDatastoreClient.getInstance();
     return new EntryServletBackend(dsClient, new PasswordValidator(dsClient), LoginCache.getInstance());
   }
@@ -55,39 +55,38 @@ class EntryServletBackend {
     this.cache = cache;
   }
 
-  public Orders getOrders(Request r) {
-    if (!passVal.checkPassword(r).passesRead()) return null;
+  Optional<Orders> getOrders(Request r) {
+    if (!passVal.checkPassword(r).passesRead()) return Optional.empty();
     Optional<Orders> orders = dsClient.getOrders(r.getGameId(), r.getKingdom(), r.getTurn());
 
-    if(orders.isPresent()) {
-      return orders.get();
-    } else {
+    if(!orders.isPresent()) {
       log.severe("Unable to get orders for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom() + ", turn=" + r.getTurn());
-      return null;
+
     }
+
+    return orders;
   }
 
   // TODO - should filter this data or display it.
-  public Nation getSetup(Request r) {
+  Optional<Nation> getSetup(Request r) {
     Optional<Nation> nation = dsClient.getNation(r.getGameId(), r.getKingdom());
 
-    if(nation.isPresent()) {
-      return nation.get();
-    } else {
+    if(!nation.isPresent()) {
       log.severe("Unable to complete setup request for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom());
-      return null;
     }
+
+    return nation;
   }
 
-  public World getWorld(Request r) {
+  Optional<World> getWorld(Request r) {
     PasswordValidator.PasswordCheck result = passVal.checkPassword(r);
-    if (!result.passesRead()) return null;
+    if (!result.passesRead()) return Optional.empty();
 
     Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
     if (!dateOpt.isPresent()) {
       log.severe("Unable to retrieve date for gameId=" + r.getGameId());
-      return null;
+      return Optional.empty();
     }
 
     int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
@@ -95,22 +94,22 @@ class EntryServletBackend {
 
     if(!worldOpt.isPresent()) {
       log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
-      return null;
+      return Optional.empty();
     }
 
     World w = worldOpt.get();
     if (result == PasswordValidator.PasswordCheck.PASS_PLAYER && r.getTurn() == 0) cache.recordLogin(r.getGameId(), date, w.getNation(r.getKingdom()).email);
     w.filter(r.getKingdom());
 
-    return w;
+    return Optional.of(w);
   }
 
-  public String getAdvancePoll() {
+  Optional<String> getAdvancePoll() {
     Optional<Set<Long>> activeGamesOpt = dsClient.getActiveGames();
 
     if(!activeGamesOpt.isPresent()) {
       log.severe("Poller failed, could not retrieve active games");
-      return null;
+      return Optional.empty();
     }
 
     for (Long gameId : activeGamesOpt.get()) {
@@ -118,7 +117,7 @@ class EntryServletBackend {
 
       if(!worldOpt.isPresent()) {
         log.severe("Poller failed, unable to retrieve current world for gameId=" + gameId);
-        return null;
+        return Optional.empty();
       }
 
       World w = worldOpt.get();
@@ -156,17 +155,17 @@ class EntryServletBackend {
       }
     }
 
-    return "";
+    return Optional.of("");
   }
 
-  public List<Map<String, Boolean>> getActivity(Request r) {
-    if (passVal.checkPassword(r) != PasswordValidator.PasswordCheck.PASS_GM) return null;
+  Optional<List<Map<String, Boolean>>> getActivity(Request r) {
+    if (passVal.checkPassword(r) != PasswordValidator.PasswordCheck.PASS_GM) return Optional.empty();
 
     Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
     if (!dateOpt.isPresent()) {
       log.warning("Unable to retrieve date for gameId=" + r.getGameId());
-      return null;
+      return Optional.empty();
     }
 
     int date = r.getTurn() != 0 ? r.getTurn() : dateOpt.get();
@@ -174,7 +173,7 @@ class EntryServletBackend {
 
     if(!worldOpt.isPresent()) {
       log.severe("Unable to retrieve world for gameId=" + r.getGameId() + ", turn=" + date);
-      return null;
+      return Optional.empty();
     }
 
     World w = worldOpt.get();
@@ -185,10 +184,10 @@ class EntryServletBackend {
         .map(a -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, a::get)))
         .collect(Collectors.toList());
 
-    return result;
+    return Optional.of(result);
   }
 
-  public boolean postOrders(Request r) {
+  boolean postOrders(Request r) {
     if (!passVal.checkPassword(r).passesWrite()) return false;
     Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());
 
@@ -204,7 +203,7 @@ class EntryServletBackend {
   }
 
   // TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
-  public boolean postAdvanceWorld(Request r) {
+  boolean postAdvanceWorld(Request r) {
     Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
 
     if(!worldOpt.isPresent()) {
@@ -219,7 +218,7 @@ class EntryServletBackend {
     return true;
   }
 
-  public boolean postStartWorld(Request r) {
+  boolean postStartWorld(Request r) {
     StartWorld s = JsonUtils.fromJson(r.getBody(), StartWorld.class);
     String passHash = passVal.encodePassword(s.gmPassword);
     String obsPassHash = passVal.encodePassword(s.obsPassword);
@@ -263,7 +262,7 @@ class EntryServletBackend {
     return response;
   }
 
-  public boolean postSetup(Request r) {
+  boolean postSetup(Request r) {
     Optional<Nation> nationCheck = dsClient.getNation(r.getGameId(), r.getKingdom());
 
     if (nationCheck.isPresent()) return false; // We expect nation to not be found
@@ -282,7 +281,7 @@ class EntryServletBackend {
         .put(dsClient);
   }
 
-  public boolean postRealTimeCommunication(Request r) {
+  boolean postRealTimeCommunication(Request r) {
     if (!passVal.checkPassword(r).passesWrite()) return false;
 
     Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
@@ -297,7 +296,7 @@ class EntryServletBackend {
     return true;
   }
 
-  public boolean postChangePlayer(Request r) {
+  boolean postChangePlayer(Request r) {
     if (!passVal.checkPassword(r).passesWrite()) return false;
 
     Optional<Integer> dateOpt = dsClient.getWorldDate(r.getGameId());

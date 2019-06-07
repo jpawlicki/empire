@@ -1,14 +1,11 @@
 package com.empire.svc;
 
-import com.empire.Nation;
 import com.empire.Orders;
-import com.empire.World;
 import com.empire.util.JsonUtils;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -74,48 +71,45 @@ public class EntryServlet extends HttpServlet {
 		Request r = RequestFactory.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 
-		String json;
+		Optional<String> jsonOpt;
 
 		switch(req.getRequestURI()) {
 			case EntryServlet.pingRoute:
-				json = "";
+				jsonOpt = Optional.of("");
 				break;
 			case EntryServlet.ordersRoute:
-				Orders orders = backend.getOrders(r);
-				resp.setHeader("SJS-Version", String.valueOf(orders.getVersion()));
-				json = JsonUtils.toJson(orders.getOrders());
+				Optional<Orders> ordersOpt = backend.getOrders(r);
+				ordersOpt.ifPresent(o -> resp.setHeader("SJS-Version", String.valueOf(ordersOpt.get().getVersion())));
+				jsonOpt = ordersOpt.map(Orders::getOrders).map(JsonUtils::toJson);
 				break;
 			case EntryServlet.setupRoute:
-				Nation nation = backend.getSetup(r);
-				json = JsonUtils.toJson(nation);
+				jsonOpt = backend.getSetup(r).map(JsonUtils::toJson);
 				break;
 			case EntryServlet.worldRoute:
-				World world = backend.getWorld(r);
-				json = JsonUtils.toJson(world);
+				jsonOpt = backend.getWorld(r).map(JsonUtils::toJson);
 				break;
 			case EntryServlet.advanceWorldPollRoute:
-				json = backend.getAdvancePoll();
+				jsonOpt = backend.getAdvancePoll();
 				break;
 			case EntryServlet.activityRoute:
-				List<Map<String, Boolean>> activity = backend.getActivity(r);
-				json = JsonUtils.toJson(activity);
+				jsonOpt = backend.getActivity(r).map(JsonUtils::toJson);
 				break;
 			default:
 				resp.sendError(404, "No such path.");
 				return;
 		}
 
-		if (json == null) {
+		if (!jsonOpt.isPresent()) {
 			resp.sendError(404, "No such entity.");
 			return;
 		}
 
 		resp.setHeader("Access-Control-Expose-Headers", "SJS-Version");
 		resp.setContentType("application/json");
-		byte[] ojson = json.getBytes(StandardCharsets.UTF_8);
-		resp.setContentLength(ojson.length);
+		byte[] jsonBytes = jsonOpt.get().getBytes(StandardCharsets.UTF_8);
+		resp.setContentLength(jsonBytes.length);
 		OutputStream os = resp.getOutputStream();
-		os.write(ojson);
+		os.write(jsonBytes);
 		os.flush();
   }
 
