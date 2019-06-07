@@ -97,7 +97,7 @@ class EntryServletBackend {
     }
 
     World w = worldOpt.get();
-    if (result == PasswordValidator.PasswordCheck.PASS_PLAYER && r.getTurn() == 0) cache.recordLogin(r.getGameId(), date, w.getNation(r.getKingdom()).email);
+    if (result == PasswordValidator.PasswordCheck.PASS_PLAYER && r.getTurn() == 0) cache.recordLogin(w.getNation(r.getKingdom()).email, r.getGameId(), date);
     w.filter(r.getKingdom());
 
     return Optional.of(w);
@@ -178,7 +178,7 @@ class EntryServletBackend {
     World w = worldOpt.get();
 
     List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
-    List<List<Boolean>> actives = cache.fetchLoginHistory(r.getGameId(), date, emails);
+    List<List<Boolean>> actives = cache.fetchLoginHistory(emails, r.getGameId(), date);
     List<Map<String, Boolean>> result = actives.stream()
         .map(a -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, a::get)))
         .collect(Collectors.toList());

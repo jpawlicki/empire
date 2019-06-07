@@ -5,14 +5,12 @@ import com.empire.store.GaeDatastoreClient;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class LoginCache {
-    private static LoginCache instance = null;
+class LoginCache {
+    private static LoginCache instance;
 
     public static LoginCache getInstance() {
         if(instance == null) {
@@ -25,21 +23,35 @@ public class LoginCache {
     private final DatastoreClient client;
     private final Set<LoginKey> recordedKeys;
 
-    private LoginCache(DatastoreClient client) {
+    LoginCache(DatastoreClient client) {
         this.client = client;
         this.recordedKeys = new HashSet<>();
     }
 
-    public synchronized void recordLogin(long gameId, int date, String email) {
-        LoginKey nu = new LoginKey(email, gameId, date);
-
-        if (!recordedKeys.contains(nu)) {
-            recordedKeys.add(nu);
-            client.putLogin(email, gameId, date);
-        }
+    public void clear() {
+        recordedKeys.clear();
     }
 
-    synchronized List<Boolean> checkLogin(long gameId, int date, Iterable<String> emails) {
+    public Set<LoginKey> getRecordedKeys() {
+        return recordedKeys;
+    }
+
+    public synchronized void recordLogin(String email, long gameId, int date) {
+        LoginKey login = new LoginKey(email, gameId, date);
+
+        if (recordedKeys.contains(login)) return;
+
+        recordedKeys.add(login);
+        client.putLogin(email, gameId, date);
+    }
+
+    public List<List<Boolean>> fetchLoginHistory(List<String> emails, long gameId, int finalDate) {
+        return IntStream.rangeClosed(1, finalDate)
+            .mapToObj(i -> checkLogin(emails, gameId, i))
+            .collect(Collectors.toList());
+    }
+
+    synchronized List<Boolean> checkLogin(Iterable<String> emails, long gameId, int date) {
         List<Boolean> result = new ArrayList<>();
 
         for (String email : emails) {
@@ -52,11 +64,5 @@ public class LoginCache {
         }
 
         return result;
-    }
-
-    public List<List<Boolean>> fetchLoginHistory(long gameId, int finalDate, List<String> emails) {
-        return IntStream.rangeClosed(1, finalDate)
-                .mapToObj(i -> checkLogin(gameId, i, emails))
-                .collect(Collectors.toList());
     }
 }

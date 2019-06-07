@@ -7,6 +7,10 @@ public class LoginKey {
     private final long gameId;
     private final int date;
 
+    public static LoginKey create(String email, long gameId, int date) {
+        return new LoginKey(email, gameId, date);
+    }
+
     public LoginKey(String email, long gameId, int date) {
         this.email = email;
         this.gameId = gameId;
