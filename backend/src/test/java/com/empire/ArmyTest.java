@@ -184,7 +184,7 @@ public class ArmyTest {
 	public void calcStrengthCaptured() {
 		Character leader = Mocks.character();
 		when(leader.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
-		leader.captor = "DONTCARE";
+		when(leader.captive()).thenReturn(true);
 		assertEquals(1.0, a.calcStrength(w, leader, 0, false), DELTA);
 	}
 

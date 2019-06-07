@@ -79,7 +79,6 @@ public class Constants {
 	public static final int tivarSpellGracePeriod = 2;
 	public static final double tivarSpellCropDestruction = 0.01;
 
-	public static final String noCaptor = "";
 	public static final Noble noNoble = null;
 	public static final Character noLeader = null;
 
