@@ -154,4 +154,34 @@ public class EntryServletTest {
       fail("IOException occurred");
     }
   }
+
+  @Test
+  public void getWorldBackendEmptyReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.worldRoute);
+    when(backend.getWorld(req)).thenReturn(Optional.empty());
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getWorld(req);
+      assertGetFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getWorldBackendFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.worldRoute);
+
+    World world = new World();
+    when(backend.getWorld(req)).thenReturn(Optional.of(world));
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getWorld(req);
+      assertGetSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
 }
