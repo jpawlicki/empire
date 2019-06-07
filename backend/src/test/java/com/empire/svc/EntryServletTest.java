@@ -30,6 +30,8 @@ public class EntryServletTest {
   private ServletOutputStream os;
   private Request req;
 
+  private final String jsonTestResp = "{\"status\": \"success\"}";
+
   @Before
   public void setup() {
     httpReq = mock(HttpServletRequest.class);
@@ -55,13 +57,14 @@ public class EntryServletTest {
     servlet = new EntryServlet(backend);
   }
 
-  /** This is our defnition of success for the get methods */
+  /** This is our definition of success for the get methods */
   private void assertGetSuccess() throws IOException {
     verify(httpResp, never()).sendError(Mockito.anyInt(), Mockito.anyString());
     verify(httpResp).setStatus(200);
     verify(os).flush();
   }
 
+  /** This is our definition of failure for the get methods */
   private void assertGetFailure() throws IOException {
     verify(httpResp).sendError(eq(404), Mockito.anyString());
   }
@@ -122,33 +125,33 @@ public class EntryServletTest {
     }
   }
 
-//  @Test
-//  public void getSetupDatastoreNoNationReturnsNull() {
-//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
-//    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
-//
-//    try {
-//      servlet.doGet(httpReq, httpResp);
-//      verify(dsClient).getNation(gameIdTest, kingdomTest);
-//      verify(httpResp).sendError(404, "No such entity.");
-//    } catch (IOException e) {
-//      fail("IOException occurred");
-//    }
-//  }
-//
-//  @Test
-//  public void getSetupDatastoreFoundNation() {
-//    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
-//
-//    Nation nation = new Nation();
-//    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.of(nation));
-//
-//    try {
-//      servlet.doGet(httpReq, httpResp);
-//      verify(dsClient).getNation(gameIdTest, kingdomTest);
-//      verify(httpResp).getOutputStream();
-//    } catch (IOException e) {
-//      fail("IOException occurred");
-//    }
-//  }
+  @Test
+  public void getSetupBackendEmptyReturnsFailureResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
+    when(backend.getSetup(req)).thenReturn(Optional.empty());
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getSetup(req);
+      assertGetFailure();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
+
+  @Test
+  public void getSetupBackendFoundReturnsSuccessResponse() {
+    when(httpReq.getRequestURI()).thenReturn(EntryServlet.setupRoute);
+
+    Nation nation = new Nation();
+    when(backend.getSetup(req)).thenReturn(Optional.of(nation));
+
+    try {
+      servlet.doGet(httpReq, httpResp);
+      verify(backend).getSetup(req);
+      assertGetSuccess();
+    } catch (IOException e) {
+      fail("IOException occurred");
+    }
+  }
 }
