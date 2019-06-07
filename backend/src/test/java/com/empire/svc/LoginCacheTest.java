@@ -31,8 +31,6 @@ public class LoginCacheTest {
 
   @Test
   public void recordLoginSavesLoginKey() {
-    when(dsClient.putLogin(Mockito.anyString(), Mockito.anyLong(), Mockito.anyInt())).thenReturn(true);
-
     cache.recordLogin(emailTest, gameIdTest, dateTest);
 
     verify(dsClient).putLogin(emailTest, gameIdTest, dateTest);
@@ -41,8 +39,6 @@ public class LoginCacheTest {
 
   @Test
   public void recordLoginSavesMultipleLoginKeys() {
-    when(dsClient.putLogin(Mockito.anyString(), Mockito.anyLong(), Mockito.anyInt())).thenReturn(true);
-
     List<LoginKey> keys = IntStream.rangeClosed(0, 2)
         .peek(n -> cache.recordLogin(emailTest, gameIdTest, dateTest + n))
         .mapToObj(n -> LoginKey.create(emailTest, gameIdTest, dateTest + n))
@@ -50,5 +46,14 @@ public class LoginCacheTest {
 
     IntStream.rangeClosed(0, 2).forEach(n -> verify(dsClient).putLogin(emailTest, gameIdTest, dateTest + n));
     assertThat(cache.getRecordedKeys(), Matchers.containsInAnyOrder(keys.get(0), keys.get(1), keys.get(2)));
+  }
+
+  @Test
+  public void clearMethodEmptiesCache() {
+    IntStream.rangeClosed(0, 2).forEach(n -> cache.recordLogin(emailTest, gameIdTest, dateTest + n));
+    assertThat(cache.getRecordedKeys(), Matchers.hasSize(3));
+
+    cache.clear();
+    assertThat(cache.getRecordedKeys(), Matchers.hasSize(0));
   }
 }
