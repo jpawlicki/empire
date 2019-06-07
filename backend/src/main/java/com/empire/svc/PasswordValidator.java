@@ -22,7 +22,7 @@ class PasswordValidator {
     this.dsClient = dsClient;
   }
 
-  public PasswordCheck checkPassword(Request r) {
+  PasswordCheck checkPassword(Request r) {
     if (r.getPassword() == null) return PasswordCheck.FAIL;
 
     byte[] pwHash = hashPassword(r.getPassword());
@@ -59,7 +59,7 @@ class PasswordValidator {
     return PasswordCheck.FAIL;
   }
 
-  public String encodePassword(String pw) {
+  String encodePassword(String pw) {
     byte[] hashPw = hashPassword(pw);
     return hashPw != null ? BaseEncoding.base16().encode(hashPw) : null;
   }
