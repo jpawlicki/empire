@@ -141,23 +141,43 @@ public class PasswordValidatorTest {
     assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_PLAYER);
   }
 
-//  private void passPasswordCheck() {
-//    when(req.getPassword()).thenReturn(pwTest);
-//    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
-//    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
-//
-//    NationData k = mock(NationData.class);
-//    k.email = emailTest;
-//
-//    World w = mock(World.class);
-//    w.gmPasswordHash = pwTest;
-//    w.obsPasswordHash = pwTest;
-//    when(w.getNation(kingdomTest)).thenReturn(k);
-//    when(w.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
-//    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(w));
-//
-//    Player p = mock(Player.class);
-//    when(p.getPassHash()).thenReturn(pwEncTest);
-//    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
-//  }
+  @Test
+  public void gmPasswordMatchReturnsPassGm() {
+    when(req.getPassword()).thenReturn(pwTest);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(dateTest));
+
+    NationData k = mock(NationData.class);
+    k.email = emailTest;
+
+    World w = mock(World.class);
+    w.gmPasswordHash = pwEncTest;
+    w.obsPasswordHash = pwFailTest;
+    when(w.getNation(kingdomTest)).thenReturn(k);
+    when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.of(w));
+
+    Player p = mock(Player.class);
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
+
+    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_GM);
+  }
+
+  @Test
+  public void obsPasswordMatchReturnsPassObs() {
+    when(req.getPassword()).thenReturn(pwTest);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(dateTest));
+
+    NationData k = mock(NationData.class);
+    k.email = emailTest;
+
+    World w = mock(World.class);
+    w.gmPasswordHash = pwFailTest;
+    w.obsPasswordHash = pwEncTest;
+    when(w.getNation(kingdomTest)).thenReturn(k);
+    when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.of(w));
+
+    Player p = mock(Player.class);
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
+
+    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_OBS);
+  }
 }
