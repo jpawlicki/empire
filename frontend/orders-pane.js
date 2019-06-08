@@ -887,7 +887,7 @@ class OrdersPane extends HTMLElement {
 				}
 				for (let gothi in g_data.kingdoms[whoami].gothi) {
 					if (g_data.kingdoms[whoami].gothi.hasOwnProperty(gothi) && g_data.kingdoms[whoami].gothi[gothi]) {
-						shadow.querySelector("[name=gothi_" + gothi + "]").checked = true;
+						shadow.querySelector("[name=gothi_" + gothi.toLowerCase() + "]").checked = true;
 					}
 				}
 				for (let doctrine of g_data.church.doctrines) {
