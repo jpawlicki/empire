@@ -15,7 +15,7 @@ public class PasswordValidatorTest {
 
 //  private final String emailTest = "test@email.com";
   private final long gameIdTest = -1;
-//  private final int turnTest = 5;
+  private final int dateTest = 5;
 //  private final String kingdomTest = "TEST_KINGDOM";
   private final String pwTest = "0123456789ABCDEF";
 //  private final String pwEncTest = "CB469D8CFBD5CB38935AD4C8CBAE397A41A42ADCB85D2D5858550465F7BD31FC";
@@ -27,6 +27,7 @@ public class PasswordValidatorTest {
 
     req = mock(Request.class);
     when(req.getGameId()).thenReturn(gameIdTest);
+    when(req.getTurn()).thenReturn(dateTest);
   }
 
   @Test
@@ -40,6 +41,15 @@ public class PasswordValidatorTest {
   public void noDateFoundReturnsNoEntity() {
     when(req.getPassword()).thenReturn(pwTest);
     when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+
+    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.NO_ENTITY);
+  }
+
+  @Test
+  public void noWorldFoundReturnsNoEntity() {
+    when(req.getPassword()).thenReturn(pwTest);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+    when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.empty());
 
     assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.NO_ENTITY);
   }
