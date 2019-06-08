@@ -31,6 +31,8 @@ import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
+// TODO: Methods don't need passwords? getSetup, getAdvancePoll
+
 class EntryServletBackend {
   private static final Logger log = Logger.getLogger(EntryServletBackend.class.getName());
 

@@ -1,5 +1,6 @@
 package com.empire.svc;
 
+import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.store.DatastoreClient;
 import java.util.Optional;
@@ -67,5 +68,22 @@ public class EntryServletBackendTest {
 
     assertEquals(orders, backend.getOrders(req).orElse(mock(Orders.class)));
     verify(dsClient).getOrders(gameIdTest, kingdomTest, turnTest);
+  }
+
+  @Test
+  public void getSetupNotFoundReturnsNothing() {
+    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getSetup(req).isPresent());
+    verify(dsClient).getNation(gameIdTest, kingdomTest);
+  }
+
+  @Test
+  public void getSetupFoundReturnsNation() {
+    Nation nation = mock(Nation.class);
+    when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.of(nation));
+
+    assertEquals(nation, backend.getSetup(req).orElse(mock(Nation.class)));
+    verify(dsClient).getNation(gameIdTest, kingdomTest);
   }
 }
