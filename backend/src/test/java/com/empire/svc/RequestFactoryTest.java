@@ -48,32 +48,6 @@ public class RequestFactoryTest {
   private void mockInputStream() { mockInputStream(""); }
 
   @Test
-  public void missingParametersParseToDefaults() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam("unknownkey", "unknownval"));
-    mockInputStream();
-
-    try {
-      Request defaultRequest = new Request(0, 0, -1, null, null, "", false);
-      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void nullQueryStringParsesToDefaults() {
-    when(httpReq.getQueryString()).thenReturn(null);
-    mockInputStream();
-
-    try {
-      Request defaultRequest = new Request(0, 0, -1, null, null, "", false);
-      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
   public void kingdomParsesSuccessfully() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.kingdomKey, kingdomTest));
     mockInputStream();
@@ -163,6 +137,53 @@ public class RequestFactoryTest {
 
     try {
       assertEquals(bodyTest, factory.fromHttpServletRequest(httpReq).getBody());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void missingParametersParseToDefaults() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam("unknownkey", "unknownval"));
+    mockInputStream();
+
+    try {
+      Request defaultRequest = new Request(0, 0, -1, null, null, "", false);
+      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void nullQueryStringParsesToDefaults() {
+    when(httpReq.getQueryString()).thenReturn(null);
+    mockInputStream();
+
+    try {
+      Request defaultRequest = new Request(0, 0, -1, null, null, "", false);
+      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void multipleParamsAndBodyParseSuccessfully() {
+    String queryParam = RequestFactory.gameIdKey + "=" + gameIdTest
+        + "&" + RequestFactory.kingdomKey + "=" + kingdomTest
+        + "&" + RequestFactory.versionKey + "=" + versionTest
+        + "&" + RequestFactory.passwordKey + "=" + passwordTest
+        + "&" + RequestFactory.kingdomKey + "=" + kingdomTest
+        + "&" + RequestFactory.skipmailKey + "=" + RequestFactory.TRUE
+        + "&" + RequestFactory.turnKey + "=" + turnTest;
+
+    when(httpReq.getQueryString()).thenReturn(queryParam);
+    mockInputStream(bodyTest);
+
+    try {
+      Request defaultRequest = new Request(turnTest, versionTest, gameIdTest, passwordTest, kingdomTest, bodyTest, true);
+      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
     } catch (IOException e) {
       fail("IOException during test");
     }
