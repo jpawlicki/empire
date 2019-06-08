@@ -43,7 +43,6 @@ class GothiReport extends HTMLElement {
 				<div class="summary">
 					<p>The Gothi are religious leaders in the northern religion. Although the northern deities (known collectively as the "Tivar") magically interact with their individual faithful on a daily basis, the gothi are responsible for servicing the spiritual needs of the community and granted special favor by their gods.</p>
 					<p>The Gothi are capable of working together to magically control weather globally, but magic is inherently destructive and damaging to living things. They therefore reserve these powers for the utmost emergencies, and only engage in manipulating weather when asked to do so by their rulers.</p>
-					<p>Because of the incredible power of the Tivar (and by extension the Gothi and their rulers), many Anpilayn view the northern religion as extremely dangerous and unethical, and the Church of Iruhan despises it.</p>
 				</div>
 			</div>
 		`;
@@ -105,6 +104,10 @@ class GothiReport extends HTMLElement {
 				margin-top: 0;
 				text-indent: 1em;
 			}
+			.voting {
+				font-weight: bold;
+				color: #600;
+			}
 			td:nth-child(n + 2) {
 				text-align: center;
 			}
@@ -129,6 +132,7 @@ class GothiReport extends HTMLElement {
 			for (let tivar of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) {
 				let td = document.createElement("td");
 				td.innerHTML = votes[tivar].v > 0 ? votes[tivar].v : "";
+				if (g_data.kingdoms[k].gothi[r]) td.setAttribute("class", "voting");
 				tr.appendChild(td);
 			}
 			odiv.appendChild(tr);
