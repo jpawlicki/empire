@@ -171,6 +171,9 @@ class World implements GoodwillProvider {
 			nation.gothi.put("Syrjen", false);
 			nation.addTag(setup.trait1);
 			nation.addTag(setup.trait2);
+			for (NationData.ScoreProfile profile : NationData.ScoreProfile.values()) {
+				if (setup.hasScoreProfile(profile)) nation.addProfile(profile);
+			}
 			for (String k2 : nationSetup.keySet()) {
 				if (k2.equals(kingdom)) continue;
 				Relationship r = new Relationship();
@@ -397,28 +400,7 @@ class World implements GoodwillProvider {
 					c.honorific = setup.title;
 				}
 				c.kingdom = kingdom;
-				if (i == 0) {
-					c.addTag(Character.Tag.RULER);
-					if ("checked".equals(setup.food)) c.values.add("food");
-					if ("checked".equals(setup.happiness)) c.values.add("happiness");
-					if ("checked".equals(setup.territory)) c.values.add("territory");
-					if ("checked".equals(setup.glory)) c.values.add("glory");
-					if ("checked".equals(setup.religion)) c.values.add("religion");
-					if ("checked".equals(setup.ideology)) c.values.add("ideology");
-					if ("checked".equals(setup.security)) c.values.add("security");
-					if ("checked".equals(setup.riches)) c.values.add("riches");
-					if ("checked".equals(setup.culture)) c.values.add("culture");
-				} else {
-					c.values.add("food");
-					if (Math.random() < 0.1) c.values.add("happiness");
-					if (Math.random() < 0.1) c.values.add("territory");
-					if (Math.random() < 0.1) c.values.add("glory");
-					if (Math.random() < 0.1) c.values.add("religion");
-					if (Math.random() < 0.1) c.values.add("ideology");
-					if (Math.random() < 0.1) c.values.add("security");
-					if (Math.random() < 0.1) c.values.add("riches");
-					if (Math.random() < 0.1) c.values.add("culture");
-				}
+				if (i == 0) c.addTag(Character.Tag.RULER);
 				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
 				c.addExperienceGeneral();
 				c.addExperienceAdmiral();
@@ -517,7 +499,6 @@ class World implements GoodwillProvider {
 		HashSet<Region> builds = new HashSet<>();
 		HashSet<Region> templeBuilds = new HashSet<>();
 		HashSet<String> battlingNations = new HashSet<>();
-		HashSet<Army> battlingArmies = new HashSet<>();
 		HashMap<String, Double> rationing = new HashMap<String, Double>();
 		HashMap<String, Double> taxationRates = new HashMap<String, Double>();
 
@@ -530,7 +511,6 @@ class World implements GoodwillProvider {
 			synthesizeOrders();
 			updateEconomyHints();
 			markLastStands();
-			updateScoreProfiles();
 			deliverLetters();
 			updateRelationships();
 			transferGold();
@@ -637,20 +617,6 @@ class World implements GoodwillProvider {
 			for (String k : orders.keySet()) {
 				if ("last_stand".equals(orders.get(k).get("final_action"))) lastStands.add(k);
 				if ("abdicate".equals(orders.get(k).get("final_action"))) abdications.add(k);
-			}
-		}
-
-		void updateScoreProfiles() {
-			if (date % 7 == 0) {
-				for (String k : orders.keySet()) {
-					Character ruler = null;
-					for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c;
-					Map<String, String> kOrders = orders.get(k);
-					ruler.values.clear();
-					for (String o : kOrders.keySet()) {
-						if (o.startsWith("score_") && kOrders.get(o).equals("checked")) ruler.values.add(o.replace("score_", ""));
-					}
-				}
 			}
 		}
 
@@ -1268,6 +1234,14 @@ class World implements GoodwillProvider {
 					gov.add(c);
 					governors.put(region, gov);
 					c.addExperienceGovernor();
+				} else if (action.startsWith("Reflect")) {
+					if (!c.hasTag(Character.Tag.RULER)) continue;
+					if (c.isCaptive()) continue;
+					NationData.ScoreProfile profile = null;
+					for (NationData.ScoreProfile p : NationData.ScoreProfile.values()) if (action.contains(p.toString().toLowerCase())) profile = p;
+					if (profile == null) continue;
+					getNation(c.kingdom).toggleProfile(profile);
+					c.orderhint = "";
 				} else if (action.startsWith("Transfer character to ")) {
 					String target = action.replace("Transfer character to ", "");
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
@@ -1397,6 +1371,8 @@ class World implements GoodwillProvider {
 		}
 
 		void joinBattles() {
+			HashMap<String, Double> casualtiesCaused = new HashMap<>();
+			HashMap<String, Double> casualtiesSuffered = new HashMap<>();
 			for (int i = 0; i < regions.size(); i++) {
 				Region region = regions.get(i);
 				ArrayList<Army> localArmies = new ArrayList<>();
@@ -1423,9 +1399,11 @@ class World implements GoodwillProvider {
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
+					casualtiesSuffered.put(a.kingdom, cf * a.size);
 					for (Army b : localArmies) {
 						if (!NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) || (a.hasTag(Army.Tag.HIGHER_POWER) && b.hasTag(Army.Tag.HIGHER_POWER))) continue;
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
+						casualtiesCaused.put(b.kingdom, casualtiesCaused.getOrDefault(b.kingdom, 0.0) + a.size * casualtyRateCaused);
 						if (a.isArmy() && b.hasTag(Army.Tag.IMPRESSMENT)) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
 						if (church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill < 0) getNation(b.kingdom).goodwill += Constants.defendersOfFaithCasualtyOpinion * a.size * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
@@ -1433,7 +1411,6 @@ class World implements GoodwillProvider {
 				}
 				double dead = 0;
 				for (Army c : casualties.keySet()) {
-					battlingArmies.add(c);
 					battlingNations.add(c.kingdom);
 					double cf = casualties.get(c);
 					double lost = cf * c.size;
@@ -1478,6 +1455,10 @@ class World implements GoodwillProvider {
 						notifications.add(new Notification(k, "Battle in " + region.name, "Over a week of fighting in " + region.name + ":" + armySummary + "\n" + battleDetails));
 					}
 				}
+			}
+			for (String k : kingdoms.keySet()) {
+				if (casualtiesCaused.getOrDefault(k, 0.0) > Constants.gloryCasualtyRewardThreshold || casualtiesSuffered.getOrDefault(k, 0.0) > Constants.gloryCasualtyRewardThreshold) score(k, NationData.ScoreProfile.GLORY, 1);
+				if (casualtiesCaused.getOrDefault(k, 0.0) < Constants.gloryCasualtyPunishmentThreshold && casualtiesSuffered.getOrDefault(k, 0.0) < Constants.gloryCasualtyPunishmentThreshold) score(k, NationData.ScoreProfile.GLORY, -1);
 			}
 		}
 
@@ -2030,8 +2011,8 @@ class World implements GoodwillProvider {
 				if (kingdoms.containsKey(r.getKingdom())) {
 					double fed = Math.min(hungry, r.food) / hungry * r.population;
 					double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
-					if (ration > 1) score(r.getKingdom(), "food", fed * Constants.foodFedPlentifulPointFactor);
-					else if (ration == 1) score(r.getKingdom(), "food", fed * Constants.foodFedPointFactor);
+					if (ration > 1) score(r.getKingdom(), NationData.ScoreProfile.PROSPERITY, fed * Constants.foodFedPlentifulPointFactor);
+					else if (ration == 1) score(r.getKingdom(), NationData.ScoreProfile.PROSPERITY, fed * Constants.foodFedPointFactor);
 				}
 				if (hungry <= r.food) {
 					r.food -= hungry;
@@ -2041,9 +2022,9 @@ class World implements GoodwillProvider {
 					r.unrestPopular = Math.min(1, r.unrestPopular + starving / r.population * 3);
 					starvation.put(r, starving);
 					addPopulation(r, -starving);
-					if (kingdoms.containsKey(r.getKingdom()) && !getNation(r.getKingdom()).coreRegions.contains(i)) score(r.getKingdom(), "food", -1 / 25000.0 * starving);
-					for (String k : tributes.getOrDefault(r.getKingdom(), new ArrayList<String>())) score(k, "food", -1 / 12000.0 * starving);
-					for (String k : kingdoms.keySet()) if (getNation(k).coreRegions.contains(i)) score(k, "food", -1 / 6000.0 * starving);
+					if (kingdoms.containsKey(r.getKingdom()) && !getNation(r.getKingdom()).coreRegions.contains(i)) score(r.getKingdom(), NationData.ScoreProfile.PROSPERITY, -1 / 25000.0 * starving);
+					for (String k : tributes.getOrDefault(r.getKingdom(), new ArrayList<String>())) score(k, NationData.ScoreProfile.PROSPERITY, -1 / 12000.0 * starving);
+					for (String k : kingdoms.keySet()) if (getNation(k).coreRegions.contains(i)) score(k, NationData.ScoreProfile.PROSPERITY, -1 / 6000.0 * starving);
 				}
 			}
 			for (Region r : starvation.keySet()) {
@@ -2166,51 +2147,37 @@ class World implements GoodwillProvider {
 					pop += r.population;
 				}
 				if (pop > 0) {
-					if (below25 > pop * 0.99999) score(k, "happiness", 1);
-					if (below35 > pop * 0.9) score(k, "happiness", 1);
-					if (above25 > pop * 0.25) score(k, "happiness", -1);
-					if (above50 > pop * 0.33) score(k, "happiness", -2);
+					if (below25 > pop * 0.99999) score(k, NationData.ScoreProfile.HAPPINESS, 1);
+					if (below35 > pop * 0.9) score(k, NationData.ScoreProfile.HAPPINESS, 1);
+					if (above25 > pop * 0.25) score(k, NationData.ScoreProfile.HAPPINESS, -1);
+					if (above50 > pop * 0.33) score(k, NationData.ScoreProfile.HAPPINESS, -2);
 				}
 			}
 			// Riches
 			for (String k : kingdoms.keySet()) {
-				int richer = 0;
-				for (String kk : kingdoms.keySet()) if (getNation(kk).gold > getNation(k).gold) richer++;
-				score(k, "riches", richer / (double)kingdoms.size() <= .25 ? 1 : -1);
-			}
-			// Glory
-			for (String k : kingdoms.keySet()) {
-				double battles = 0;
-				double peace = 0;
-				for (Army a : armies) if (a.kingdom.equals(k)) {
-					if (battlingArmies.contains(a)) battles += a.size * (a.isNavy() ? 100 : 1);
-					else peace += a.size * (a.isNavy() ? 50 : 1);
-				}
-				double frac = battles / (battles + peace);
-				score(k, "glory", frac >= .30 ? 1 : -1);
+				NationData n = getNation(k);
+				if (n.gold > 10000) n.score(NationData.ScoreProfile.RICHES, 2);
+				if (n.gold > 1000) n.score(NationData.ScoreProfile.RICHES, 1);
+				if (n.gold < 500) n.score(NationData.ScoreProfile.RICHES, -1);
 			}
 			// Security
 			for (String k : kingdoms.keySet()) {
-				int moreSoldiers = 0;
-				int moreWarships = 0;
-				int warships = 0;
-				int soldiers = 0;
-				for (Army a : armies) if (a.kingdom.equals(k)) {
-					if (a.isArmy()) soldiers += a.size;
-					else warships += a.size;
+				NationData n = getNation(k);
+				Set<Region> zone = new HashSet<>();
+				n.coreRegions.stream().map(regions::get).forEach(
+						r -> {
+							zone.add(r);
+							zone.addAll(r.getNeighbors(World.this));
+						});
+				if (armies
+						.stream()
+						.filter(a -> zone.contains(regions.get(a.location)))
+						.filter(a -> NationData.isEnemy(k, a.kingdom, World.this, regions.get(a.location)))
+						.count() == 0) {
+					n.score(NationData.ScoreProfile.SECURITY, 1);
+				} else {
+					n.score(NationData.ScoreProfile.SECURITY, -1);
 				}
-				for (String kk : kingdoms.keySet()) {
-					int kWarships = 0;
-					int kSoldiers = 0;
-					for (Army a : armies) if (a.kingdom.equals(kk)) {
-						if (a.isArmy()) kSoldiers += a.size;
-						else kWarships += a.size;
-					}
-					if (kWarships > warships) moreWarships++;
-					if (kSoldiers > soldiers) moreSoldiers++;
-				}
-				if (moreSoldiers == 0 || moreWarships == 0) score(k, "security", 5);
-				if (moreWarships >= 3 && moreSoldiers >= 3) score(k, "security", -1);
 			}
 			// Culture
 			for (String k : kingdoms.keySet()) {
@@ -2227,7 +2194,7 @@ class World implements GoodwillProvider {
 						totalOther += r.population;
 					}
 				}
-				if (totalUs > 0 && totalOther > 0) score(k, "culture", happyUs / totalUs > happyOther / totalOther ? 2 : -2);
+				if (totalUs > 0 && totalOther > 0) score(k, NationData.ScoreProfile.CULTURE, happyUs / totalUs > happyOther / totalOther ? 2 : -2);
 			}
 		}
 
@@ -2253,15 +2220,6 @@ class World implements GoodwillProvider {
 				c.honorific = "Protector ";
 				c.kingdom = k;
 				c.addTag(Character.Tag.RULER);
-				c.values.add("food");
-				if (Math.random() < 0.1) c.values.add("happiness");
-				if (Math.random() < 0.1) c.values.add("territory");
-				if (Math.random() < 0.1) c.values.add("glory");
-				if (Math.random() < 0.1) c.values.add("religion");
-				if (Math.random() < 0.1) c.values.add("ideology");
-				if (Math.random() < 0.1) c.values.add("security");
-				if (Math.random() < 0.1) c.values.add("riches");
-				if (Math.random() < 0.1) c.values.add("culture");
 				c.addExperienceGeneral();
 				c.addExperienceAdmiral();
 				c.addExperienceSpy();
@@ -2752,8 +2710,8 @@ class World implements GoodwillProvider {
 		}
 	}
 
-	void score(String kingdom, String profile, double amount) {
-		for (Character c : characters) if (kingdom.equals(c.kingdom) && c.hasTag(Character.Tag.RULER) && c.values.contains(profile)) getNation(kingdom).score.put(profile, getNation(kingdom).score.getOrDefault(profile, 0.0) + amount);
+	void score(String kingdom, NationData.ScoreProfile profile, double amount) {
+		getNation(kingdom).score(profile, amount);
 	}
 
 	private Army getMaxArmyInRegion(int location, Map<Army, Character> leaders, int inspires, HashSet<String> lastStands) {

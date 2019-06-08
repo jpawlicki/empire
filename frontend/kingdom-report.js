@@ -373,13 +373,9 @@ class KingdomReport extends HTMLElement {
 			shadow.getElementById("historical").appendChild(d);
 		}
 		let score = shadow.getElementById("score");
-		let ruler = undefined;
-		for (let c of g_data.characters) if (c.kingdom == kingdom.name && contains(c.tags, "Ruler")) ruler = c;
-		if (ruler != undefined) {
-			let d = document.createElement("div");
-			d.innerHTML = "The current ruler cares about " + ruler.values.join(", ") + ".";
-			score.appendChild(d);
-		}
+		let d = document.createElement("div");
+		d.innerHTML = "They care about " + kingdom.profiles.map(s => s.toLowerCase()).sort().join(", ") + ".";
+		score.appendChild(d);
 		if (kingdom.score != undefined) {
 			for (let s in kingdom.score) if (kingdom.score.hasOwnProperty(s)) {
 				let d = document.createElement("div");

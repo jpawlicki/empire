@@ -543,6 +543,7 @@ class Kingdom {
 		this.signingbonushint = dataEntry.signingbonushint;
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
+		this.profiles = dataEntry.profiles;
 	}
 
 	calcRecruitment(extraMod=0) {
@@ -749,4 +750,18 @@ let doctrineDescriptions = {
 	"INQUISITION": ["-35 opinion each turn for any Iruhan nation not attacking every Vessel of Faith nation."],
 	"MANDATORY_MINISTRY": ["-35 opinion each turn for any nation controlling an unimprisoned Cardinal not in the Holy City."],
 	"WORKS_OF_IRUHAN": ["+10 opinion for constructing an Iruhan temple."]
+};
+
+// ============ SCORE CONSTANTS ============
+let g_scoreProfiles = {
+	"PROSPERITY": {"selectable": true,  "description": ["+2 points per million civilians you feed with plentiful rations.", "+1 point per million civilians you feed with normal rations.", "-1 point per 6000 civilians that starve to death in your core regions.", "-1 point per 12000 civilians that starve in the core regions of a nation paying you tribute."]},
+	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
+	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 10000 gold.", "+1 point per turn you have more than 1000 gold.", "-1 point per turn you have less than 500 gold."]},
+	"TERRITORY":  {"selectable": true,  "description": ["+4 points whenever you gain rulership of a region.", "-4 points whenever you lose rulership of a region."]},
+	"GLORY":      {"selectable": true,  "description": ["+1 point per battle in which you inflict or suffer more than 2000 casualties.", "-1 point any turn you inflict or suffer less than 500 casualties total."]},
+	"RELIGION":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion.", "-2 points whenever a region is converted away from your state religion."]},
+	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy army or navy is adjacent to or occupying any of your core regions.", "-1 point otherwise."]},
+	"CULTURE":    {"selectable": true,  "description": ["+2 points per turn the mean unrest of population of your culture is lower than the mean unrest of all other people.", "-2 points otherwise."]},
+	"IDEOLOGY":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion and ideology.", "-2 points whenever a region of your ideology is converted to another religion or ideology."]},
+	"CULTISM":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region that is not an objective region."]}
 };

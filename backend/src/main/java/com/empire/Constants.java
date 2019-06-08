@@ -12,20 +12,13 @@ public class Constants {
 	// Scoring
 	public static final double foodFedPointFactor = 1 / 1E6;
 	public static final double foodFedPlentifulPointFactor = 2 / 1E6;
-
-	public static final String scoreProfReligion = "religion";
 	public static final double scoreReligionPerConverted = 2;
-
-	public static final String scoreProfIdeology = "ideology";
 	public static final double scoreIdeologyPerConverted = 2;
-
-	public static final String scoreProfTerritory = "territory";
 	public static final double scorePerConqueredTerritory = 4;
-
 	public static final double numShipsBuiltPerShipyard = 5;
 	public static final double shipBuildingTraitWeeksProduction = 5;
-
-	public static final double razeRefundFactor = 0.8;
+	public static final double gloryCasualtyRewardThreshold = 2000;
+	public static final double gloryCasualtyPunishmentThreshold = 500;
 
 	//Armies
 	public static final double armyBaseStrength = 1E-2;
@@ -34,6 +27,8 @@ public class Constants {
 	public static final double steelMod = 0.15;
 	public static final double armyPillagersRecruitmentMod = -0.75;
 	public static final double seafaringMod = 1.5;
+
+	public static final double razeRefundFactor = 0.8;
 
 	public static final String pirateKingdom = "Pirate";
 
