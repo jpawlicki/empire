@@ -1010,6 +1010,7 @@ class World implements GoodwillProvider {
 				Region region = regions.get(army.location);
 				if (action.startsWith("Patrol")) {
 					if (!army.isArmy()) continue;
+					if (!NationData.isFriendly(army.kingdom, region.getKingdom(), World.this)) continue;
 					if (army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < region.calcMinPatrolStrength(World.this)) {
 						notifications.add(new Notification(army.kingdom, "Patrol Ineffective", "Army " + army.id + " is not strong enough to effectively patrol " + region.name + "."));
 						continue;
@@ -1360,7 +1361,7 @@ class World implements GoodwillProvider {
 			double pirateArmies = pirate.threat * .25 * 100;
 			double piratesSpawned = 0;
 			pirate.threat *= .75;
-			List<String> pirateNotes = new ArrayList<>();
+			Set<String> pirateNotes = new HashSet<>();
 			while (piratesSpawned < pirateArmies) {
 				for (Region r : regions) totalPirateThreat += r.calcPirateThreat(World.this);
 				totalPirateThreat *= Math.random();
@@ -1386,7 +1387,7 @@ class World implements GoodwillProvider {
 				}
 			}
 			for (String bribe : pirate.bribes.keySet()) pirate.bribes.put(bribe, pirate.bribes.get(bribe) * .75);
-			notifyAllPlayers("Piracy", (int) Math.ceil(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(pirateNotes) + ".");
+			notifyAllPlayers("Piracy", (int) Math.ceil(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(new ArrayList<>(pirateNotes)) + ".");
 		}
 
 		void joinBattles() {

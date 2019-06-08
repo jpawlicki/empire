@@ -1218,7 +1218,7 @@ class OrdersPane extends HTMLElement {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
 				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && g_data.tivar.deluge == 0) {
-					warn += "(navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
+					warn += " (navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
 			} else if (o.value.startsWith("Merge into army")) {
 				let ot = undefined;
@@ -1226,22 +1226,26 @@ class OrdersPane extends HTMLElement {
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
 			} else if (o.value.startsWith("Patrol")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn = "(army may be too small to patrol)";
+					warn += " (army may be too small to patrol)";
+				}
+				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
+				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
+					warn += " (armies can only patrol friendly regions)";
 				}
 			} else if (o.value.startsWith("Oust")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn = "(army may be too small to oust)";
+					warn = " (army may be too small to oust)";
 				}
 			} else if (o.value.startsWith("Conquer")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
-					warn = "(army may be too small to conquer)";
+					warn = " (army may be too small to conquer)";
 				}
 				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
-					warn += "(conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
+					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
 			} else if (o.value.startsWith("Raze")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 2) {
-					warn = "(army may be too small to raze)";
+					warn = " (army may be too small to raze)";
 				}
 			}
 			shadow.getElementById("warning_army_" + a.id).innerHTML = warn;
