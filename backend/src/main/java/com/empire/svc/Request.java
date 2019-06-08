@@ -46,7 +46,7 @@ public class Request {
         return body;
     }
 
-    public boolean isSkipMail() {
+    public boolean skipmail() {
         return skipMail;
     }
 

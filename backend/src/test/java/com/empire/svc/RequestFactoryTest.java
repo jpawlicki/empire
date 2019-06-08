@@ -139,7 +139,7 @@ public class RequestFactoryTest {
     mockInputStream();
 
     try {
-      assertTrue(factory.fromHttpServletRequest(httpReq).isSkipMail());
+      assertTrue(factory.fromHttpServletRequest(httpReq).skipmail());
     } catch (IOException e) {
       fail("IOException during test");
     }
@@ -151,7 +151,7 @@ public class RequestFactoryTest {
     mockInputStream();
 
     try {
-      assertFalse(factory.fromHttpServletRequest(httpReq).isSkipMail());
+      assertFalse(factory.fromHttpServletRequest(httpReq).skipmail());
     } catch (IOException e) {
       fail("IOException during test");
     }
