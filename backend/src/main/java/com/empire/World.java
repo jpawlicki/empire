@@ -1399,7 +1399,7 @@ class World implements GoodwillProvider {
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
-					casualtiesSuffered.put(a.kingdom, cf * a.size);
+					casualtiesSuffered.put(a.kingdom, casualtiesSuffered.getOrDefault(a.kingdom, 0.0) + cf * a.size);
 					for (Army b : localArmies) {
 						if (!NationData.isEnemy(a.kingdom, b.kingdom, World.this, region) || (a.hasTag(Army.Tag.HIGHER_POWER) && b.hasTag(Army.Tag.HIGHER_POWER))) continue;
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;

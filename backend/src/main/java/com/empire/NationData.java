@@ -103,8 +103,8 @@ class NationData {
 
 	// Instance members.
 
-	HashMap<ScoreProfile, Double> score = new HashMap<>();
-	HashMap<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
+	private Map<ScoreProfile, Double> score = new HashMap<>();
+	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
 	private Set<ScoreProfile> profiles = new HashSet<>();
 	double gold;
 	private Map<String, Relationship> relationships = new HashMap<>();
