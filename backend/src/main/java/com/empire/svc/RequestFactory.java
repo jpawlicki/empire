@@ -11,6 +11,13 @@ import javax.servlet.http.HttpServletRequest;
 class RequestFactory {
   static RequestFactory factory = new RequestFactory();
 
+  static String kingdomKey = "k";
+  static String passwordKey = "password";
+  static String versionKey = "v";
+  static String turnKey = "t";
+  static String gameIdKey = "gid";
+  static String skipmailKey = "skipmail";
+
   public static Request from(HttpServletRequest req) throws IOException {
     return factory.fromHttpServletRequest(req);
   }
@@ -19,12 +26,12 @@ class RequestFactory {
     try {
       // Manual parsing is necessary: req.getParameter consumes the req inputstream.
       String path = req.getQueryString();
-      String kingdom = extract("k", path, null);
-      String password = extract("password", path, null);
-      int version = Integer.parseInt(extract("v", path, "0"));
-      int turn = Integer.parseInt(extract("t", path, "0"));
-      long gameId = Long.parseLong(extract("gid", path, "-1"));
-      boolean skipMail = "t".equals(extract("skipmail", path, "f"));
+      String kingdom = extract(RequestFactory.kingdomKey, path, null);
+      String password = extract(RequestFactory.passwordKey, path, null);
+      int version = Integer.parseInt(extract(RequestFactory.versionKey, path, "0"));
+      int turn = Integer.parseInt(extract(RequestFactory.turnKey, path, "0"));
+      long gameId = Long.parseLong(extract(gameIdKey, path, "-1"));
+      boolean skipMail = "t".equals(extract(skipmailKey, path, "f"));
       return new Request(turn, version, gameId, password, kingdom, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail);
     } catch (NumberFormatException e) {
       throw new IOException(e);
