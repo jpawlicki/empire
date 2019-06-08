@@ -55,9 +55,6 @@ class PasswordValidator {
     }
 
     World w = worldOpt.get();
-
-    byte[] gmPassHash = decodePassword(w.gmPasswordHash);
-    byte[] obsPassHash = decodePassword(w.obsPasswordHash);
     Optional<Player> player = dsClient.getPlayer(w.getNation(r.getKingdom()).email);
 
     if(!player.isPresent()) {
@@ -66,8 +63,13 @@ class PasswordValidator {
     }
 
     if (w.getNationNames().contains(r.getKingdom()) && Arrays.equals(pwHash, decodePassword(player.get().getPassHash()))) return PasswordCheck.PASS_PLAYER;
+
+    byte[] gmPassHash = decodePassword(w.gmPasswordHash);
     if (Arrays.equals(pwHash, gmPassHash)) return PasswordCheck.PASS_GM;
+
+    byte[] obsPassHash = decodePassword(w.obsPasswordHash);
     if (Arrays.equals(pwHash, obsPassHash)) return PasswordCheck.PASS_OBS;
+
     return PasswordCheck.FAIL;
   }
 
