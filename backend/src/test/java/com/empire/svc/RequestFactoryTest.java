@@ -49,7 +49,20 @@ public class RequestFactoryTest {
   private void mockInputStream() { mockInputStream(""); }
 
   @Test
-  public void kingdomParsesSuccessfully () {
+  public void missingParamatersParseToDefaults() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam("unknownkey", "unknownval"));
+    mockInputStream();
+
+    try {
+      Request defaultRequest = new Request(0, 0, -1, null, null, "", false);
+      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void kingdomParsesSuccessfully() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.kingdomKey, kingdomTest));
     mockInputStream();
 
@@ -61,19 +74,7 @@ public class RequestFactoryTest {
   }
 
   @Test
-  public void kingdomMissingParsesToDefault() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, kingdomTest));
-    mockInputStream();
-
-    try {
-      assertNull(factory.fromHttpServletRequest(httpReq).getKingdom());
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void passwordParsesSuccessfully () {
+  public void passwordParsesSuccessfully() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.passwordKey, passwordTest));
     mockInputStream();
 
@@ -85,19 +86,7 @@ public class RequestFactoryTest {
   }
 
   @Test
-  public void passwordMissingParsesToDefault() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, passwordTest));
-    mockInputStream();
-
-    try {
-      assertNull(factory.fromHttpServletRequest(httpReq).getPassword());
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void versionParsesSuccessfully () {
+  public void versionParsesSuccessfully() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.versionKey, Integer.toString(versionTest)));
     mockInputStream();
 
@@ -109,19 +98,7 @@ public class RequestFactoryTest {
   }
 
   @Test
-  public void versionMissingParsesToDefault() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, Integer.toString(versionTest)));
-    mockInputStream();
-
-    try {
-      assertEquals(0, factory.fromHttpServletRequest(httpReq).getVersion());
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void turnParsesSuccessfully () {
+  public void turnParsesSuccessfully() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.turnKey, Integer.toString(turnTest)));
     mockInputStream();
 
@@ -133,36 +110,12 @@ public class RequestFactoryTest {
   }
 
   @Test
-  public void turnMissingParsesToDefault() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, Integer.toString(turnTest)));
-    mockInputStream();
-
-    try {
-      assertEquals(0, factory.fromHttpServletRequest(httpReq).getTurn());
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void gameIdParsesSuccessfully () {
+  public void gameIdParsesSuccessfully() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.gameIdKey, Long.toString(gameIdTest)));
     mockInputStream();
 
     try {
       assertEquals(gameIdTest, factory.fromHttpServletRequest(httpReq).getGameId());
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void gameIdMissingParsesToDefault() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, Long.toString(gameIdTest)));
-    mockInputStream();
-
-    try {
-      assertEquals(-1, factory.fromHttpServletRequest(httpReq).getGameId());
     } catch (IOException e) {
       fail("IOException during test");
     }
@@ -183,18 +136,6 @@ public class RequestFactoryTest {
   @Test
   public void skipmailParsesSuccessfullyFalse() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.skipmailKey, RequestFactory.FALSE));
-    mockInputStream();
-
-    try {
-      assertFalse(factory.fromHttpServletRequest(httpReq).isSkipMail());
-    } catch (IOException e) {
-      fail("IOException during test");
-    }
-  }
-
-  @Test
-  public void skipmailMissingParsesToDefault() {
-    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, RequestFactory.TRUE));
     mockInputStream();
 
     try {

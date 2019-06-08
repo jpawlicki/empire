@@ -1,6 +1,8 @@
 package com.empire.svc;
 
 
+import java.util.Objects;
+
 public class Request {
     private final int turn;
     private final int version;
@@ -46,5 +48,24 @@ public class Request {
 
     public boolean isSkipMail() {
         return skipMail;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Request request = (Request) o;
+        return turn == request.turn &&
+            version == request.version &&
+            gameId == request.gameId &&
+            skipMail == request.skipMail &&
+            Objects.equals(password, request.password) &&
+            Objects.equals(kingdom, request.kingdom) &&
+            Objects.equals(body, request.body);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(turn, version, gameId, password, kingdom, body, skipMail);
     }
 }
