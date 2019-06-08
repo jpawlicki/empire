@@ -39,7 +39,7 @@ public class PasswordValidatorTest {
   public void nullPassworldReturnsFailure() {
     when(req.getPassword()).thenReturn(null);
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.FAIL);
+    assertEquals(PasswordValidator.PasswordCheck.FAIL, passVal.checkPassword(req));
   }
 
   @Test
@@ -47,7 +47,7 @@ public class PasswordValidatorTest {
     when(req.getPassword()).thenReturn(pwTest);
     when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.NO_ENTITY);
+    assertEquals(PasswordValidator.PasswordCheck.NO_ENTITY, passVal.checkPassword(req));
   }
 
   @Test
@@ -56,7 +56,7 @@ public class PasswordValidatorTest {
     when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(dateTest));
     when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.empty());
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.NO_ENTITY);
+    assertEquals(PasswordValidator.PasswordCheck.NO_ENTITY, passVal.checkPassword(req));
   }
 
   @Test
@@ -73,7 +73,7 @@ public class PasswordValidatorTest {
 
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.empty());
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.NO_ENTITY);
+    assertEquals(PasswordValidator.PasswordCheck.NO_ENTITY, passVal.checkPassword(req));
   }
 
   @Test
@@ -95,7 +95,7 @@ public class PasswordValidatorTest {
     when(p.getPassHash()).thenReturn(pwEncTest);
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.FAIL);
+    assertEquals(PasswordValidator.PasswordCheck.FAIL, passVal.checkPassword(req));
   }
 
   @Test
@@ -118,7 +118,7 @@ public class PasswordValidatorTest {
     when(p.getPassHash()).thenReturn(pwEncTest);
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.FAIL);
+    assertEquals(PasswordValidator.PasswordCheck.FAIL, passVal.checkPassword(req));
   }
 
   @Test
@@ -138,7 +138,7 @@ public class PasswordValidatorTest {
     when(p.getPassHash()).thenReturn(pwEncTest);
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_PLAYER);
+    assertEquals(PasswordValidator.PasswordCheck.PASS_PLAYER, passVal.checkPassword(req));
   }
 
   @Test
@@ -158,7 +158,7 @@ public class PasswordValidatorTest {
     Player p = mock(Player.class);
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_GM);
+    assertEquals(PasswordValidator.PasswordCheck.PASS_GM, passVal.checkPassword(req));
   }
 
   @Test
@@ -178,6 +178,6 @@ public class PasswordValidatorTest {
     Player p = mock(Player.class);
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
 
-    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_OBS);
+    assertEquals(PasswordValidator.PasswordCheck.PASS_OBS, passVal.checkPassword(req));
   }
 }
