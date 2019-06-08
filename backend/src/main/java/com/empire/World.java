@@ -164,11 +164,7 @@ class World implements GoodwillProvider {
 			nation.culture = con.culture;
 			nation.coreRegions = Ints.asList(con.coreRegions);
 			nation.goodwill = setup.hasTag(NationData.Tag.HOLY) ? 15 : 5;
-			nation.gothi = new HashMap<String, Boolean>();
-			nation.gothi.put("Alyrja", false);
-			nation.gothi.put("Lyskr", false);
-			nation.gothi.put("Rjinku", false);
-			nation.gothi.put("Syrjen", false);
+			for (NationData.Gothi g : NationData.Gothi.values()) nation.gothi.put(g, false);
 			nation.addTag(setup.trait1);
 			nation.addTag(setup.trait2);
 			for (String k2 : nationSetup.keySet()) {
@@ -750,16 +746,16 @@ class World implements GoodwillProvider {
 		}
 
 		void setGothiSpellStatus() {
-			HashSet<String> passedSpells = new HashSet<>();
-			for (String g : new String[]{"Alyrja", "Rjinku", "Lyskr", "Syrjen"}) {
+			HashSet<NationData.Gothi> passedSpells = new HashSet<>();
+			for (NationData.Gothi g : NationData.Gothi.values()) {
 				int votes = 0;
 				int votesTotal = 0;
 				for (String k : kingdoms.keySet()) {
-					getNation(k).gothi.put(g, orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("gothi_" + g, getNation(k).gothi.get(g) ? "checked" : "").equals("checked"));
+					getNation(k).gothi.put(g, orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("gothi_" + g.toString().toLowerCase(), getNation(k).gothi.get(g) ? "checked" : "").equals("checked"));
 				}
 				for (Region r : regions) {
 					if (r.religion == null) continue;
-					if (r.religion.toString().toLowerCase().equals(g.toLowerCase())) {
+					if (r.religion.toString().toLowerCase().equals(g.toString().toLowerCase())) {
 						votesTotal++;
 						if (getNation(r.getKingdom()).gothi.getOrDefault(g, false)) votes++;
 					}
@@ -768,14 +764,11 @@ class World implements GoodwillProvider {
 			}
 			// Goodwill effects.
 			for (String k : kingdoms.keySet()) {
-				boolean voting = false;
-				for (String g : new String[]{"Alyrja", "Rjinku", "Lyskr", "Syrjen"}) {
-					if (getNation(k).gothi.get(g)) voting = true;
-				}
+				boolean voting = getNation(k).gothi.values().stream().anyMatch(a -> a);
 				if (church.hasDoctrine(Church.Doctrine.ANTITERRORISM) && voting) getNation(k).goodwill += Constants.antiterrorismOpinion;
 			}
 			// Spell tickers.
-			if (passedSpells.contains("Rjinku")) {
+			if (passedSpells.contains(NationData.Gothi.RJINKU)) {
 				if (tivar.quake == 0)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi of Rjinku have agreed to call forth the Quake. Buildings will be destroyed every week until the earthquakes end. If they do not end soon, destruction of crops will follow.");
 				tivar.quake++;
 			} else if (tivar.quake > 0) {
@@ -786,7 +779,7 @@ class World implements GoodwillProvider {
 					tivar.quake++;
 				}
 			}
-			if (passedSpells.contains("Syrjen")) {
+			if (passedSpells.contains(NationData.Gothi.SYRJEN)) {
 				if (tivar.deluge == 0) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi of Syrjen have agreed to call forth the Deluge. Swollen rivers and lakes cause land regions to be navigable by warships, but flash floods wash away a quarter of any ships or soldiers trying to traverse them. As the floods intensify, crops will be lost to the rising waters.");
 				tivar.deluge++;
 			} else if (tivar.deluge > 0) {
@@ -797,7 +790,7 @@ class World implements GoodwillProvider {
 					tivar.deluge++;
 				}
 			}
-			if (passedSpells.contains("Lyskr")) {
+			if (passedSpells.contains(NationData.Gothi.LYSKR)) {
 				if (tivar.veil == 0) notifyAllPlayers("The Veil Falls", "The necessary number of gothi of Lyskr have agreed to call forth the Veil. Heavy fog chokes out the sun and reduces visibility severely. If the fog does not lift soon, crops will starve.");
 				tivar.veil++;
 			} else if (tivar.veil > 0) {
@@ -808,7 +801,7 @@ class World implements GoodwillProvider {
 					tivar.veil++;
 				}
 			}
-			if (passedSpells.contains("Alyrja")) {
+			if (passedSpells.contains(NationData.Gothi.ALYRJA)) {
 				if (tivar.warwinds == 0) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi of Alyrja have agreed to call forth the Warwinds. Titanic waves destroy a quarter of any ship or army at sea, and powerful winds blow all vessels at sea off course. The temperature begins to plummet, threating to freeze crops worldwide.");
 				tivar.warwinds++;
 			} else if (tivar.warwinds > 0) {
