@@ -60,7 +60,6 @@ class EntryServletBackend {
 
     if(!orders.isPresent()) {
       log.severe("Unable to get orders for gameId=" + r.getGameId() + ", kingdom=" + r.getKingdom() + ", turn=" + r.getTurn());
-
     }
 
     return orders;
