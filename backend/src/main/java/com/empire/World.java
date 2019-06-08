@@ -2169,10 +2169,20 @@ class World implements GoodwillProvider {
 							zone.add(r);
 							zone.addAll(r.getNeighbors(World.this));
 						});
+				Set<Region> expandedZone = new HashSet<>(zone);
+				zone.stream().forEach(r -> expandedZone.addAll(r.getNeighbors(World.this)));
 				if (armies
 						.stream()
+						.filter(a -> a.type == Army.Type.ARMY)
+						.filter(a -> expandedZone.contains(regions.get(a.location)))
+						.filter(a -> !NationData.isFriendly(k, a.kingdom, World.this))
+						.count() == 0) {
+					n.score(NationData.ScoreProfile.SECURITY, 2);
+				} else if (armies
+						.stream()
+						.filter(a -> a.type == Army.Type.ARMY)
 						.filter(a -> zone.contains(regions.get(a.location)))
-						.filter(a -> NationData.isEnemy(k, a.kingdom, World.this, regions.get(a.location)))
+						.filter(a -> !NationData.isFriendly(k, a.kingdom, World.this))
 						.count() == 0) {
 					n.score(NationData.ScoreProfile.SECURITY, 1);
 				} else {
