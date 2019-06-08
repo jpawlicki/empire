@@ -22,6 +22,7 @@ public class RequestFactoryTest {
   private static final String unknownKey = "BOGUS_KEY";
   private static final String kingdomTest = "TEST_KINGDOM";
   private static final String passwordTest = "TEST_PW";
+  private static final int versionTest = 12;
   private static final long gameIdTest = 42;
 
   @Before
@@ -87,6 +88,30 @@ public class RequestFactoryTest {
 
     try {
       assertNull(factory.fromHttpServletRequest(httpReq).getPassword());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void versionParsesSuccessfully () {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.versionKey, Integer.toString(versionTest)));
+    mockInputStream();
+
+    try {
+      assertEquals(versionTest, factory.fromHttpServletRequest(httpReq).getVersion());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void versionMissingParsesToDefault() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, Integer.toString(versionTest)));
+    mockInputStream();
+
+    try {
+      assertEquals(0, factory.fromHttpServletRequest(httpReq).getVersion());
     } catch (IOException e) {
       fail("IOException during test");
     }
