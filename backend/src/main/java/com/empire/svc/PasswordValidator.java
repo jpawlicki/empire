@@ -2,6 +2,7 @@ package com.empire.svc;
 
 import com.empire.World;
 import com.empire.store.DatastoreClient;
+import com.empire.store.GaeDatastoreClient;
 import com.google.common.io.BaseEncoding;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -15,6 +16,17 @@ import java.util.logging.Logger;
 class PasswordValidator {
   private static final Logger log = Logger.getLogger(PasswordValidator.class.getName());
   private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
+
+  private static PasswordValidator instance;
+
+  public static PasswordValidator getInstance() {
+    if(instance == null) {
+      instance = new PasswordValidator(
+          GaeDatastoreClient.getInstance());
+    }
+
+    return instance;
+  }
 
   private final DatastoreClient dsClient;
 
