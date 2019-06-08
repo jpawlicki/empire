@@ -1574,7 +1574,7 @@ class World implements GoodwillProvider {
 				for (Region r : regions) if (k.equals(r.getKingdom()) && r.noble != null && r.noble.unrest >= .75) rebels = true;
 				if (rebels) {
 					ArrayList<String> rebelTo = new ArrayList<>();
-					for (String kk : kingdoms.keySet()) if (NationData.isEnemy(k, kk, World.this)) rebelTo.add(kk);
+					for (String kk : kingdoms.keySet()) if (NationData.isEnemy(k, kk, World.this) && !getNation(kk).hasTag(NationData.Tag.REPUBLICAN)) rebelTo.add(kk);
 					if (rebelTo.isEmpty()) {
 						HashMap<String, ArrayList<Double>> unrests = new HashMap<>();
 						for (Region r : regions) if (!k.equals(r.getKingdom()) && r.noble != null) {
