@@ -21,6 +21,7 @@ public class RequestFactoryTest {
 
   private static final String unknownKey = "BOGUS_KEY";
   private static final String kingdomTest = "TEST_KINGDOM";
+  private static final String passwordTest = "TEST_PW";
 
   @Before
   public void setup() {
@@ -61,6 +62,30 @@ public class RequestFactoryTest {
 
     try {
       assertNull(factory.fromHttpServletRequest(httpReq).getKingdom());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void passwordParsesSuccessfully () {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.passwordKey, passwordTest));
+    mockInputStream();
+
+    try {
+      assertEquals(passwordTest, factory.fromHttpServletRequest(httpReq).getPassword());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void passwordMissingParsesToDefault() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, passwordTest));
+    mockInputStream();
+
+    try {
+      assertNull(factory.fromHttpServletRequest(httpReq).getPassword());
     } catch (IOException e) {
       fail("IOException during test");
     }
