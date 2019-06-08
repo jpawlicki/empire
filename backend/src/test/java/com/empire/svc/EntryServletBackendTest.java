@@ -2,6 +2,7 @@ package com.empire.svc;
 
 import com.empire.Nation;
 import com.empire.Orders;
+import com.empire.World;
 import com.empire.store.DatastoreClient;
 import java.util.Optional;
 import org.junit.Before;
@@ -52,7 +53,7 @@ public class EntryServletBackendTest {
   }
 
   @Test
-  public void getOrdersNotFoundReturnsNothing() {
+  public void getOrdersNotFoundReturnsEmpty() {
     when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
     when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.empty());
 
@@ -71,7 +72,7 @@ public class EntryServletBackendTest {
   }
 
   @Test
-  public void getSetupNotFoundReturnsNothing() {
+  public void getSetupNotFoundReturnsEmpty() {
     when(dsClient.getNation(gameIdTest, kingdomTest)).thenReturn(Optional.empty());
 
     assertFalse(backend.getSetup(req).isPresent());
@@ -85,5 +86,46 @@ public class EntryServletBackendTest {
 
     assertEquals(nation, backend.getSetup(req).orElse(mock(Nation.class)));
     verify(dsClient).getNation(gameIdTest, kingdomTest);
+  }
+
+  @Test
+  public void getWorldRequiresPasswordSuccess() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
+
+    assertFalse(backend.getWorld(req).isPresent());
+    verifyZeroInteractions(dsClient);
+  }
+
+  @Test
+  public void getWorldDateNotFoundReturnsEmpty() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getWorld(req).isPresent());
+    verify(dsClient).getWorldDate(gameIdTest);
+  }
+
+  @Test
+  public void getWorldNotFoundReturnsEmpty() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getWorld(req).isPresent());
+    verify(dsClient).getWorldDate(gameIdTest);
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void getWorldFoundReturnsFilteredWorld() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    World world = mock(World.class);
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(world));
+
+    assertEquals(world, backend.getWorld(req).orElse(mock(World.class)));
+    verify(dsClient).getWorldDate(gameIdTest);
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+    verify(world).filter(kingdomTest);
   }
 }
