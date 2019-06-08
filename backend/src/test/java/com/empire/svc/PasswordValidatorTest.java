@@ -21,7 +21,8 @@ public class PasswordValidatorTest {
   private final int dateTest = 5;
   private final String kingdomTest = "TEST_KINGDOM";
   private final String pwTest = "0123456789ABCDEF";
-//  private final String pwEncTest = "CB469D8CFBD5CB38935AD4C8CBAE397A41A42ADCB85D2D5858550465F7BD31FC";
+  private final String pwFailTest = "FEDCBA9876543210";
+  private final String pwEncTest = "CB469D8CFBD5CB38935AD4C8CBAE397A41A42ADCB85D2D5858550465F7BD31FC";
 
   @Before
   public void setup() {
@@ -68,12 +69,76 @@ public class PasswordValidatorTest {
 
     World w = mock(World.class);
     when(w.getNation(kingdomTest)).thenReturn(k);
-    when(w.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
     when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.of(w));
 
     when(dsClient.getPlayer(emailTest)).thenReturn(Optional.empty());
 
     assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.NO_ENTITY);
+  }
+
+  @Test
+  public void noKingdomInWorldReturnsPasswordFail() {
+    when(req.getPassword()).thenReturn(pwTest);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(dateTest));
+
+    NationData k = mock(NationData.class);
+    k.email = emailTest;
+
+    World w = mock(World.class);
+    w.gmPasswordHash = pwFailTest;
+    w.obsPasswordHash = pwFailTest;
+    when(w.getNation(kingdomTest)).thenReturn(k);
+    when(w.getNationNames()).thenReturn(Collections.emptySet());
+    when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.of(w));
+
+    Player p = mock(Player.class);
+    when(p.getPassHash()).thenReturn(pwEncTest);
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
+
+    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.FAIL);
+  }
+
+  @Test
+  public void playerPasswordWrongReturnsPasswordFail() {
+    when(req.getPassword()).thenReturn(pwTest);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(dateTest));
+
+    NationData k = mock(NationData.class);
+    k.email = emailTest;
+
+    World w = mock(World.class);
+    w.gmPasswordHash = pwFailTest;
+    w.obsPasswordHash = pwFailTest;
+    when(w.getNation(kingdomTest)).thenReturn(k);
+    when(w.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
+    when(w.getNationNames()).thenReturn(Collections.emptySet());
+    when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.of(w));
+
+    Player p = mock(Player.class);
+    when(p.getPassHash()).thenReturn(pwEncTest);
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
+
+    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.FAIL);
+  }
+
+  @Test
+  public void playerPasswordMatchReturnsPassPlayer() {
+    when(req.getPassword()).thenReturn(pwTest);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(dateTest));
+
+    NationData k = mock(NationData.class);
+    k.email = emailTest;
+
+    World w = mock(World.class);
+    when(w.getNation(kingdomTest)).thenReturn(k);
+    when(w.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
+    when(dsClient.getWorld(gameIdTest, dateTest)).thenReturn(Optional.of(w));
+
+    Player p = mock(Player.class);
+    when(p.getPassHash()).thenReturn(pwEncTest);
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(p));
+
+    assertEquals(passVal.checkPassword(req), PasswordValidator.PasswordCheck.PASS_PLAYER);
   }
 
 //  private void passPasswordCheck() {
