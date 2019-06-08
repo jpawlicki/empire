@@ -49,8 +49,21 @@ public class RequestFactoryTest {
   private void mockInputStream() { mockInputStream(""); }
 
   @Test
-  public void missingParamatersParseToDefaults() {
+  public void missingParametersParseToDefaults() {
     when(httpReq.getQueryString()).thenReturn(embedQueryParam("unknownkey", "unknownval"));
+    mockInputStream();
+
+    try {
+      Request defaultRequest = new Request(0, 0, -1, null, null, "", false);
+      assertEquals(defaultRequest, factory.fromHttpServletRequest(httpReq));
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void nullQueryStringParsesToDefaults() {
+    when(httpReq.getQueryString()).thenReturn(null);
     mockInputStream();
 
     try {
