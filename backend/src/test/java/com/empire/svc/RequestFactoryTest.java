@@ -10,7 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
@@ -21,12 +20,12 @@ public class RequestFactoryTest {
   private static RequestFactory factory;
   private static HttpServletRequest httpReq;
 
-  private static final String unknownKey = "BOGUS_KEY";
   private static final String kingdomTest = "TEST_KINGDOM";
   private static final String passwordTest = "TEST_PW";
   private static final int versionTest = 12;
   private static final int turnTest = 26;
   private static final long gameIdTest = 42;
+  private static final String bodyTest = "TEST_BODY";
 
   @Before
   public void setup() {
@@ -153,6 +152,17 @@ public class RequestFactoryTest {
 
     try {
       assertFalse(factory.fromHttpServletRequest(httpReq).isSkipMail());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void bodyParsesSuccessfully() {
+    mockInputStream(bodyTest);
+
+    try {
+      assertEquals(bodyTest, factory.fromHttpServletRequest(httpReq).getBody());
     } catch (IOException e) {
       fail("IOException during test");
     }
