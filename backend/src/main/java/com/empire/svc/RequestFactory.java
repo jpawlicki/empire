@@ -11,14 +11,17 @@ import javax.servlet.http.HttpServletRequest;
 class RequestFactory {
   static RequestFactory factory = new RequestFactory();
 
-  static String kingdomKey = "k";
-  static String passwordKey = "password";
-  static String versionKey = "v";
-  static String turnKey = "t";
-  static String gameIdKey = "gid";
-  static String skipmailKey = "skipmail";
+  static final String TRUE = "t";
+  static final String FALSE = "f";
 
-  public static Request from(HttpServletRequest req) throws IOException {
+  static final String kingdomKey = "k";
+  static final String passwordKey = "password";
+  static final String versionKey = "v";
+  static final String turnKey = "t";
+  static final String gameIdKey = "gid";
+  static final String skipmailKey = "skipmail";
+
+  static Request from(HttpServletRequest req) throws IOException {
     return factory.fromHttpServletRequest(req);
   }
 
@@ -31,7 +34,7 @@ class RequestFactory {
       int version = Integer.parseInt(extract(RequestFactory.versionKey, path, "0"));
       int turn = Integer.parseInt(extract(RequestFactory.turnKey, path, "0"));
       long gameId = Long.parseLong(extract(gameIdKey, path, "-1"));
-      boolean skipMail = "t".equals(extract(skipmailKey, path, "f"));
+      boolean skipMail = RequestFactory.TRUE.equals(extract(skipmailKey, path, RequestFactory.FALSE));
       return new Request(turn, version, gameId, password, kingdom, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail);
     } catch (NumberFormatException e) {
       throw new IOException(e);

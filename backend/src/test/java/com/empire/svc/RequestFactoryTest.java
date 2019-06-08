@@ -9,7 +9,9 @@ import javax.servlet.http.HttpServletRequest;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -161,6 +163,42 @@ public class RequestFactoryTest {
 
     try {
       assertEquals(-1, factory.fromHttpServletRequest(httpReq).getGameId());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void skipmailParsesSuccessfullyTrue() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.skipmailKey, RequestFactory.TRUE));
+    mockInputStream();
+
+    try {
+      assertTrue(factory.fromHttpServletRequest(httpReq).isSkipMail());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void skipmailParsesSuccessfullyFalse() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(RequestFactory.skipmailKey, RequestFactory.FALSE));
+    mockInputStream();
+
+    try {
+      assertFalse(factory.fromHttpServletRequest(httpReq).isSkipMail());
+    } catch (IOException e) {
+      fail("IOException during test");
+    }
+  }
+
+  @Test
+  public void skipmailMissingParsesToDefault() {
+    when(httpReq.getQueryString()).thenReturn(embedQueryParam(unknownKey, RequestFactory.TRUE));
+    mockInputStream();
+
+    try {
+      assertFalse(factory.fromHttpServletRequest(httpReq).isSkipMail());
     } catch (IOException e) {
       fail("IOException during test");
     }
