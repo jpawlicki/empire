@@ -124,31 +124,20 @@ class EntryServletBackend {
 
       if (w.nextTurn >= Instant.now().toEpochMilli()) continue;
 
-      Map<String, Map<String, String>> orders = new HashMap<>();
-      for (String kingdom : w.getNationNames()) {
-        Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, w.date);
-
-        if(ordersKingdom.isPresent()) {
-          orders.put(kingdom, ordersKingdom.get().getOrders());
-        } else {
-          log.warning("Cannot find orders for gameId=" + gameId + ", kingdom=" + kingdom + ", turn=" + w.date);
-          orders.put(kingdom,  null);
-        }
-      }
-
+      Map<String, Map<String, String>> orders = collectAllGameOrders(gameId, w.getNationNames(), w.date);
       Map<String, String> emails = w.advance(orders);
 
-      MultiPutRequest mp = MultiPutRequest.create()
+      MultiPutRequest putRequest = MultiPutRequest.create()
           .addWorld(gameId, w)
           .addWorldDate(gameId, w.date);
 
       if (w.gameover) {
         Set<Long> newActiveGames = dsClient.getActiveGames().orElse(new HashSet<>());
         newActiveGames.remove(gameId);
-        mp.addActiveGames(newActiveGames);
+        putRequest.addActiveGames(newActiveGames);
       }
 
-      boolean response = mp.put(dsClient);
+      boolean response = dsClient.multiPut(putRequest);
 
       if(response) {
         emails.forEach((k, v) -> mail(k, emailsubject, v.replace("%GAMEID%", Long.toString(gameId))));
@@ -249,11 +238,12 @@ class EntryServletBackend {
     Set<Long> activeGames = dsClient.getActiveGames().orElse(new HashSet<>());
     activeGames.add(r.getGameId());
 
-    boolean response = MultiPutRequest.create()
+    MultiPutRequest putRequest = MultiPutRequest.create()
         .addWorld(r.getGameId(), w)
         .addWorldDate(r.getGameId(), 1)
-        .addActiveGames(activeGames)
-        .put(dsClient);
+        .addActiveGames(activeGames);
+
+    boolean response = dsClient.multiPut(putRequest);
 
     if(response) {
       mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.getGameId() + ".");
@@ -275,10 +265,11 @@ class EntryServletBackend {
       return false;
     }
 
-    return MultiPutRequest.create()
+    MultiPutRequest putRequest = MultiPutRequest.create()
         .addNation(r.getGameId(), r.getKingdom(), nation)
-        .addPlayer(new Player(nation.email, nation.password))
-        .put(dsClient);
+        .addPlayer(new Player(nation.email, nation.password));
+
+    return dsClient.multiPut(putRequest);
   }
 
   boolean postRealTimeCommunication(Request r) {
@@ -332,6 +323,23 @@ class EntryServletBackend {
   private static final class ChangePlayerRequestBody {
     public String email;
     public String password;
+  }
+
+  private Map<String, Map<String, String>> collectAllGameOrders(long gameId, Set<String> kingdoms, int date) {
+    Map<String, Map<String, String>> orders = new HashMap<>();
+
+    for (String kingdom : kingdoms) {
+      Optional<Orders> ordersKingdom = dsClient.getOrders(gameId, kingdom, date);
+
+      if(ordersKingdom.isPresent()) {
+        orders.put(kingdom, ordersKingdom.get().getOrders());
+      } else {
+        log.warning("Cannot find orders for gameId=" + gameId + ", kingdom=" + kingdom + ", turn=" + date);
+        orders.put(kingdom,  null);
+      }
+    }
+
+    return orders;
   }
 
   private void mail(String address, String subject, String body) {

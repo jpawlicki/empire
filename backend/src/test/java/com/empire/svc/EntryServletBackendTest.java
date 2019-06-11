@@ -4,15 +4,18 @@ import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.World;
 import com.empire.store.DatastoreClient;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,7 +26,6 @@ public class EntryServletBackendTest {
   private static EntryServletBackend backend;
   private static DatastoreClient dsClient;
   private static PasswordValidator passVal;
-  private static LoginCache cache;
   private static Request req;
 
   private static final long gameIdTest = 42;
@@ -34,8 +36,7 @@ public class EntryServletBackendTest {
   public void setup() {
     dsClient = mock(DatastoreClient.class);
     passVal = mock(PasswordValidator.class);
-    cache = mock(LoginCache.class);
-    backend = new EntryServletBackend(dsClient, passVal, cache);
+    backend = new EntryServletBackend(dsClient, passVal, mock(LoginCache.class));
 
     req = mock(Request.class);
     when(req.getGameId()).thenReturn(gameIdTest);
@@ -127,5 +128,71 @@ public class EntryServletBackendTest {
     verify(dsClient).getWorldDate(gameIdTest);
     verify(dsClient).getWorld(gameIdTest, turnTest);
     verify(world).filter(kingdomTest);
+  }
+
+  @Test
+  public void getAdvancePollActiveGamesNotFoundReturnsEmpty() {
+    when(dsClient.getActiveGames()).thenReturn(Optional.empty());
+
+    assertFalse(backend.getAdvancePoll().isPresent());
+    verify(dsClient).getActiveGames();
+  }
+
+  @Test
+  public void getAdvancePollWorldDateNotFoundReturnsEmpty() {
+    when(dsClient.getActiveGames()).thenReturn(Optional.of(Collections.singleton(gameIdTest)));
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+    when(dsClient.getWorld(gameIdTest, -1)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getAdvancePoll().isPresent());
+    verify(dsClient).getWorldDate(gameIdTest);
+  }
+
+  @Test
+  public void getAdvancePollWorldNotFoundReturnsEmpty() {
+    when(dsClient.getActiveGames()).thenReturn(Optional.of(Collections.singleton(gameIdTest)));
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getAdvancePoll().isPresent());
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void getAdvancePollNotReadyReturnsEmpty() {
+    when(dsClient.getActiveGames()).thenReturn(Optional.of(Collections.singleton(gameIdTest)));
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    World world = mock(World.class);
+    world.nextTurn = Instant.now().toEpochMilli() + 1000000000;
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(world));
+
+    assertTrue(backend.getAdvancePoll().isPresent());
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+    verify(world, never()).advance(any());
+  }
+
+  @Test
+  public void getAdvancePollAdvancesWorld() {
+    when(dsClient.getActiveGames()).thenReturn(Optional.of(Collections.singleton(gameIdTest)));
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+
+    World world = mock(World.class);
+    world.nextTurn = Instant.now().toEpochMilli() - 100;
+    world.date = turnTest;
+    world.gameover = false;
+    when(world.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(world));
+
+    Map<String, String> ordersMap = Collections.emptyMap();
+    Orders orders = mock(Orders.class);
+    when(orders.getOrders()).thenReturn(ordersMap);
+    when(dsClient.getOrders(gameIdTest, kingdomTest, turnTest)).thenReturn(Optional.of(orders));
+
+    Map<String, Map<String, String>> gameOrdersMap = new HashMap<>();
+    gameOrdersMap.put(kingdomTest, ordersMap);
+
+    assertTrue(backend.getAdvancePoll().isPresent());
+    verify(world).advance(gameOrdersMap);
+    verify(dsClient).multiPut(anyObject()); // TODO: This is not an adequate test condition
   }
 }

@@ -23,10 +23,6 @@ public class MultiPutRequest {
     return puts;
   }
 
-  public boolean put(DatastoreClient client) {
-    return client.multiPut(this);
-  }
-
   public MultiPutRequest addPlayer(Player player) {
     PutParams k = new PutParams(PutType.PLAYER);
     k.player = player;
