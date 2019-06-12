@@ -49,10 +49,10 @@ class OrdersPane extends HTMLElement {
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
 					<expandable-snippet text="In exchange for loyalty, the Cult will give us an army of 5000 undead soldiers and 2 weeks of food in every region we control. However, the Cult will gain access to any regions we control, and we do not fully understand their objectives."></expandable-snippet>
 					<hr/>
-					<label id="gothi_Alyrja"><input type="checkbox" name="gothi_Alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
-					<label id="gothi_Rjinku"><input type="checkbox" name="gothi_Rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
-					<label id="gothi_Syrjen"><input type="checkbox" name="gothi_Syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge destroys 25% of any army or navy travelling into a land region, allows navies to traverse land regions and participate in battles there, and prevents navies from being captured. It will start to destroy crops worldwide after 2 weeks of activity.">Deluge</tooltip-element></label>
-					<label id="gothi_Lyskr"><input type="checkbox" name="gothi_Lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It will start to destroy crops worldwide after 2 weeks of activity.">Veil</tooltip-element></label>
+					<label id="gothi_Alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
+					<label id="gothi_Rjinku"><input type="checkbox" name="gothi_rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
+					<label id="gothi_Syrjen"><input type="checkbox" name="gothi_syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge destroys 25% of any army or navy travelling into a land region, allows navies to traverse land regions and participate in battles there, and prevents navies from being captured. It will start to destroy crops worldwide after 2 weeks of activity.">Deluge</tooltip-element></label>
+					<label id="gothi_Lyskr"><input type="checkbox" name="gothi_lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It will start to destroy crops worldwide after 2 weeks of activity.">Veil</tooltip-element></label>
 				</div>
 				<div id="content_nations">
 					<h1><tooltip-element tooltip="These communications are usually delayed by 0 to 30 seconds.">Real-Time</tooltip-element> Communications</h1>
@@ -876,7 +876,7 @@ class OrdersPane extends HTMLElement {
 				}
 				for (let gothi in g_data.kingdoms[whoami].gothi) {
 					if (g_data.kingdoms[whoami].gothi.hasOwnProperty(gothi) && g_data.kingdoms[whoami].gothi[gothi]) {
-						shadow.querySelector("[name=gothi_" + gothi + "]").checked = true;
+						shadow.querySelector("[name=gothi_" + gothi.toLowerCase() + "]").checked = true;
 					}
 				}
 				for (let doctrine of g_data.church.doctrines) {
@@ -1207,7 +1207,7 @@ class OrdersPane extends HTMLElement {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
 				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && g_data.tivar.deluge == 0) {
-					warn += "(navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
+					warn += " (navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
 			} else if (o.value.startsWith("Merge into army")) {
 				let ot = undefined;
@@ -1215,22 +1215,26 @@ class OrdersPane extends HTMLElement {
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
 			} else if (o.value.startsWith("Patrol")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn = "(army may be too small to patrol)";
+					warn += " (army may be too small to patrol)";
+				}
+				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
+				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
+					warn += " (armies can only patrol friendly regions)";
 				}
 			} else if (o.value.startsWith("Oust")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn = "(army may be too small to oust)";
+					warn = " (army may be too small to oust)";
 				}
 			} else if (o.value.startsWith("Conquer")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
-					warn = "(army may be too small to conquer)";
+					warn = " (army may be too small to conquer)";
 				}
 				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
-					warn += "(conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
+					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
 			} else if (o.value.startsWith("Raze")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 2) {
-					warn = "(army may be too small to raze)";
+					warn = " (army may be too small to raze)";
 				}
 			}
 			shadow.getElementById("warning_army_" + a.id).innerHTML = warn;
