@@ -1365,8 +1365,8 @@ class World implements GoodwillProvider {
 		}
 
 		void joinBattles() {
-			HashMap<String, Double> casualtiesCaused = new HashMap<>();
-			HashMap<String, Double> casualtiesSuffered = new HashMap<>();
+			Map<String, Double> casualtiesCaused = new HashMap<>();
+			Map<String, Double> casualtiesSuffered = new HashMap<>();
 			for (int i = 0; i < regions.size(); i++) {
 				Region region = regions.get(i);
 				ArrayList<Army> localArmies = new ArrayList<>();
@@ -2150,7 +2150,7 @@ class World implements GoodwillProvider {
 			// Riches
 			for (String k : kingdoms.keySet()) {
 				NationData n = getNation(k);
-				if (n.gold > 10000) n.score(NationData.ScoreProfile.RICHES, 2);
+				if (n.gold > 5000) n.score(NationData.ScoreProfile.RICHES, 2);
 				if (n.gold > 1000) n.score(NationData.ScoreProfile.RICHES, 1);
 				if (n.gold < 500) n.score(NationData.ScoreProfile.RICHES, -1);
 			}
@@ -2187,18 +2187,18 @@ class World implements GoodwillProvider {
 			for (String k : kingdoms.keySet()) {
 				double happyUs = 0;
 				double totalUs = 0;
-				double happyOther = 0;
-				double totalOther = 0;
+				double happyThem = 0;
+				double totalThem = 0;
 				for (Region r : regions) if (r.culture != null) {
 					if (r.culture.equals(getNation(k).culture)) {
 						happyUs += (1 - r.calcUnrest(World.this)) * r.population;
 						totalUs += r.population;
 					} else {
-						happyOther += (1 - r.calcUnrest(World.this)) * r.population;
-						totalOther += r.population;
+						happyThem += (1 - r.calcUnrest(World.this)) * r.population;
+						totalThem += r.population;
 					}
 				}
-				if (totalUs > 0 && totalOther > 0) score(k, NationData.ScoreProfile.CULTURE, happyUs / totalUs > happyOther / totalOther ? 2 : -2);
+				if (totalUs > 0 && totalThem > 0) score(k, NationData.ScoreProfile.CULTURE, happyUs / totalUs > happyThem / totalThem ? 2 : -2);
 			}
 		}
 

@@ -756,7 +756,7 @@ let doctrineDescriptions = {
 let g_scoreProfiles = {
 	"PROSPERITY": {"selectable": true,  "description": ["+2 points per million civilians you feed with plentiful rations.", "+1 point per million civilians you feed with normal rations.", "-1 point per 6000 civilians that starve to death in your core regions.", "-1 point per 12000 civilians that starve in the core regions of a nation paying you tribute."]},
 	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
-	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 10000 gold.", "+1 point per turn you have more than 1000 gold.", "-1 point per turn you have less than 500 gold."]},
+	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 5000 gold.", "+1 point per turn you have more than 1000 gold.", "-1 point per turn you have less than 500 gold."]},
 	"TERRITORY":  {"selectable": true,  "description": ["+4 points whenever you gain rulership of a region.", "-4 points whenever you lose rulership of a region."]},
 	"GLORY":      {"selectable": true,  "description": ["+1 point per battle in which you inflict or suffer more than 2000 casualties.", "-1 point any turn you inflict or suffer less than 500 casualties total."]},
 	"RELIGION":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion.", "-2 points whenever a region is converted away from your state religion."]},
