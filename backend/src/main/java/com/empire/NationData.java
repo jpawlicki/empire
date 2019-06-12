@@ -8,6 +8,13 @@ import java.util.Map;
 import java.security.SecureRandom;
 
 class NationData {
+	enum Gothi {
+		@SerializedName("Alyrja") ALYRJA,
+		@SerializedName("Rjinku") RJINKU,
+		@SerializedName("Lyskr") LYSKR,
+		@SerializedName("Syrjen") SYRJEN,
+	}
+
 	enum Tag {	
 		@SerializedName("Defensive") DEFENSIVE,
 		@SerializedName("Disciplined") DISCIPLINED,
@@ -99,7 +106,7 @@ class NationData {
 	HashMap<String, Double> score = new HashMap<>();
 	double gold;
 	private Map<String, Relationship> relationships = new HashMap<>();
-	Map<String, Boolean> gothi = new HashMap<>();
+	Map<Gothi, Boolean> gothi = new HashMap<>();
 	double goodwill;
 	boolean loyalToCult;
 	List<Noble> court = new ArrayList<>();

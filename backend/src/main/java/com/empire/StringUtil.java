@@ -1,15 +1,17 @@
 package com.empire;
 
-import java.util.List;
+import java.util.Collection;
 
 public class StringUtil {
-	public static String and(List<String> in) {
+	public static String and(Collection<String> in) {
 		StringBuilder b = new StringBuilder();
-		for (int i = 0; i < in.size(); i++) {
+		int i = 0;
+		for (String s : in) {
 			if (i > 0 && in.size() > 2) b.append(",");
 			if (i > 0) b.append(" ");
 			if (i > 0 && i == in.size() - 1) b.append("and ");
-			b.append(in.get(i));
+			b.append(s);
+			i++;
 		}
 		return b.toString();
 	}
