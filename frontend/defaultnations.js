@@ -66,7 +66,7 @@ let nations = {
 	"hosshofn": {
 		"culture": "eolsung",
 		"description": "Ancient darkness lives in the deep places under Hosshofn, and sometimes creeps forth to the surface world in defiance of the sun. The people of this land live in fear and in symbiosis with that alien power, blending their worship of the Eolsung gods with their knowledge that there are forces older and perhaps more powerful than their dieties.",
-		"traits": ["Bloodthirsty", "Mercantile"],
+		"traits": ["Imperialistic", "Mercantile"],
 		"score": ["food", "glory"],
 		"religion": "Northern (Rjinku)",
 		"title": "Jarl",
@@ -93,7 +93,7 @@ let nations = {
 	"kyaradis": {
 		"culture": "hansa",
 		"description": "Kyaradis has been the source of most technological improvements to sea vessels, and the ingenuity of her shipwrights is matched only by the skill of her sailors. The constant storms of the western seas bother her people little as they pursue wealth and prosperity.",
-		"traits": ["Coast-Dwelling", "Seafaring"],
+		"traits": ["Ship-Building", "Seafaring"],
 		"score": ["food", "riches", "happiness"],
 		"religion": "Iruhan (Vessel of Faith)",
 		"title": "King",
@@ -102,7 +102,7 @@ let nations = {
 	"nysiunarri": {
 		"culture": "anpilayn",
 		"description": "No nation has been as badly scarred by the horrors of war as Nysiunarri. Invaded generations ago by their Eolsung neighbors, the soldiers of Nysiunarri and her allies rallied in time to save their sovereignty, but returned to desolate lands drained of population and resources. Nysiunarri is weak - can it find strength anew?",
-		"traits": ["Ruined", "Stoic"],
+		"traits": ["Defensive", "Stoic"],
 		"score": ["food", "culture"],
 		"religion": "Iruhan (Tapestry of People)",
 		"title": "King",
@@ -147,7 +147,7 @@ let nations = {
 	"rettrsvelt": {
 		"culture": "tyrgaetan",
 		"description": "The numerous nomadic tribes that live among the fierce and inhospitible lands of the Atjanfjall are the northern-most dwelling peoples in the world. United for common security against their hostile and aggresive Eolsung neighbors, the Rettrsvelt need a clever and strong leader to fend off both hungry enemies and hunger itself.",
-		"traits": ["Nomadic", "Mystical"],
+		"traits": ["Stoic", "Mystical"],
 		"score": ["food"],
 		"religion": "Northern (Alyrja)",
 		"title": "Chieftain",

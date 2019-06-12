@@ -65,7 +65,10 @@ class World implements GoodwillProvider {
 	boolean gameover;
 
 	private static Gson getGson() {
-		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+		return new GsonBuilder()
+				.enableComplexMapKeySerialization()
+				.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+				.create();
 	}
 
 	private static String loadJson(long gameId, int turn, DatastoreService service) throws EntityNotFoundException {
@@ -82,6 +85,7 @@ class World implements GoodwillProvider {
 	}
 
 	public static World fromJson(String json) {
+		log.warning(json);
 		return getGson().fromJson(json, World.class);
 	}
 
