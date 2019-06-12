@@ -746,7 +746,7 @@ class World implements GoodwillProvider {
 		}
 
 		void setGothiSpellStatus() {
-			HashSet<NationData.Gothi> passedSpells = new HashSet<>();
+			Set<NationData.Gothi> passedSpells = new HashSet<>();
 			for (NationData.Gothi g : NationData.Gothi.values()) {
 				int votes = 0;
 				int votesTotal = 0;
@@ -1387,7 +1387,7 @@ class World implements GoodwillProvider {
 				}
 			}
 			for (String bribe : pirate.bribes.keySet()) pirate.bribes.put(bribe, pirate.bribes.get(bribe) * .75);
-			notifyAllPlayers("Piracy", (int) Math.ceil(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(new ArrayList<>(pirateNotes)) + ".");
+			notifyAllPlayers("Piracy", (int) Math.ceil(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(pirateNotes) + ".");
 		}
 
 		void joinBattles() {
