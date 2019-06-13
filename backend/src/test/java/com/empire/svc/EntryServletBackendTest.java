@@ -205,7 +205,7 @@ public class EntryServletBackendTest {
 
   @Test
   public void getActivityRequiresGmPasswordSuccess() {
-    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
 
     assertFalse(backend.getActivity(req).isPresent());
     verifyZeroInteractions(dsClient);
@@ -292,5 +292,37 @@ public class EntryServletBackendTest {
 
     assertTrue(backend.postOrders(req));
     verify(dsClient).putOrders(new Orders(gameIdTest, kingdomTest, turnTest, Collections.emptyMap(), versionTest));
+  }
+
+  @Test
+  public void postAdvanceWorldRequiresGmPasswordSuccess() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+
+    assertFalse(backend.postAdvanceWorld(req));
+    verifyZeroInteractions(dsClient);
+  }
+
+  @Test
+  public void postAdvanceWorldWorldNotFoundReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_GM);
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.postAdvanceWorld(req));
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void postAdvanceWorldWriteAdvancedWorld() {
+    // TODO: This test is not sufficient, should refactor single advance world method in backend
+    // This next line is necessary because postAdvanceWorld calls getAdvancePoll(), this is bad
+    when(dsClient.getActiveGames()).thenReturn(Optional.empty());
+
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_GM);
+    World world = mock(World.class);
+
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(world));
+
+    assertTrue(backend.postAdvanceWorld(req));
+    verify(dsClient).putWorld(gameIdTest, world);
   }
 }

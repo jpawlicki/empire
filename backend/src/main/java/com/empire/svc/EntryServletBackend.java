@@ -191,8 +191,9 @@ class EntryServletBackend {
     return dsClient.putOrders(new Orders(r.getGameId(), r.getKingdom(), r.getTurn(), orders, r.getVersion()));
   }
 
-  // TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
+  // TODO: Refactor a method to advance a single world and write to datastore
   boolean postAdvanceWorld(Request r) {
+    if (passVal.checkPassword(r) != PasswordValidator.PasswordCheck.PASS_GM) return false;
     Optional<World> worldOpt = dsClient.getWorld(r.getGameId(), r.getTurn());
 
     if(!worldOpt.isPresent()) {
