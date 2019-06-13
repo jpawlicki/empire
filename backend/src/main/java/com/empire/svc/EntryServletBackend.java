@@ -169,8 +169,8 @@ class EntryServletBackend {
 
     List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
     List<List<Boolean>> actives = cache.fetchLoginHistory(emails, r.getGameId(), date);
-    List<Map<String, Boolean>> result = actives.stream()
-        .map(a -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, a::get)))
+    List<Map<String, Boolean>> result = IntStream.range(0, date)
+        .mapToObj(i -> IntStream.range(0, emails.size()).boxed().collect(Collectors.toMap(emails::get, j -> actives.get(j).get(i))))
         .collect(Collectors.toList());
 
     return Optional.of(result);

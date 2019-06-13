@@ -1,12 +1,15 @@
 package com.empire.svc;
 
 import com.empire.Nation;
+import com.empire.NationData;
 import com.empire.Orders;
 import com.empire.World;
 import com.empire.store.DatastoreClient;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.Before;
@@ -26,17 +29,20 @@ public class EntryServletBackendTest {
   private static EntryServletBackend backend;
   private static DatastoreClient dsClient;
   private static PasswordValidator passVal;
+  private static LoginCache cache;
   private static Request req;
 
   private static final long gameIdTest = 42;
   private static final String kingdomTest = "TEST_KINGDOM";
-  private static final int turnTest = 13;
+  private static final int turnTest = 2;
+  private static final String emailTest = "email@test.com";
 
   @Before
   public void setup() {
     dsClient = mock(DatastoreClient.class);
     passVal = mock(PasswordValidator.class);
-    backend = new EntryServletBackend(dsClient, passVal, mock(LoginCache.class));
+    cache = mock(LoginCache.class);
+    backend = new EntryServletBackend(dsClient, passVal, cache);
 
     req = mock(Request.class);
     when(req.getGameId()).thenReturn(gameIdTest);
@@ -194,5 +200,58 @@ public class EntryServletBackendTest {
     assertTrue(backend.getAdvancePoll().isPresent());
     verify(world).advance(gameOrdersMap);
     verify(dsClient).multiPut(anyObject()); // TODO: This is not an adequate test condition
+  }
+
+  @Test
+  public void getActivityRequiresPasswordSuccess() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
+
+    assertFalse(backend.getActivity(req).isPresent());
+    verifyZeroInteractions(dsClient);
+  }
+
+  @Test
+  public void getActivityDateNotFoundReturnsEmpty() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_GM);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getActivity(req).isPresent());
+    verify(dsClient).getWorldDate(gameIdTest);
+  }
+
+  @Test
+  public void getActivityWorldNotFoundReturnsEmpty() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_GM);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.getActivity(req).isPresent());
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void getActivityReturnsPlayerActivity() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_GM);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+
+    NationData nation = mock(NationData.class);
+    nation.email = emailTest;
+
+    World world = mock(World.class);
+    when(world.getNationNames()).thenReturn(Collections.singleton(kingdomTest));
+    when(world.getNation(kingdomTest)).thenReturn(nation);
+
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(world));
+
+    when(cache.fetchLoginHistory(Collections.singletonList(emailTest), gameIdTest, turnTest))
+        .thenReturn(Collections.singletonList(Arrays.asList(false, true)));
+
+    List<Map<String, Boolean>> result = Arrays.asList(Collections.singletonMap(emailTest, false), Collections.singletonMap(emailTest, true));
+
+    Optional<List<Map<String, Boolean>>> activityOpt = backend.getActivity(req);
+
+    assertTrue(activityOpt.isPresent());
+    assertEquals(result, activityOpt.get());
+    verify(dsClient).getWorld(gameIdTest, turnTest);
   }
 }
