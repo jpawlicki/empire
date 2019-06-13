@@ -104,19 +104,6 @@ class OrdersPane extends HTMLElement {
 					</table>
 				</div>
 				<div id="content_game">
-					<h1 id="score_header">Score</h1>
-					<div id="score_switches">
-						<label><input type="checkbox" id="score_food" name="score_food"></input>Food</label>
-						<label><input type="checkbox" id="score_happiness" name="score_happiness"></input>Happiness</label>
-						<label><input type="checkbox" id="score_riches" name="score_riches"></input>Riches</label>
-						<label><input type="checkbox" id="score_territory" name="score_territory"></input>Territory</label>
-						<label><input type="checkbox" id="score_glory" name="score_glory"></input>Glory</label>
-						<label><input type="checkbox" id="score_religion" name="score_religion"></input>Religion</label>
-						<label><input type="checkbox" id="score_security" name="score_security"></input>Security</label>
-						<label><input type="checkbox" id="score_culture" name="score_culture"></input>Culture</label>
-						<label><input type="checkbox" id="score_ideology" name="score_ideology"></input>Ideology</label>
-						<expandable-snippet text="Your score profiles can be changed on every 7th turn.">
-					</div>
 					<div id="end_vote_div">
 						<h1 class="alert">Game Extension Vote</h1>
 						<select name="end_vote">
@@ -212,7 +199,7 @@ class OrdersPane extends HTMLElement {
 			input[type=text], input[type=number] {
 				width: 5em;
 			}
-			#content_economy label, #score_switches label {
+			#content_economy label {
 				width: 100%;
 			}
 			input[type=range] {
@@ -366,6 +353,17 @@ class OrdersPane extends HTMLElement {
 				for (let k in g_data.kingdoms) {
 					if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;
 					opts.push("Transfer character to " + k);
+				}
+			} else {
+				if (unit.captor == "") {
+					for (let profile of Object.keys(g_scoreProfiles).sort()) {
+						if (!g_scoreProfiles[profile].selectable) continue;
+						if (g_data.kingdoms[whoami].profiles.includes(profile)) {
+							opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
+						} else {
+							opts.push("Reflect on " + profile.toLowerCase() + " (add)");
+						}
+					}
 				}
 			}
 			return opts;
@@ -866,19 +864,10 @@ class OrdersPane extends HTMLElement {
 			};
 			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];
 		});
-		if (g_data.date % 7 == 0) {
-			shadow.querySelector("#tab_game").classList.add("alert");
-			shadow.querySelector("#score_header").classList.add("alert");
-		} else {
-			for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
-		}
 		if (g_data.date >= 26 && (g_data.date - 26) % 6 == 0) {
 			shadow.querySelector("#tab_game").classList.add("alert");
 		} else {
 			shadow.querySelector("#end_vote_div").style.display = "none";
-		}
-		for (let value of g_data.kingdoms[whoami].getRuler().values) {
-			shadow.getElementById("score_" + value).checked = true;
 		}
 
 		// Load Old Orders

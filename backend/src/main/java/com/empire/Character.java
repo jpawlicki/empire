@@ -31,7 +31,6 @@ class Character {
 	List<Preparation> preparation = new ArrayList<>();
 	private List<Tag> tags = new ArrayList<>();
 	private Experience experience = new Experience();
-	List<String> values = new ArrayList<>();
 	int leadingArmy = -1;
 	String orderhint = "";
 
