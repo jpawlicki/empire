@@ -35,6 +35,7 @@ public class EntryServletBackendTest {
   private static final long gameIdTest = 42;
   private static final String kingdomTest = "TEST_KINGDOM";
   private static final int turnTest = 2;
+  private static final int versionTest = 5;
   private static final String emailTest = "email@test.com";
 
   @Before
@@ -48,7 +49,7 @@ public class EntryServletBackendTest {
     when(req.getGameId()).thenReturn(gameIdTest);
     when(req.getKingdom()).thenReturn(kingdomTest);
     when(req.getTurn()).thenReturn(turnTest);
-
+    when(req.getVersion()).thenReturn(versionTest);
   }
 
   @Test
@@ -203,7 +204,7 @@ public class EntryServletBackendTest {
   }
 
   @Test
-  public void getActivityRequiresPasswordSuccess() {
+  public void getActivityRequiresGmPasswordSuccess() {
     when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
 
     assertFalse(backend.getActivity(req).isPresent());
@@ -253,5 +254,43 @@ public class EntryServletBackendTest {
     assertTrue(activityOpt.isPresent());
     assertEquals(result, activityOpt.get());
     verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void postOrdersRequiresPasswordSuccess() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
+
+    assertFalse(backend.postOrders(req));
+    verify(passVal).checkPassword(req);
+    verifyZeroInteractions(dsClient);
+  }
+
+  @Test
+  public void postOrdersDateNotFoundReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.postOrders(req));
+    verify(dsClient).getWorldDate(gameIdTest);
+  }
+
+  @Test
+  public void postOrdersDateNotCurrentReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest - 1));
+
+    assertFalse(backend.postOrders(req));
+    verify(dsClient).getWorldDate(gameIdTest);
+  }
+
+  @Test
+  public void postOrdersPutsOrdersAndReturnsTrue() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    when(req.getBody()).thenReturn("{}");
+    when(dsClient.putOrders(any())).thenReturn(true);
+
+    assertTrue(backend.postOrders(req));
+    verify(dsClient).putOrders(new Orders(gameIdTest, kingdomTest, turnTest, Collections.emptyMap(), versionTest));
   }
 }
