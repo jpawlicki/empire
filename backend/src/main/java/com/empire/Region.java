@@ -206,10 +206,10 @@ class Region {
 		if (max != religion) {
 			for (String k : w.getNationNames()) {
 				Ideology si = NationData.getStateReligion(k, w);
-				if (max.religion == si.religion) w.score(k, Constants.scoreProfReligion, Constants.scoreReligionPerConverted);
-				if (religion.religion == si.religion) w.score(k, Constants.scoreProfReligion, -Constants.scoreReligionPerConverted);
-				if (max == si) w.score(k, Constants.scoreProfIdeology, Constants.scoreIdeologyPerConverted);
-				if (religion == si) w.score(k, Constants.scoreProfIdeology, -Constants.scoreIdeologyPerConverted);
+				if (max.religion == si.religion) w.score(k, NationData.ScoreProfile.RELIGION, Constants.scoreReligionPerConverted);
+				if (religion.religion == si.religion) w.score(k, NationData.ScoreProfile.RELIGION, -Constants.scoreReligionPerConverted);
+				if (max == si) w.score(k, NationData.ScoreProfile.IDEOLOGY, Constants.scoreIdeologyPerConverted);
+				if (religion == si) w.score(k, NationData.ScoreProfile.IDEOLOGY, -Constants.scoreIdeologyPerConverted);
 			}
 		}
 		religion = max;
@@ -224,8 +224,8 @@ class Region {
 	}
 
 	public void setKingdom(World w, String kingdom) {
-		w.score(kingdom, Constants.scoreProfTerritory, Constants.scorePerConqueredTerritory);
-		w.score(this.kingdom, Constants.scoreProfTerritory, -Constants.scorePerConqueredTerritory);
+		w.score(kingdom, NationData.ScoreProfile.TERRITORY, Constants.scorePerConqueredTerritory);
+		w.score(this.kingdom, NationData.ScoreProfile.TERRITORY, -Constants.scorePerConqueredTerritory);
 		this.kingdom = kingdom;
 	}
 

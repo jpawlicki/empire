@@ -3,8 +3,10 @@ package com.empire;
 import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.security.SecureRandom;
 
 class NationData {
@@ -35,6 +37,18 @@ class NationData {
 		@SerializedName("War-like") WARLIKE;
 	}
 
+	enum ScoreProfile {
+		CULTURE,
+		GLORY,
+		HAPPINESS,
+		IDEOLOGY,
+		PROSPERITY,
+		RELIGION,
+		RICHES,
+		SECURITY,
+		TERRITORY;
+	}
+
 	public static final String PIRATE_NAME = "Pirate";
 	public static final String UNRULED_NAME = "Unruled";
 	public static final NationData UNRULED;
@@ -48,13 +62,6 @@ class NationData {
 			@Override
 			Relationship getRelationship(String who) { return Relationship.NPC_RELATION; }
 		};
-	}
-
-	static boolean rulerValues(String kingdom, String value, World w) {
-		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.hasTag(Character.Tag.RULER)) {
-			return c.values.contains(value);
-		}
-		return false;
 	}
 
 	static boolean isFriendly(String a, String b, World w) {
@@ -103,7 +110,9 @@ class NationData {
 
 	// Instance members.
 
-	HashMap<String, Double> score = new HashMap<>();
+	private Map<ScoreProfile, Double> score = new HashMap<>();
+	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
+	private Set<ScoreProfile> profiles = new HashSet<>();
 	double gold;
 	private Map<String, Relationship> relationships = new HashMap<>();
 	Map<Gothi, Boolean> gothi = new HashMap<>();
@@ -142,6 +151,24 @@ class NationData {
 
 	void addTag(Tag tag) {
 		tags.add(tag);
+	}
+
+	void addProfile(ScoreProfile p) {
+		profiles.add(p);
+	}
+
+	boolean hasProfile(ScoreProfile p) {
+		return profiles.contains(p);
+	}
+
+	void toggleProfile(ScoreProfile p) {
+		if (profiles.contains(p)) profiles.remove(p);
+		else profiles.add(p);
+	}
+
+	void score(ScoreProfile p, double amount) {
+		if (profiles.contains(p)) score.put(p, score.getOrDefault(p, 0.0) + amount);
+		else shadowScore.put(p, shadowScore.getOrDefault(p, 0.0) + amount);
 	}
 }
 
