@@ -68,7 +68,7 @@ class Region {
 		return culture.getArmyTags();
 	}
 
-	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population * Constants.recruitmentPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > Constants.unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - Constants.unrestRecruitmentEffectThresh);
@@ -76,11 +76,7 @@ class Region {
 		double mods = 1;
 		mods += calcSigningBonusMod(signingBonus);
 
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcGovernRecruitMod();
-			}
-		}
+		if (governor != null) governor.calcGovernRecruitMod();
 		if (noble != null) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
@@ -119,18 +115,14 @@ class Region {
 		return signingBonus <= 0 ? signingBonus * 0.5 : (Math.log(signingBonus) / Math.log(2)) * 0.5 + 0.5;
 	}
 
-	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
+	public double calcTaxIncome(World w, Character governor, double taxRate, double rationing) {
 		double base = population * Constants.taxPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > Constants.unrestTaxEffectThresh) base *= 1.0 - (unrest - Constants.unrestTaxEffectThresh);
 
 		double mods = taxRate;
 
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcGovernTaxMod();
-			}
-		}
+		if (governor != null) mods += governor.calcGovernTaxMod();
 		if (noble != null) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
