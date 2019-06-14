@@ -27,4 +27,28 @@ public class NobleTest {
 		n.addExperience();
 		assertEquals(2, n.calcLevel(), EPSILON);
 	}
+
+	@Test
+	public void levyActionMod() {
+		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		n.action = Noble.Action.LEVY;
+		assertEquals(.1 + .25, n.calcTaxMod(), EPSILON);
+		assertEquals(.1, n.calcRecruitMod(), EPSILON);
+	}
+
+	@Test
+	public void sootheActionMod() {
+		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		n.action = Noble.Action.SOOTHE;
+		assertEquals(.1 - .25, n.calcTaxMod(), EPSILON);
+		assertEquals(.1, n.calcRecruitMod(), EPSILON);
+	}
+
+	@Test
+	public void conscriptActionMod() {
+		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		n.action = Noble.Action.CONSCRIPT;
+		assertEquals(.1, n.calcTaxMod(), EPSILON);
+		assertEquals(.1 + .25, n.calcRecruitMod(), EPSILON);
+	}
 }

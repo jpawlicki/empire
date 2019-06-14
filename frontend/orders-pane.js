@@ -1032,7 +1032,7 @@ class OrdersPane extends HTMLElement {
 
 	getNobleOptions(r) {
 		let opts = [];
-		opts.push("Relax", "Sooth Population", "Levy Tax", "Conscript Recruits");
+		opts.push("Relax", "Soothe Population", "Levy Tax", "Conscript Recruits");
 		if (r.type == "land") {
 			if (r.isCoastal()) opts.push("Build Shipyard");
 			opts.push("Build Fortifications");
