@@ -85,7 +85,6 @@ class World implements GoodwillProvider {
 	}
 
 	public static World fromJson(String json) {
-		log.warning(json);
 		return getGson().fromJson(json, World.class);
 	}
 

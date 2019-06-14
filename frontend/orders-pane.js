@@ -26,9 +26,9 @@ class OrdersPane extends HTMLElement {
 				<table id="content_units">
 					<tbody id="units">
 						<tr><th>Who</th><th></th><th>Action</th></tr>
+						<tr id="table_nobles"><th colspan="2">Nobles</th></tr>
 						<tr id="table_armies"><th colspan="2">Armies</th></tr>
 						<tr id="table_navies"><th colspan="2">Navies</th></tr>
-						<tr id="table_nobles"><th colspan="2">Nobles</th></tr>
 					</tbody>
 				</table>
 				<div id="content_plots">
@@ -421,7 +421,7 @@ class OrdersPane extends HTMLElement {
 					unitTable.insertBefore(tr, shadow.getElementById("table_navies"));
 					armyCount++;
 				} else {
-					unitTable.insertBefore(tr, shadow.getElementById("table_nobles"));
+					unitTable.appendChild(tr);
 					navyCount++;
 				}
 			}
@@ -440,7 +440,7 @@ class OrdersPane extends HTMLElement {
 				addCell(who);
 				addCell(document.createElement("div"));
 				addCell(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
-				unitTable.appendChild(tr);
+				unitTable.insertBefore(tr, shadow.getElementById("table_armies"));
 				nobleCount++;
 			}
 		}
@@ -1033,13 +1033,11 @@ class OrdersPane extends HTMLElement {
 	getNobleOptions(r) {
 		let opts = [];
 		opts.push("Relax", "Soothe Population", "Levy Tax", "Conscript Recruits");
-		if (r.type == "land") {
-			if (r.isCoastal()) opts.push("Build Shipyard");
-			opts.push("Build Fortifications");
-			for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
-			for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
-			for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
-		}
+		if (r.isCoastal()) opts.push("Build Shipyard");
+		opts.push("Build Fortifications");
+		for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
+		for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
+		for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
 		return opts;
 	};
 
