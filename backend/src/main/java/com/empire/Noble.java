@@ -12,6 +12,14 @@ class Noble {
 	double unrest;
 	private double experience;
 
+	enum Action {
+		SOOTHE,
+		LEVY,
+		CONSCRIPT,
+		OTHER;
+	}
+	transient Action action = Action.OTHER;
+
 	static Noble makeNoble(Culture culture, int date) {
 		Noble n = new Noble();
 		n.name = WorldConstantData.getRandomName(culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
@@ -31,11 +39,16 @@ class Noble {
 	}
 
 	double calcRecruitMod() {
-		return calcLevel() * Constants.nobleRecruitModPerLevel;
+		double mod = calcLevel() * Constants.nobleRecruitModPerLevel;
+		if (action == Action.CONSCRIPT) mod += Constants.nobleActionConscriptionMod;
+		return mod;
 	}
 
 	double calcTaxMod() {
-		return calcLevel() * Constants.nobleTaxModPerLevel;
+		double mod = calcLevel() * Constants.nobleTaxModPerLevel;
+		if (action == Action.LEVY) mod += Constants.nobleActionLevyMod;
+		if (action == Action.SOOTHE) mod += Constants.nobleActionSootheMod;
+		return mod;
 	}
 
 	void addExperience() {

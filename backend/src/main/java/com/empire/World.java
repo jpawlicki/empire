@@ -65,7 +65,10 @@ class World implements GoodwillProvider {
 	boolean gameover;
 
 	private static Gson getGson() {
-		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+		return new GsonBuilder()
+				.enableComplexMapKeySerialization()
+				.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+				.create();
 	}
 
 	private static String loadJson(long gameId, int turn, DatastoreService service) throws EntityNotFoundException {
@@ -519,6 +522,7 @@ class World implements GoodwillProvider {
 			resolveIntrigue();
 			doctrineChanges();
 			orderOverrides();
+			nobleActions();
 			armyActionsNonTravel();
 			armyActionsTravel();
 			characterActions();
@@ -962,6 +966,82 @@ class World implements GoodwillProvider {
 			}
 		}
 
+		void buildAction(String action, String kingdom, Region region) {
+			double costMod = 1;
+			NationData nation = getNation(kingdom);
+			if (nation.hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
+			Construction ct;
+			if (action.contains("Shipyard")) {
+				ct = Construction.makeShipyard(Math.max(0, Constants.baseCostShipyard * costMod));
+			} else if (action.contains("Temple")) {
+				Ideology ideo = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
+				if (nation.hasTag(NationData.Tag.MYSTICAL)) costMod -= .5;
+				if (nation.hasTag(NationData.Tag.EVANGELICAL) && region.religion != NationData.getStateReligion(kingdom, World.this)) costMod -= 1;
+				if (ideo.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
+				if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
+					boolean templeBonus = true;
+					for (Region r : region.getNeighbors(World.this)) if (r.isLand() && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
+					if (templeBonus) costMod -= 1;
+				}
+				ct = Construction.makeTemple(ideo, Math.max(0, Constants.baseCostTemple * costMod));
+			} else if (action.contains("Fortifications")) {
+				if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
+				ct = Construction.makeFortifications(Math.max(0, Constants.baseCostFortifications * costMod));
+			} else {
+				return;
+			}
+			double cost = ct.originalCost;
+			if (cost <= nation.gold) {
+				nation.gold -= cost;
+				incomeSources.getOrDefault(kingdom, new Budget()).spentConstruction += cost;
+				region.constructions.add(ct);
+				if (ct.type == Construction.Type.TEMPLE) {
+					Ideology r = region.religion;
+					region.setReligion(ct.religion, World.this);
+					if (r != Ideology.VESSEL_OF_FAITH && region.religion == Ideology.VESSEL_OF_FAITH) {
+						for (String k : kingdoms.keySet()) if (Ideology.VESSEL_OF_FAITH == NationData.getStateReligion(k, World.this)) {
+							for (Region rr : regions) if (k.equals(rr.getKingdom())) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
+						}
+					}
+					if (nation.hasTag(NationData.Tag.MYSTICAL)) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
+					if (church.hasDoctrine(Church.Doctrine.ANTIECUMENISM) && ct.religion.religion != Religion.IRUHAN) nation.goodwill += Constants.antiecumenismConstructionOpinion;
+					if (church.hasDoctrine(Church.Doctrine.ANTISCHISMATICISM) && ct.religion == Ideology.VESSEL_OF_FAITH) nation.goodwill += Constants.antischismaticismConstructionOpinion;
+					if (church.hasDoctrine(Church.Doctrine.WORKS_OF_IRUHAN) && ct.religion.religion == Religion.IRUHAN) nation.goodwill += Constants.worksOfIruhanConstructionOpinion;
+				}
+				if (ct.type == Construction.Type.SHIPYARD && nation.hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(kingdom, regions.indexOf(region), Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
+				builds.add(region);
+				if (ct.type == Construction.Type.TEMPLE) templeBuilds.add(region);
+				if (ct.type == Construction.Type.FORTIFICATIONS && nation.hasTag(NationData.Tag.DEFENSIVE)) {
+					region.constructions.add(Construction.makeFortifications(0));
+				}
+			} else {
+				notifications.add(new Notification(kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
+			}
+		}
+
+		void nobleActions() {
+			for (int rid = 0; rid < regions.size(); rid++) {
+				Region r = regions.get(rid);
+				if (!r.hasNoble()) continue;
+				if (r.noble.unrest > 0.5) continue;
+				String action = orders.getOrDefault(r.getKingdom(), new HashMap<String, String>()).getOrDefault("action_noble_" + rid, "Relax");
+				if (action.startsWith("Build ")) {
+					buildAction(action, r.getKingdom(), r);
+				} else if (action.startsWith("Soothe ")) {
+					r.noble.action = Noble.Action.SOOTHE;
+					r.unrestPopular = Math.max(0, r.unrestPopular + Constants.nobleActionSootheUnrest);
+				} else if (action.startsWith("Relax")) {
+					r.noble.unrest = Math.max(0, r.noble.unrest + Constants.nobleActionRelaxUnrest);
+				} else if (action.startsWith("Levy ")) {
+					r.noble.action = Noble.Action.LEVY;
+					r.unrestPopular = Math.max(0, r.unrestPopular + Constants.nobleActionLevyUnrest);
+				} else if (action.startsWith("Conscript ")) {
+					r.noble.action = Noble.Action.CONSCRIPT;
+					r.unrestPopular = Math.max(0, r.unrestPopular + Constants.nobleActionConscriptionUnrest);
+				}
+			}
+		}
+
 		void armyActionsNonTravel() {
 			ArrayList<Army> actors = new ArrayList<>();
 			for (Army a : armies) {
@@ -1167,55 +1247,7 @@ class World implements GoodwillProvider {
 					if (!c.kingdom.equals(region.getKingdom()) && getNation(region.getKingdom()).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
 						notifications.add(new Notification(c.kingdom, "Construction Failed", region.getKingdom() + " does not permit us to build in " + region.name + "."));
 					} else {
-						double costMod = 1;
-						if (getNation(c.kingdom).hasTag(NationData.Tag.INDUSTRIAL)) costMod -= .25;
-						Construction ct;
-						if (action.contains("Shipyard")) {
-							ct = Construction.makeShipyard(Math.max(0, Constants.baseCostShipyard * costMod));
-						} else if (action.contains("Temple")) {
-							Ideology ideo = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
-							if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) costMod -= .5;
-							if (getNation(c.kingdom).hasTag(NationData.Tag.EVANGELICAL) && region.religion != NationData.getStateReligion(c.kingdom, World.this)) costMod -= 1;
-							if (ideo.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
-							if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
-								boolean templeBonus = true;
-								for (Region r : region.getNeighbors(World.this)) if (r.isLand() && (r.religion != region.religion || r.culture != region.culture)) templeBonus = false;
-								if (templeBonus) costMod -= 1;
-							}
-							ct = Construction.makeTemple(ideo, Math.max(0, Constants.baseCostTemple * costMod));
-						} else if (action.contains("Fortifications")) {
-							if (Ideology.FLAME_OF_KITH == region.religion) costMod -= 1;
-							ct = Construction.makeFortifications(Math.max(0, Constants.baseCostFortifications * costMod));
-						} else {
-							continue;
-						}
-						double cost = ct.originalCost;
-						if (cost <= getNation(c.kingdom).gold) {
-							getNation(c.kingdom).gold -= cost;
-							incomeSources.getOrDefault(c.kingdom, new Budget()).spentConstruction += cost;
-							region.constructions.add(ct);
-							if (ct.type == Construction.Type.TEMPLE) {
-								Ideology r = region.religion;
-								region.setReligion(ct.religion, World.this);
-								if (r != Ideology.VESSEL_OF_FAITH && region.religion == Ideology.VESSEL_OF_FAITH) {
-									for (String kingdom : kingdoms.keySet()) if (Ideology.VESSEL_OF_FAITH == NationData.getStateReligion(kingdom, World.this)) {
-										for (Region rr : regions) if (kingdom.equals(rr.getKingdom())) rr.unrestPopular = Math.max(0, rr.unrestPopular - .1);
-									}
-								}
-								if (getNation(c.kingdom).hasTag(NationData.Tag.MYSTICAL)) region.unrestPopular = Math.max(0, region.unrestPopular - .1);
-								if (church.hasDoctrine(Church.Doctrine.ANTIECUMENISM) && ct.religion.religion != Religion.IRUHAN) getNation(c.kingdom).goodwill += Constants.antiecumenismConstructionOpinion;
-								if (church.hasDoctrine(Church.Doctrine.ANTISCHISMATICISM) && ct.religion == Ideology.VESSEL_OF_FAITH) getNation(c.kingdom).goodwill += Constants.antischismaticismConstructionOpinion;
-								if (church.hasDoctrine(Church.Doctrine.WORKS_OF_IRUHAN) && ct.religion.religion == Religion.IRUHAN) getNation(c.kingdom).goodwill += Constants.worksOfIruhanConstructionOpinion;
-							}
-							if (ct.type == Construction.Type.SHIPYARD && getNation(c.kingdom).hasTag(NationData.Tag.SHIP_BUILDING)) buildShips(c.kingdom, c.location, Constants.numShipsBuiltPerShipyard * Constants.shipBuildingTraitWeeksProduction);
-							builds.add(region);
-							if (ct.type == Construction.Type.TEMPLE) templeBuilds.add(region);
-							if (ct.type == Construction.Type.FORTIFICATIONS && getNation(c.kingdom).hasTag(NationData.Tag.DEFENSIVE)) {
-								region.constructions.add(Construction.makeFortifications(0));
-							}
-						} else {
-							notifications.add(new Notification(c.kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
-						}
+						buildAction(action, c.kingdom, region);
 					}
 				} else if (action.startsWith("Instate Noble")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom) || region.noble != null) continue;

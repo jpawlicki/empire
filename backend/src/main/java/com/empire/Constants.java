@@ -50,6 +50,13 @@ public class Constants {
 	public static final double setupNobleFractionHansa = 0.8;
 	public static final double setupNobleFractionTavian = 0;
 	public static final double setupNobleFractionTyrgaetan = 0;
+	public static final double nobleActionConscriptionMod = .25;
+	public static final double nobleActionConscriptionUnrest = .04;
+	public static final double nobleActionLevyMod = .25;
+	public static final double nobleActionLevyUnrest = .04;
+	public static final double nobleActionRelaxUnrest = -.02;
+	public static final double nobleActionSootheMod = -.25;
+	public static final double nobleActionSootheUnrest = -.04;
 
 	//Religion
 	public static final double rjinkuRecruitmentMod = 1.0;
@@ -74,7 +81,6 @@ public class Constants {
 	public static final int tivarSpellGracePeriod = 2;
 	public static final double tivarSpellCropDestruction = 0.01;
 
-	public static final Noble noNoble = null;
 	public static final Character noLeader = null;
 
 	public static final double basePlotStrength = 1.0;

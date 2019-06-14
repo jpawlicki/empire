@@ -26,6 +26,7 @@ class OrdersPane extends HTMLElement {
 				<table id="content_units">
 					<tbody id="units">
 						<tr><th>Who</th><th></th><th>Action</th></tr>
+						<tr id="table_nobles"><th colspan="2">Nobles</th></tr>
 						<tr id="table_armies"><th colspan="2">Armies</th></tr>
 						<tr id="table_navies"><th colspan="2">Navies</th></tr>
 					</tbody>
@@ -384,6 +385,9 @@ class OrdersPane extends HTMLElement {
 				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_armies"));
 			}
 		}
+		let navyCount = 0;
+		let armyCount = 0;
+		let nobleCount = 0;
 		for (let unit of g_data.armies) {
 			if (unit.kingdom == kingdom.name) {
 				let tr = document.createElement("tr");
@@ -413,10 +417,36 @@ class OrdersPane extends HTMLElement {
 				wd.setAttribute("class", "warning");
 				td3.appendChild(wd);
 				tr.appendChild(td3);
-				if (unit.type == "army") unitTable.insertBefore(tr, shadow.getElementById("table_navies"));
-				else unitTable.appendChild(tr);
+				if (unit.type == "army") {
+					unitTable.insertBefore(tr, shadow.getElementById("table_navies"));
+					armyCount++;
+				} else {
+					unitTable.appendChild(tr);
+					navyCount++;
+				}
 			}
 		}
+		for (let r of g_data.regions) {
+			if (r.kingdom == whoami && r.noble.name != undefined && r.noble.unrest <= 0.5) {
+				let tr = document.createElement("tr");
+				let addCell = function(c) {
+					let td = document.createElement("td");
+					td.appendChild(c);
+					tr.appendChild(td);
+				}
+				let who = document.createElement("report-link");
+				who.setAttribute("href", "region/" + r.name);
+				who.appendChild(document.createTextNode(r.noble.name));
+				addCell(who);
+				addCell(document.createElement("div"));
+				addCell(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
+				unitTable.insertBefore(tr, shadow.getElementById("table_armies"));
+				nobleCount++;
+			}
+		}
+		if (armyCount == 0) shadow.getElementById("table_armies").style.display = "none";
+		if (navyCount == 0) shadow.getElementById("table_navies").style.display = "none";
+		if (nobleCount == 0) shadow.getElementById("table_nobles").style.display = "none";
 		changeTab("units");
 
 		// PLOT TAB
@@ -1000,6 +1030,18 @@ class OrdersPane extends HTMLElement {
 		return opts;
 	};
 
+	getNobleOptions(r) {
+		let opts = [];
+		opts.push("Relax", "Soothe Population", "Levy Tax", "Conscript Recruits");
+		if (r.isCoastal()) opts.push("Build Shipyard");
+		opts.push("Build Fortifications");
+		for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
+		for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
+		for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
+		return opts;
+	};
+
+
 	select(name, opts) {
 		let sel = document.createElement("select");
 		sel.setAttribute("name", name);
@@ -1217,7 +1259,6 @@ class OrdersPane extends HTMLElement {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn += " (army may be too small to patrol)";
 				}
-				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
 					warn += " (armies can only patrol friendly regions)";
 				}

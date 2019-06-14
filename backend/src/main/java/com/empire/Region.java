@@ -77,7 +77,7 @@ class Region {
 		mods += calcSigningBonusMod(signingBonus);
 
 		if (governor != null) governor.calcGovernRecruitMod();
-		if (noble != null) mods += noble.calcRecruitMod();
+		if (hasNoble()) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += Constants.patrioticMod;
@@ -122,8 +122,17 @@ class Region {
 
 		double mods = taxRate;
 
+<<<<<<< HEAD
+		if (governors != null) {
+			for (Character c : governors) {
+				mods += c.calcGovernTaxMod();
+			}
+		}
+		if (hasNoble()) mods += noble.calcTaxMod();
+=======
 		if (governor != null) mods += governor.calcGovernTaxMod();
 		if (noble != null) mods += noble.calcTaxMod();
+>>>>>>> origin/master
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;
@@ -169,7 +178,7 @@ class Region {
 
 		double unrest = calcUnrest(w);
 		double mods = 1;
-		if (noble != null) mods += Constants.noblePirateThreatMod;
+		if (hasNoble()) mods += Constants.noblePirateThreatMod;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / Constants.pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
 	}
@@ -309,7 +318,7 @@ class Region {
 	// TODO: Some or all of the condition checking into Noble?
 	// TODO: Enforce [0.0, 1.0] range?
 	public double calcUnrestNoble(){
-		return noble != null && !"".equals(noble.name) ? noble.unrest : 0.0;
+		return hasNoble() ? noble.unrest : 0.0;
 	}
 
 	// TODO: Enfore min/max, add testing
@@ -352,6 +361,10 @@ class Region {
 		return type == Type.WATER;
 	}
 
+	public boolean hasNoble() {
+		return noble != null && !"".equals(noble.name);
+	}
+
 	/**
 	 * Returns a set of region ids that are within {@code limit} edges of this region.
 	 */
@@ -382,7 +395,7 @@ class Region {
 	void plant(boolean isHarvestTurn) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * Constants.chaliceOfCompassionPlantPerCitizen;
 		double mod = 1;
-		if (noble != null) mod += noble.calcPlantMod();
+		if (hasNoble()) mod += noble.calcPlantMod();
 		if (isHarvestTurn) {
 			crops += population * Constants.plantsPerCitizen * mod;
 		}
