@@ -170,5 +170,16 @@ class NationData {
 		if (profiles.contains(p)) score.put(p, score.getOrDefault(p, 0.0) + amount);
 		else shadowScore.put(p, shadowScore.getOrDefault(p, 0.0) + amount);
 	}
+
+	void filterForView(boolean filterScore) {
+		password = "";
+		email = "";
+		accessToken = "";
+		if (filterScore) {
+			score = new HashMap<>();
+			shadowScore = new HashMap<>();
+			profiles = new HashSet<>();
+		}
+	}
 }
 

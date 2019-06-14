@@ -493,7 +493,7 @@ class World implements GoodwillProvider {
 		int inspires;
 		HashMap<Army, Character> leaders = new HashMap<>();
 		HashMap<String, Double> pirateThreatSources = new HashMap<>();
-		HashMap<Region, ArrayList<Character>> governors = new HashMap<>();
+		HashMap<Region, Character> governors = new HashMap<>();
 		HashMap<Army, Double> attritionLosses = new HashMap<>();
 		HashSet<Region> builds = new HashSet<>();
 		HashSet<Region> templeBuilds = new HashSet<>();
@@ -1256,10 +1256,7 @@ class World implements GoodwillProvider {
 					c.addExperienceGovernor();
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
-					ArrayList<Character> gov = governors.getOrDefault(region, new ArrayList<Character>());
-					gov.add(c);
-					governors.put(region, gov);
-					c.addExperienceGovernor();
+					if (!governors.containsKey(region) || governors.get(region).calcGovernTaxMod() < c.calcGovernTaxMod()) governors.put(region, c);
 				} else if (action.startsWith("Reflect")) {
 					if (!c.hasTag(Character.Tag.RULER)) continue;
 					if (c.isCaptive()) continue;
@@ -1298,6 +1295,7 @@ class World implements GoodwillProvider {
 					c.captor = "";
 				}
 			}
+			for (Character gov : governors.values()) gov.addExperienceGovernor();
 			for (Character c : removeCharacters) characters.remove(c);
 		}
 
@@ -2801,9 +2799,7 @@ class World implements GoodwillProvider {
 		gmPasswordHash = "";
 		obsPasswordHash = "";
 		for (String k : kingdoms.keySet()) {
-			getNation(k).password = "";
-			getNation(k).email = "";
-			getNation(k).accessToken = "";
+			getNation(k).filterForView(!kingdom.equals(k) && !"(Observer)".equals(kingdom));
 		}
 		if ("(Observer)".equals(kingdom)) return;
 		// Filter out cult regions.
