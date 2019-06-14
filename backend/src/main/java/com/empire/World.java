@@ -2769,9 +2769,15 @@ class World implements GoodwillProvider {
 		gmPasswordHash = "";
 		obsPasswordHash = "";
 		for (String k : kingdoms.keySet()) {
-			getNation(k).password = "";
-			getNation(k).email = "";
-			getNation(k).accessToken = "";
+			NationData n = getNation(k);
+			n.password = "";
+			n.email = "";
+			n.accessToken = "";
+			if (!kingdom.equals(k) && !"(Observer)".equals(kingdom)) {
+				n.score = new HashMap<>();
+				n.shadowScore = new HashMap<>();
+				n.profiles = new HashSet<>();
+			}
 		}
 		if ("(Observer)".equals(kingdom)) return;
 		// Filter out cult regions.

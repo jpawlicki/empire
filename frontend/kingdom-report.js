@@ -372,16 +372,20 @@ class KingdomReport extends HTMLElement {
 			}
 			shadow.getElementById("historical").appendChild(d);
 		}
-		let score = shadow.getElementById("score");
-		let d = document.createElement("div");
-		d.innerHTML = "They care about " + kingdom.profiles.map(s => s.toLowerCase()).sort().join(", ") + ".";
-		score.appendChild(d);
-		if (kingdom.score != undefined) {
-			for (let s in kingdom.score) if (kingdom.score.hasOwnProperty(s)) {
-				let d = document.createElement("div");
-				d.innerHTML = s.substring(0, 1).toUpperCase() + s.substring(1) + ": " + (kingdom.score[s] > 0 ? "+" : "") + Math.round(kingdom.score[s] * 10) / 10;
-				score.appendChild(d);
+		if ("(Observer)" == whoami) {
+			let score = shadow.getElementById("score");
+			let d = document.createElement("div");
+			d.innerHTML = "They care about " + kingdom.profiles.map(s => s.toLowerCase()).sort().join(", ") + ".";
+			score.appendChild(d);
+			if (kingdom.score != undefined) {
+				for (let s in kingdom.score) if (kingdom.score.hasOwnProperty(s)) {
+					let d = document.createElement("div");
+					d.innerHTML = s.substring(0, 1).toUpperCase() + s.substring(1) + ": " + (kingdom.score[s] > 0 ? "+" : "") + Math.round(kingdom.score[s] * 10) / 10;
+					score.appendChild(d);
+				}
 			}
+		} else {
+			shadow.getElementById("score_heading").style.display = "none";
 		}
 	}
 }
