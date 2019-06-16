@@ -1367,10 +1367,10 @@ class World implements GoodwillProvider {
 			double totalPirateThreat = 0;
 			double pirateArmies = pirate.threat * .25 * 100;
 			double piratesSpawned = 0;
-			pirate.threat *= .75;
 			Set<String> pirateNotes = new HashSet<>();
 			while (piratesSpawned < pirateArmies) {
 				for (Region r : regions) totalPirateThreat += r.calcPirateThreat(World.this);
+				if (totalPirateThreat == 0) return; // Probably 0% unhappiness globally.
 				totalPirateThreat *= Math.random();
 				for (int i = 0; i < regions.size(); i++) {
 					totalPirateThreat -= regions.get(i).calcPirateThreat(World.this);
@@ -1393,6 +1393,7 @@ class World implements GoodwillProvider {
 					}
 				}
 			}
+			pirate.threat *= .75;
 			for (String bribe : pirate.bribes.keySet()) pirate.bribes.put(bribe, pirate.bribes.get(bribe) * .75);
 			notifyAllPlayers("Piracy", (int) Math.ceil(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(pirateNotes) + ".");
 		}
@@ -2069,13 +2070,9 @@ class World implements GoodwillProvider {
 						if (nn != r && n.type == Region.Type.LAND) destinations.add(nn);
 					}
 				}
-				destinations.removeIf(
-						d ->
-								d.unrestPopular >= r.unrestPopular
-								|| starvingRegions.contains(d)
-								|| (!d.getKingdom().equals(r.getKingdom())
-										&& (patrolledRegions.contains(r)
-												|| getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.ACCEPT)));
+				destinations.removeIf(d -> d.unrestPopular >= r.unrestPopular);
+				destinations.removeIf(d -> starvingRegions.contains(d));
+				destinations.removeIf(d -> !d.getKingdom().equals(r.getKingdom()) && (patrolledRegions.contains(r) || getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.REFUSE));
 				if (destinations.isEmpty() || eligibleToEmigrate < 1) continue;
 				double totalWeight = 0;
 				for (Region d : destinations) totalWeight += d.calcImmigrationWeight();
@@ -2096,13 +2093,17 @@ class World implements GoodwillProvider {
 			}
 			for (String k : kingdoms.keySet()) {
 				double popChange = 0;
+				double absPopChange = 0;
 				String note = "";
 				for (Map.Entry<Region, Double> e : netMotion.entrySet()) {
 					if (!e.getKey().getKingdom().equals(k)) continue;
 					popChange += e.getValue();
+					absPopChange += Math.abs(e.getValue());
 					note += "\n" + e.getKey().name + ": " + (e.getValue() > 0 ? "+" : "") + Math.round(e.getValue()) + " people.";
 				}
-				notifications.add(new Notification(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:" + note));
+				if (absPopChange > 1000) {
+					notifications.add(new Notification(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:" + note));
+				}
 			}
 
 			// Growth
