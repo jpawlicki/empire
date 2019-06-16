@@ -68,6 +68,12 @@ class Region {
 		return culture.getArmyTags();
 	}
 
+	public double calcImmigrationWeight() {
+		double mod = 1;
+		if (religion == Ideology.FLAME_OF_KITH) mod += Constants.flameOfKithImmigrationWeightMod;
+		return (1 - unrestPopular) * mod;
+	}
+
 	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population * Constants.recruitmentPerPop;
 		double unrest = calcUnrest(w);
@@ -122,17 +128,8 @@ class Region {
 
 		double mods = taxRate;
 
-<<<<<<< HEAD
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcGovernTaxMod();
-			}
-		}
-		if (hasNoble()) mods += noble.calcTaxMod();
-=======
 		if (governor != null) mods += governor.calcGovernTaxMod();
-		if (noble != null) mods += noble.calcTaxMod();
->>>>>>> origin/master
+		if (hasNoble()) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += Constants.mercantileTaxMod;

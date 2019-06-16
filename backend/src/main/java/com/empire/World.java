@@ -500,6 +500,8 @@ class World implements GoodwillProvider {
 		HashSet<String> battlingNations = new HashSet<>();
 		HashMap<String, Double> rationing = new HashMap<String, Double>();
 		HashMap<String, Double> taxationRates = new HashMap<String, Double>();
+		Set<Region> starvingRegions = new HashSet<>();
+		Set<Region> patrolledRegions = new HashSet<>();
 
 		Advancer(Map<String, Map<String, String>> orders) {
 			this.orders = orders;
@@ -1061,6 +1063,7 @@ class World implements GoodwillProvider {
 						notifications.add(new Notification(army.kingdom, "Patrol Ineffective", "Army " + army.id + " is not strong enough to effectively patrol " + region.name + "."));
 						continue;
 					}
+					patrolledRegions.add(region);
 					ArrayList<String> who = new ArrayList<>();
 					for (Character c : characters) {
 						if (c.location == army.location) {
@@ -1559,25 +1562,6 @@ class World implements GoodwillProvider {
 					}
 				}
 			}
-			// Tavian abductions 
-			HashMap<Region, Double> totalAbductions = new HashMap<>();
-			for (Region r : regions) {
-				if (r.getKingdom() == null) continue;
-				if (Ideology.FLAME_OF_KITH != NationData.getStateReligion(r.getKingdom(), World.this)) continue;
-				ArrayList<Region> abductees = new ArrayList<>();
-				for (Region n : r.getNeighbors(World.this)) if (!r.getKingdom().equals(n.getKingdom())) abductees.add(n);
-				if (abductees.isEmpty()) continue;
-				for (Region a : abductees) {
-					double transfer = a.population * 0.01;
-					addPopulation(r, transfer);
-					addPopulation(a, -transfer);
-					totalAbductions.put(a, totalAbductions.getOrDefault(a, 0.0) + transfer);
-				}
-			}
-			for (Region r : totalAbductions.keySet()) {
-				r.unrestPopular = Math.min(1, r.unrestPopular + 0.02);
-				notifications.add(new Notification(r.getKingdom(), "Slavers in " + r.name, "Traffickers from neighboring lands that follow the Tavian (Flame of Kith) religion have carried off " + Math.round(totalAbductions.get(r)) + " of the inhabitants of " + r.name + " to sell as slaves."));
-			}
 		}
 
 		void noblesRebel() {
@@ -2051,9 +2035,7 @@ class World implements GoodwillProvider {
 					for (String k : kingdoms.keySet()) if (getNation(k).coreRegions.contains(i)) score(k, NationData.ScoreProfile.PROSPERITY, -1 / 6000.0 * starving);
 				}
 			}
-			for (Region r : starvation.keySet()) {
-				sendRefugees(r, null, starvation.get(r), false, true);
-			}
+			starvingRegions.addAll(starvation.keySet());
 			for (String k : kingdoms.keySet()) {
 				String notification = "";
 				for (Region r : starvation.keySet()) if (r.getKingdom().equals(k)) {
@@ -2064,6 +2046,66 @@ class World implements GoodwillProvider {
 		}
 
 		void growPopulations() {
+			// Emigration
+			class Emigration {
+				final Region source;
+				final Region sink;
+				final double population;
+				public Emigration(Region source, Region sink, double population) {
+					this.source = source;
+					this.sink = sink;
+					this.population = population;
+				}
+			}
+			List<Emigration> emigrations = new ArrayList<>();
+			for (Region r : regions) {
+				double eligibleToEmigrate = r.population * r.unrestPopular * Constants.emigrationFactor;
+				if (starvingRegions.contains(r)) eligibleToEmigrate *= (1 + Constants.emigrationStarvationMod);
+				eligibleToEmigrate = Math.min(eligibleToEmigrate, r.population - 1); // Emigrating the last person causes a divide by zero error.
+				List<Region> destinations = new ArrayList<Region>();
+				for (Region n : r.getNeighbors(World.this)) {
+					if (n.type == Region.Type.LAND) destinations.add(n);
+					else for (Region nn : n.getNeighbors(World.this)) {
+						if (nn != r && n.type == Region.Type.LAND) destinations.add(nn);
+					}
+				}
+				destinations.removeIf(
+						d ->
+								d.unrestPopular >= r.unrestPopular
+								|| starvingRegions.contains(d)
+								|| (!d.getKingdom().equals(r.getKingdom())
+										&& (patrolledRegions.contains(r)
+												|| getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.ACCEPT)));
+				if (destinations.isEmpty() || eligibleToEmigrate < 1) continue;
+				double totalWeight = 0;
+				for (Region d : destinations) totalWeight += d.calcImmigrationWeight();
+				for (Region d : destinations) {
+					emigrations.add(new Emigration(r, d, d.calcImmigrationWeight() / totalWeight * eligibleToEmigrate));
+				}
+			}
+			Map<Region, Double> netMotion = new HashMap<>();
+			for (Emigration e : emigrations) {
+				netMotion.merge(e.source, -e.population, Double::sum);
+				double unhappyCitizens = e.source.population * e.source.unrestPopular;
+				e.source.population -= e.population;
+				e.source.unrestPopular = (unhappyCitizens - e.population) / e.source.population;
+				netMotion.merge(e.sink, e.population, Double::sum);
+				unhappyCitizens = e.sink.population * e.sink.unrestPopular;
+				e.sink.population += e.population;
+				e.sink.unrestPopular = (unhappyCitizens + e.population) / e.sink.population;
+			}
+			for (String k : kingdoms.keySet()) {
+				double popChange = 0;
+				String note = "";
+				for (Map.Entry<Region, Double> e : netMotion.entrySet()) {
+					if (!e.getKey().getKingdom().equals(k)) continue;
+					popChange += e.getValue();
+					note += "\n" + e.getKey().name + ": " + (e.getValue() > 0 ? "+" : "") + Math.round(e.getValue()) + " people.";
+				}
+				notifications.add(new Notification(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:" + note));
+			}
+
+			// Growth
 			for (Region r : regions) r.population *= 1.001;
 		}
 
@@ -2406,7 +2448,6 @@ class World implements GoodwillProvider {
 
 	private void addPopulation(Region r, double amount) {
 		r.population += amount;
-		int rid = regions.indexOf(r);
 	}
 
 	private int getNewArmyId() {
