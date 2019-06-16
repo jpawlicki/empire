@@ -146,7 +146,7 @@ public class Constants {
 	public static final double pirateThreatDoubleGold = 30;
 
 	public static final double emigrationFactor = 0.1;
-	public static final double emigrationStarvationMod = 1;
+	public static final double emigrationStarvationMod = 2;
 
 	public static final double baseCostFortifications = 20;
 	public static final double baseCostShipyard = 80;
