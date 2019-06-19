@@ -50,7 +50,7 @@ class Army {
 		if (hasTag(Tag.STEEL)) mods += w.rules.steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += w.rules.seafaringMod;
 		if (isArmy() && !w.rules.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += w.rules.disciplinedArmyStrengthMod;
-		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
+		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod(w.rules);
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);
 			if (Ideology.SWORD_OF_TRUTH == sr) mods += w.rules.swordOfTruthMod;
@@ -59,7 +59,7 @@ class Army {
 		if (lastStand) mods += w.rules.lastStandMod;
 		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * w.rules.perInspireMod;
 		if (leader != w.rules.noLeader && !leader.isCaptive()) {
-			mods += leader.calcLeadMod(type);
+			mods += leader.calcLeadMod(type, w.rules);
 		}
 
 		return strength * mods;

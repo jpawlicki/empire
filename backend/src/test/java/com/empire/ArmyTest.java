@@ -28,7 +28,7 @@ public class ArmyTest {
 	private static final String k2 = "k2";
 
 	@Before
-	public void setUpPlainArmy() {
+	public void setUpPlainArmy() throws IOException {
 		try { 
 			rules = Rules.loadRules(5);
 		} catch (IOException e) {
@@ -47,7 +47,7 @@ public class ArmyTest {
 	}
 
 
-	private World mockWorld() {
+	private World mockWorld() throws IOException {
 		World w = mock(World.class);
 		w.rules = rules;
 		w.notifications = new ArrayList<>();
@@ -67,6 +67,7 @@ public class ArmyTest {
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		w.regions = Arrays.asList(r1, r2);
+		w.rules = Rules.loadRules(5);
 		return w;
 	}
 
@@ -193,7 +194,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthCaptured() {
 		Character leader = Mocks.character();
-		when(leader.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
+		when(leader.calcLeadMod(Army.Type.ARMY, w.rules)).thenReturn(.4);
 		when(leader.isCaptive()).thenReturn(true);
 		assertEquals(1.0, a.calcStrength(w, leader, 0, false), DELTA);
 	}
@@ -201,7 +202,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthGeneral() {
 		Character c = Mocks.character();
-		when(c.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
+		when(c.calcLeadMod(Army.Type.ARMY, w.rules)).thenReturn(.4);
 		assertEquals(1.4, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
@@ -209,7 +210,7 @@ public class ArmyTest {
 	public void calcStrengthAdmiral() {
 		a.type = Army.Type.NAVY;
 		Character c = Mocks.character();
-		when(c.calcLeadMod(Army.Type.NAVY)).thenReturn(.4);
+		when(c.calcLeadMod(Army.Type.NAVY, w.rules)).thenReturn(.4);
 		assertEquals(140.0, a.calcStrength(w, c, 0, false), DELTA);
 	}
 

@@ -38,17 +38,17 @@ class Character {
 		return Math.sqrt(xp + 1);
 	}
 
-	public double calcLeadMod(Army.Type type) {
-		if (type == Army.Type.ARMY) return calcLevel(experience.general) * w.rules.perLevelLeaderMod;
-		else return calcLevel(experience.admiral) * w.rules.perLevelLeaderMod;
+	public double calcLeadMod(Army.Type type, Rules rules) {
+		if (type == Army.Type.ARMY) return calcLevel(experience.general) * rules.perLevelLeaderMod;
+		else return calcLevel(experience.admiral) * rules.perLevelLeaderMod;
 	}
 
-	public double calcGovernRecruitMod() {
-		return calcLevel(experience.governor) * w.rules.perLevelGovernRecruitMod + w.rules.baseGovernRecruitMod;
+	public double calcGovernRecruitMod(Rules rules) {
+		return calcLevel(experience.governor) * rules.perLevelGovernRecruitMod + rules.baseGovernRecruitMod;
 	}
 
-	public double calcGovernTaxMod() {
-		return calcLevel(experience.governor) * w.rules.perLevelGovernTaxMod + w.rules.baseGovernTaxMod;
+	public double calcGovernTaxMod(Rules rules) {
+		return calcLevel(experience.governor) * rules.perLevelGovernTaxMod + rules.baseGovernTaxMod;
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {
@@ -65,27 +65,27 @@ class Character {
 		return power;
 	}
 
-	public void addExperienceAll() {
-		experience.general += w.rules.allDimExpAdd;
-		experience.admiral += w.rules.allDimExpAdd;
-		experience.spy += w.rules.allDimExpAdd;
-		experience.governor += w.rules.allDimExpAdd;
+	public void addExperienceAll(Rules rules) {
+		experience.general += rules.allDimExpAdd;
+		experience.admiral += rules.allDimExpAdd;
+		experience.spy += rules.allDimExpAdd;
+		experience.governor += rules.allDimExpAdd;
 	}
 
-	public void addExperienceGeneral() {
-		experience.general += w.rules.oneDimExpAdd;
+	public void addExperienceGeneral(Rules rules) {
+		experience.general += rules.oneDimExpAdd;
 	}
 
-	public void addExperienceAdmiral() {
-		experience.admiral += w.rules.oneDimExpAdd;
+	public void addExperienceAdmiral(Rules rules) {
+		experience.admiral += rules.oneDimExpAdd;
 	}
 
-	public void addExperienceSpy() {
-		experience.spy += w.rules.oneDimExpAdd;
+	public void addExperienceSpy(Rules rules) {
+		experience.spy += rules.oneDimExpAdd;
 	}
 
-	public void addExperienceGovernor() {
-		experience.governor += w.rules.oneDimExpAdd;
+	public void addExperienceGovernor(Rules rules) {
+		experience.governor += rules.oneDimExpAdd;
 	}
 
 	public boolean hasTag(Tag tag) {

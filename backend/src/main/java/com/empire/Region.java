@@ -70,13 +70,13 @@ class Region {
 
 	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population * w.rules.recruitmentPerPop;
-		double unrest = calcUnrest(w);
+		double unrest = calcUnrest(w, w.rules);
 		if (unrest > w.rules.unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - w.rules.unrestRecruitmentEffectThresh);
 
 		double mods = 1;
 		mods += calcSigningBonusMod(signingBonus);
 
-		if (governor != null) governor.calcGovernRecruitMod();
+		if (governor != null) governor.calcGovernRecruitMod(w.rules);
 		if (hasNoble()) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
@@ -117,12 +117,12 @@ class Region {
 
 	public double calcTaxIncome(World w, Character governor, double taxRate, double rationing) {
 		double base = population * w.rules.taxPerPop;
-		double unrest = calcUnrest(w);
+		double unrest = calcUnrest(w, w.rules);
 		if (unrest > w.rules.unrestTaxEffectThresh) base *= 1.0 - (unrest - w.rules.unrestTaxEffectThresh);
 
 		double mods = taxRate;
 
-		if (governor != null) mods += governor.calcGovernTaxMod();
+		if (governor != null) mods += governor.calcGovernTaxMod(w.rules);
 		if (hasNoble()) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
@@ -317,7 +317,7 @@ class Region {
 		double base = calcBaseConquestStrength(w);
 		double mods = 1;
 		if (w.getNation(kingdom).hasTag(NationData.Tag.STOIC)) mods += w.rules.stoicConqStrengthMod;
-		mods += calcFortificationMod();
+		mods += calcFortificationMod(w.rules);
 		return Math.max(0, base * mods);
 	}
 
@@ -330,7 +330,7 @@ class Region {
 	public double calcMinPatrolStrength(World w) {
 		double mods = 1;
 		if (w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += w.rules.disciplinedPatrolStrengthMod;
-		mods += (2 * calcUnrest(w) - 0.7);
+		mods += (2 * calcUnrest(w, w.rules) - 0.7);
 		return 0.03 * Math.sqrt(population) * mods;
 	}
 
@@ -383,12 +383,12 @@ class Region {
 		return closeRegions;
 	}
 
-	void plant(boolean isHarvestTurn) {
-		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * w.rules.chaliceOfCompassionPlantPerCitizen;
+	void plant(boolean isHarvestTurn, Rules rules) {
+		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * rules.chaliceOfCompassionPlantPerCitizen;
 		double mod = 1;
 		if (hasNoble()) mod += noble.calcPlantMod();
 		if (isHarvestTurn) {
-			crops += population * w.rules.plantsPerCitizen * mod;
+			crops += population * rules.plantsPerCitizen * mod;
 		}
 	}
 

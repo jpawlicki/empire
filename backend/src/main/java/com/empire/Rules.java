@@ -2,7 +2,9 @@ package com.empire;
 
 import com.google.gson.GsonBuilder;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,12 @@ public class Rules {
 	}
 
 	private static Rules readRules(int ruleSetId) throws IOException {
-		System.out.println("?" + String.join(", ", new java.io.File(".").list()));
 		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/rules.json")) {
 			return new GsonBuilder().create().fromJson(r, Rules.class);
+		} catch (FileNotFoundException e) {
+			try (InputStreamReader r = new InputStreamReader(Rules.class.getResourceAsStream("/rules/" + ruleSetId + "/rules.json"))) {
+				return new GsonBuilder().create().fromJson(r, Rules.class);
+			}
 		}
 	}
 
@@ -34,28 +39,23 @@ public class Rules {
 	// Scoring
 	double foodFedPointFactor;
 	double foodFedPlentifulPointFactor;
-
-	String scoreProfReligion = "religion";
 	double scoreReligionPerConverted;
-
-	String scoreProfIdeology = "ideology";
 	double scoreIdeologyPerConverted;
-
-	String scoreProfTerritory = "territory";
 	double scorePerConqueredTerritory;
-
 	double numShipsBuiltPerShipyard;
 	double shipBuildingTraitWeeksProduction;
+	double gloryCasualtyRewardThreshold;
+	double gloryCasualtyPunishmentThreshold;
 
-	double razeRefundFactor;
-
-	// Armies
+	//Armies
 	double armyBaseStrength;
 	double navyBaseStrength;
 
 	double steelMod;
 	double armyPillagersRecruitmentMod;
 	double seafaringMod;
+
+	double razeRefundFactor;
 
 	String pirateKingdom = "Pirate";
 
@@ -64,43 +64,26 @@ public class Rules {
 	double lastStandMod;
 	double perInspireMod;
 
-	String noblePiousTag = "Pious";
-	int noblePiousFactor;
-
-	String nobleLoyalTag = "Loyal";
-	double loyalMod;
-	double loyalMinConqMod;
-
-	String nobleInspiringTag = "Inspiring";
-	double nobleInspiringMod;
-
-	String nobleUntrustingTag = "Untrusting";
-	double nobleUntrustngMod;
-
-	String nobleTyrannicalTag = "Tyrannical";
-	double nobleTyrannicalMod;
-
-	String nobleFrugalTag = "Frugal";
-	double nobleFrugalMod;
-
-	String nobleHoardingTag = "Hoarding";
-	double nobleHoardingMod;
-
-	String nobleRationingTag = "Rationing";
-	double nobleRationingMod;
-
-	String nobleWastefulTag = "Wasteful";
-	double nobleWastefulMod;
-
-	String noblePolicingTag = "Policing";
-
-	String nobleShadyTag = "Shady Connections";
-	double nobleShadyMod;
-
-	String nobleDesperateTag = "Desperate";
-	double nobleDesperateMod;
-
+	// Nobles
 	double noblePirateThreatMod;
+	int nobleCrisisFrequency;
+	double nobleCrisisSuccessUnrest;
+	double nobleCrisisFailedUnrest;
+	double noblePlantModPerLevel;
+	double nobleTaxModPerLevel;
+	double nobleRecruitModPerLevel;
+	double setupNobleFractionAnpilayn;
+	double setupNobleFractionEolsung;
+	double setupNobleFractionHansa;
+	double setupNobleFractionTavian;
+	double setupNobleFractionTyrgaetan;
+	double nobleActionConscriptionMod;
+	double nobleActionConscriptionUnrest;
+	double nobleActionLevyMod;
+	double nobleActionLevyUnrest;
+	double nobleActionRelaxUnrest;
+	double nobleActionSootheMod;
+	double nobleActionSootheUnrest;
 
 	//Religion
 	double rjinkuRecruitmentMod;
@@ -121,9 +104,11 @@ public class Rules {
 	double riverOfKuunRecruitmentMod;
 	double riverOfKuunNeighborTaxMod;
 
-	String noCaptor = "";
-	Noble noNoble = null;
-	Character noLeader = null;
+	double tivarSpellContinueChance;
+	int tivarSpellGracePeriod;
+	double tivarSpellCropDestruction;
+
+	Character noLeader;
 
 	double basePlotStrength;
 	double guardAgainstPlotMod;
@@ -132,13 +117,6 @@ public class Rules {
 	double companyPlotMod;
 	double perInspirePlotMod;
 	double capturedPlotMod;
-
-	String charDimAll = "*";
-	String charDimGeneral = "general";
-	String charDimAdmiral = "admiral";
-	String charDimSpy = "spy";
-	String charDimGovernor = "governor";
-	List<String> charDims = Arrays.asList(charDimGeneral, charDimAdmiral, charDimSpy, charDimGovernor);
 
 	double oneDimExpAdd;
 	double allDimExpAdd;
@@ -151,7 +129,8 @@ public class Rules {
 	// Nations
 	double heroicExpMultiplier;
 
-	double disciplinedMod;
+	double disciplinedArmyStrengthMod;
+	double disciplinedPatrolStrengthMod;
 
 	double coastDwellingRecruitMod;
 	double coastDwellingTaxMod;
@@ -194,4 +173,20 @@ public class Rules {
 	double baseCostFortifications;
 	double baseCostShipyard;
 	double baseCostTemple;
+
+	// Church
+	double antiapostasyOpinion;
+	double antiecumenismConstructionOpinion;
+	double antiecumenismStateOpinion;
+	double antischismaticismConstructionOpinion;
+	double defendersOfFaithCasualtyOpinion;
+	double defendersOfFaithConquestOpinion;
+	double worksOfIruhanConstructionOpinion;
+	double antiterrorismOpinion;
+	double plotPraiseOpinion;
+	double plotCondemnOpinion;
+	double inquisitionOpinion;
+	double crusadeOpinion;
+	double fraternityOpinion;
+	double mandatoryMinistryOpinion;
 }

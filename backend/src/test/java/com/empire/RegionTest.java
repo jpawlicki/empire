@@ -30,7 +30,7 @@ public class RegionTest {
 	private static final double pop = 1E4;
 
 	@Before
-	public void setUpRegion() {
+	public void setUpRegion() throws IOException {
 		r = new Region();
 		r.type = Region.Type.LAND;
 		r.setKingdomNoScore(k1);
@@ -42,7 +42,7 @@ public class RegionTest {
 		w = mockWorld(r);
 	}
 
-	private World mockWorld(Region r){
+	private World mockWorld(Region r) throws IOException {
 		World world = mock(World.class);
 		Region r1 = mockRegion(k1, Region.Type.LAND, Ideology.CHALICE_OF_COMPASSION);
 		Region r2 = mockRegion(k1, Region.Type.LAND, Ideology.CHALICE_OF_COMPASSION);
@@ -50,6 +50,7 @@ public class RegionTest {
 		Region r4 = mockRegion(k2, Region.Type.LAND, null);
 		Region r5 = mockRegion(k3, Region.Type.WATER, null);
 		world.regions = Arrays.asList(r, r1, r2, r3, r4, r5);
+		world.rules = Rules.loadRules(5);
 
 		Pirate p = mock(Pirate.class);
 		p.bribes = new HashMap<>();
@@ -109,19 +110,19 @@ public class RegionTest {
 	@Test
 	public void calcUnrestClericalNonIruhan(){
 		r.religion = Ideology.ALYRJA;
-		assertEquals(0.0, r.calcUnrestClerical(unused -> -25), DELTA);
+		assertEquals(0.0, r.calcUnrestClerical(unused -> -25, w.rules), DELTA);
 	}
 
 	@Test
 	public void calcUnrestVesselOfFaith(){
 		r.religion = Ideology.VESSEL_OF_FAITH;
-		assertEquals(0.0, r.calcUnrestClerical(unused -> -25), DELTA);
+		assertEquals(0.0, r.calcUnrestClerical(unused -> -25, w.rules), DELTA);
 	}
 
 	@Test
 	public void calcUnrestClericalIruhan(){
 		r.religion = Ideology.SWORD_OF_TRUTH;
-		assertEquals(0.5, r.calcUnrestClerical(unused -> -50), DELTA);
+		assertEquals(0.5, r.calcUnrestClerical(unused -> -50, w.rules), DELTA);
 	}
 
 	@Test
@@ -142,14 +143,14 @@ public class RegionTest {
 	@Test
 	public void calcUnrestAll(){
 		r.unrestPopular = unrestLower;
-		assertEquals(unrestLower, r.calcUnrest(unused -> -25), DELTA);
+		assertEquals(unrestLower, r.calcUnrest(unused -> -25, w.rules), DELTA);
 
 		r.religion = Ideology.SWORD_OF_TRUTH;
-		assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
+		assertEquals(0.25, r.calcUnrest(unused -> -25, w.rules), DELTA);
 
 		r.noble = Noble.makeNoble(Culture.ANPILAYN, 1);
 		r.noble.unrest = unrestHigher;
-		assertEquals(unrestHigher, r.calcUnrest((unused -> -25)), DELTA);
+		assertEquals(unrestHigher, r.calcUnrest(unused -> -25, w.rules), DELTA);
 	}
 
 	@Test
@@ -186,7 +187,7 @@ public class RegionTest {
 	@Test
 	public void calcFortificationMod(){
 		r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
-		assertEquals(0.3, r.calcFortificationMod(), DELTA);
+		assertEquals(0.3, r.calcFortificationMod(w.rules), DELTA);
 	}
 
 	@Test
@@ -271,7 +272,7 @@ public class RegionTest {
 		r.religion = Ideology.CHALICE_OF_COMPASSION;
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(false);
+		r.plant(false, w.rules);
 		assertEquals(2000, r.crops, DELTA);
 	}
 
@@ -280,7 +281,7 @@ public class RegionTest {
 		r.religion = Ideology.ALYRJA;
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(false);
+		r.plant(false, w.rules);
 		assertEquals(0, r.crops, DELTA);
 	}
 
@@ -288,7 +289,7 @@ public class RegionTest {
 	public void plantHarvestTurn() {
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(true);
+		r.plant(true, w.rules);
 		assertEquals(130000, r.crops, DELTA);
 	}
 
@@ -297,7 +298,7 @@ public class RegionTest {
 		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0);
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(true);
+		r.plant(true, w.rules);
 		assertEquals(130000 * (1 + 0.05), r.crops, DELTA);
 	}
 
@@ -307,7 +308,7 @@ public class RegionTest {
 		for (int i = 0; i < 24; i++) r.noble.addExperience();
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(true);
+		r.plant(true, w.rules);
 		assertEquals(130000 * (1 + 0.25), r.crops, DELTA);
 	}
 
@@ -316,7 +317,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 1000000;
 		r.food = 0;
-		r.harvest(new HashSet<>(), unused -> 0);
+		r.harvest(new HashSet<>(), unused -> 0, w.rules);
 		assertEquals(250000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
@@ -327,7 +328,7 @@ public class RegionTest {
 		r.crops = 1000000;
 		r.food = 0;
 		r.unrestPopular = .95;
-		r.harvest(new HashSet<>(), unused -> 0);
+		r.harvest(new HashSet<>(), unused -> 0, w.rules);
 		assertEquals(75000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
@@ -338,7 +339,7 @@ public class RegionTest {
 		r.crops = 1000000;
 		r.food = 0;
 		r.unrestPopular = .95;
-		r.harvest(Collections.singleton("k1"), unused -> 0);
+		r.harvest(Collections.singleton("k1"), unused -> 0, w.rules);
 		assertEquals(250000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}

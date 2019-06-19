@@ -21,14 +21,14 @@ public class CharacterTest {
 	private static final String k1 = "k1";
 
 	@Before
-	public void createCharacter() {
+	public void createCharacter() throws IOException {
 		c = new Character();
 		c.kingdom = k1;
 
 		w = mockWorld();
 	}
 
-	private World mockWorld(){
+	private World mockWorld() throws IOException {
 		World world = mock(World.class);
 
 		n1 = mock(NationData.class);
@@ -36,6 +36,7 @@ public class CharacterTest {
 
 		r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.SWORD_OF_TRUTH);
 		world.regions = Collections.singletonList(r1);
+		world.rules = Rules.loadRules(5);
 
 		return world;
 	}
@@ -47,9 +48,9 @@ public class CharacterTest {
 
 	@Test
 	public void calcPlotPowerSpyLevel() {
-		c.addExperienceSpy();
-		c.addExperienceSpy();
-		c.addExperienceSpy();
+		c.addExperienceSpy(w.rules);
+		c.addExperienceSpy(w.rules);
+		c.addExperienceSpy(w.rules);
 		assertEquals(1.6, c.calcPlotPower(w, false, 0), DELTA);
 	}
 
