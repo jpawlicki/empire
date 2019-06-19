@@ -57,7 +57,7 @@ class Army {
 			else if (sr.religion == Religion.IRUHAN) mods += Constants.iruhanMod;
 		}
 		if (lastStand) mods += Constants.lastStandMod;
-		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * Constants.perInspireMod;
 		if (leader != Constants.noLeader && !leader.isCaptive()) {
 			mods += leader.calcLeadMod(type);
 		}
