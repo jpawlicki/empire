@@ -11,7 +11,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -20,7 +19,6 @@ import static org.mockito.Mockito.when;
 public class ArmyTest {
 	private static Army a;
 	private static World w;
-	private static Rules rules;
 	private static NationData n1;
 	private static final double DELTA = 1E-5;
 
@@ -29,12 +27,6 @@ public class ArmyTest {
 
 	@Before
 	public void setUpPlainArmy() throws IOException {
-		try { 
-			rules = Rules.loadRules(5);
-		} catch (IOException e) {
-			fail(e.getMessage());
-		}
-
 		a = new Army();
 		a.type = Army.Type.ARMY;
 		a.size = 100.0;
@@ -49,7 +41,6 @@ public class ArmyTest {
 
 	private World mockWorld() throws IOException {
 		World w = mock(World.class);
-		w.rules = rules;
 		w.notifications = new ArrayList<>();
 
 		n1 = mock(NationData.class);
@@ -110,7 +101,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
-		a.kingdom = rules.pirateKingdom;
+		a.kingdom = w.rules.pirateKingdom;
 		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -124,13 +115,13 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthFortificationNavy() {
 		a.type = Army.Type.NAVY;
-		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
 		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortificationWater() {
-		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(false);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -138,13 +129,13 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthFortificationNotFriendly() {
 		a.kingdom = k2;
-		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortification() {
-		when(w.regions.get(0).calcFortificationMod(rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(true);
 		assertEquals(1.3, a.calcStrength(w, null, 0, false), DELTA);
 	}
