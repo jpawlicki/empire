@@ -2050,12 +2050,22 @@ class World implements GoodwillProvider {
 			// Emigration
 			class Emigration {
 				final Region source;
-				final Region sink;
+				final Region destination;
 				final double population;
-				public Emigration(Region source, Region sink, double population) {
+
+				public Emigration(Region source, Region destination, double population) {
 					this.source = source;
-					this.sink = sink;
+					this.destination = destination;
 					this.population = population;
+				}
+
+				void apply() {
+					double unhappyCitizens = source.population * source.unrestPopular;
+					source.population -= population;
+					source.unrestPopular = (unhappyCitizens - population) / source.population;
+					unhappyCitizens = destination.population * destination.unrestPopular;
+					destination.population += population;
+					destination.unrestPopular = (unhappyCitizens + population) / destination.population;
 				}
 			}
 			List<Emigration> emigrations = new ArrayList<>();
@@ -2065,9 +2075,9 @@ class World implements GoodwillProvider {
 				eligibleToEmigrate = Math.min(eligibleToEmigrate, r.population - 1); // Emigrating the last person causes a divide by zero error.
 				List<Region> destinations = new ArrayList<Region>();
 				for (Region n : r.getNeighbors(World.this)) {
-					if (n.type == Region.Type.LAND) destinations.add(n);
+					if (n.isLand()) destinations.add(n);
 					else for (Region nn : n.getNeighbors(World.this)) {
-						if (nn != r && n.type == Region.Type.LAND) destinations.add(nn);
+						if (nn != r && n.isLand()) destinations.add(nn);
 					}
 				}
 				destinations.removeIf(d -> d.unrestPopular >= r.unrestPopular);
@@ -2083,13 +2093,8 @@ class World implements GoodwillProvider {
 			Map<Region, Double> netMotion = new HashMap<>();
 			for (Emigration e : emigrations) {
 				netMotion.merge(e.source, -e.population, Double::sum);
-				double unhappyCitizens = e.source.population * e.source.unrestPopular;
-				e.source.population -= e.population;
-				e.source.unrestPopular = (unhappyCitizens - e.population) / e.source.population;
-				netMotion.merge(e.sink, e.population, Double::sum);
-				unhappyCitizens = e.sink.population * e.sink.unrestPopular;
-				e.sink.population += e.population;
-				e.sink.unrestPopular = (unhappyCitizens + e.population) / e.sink.population;
+				netMotion.merge(e.destination, e.population, Double::sum);
+				e.apply();
 			}
 			for (String k : kingdoms.keySet()) {
 				double popChange = 0;
