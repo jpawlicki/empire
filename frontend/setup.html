@@ -269,13 +269,13 @@
 						</select>
 						<input type="text" name="ruler_name" id="ruler_name" placeholder="Press button to generate." disabled></label><button id="newname_male">Masculine Name</button><button id="newname_female">Feminine Name</button><button id="newname_unisex">Ungendered Name</button>
 						<div><tooltip-element tooltip="Your selections here determine how you are scored at the end of the game. You can select any number, and you will receive points for doing well in that dimension, but will lose points for doing poorly. You are also free to ignore the score and role-play your character as you wish - in this case these choices will inform other rulers of your reputation.">You care deeply about:</tooltip-element>
-							<label><input type="checkbox" name="food"/>Feeding your people. (Recommended)</label>
+							<label><input type="checkbox" name="prosperity"/>Feeding your people. (Recommended)</label>
 							<label><input type="checkbox" name="happiness"/>The happiness of your people.</label>
 							<label><input type="checkbox" name="territory"/>Expanding your nation's borders.</label>
 							<label><input type="checkbox" name="glory"/>Fighting in glorious combat.</label>
 							<label><input type="checkbox" name="religion"/>Converting heathens to your religion.</label>
 							<label><input type="checkbox" name="ideology"/>Converting heathens and heretics to your religion.</label>
-							<label><input type="checkbox" name="security"/>Maintaining large armies and navies.</label>
+							<label><input type="checkbox" name="security"/>Keeping enemies away from your people.</label>
 							<label><input type="checkbox" name="riches"/>Amassing wealth.</label>
 							<label><input type="checkbox" name="culture"/>The happiness of all people of your culture.</label>
 						</div>
@@ -325,18 +325,16 @@
 				"Iruhan (Vessel of Faith)": "Your people broadly believe that God (Iruhan) has a personal relationship with them. They are generally happier and reject the authority of the Church of Iruhan, making you largely immune to the effects of a negative relationship with the Church. They become happier whenever a region is converted to this ideology.",
 				"Northern (Alyrja)": "Your people broadly believe in constant vigilence. They destroy all pirates in your territory and give you reports on all hidden units within or adjacent to your regions.",
 				"Northern (Lyskr)": "Your people broadly believe in the power of knowledge and secrets. Your plotting and intrigue will be far more effective.",
-				"Northern (Rjinku)": "Your people broadly believe in the glory of war. Your nation generates significantly more soldiers, especially on turns that you engage in battle.",
-				"Northern (Syrjen)": "Your people broadly believe in economic cooperation. Your nation produces far more tax income both on its own and from prosperous neighbors, but cannot have less popular unrest than any of your neighbors.",
+				"Northern (Rjinku)": "Your people broadly believe in the glory of war. Your nation generates significantly more soldiers.",
+				"Northern (Syrjen)": "Your people broadly believe in economic cooperation. Your nation produces more economic income.",
 				"Tavian (Flame of Kith)": "Your people broadly believe that the needs of the many outweigh the needs of the few. Your people will freely construct fortifications and gradually abduct and enslave the population of your neighbors.",
 				"Tavian (River of Kuun)": "Your people broadly believe that the duty of the fortunate is to provide for the unfortunate. Any feasts you throw will trigger economic activity and other nations will generate more income for sharing borders with you.",
 			};
 			let traitConsequences = {
-				"Bloodthirsty": "Bringing captives from other kingdoms into your territory and executing them will earn you gold.",
-				"Coast-Dwelling": "Your coastal populations produce more tax and recruits.",
-				"Defensive": "Your people are twice as effective at constructing fortifications.",
-				"Disciplined": "Your armies are more effective, and any pirates that enter your regions lose 25% of their strength.",
+				"Defensive": "You start with fortifications in each of your regions, and your people are twice as effective at constructing new fortifications.",
+				"Disciplined": "Your armies are more effective, and your regions are easier to patrol.",
 				"Evangelical": "Your people will fund the spreading of your state religion.",
-				"Heroic": "Your characters learn new skills twice as quickly.",
+				"Heroic": "You control extra heroic characters.",
 				"Holy": "While your state ideology matches the dominant Iruhan ideology, the Church of Iruhan will donate about twice as much gold to you.",
 				"Imperialistic": "Nations that pay you tribute receive benefits, and you receive extra benefits from each nation paying you tribute.",
 				"Industrial": "All construction in your nation is inexpensive.",
@@ -346,7 +344,6 @@
 				"Patriotic": "Your nation starts with more soldiers and produces more recruits.",
 				"Rebellious": "All but one of the regions of your regions start controlled by your neighbors. You start with extra gold and armies. Your navies and armies within your rightful borders cost less to maintain.",
 				"Republican": "Your nation is a republic, not a kingdom. Popular unrest decreases in every one of your regions over time, but you cannot use feudal nobles.",
-				"Ruined": "You start with decreased population, but relocating population into your rightful regions does not cause any unrest and is not objectionable to the Church of Iruhan.",
 				"Seafaring": "You start with extra warships and gain more gold from sea regions than other nations do.",
 				"Ship-Building": "Whenever you construct a new shipyard, it immediately produces an extra small fleet of warships.",
 				"Stoic": "High unrest never decreases the size of the harvest in your regions, and your regions are more difficult for enemies to conquer.",

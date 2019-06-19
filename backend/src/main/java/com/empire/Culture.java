@@ -8,25 +8,27 @@ import java.util.List;
 
 enum Culture {
 	@SerializedName("anpilayn")
-	ANPILAYN(Religion.IRUHAN, Army.Tag.STEEL, Army.Tag.FORMATIONS),
+	ANPILAYN(Religion.IRUHAN, Constants.setupNobleFractionAnpilayn, Army.Tag.STEEL, Army.Tag.FORMATIONS),
 	@SerializedName("eolsung")
-	EOLSUNG(Religion.NORTHERN, Army.Tag.PILLAGERS, Army.Tag.RAIDERS),
+	EOLSUNG(Religion.NORTHERN, Constants.setupNobleFractionEolsung, Army.Tag.PILLAGERS, Army.Tag.RAIDERS),
 	@SerializedName("hansa")
-	HANSA(Religion.IRUHAN, Army.Tag.SEAFARING, Army.Tag.IMPRESSMENT),
+	HANSA(Religion.IRUHAN, Constants.setupNobleFractionHansa, Army.Tag.SEAFARING, Army.Tag.IMPRESSMENT),
 	@SerializedName("tavian")
-	TAVIAN(Religion.TAVIAN, Army.Tag.RIDERS, Army.Tag.CRAFTS_SOLDIERS),
+	TAVIAN(Religion.TAVIAN, Constants.setupNobleFractionTavian, Army.Tag.RIDERS, Army.Tag.CRAFTS_SOLDIERS),
 	@SerializedName("tyrgaetan")
-	TYRGAETAN(Religion.NORTHERN, Army.Tag.WEATHERED, Army.Tag.PATHFINDERS);
+	TYRGAETAN(Religion.NORTHERN, Constants.setupNobleFractionTyrgaetan, Army.Tag.WEATHERED, Army.Tag.PATHFINDERS);
 
 	final Religion religion;
+	final double nobleFraction;
 	final List<Army.Tag> armyTags;
 
 	public List<Army.Tag> getArmyTags() {
 		return armyTags;
 	}
 	
-	Culture(Religion religion, Army.Tag... tags) {
+	Culture(Religion religion, double nobleFraction, Army.Tag... tags) {
 		this.religion = religion;
+		this.nobleFraction = nobleFraction;
 		armyTags = Collections.unmodifiableList(Arrays.asList(tags));
 	}
 }

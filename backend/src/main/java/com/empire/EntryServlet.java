@@ -51,11 +51,11 @@ Basic design:
 GET /entry/orders?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and return the given orders entry JSON.
 GET /entry/setup?gid=1234&k=Aefoss
-  Return customization info for kingdom. If none, empty string.
+	Return customization info for kingdom. If none, empty string.
 GET /entry/world?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and return the visible world view JSON.
 GET /entry/advancegamepoll
-  Advance all games one turn.
+	Advance all games one turn.
 
 POST /entry/orders?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and post the given order data.
@@ -74,8 +74,8 @@ public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
 
-  	@Override
-  	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+		@Override
+		public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 		String json = "";
@@ -104,7 +104,7 @@ public class EntryServlet extends HttpServlet {
 		OutputStream os = resp.getOutputStream();
 		os.write(ojson);
 		os.flush();
-  }
+	}
 
 	@Override
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {

@@ -1,0 +1,166 @@
+package com.empire;
+
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * This class is a holding place for game constants, much of the variables here could be turned into enums,
+ * the numeric data could be game config
+ */
+public class Constants {
+	// Scoring
+	public static final double foodFedPointFactor = 1 / 1E6;
+	public static final double foodFedPlentifulPointFactor = 2 / 1E6;
+	public static final double scoreReligionPerConverted = 2;
+	public static final double scoreIdeologyPerConverted = 2;
+	public static final double scorePerConqueredTerritory = 4;
+	public static final double numShipsBuiltPerShipyard = 5;
+	public static final double shipBuildingTraitWeeksProduction = 5;
+	public static final double gloryCasualtyRewardThreshold = 2000;
+	public static final double gloryCasualtyPunishmentThreshold = 500;
+
+	//Armies
+	public static final double armyBaseStrength = 1E-2;
+	public static final double navyBaseStrength = 1.0;
+
+	public static final double steelMod = 0.15;
+	public static final double armyPillagersRecruitmentMod = -0.75;
+	public static final double seafaringMod = 1.5;
+
+	public static final double razeRefundFactor = 0.8;
+
+	public static final String pirateKingdom = "Pirate";
+
+	public static final double swordOfTruthMod = 0.25;
+	public static final double iruhanMod = 0.15;
+	public static final double lastStandMod = 4.0;
+	public static final double perInspireMod = 0.05;
+
+	// Nobles
+	public static final double noblePirateThreatMod = -0.5;
+	public static final int nobleCrisisFrequency = 6;
+	public static final double nobleCrisisSuccessUnrest = -0.25;
+	public static final double nobleCrisisFailedUnrest = 0.25;
+	public static final double noblePlantModPerLevel = 0.05;
+	public static final double nobleTaxModPerLevel = 0.1;
+	public static final double nobleRecruitModPerLevel = 0.1;
+	public static final double setupNobleFractionAnpilayn = 0.8;
+	public static final double setupNobleFractionEolsung = 0.5;
+	public static final double setupNobleFractionHansa = 0.8;
+	public static final double setupNobleFractionTavian = 0;
+	public static final double setupNobleFractionTyrgaetan = 0;
+	public static final double nobleActionConscriptionMod = .25;
+	public static final double nobleActionConscriptionUnrest = .04;
+	public static final double nobleActionLevyMod = .25;
+	public static final double nobleActionLevyUnrest = .04;
+	public static final double nobleActionRelaxUnrest = -.02;
+	public static final double nobleActionSootheMod = -.25;
+	public static final double nobleActionSootheUnrest = -.04;
+
+	//Religion
+	public static final double rjinkuRecruitmentMod = 1.0;
+	public static final double rjinkuBattledRecruitmentMod = 0.5;
+	public static final double syrjenTaxMod = 1.25;
+	public static final double swordOfTruthRecruitmentMod = 1.0;
+	public static final double chaliceOfCompassionTaxMod = -0.3;
+	public static final double chaliceOfCompassionFoodMod = -0.15;
+	public static final double tapestryRecruitmentMod = 0.5;
+	public static final double tapestryTaxMod = 0.5;
+	public static final double vesselOfFaithSetRelUnrestMod = -0.1;
+	public static final double perIdeologyTapestryRecruitmentMod = 0.03;
+	public static final double perIdeologyTapestryRecruitmentModGlobal = 0.03;
+	public static final double perIdeologyTapestryTaxMod = 0.03;
+	public static final double perIdeologyTapestryTaxModGlobal = 0.03;
+	public static final double riverOfKuunRationingThresh = 1.25;
+	public static final double riverOfKuunTaxMod = 0.5;
+	public static final double riverOfKuunRecruitmentMod = 0.5;
+	public static final double riverOfKuunNeighborTaxMod = 0.5;
+
+	public static final double tivarSpellContinueChance = 0.66;
+	public static final int tivarSpellGracePeriod = 2;
+	public static final double tivarSpellCropDestruction = 0.01;
+
+	public static final Character noLeader = null;
+
+	public static final double basePlotStrength = 1.0;
+	public static final double guardAgainstPlotMod = 0.5;
+	public static final double perSpyLevelPlotMod = 0.3;
+	public static final double lyskrPlotMod = 0.4;
+	public static final double companyPlotMod = 0.2;
+	public static final double perInspirePlotMod = 0.05;
+	public static final double capturedPlotMod = -0.5;
+
+	public static final double oneDimExpAdd = 1.0;
+	public static final double allDimExpAdd = 0.25;
+	public static final double perLevelLeaderMod = 0.2;
+	public static final double baseGovernRecruitMod = 1.0;
+	public static final double baseGovernTaxMod = 1.0;
+	public static final double perLevelGovernRecruitMod = 0.5;
+	public static final double perLevelGovernTaxMod = 0.5;
+
+	// Nations
+	public static final String nationHeroicTag = "Heroic";
+	public static final double heroicExpMultiplier = 2.0;
+
+	public static final double disciplinedArmyStrengthMod = 0.1;
+	public static final double disciplinedPatrolStrengthMod = -.5;
+
+	public static final double coastDwellingRecruitMod = 0.12;
+	public static final double coastDwellingTaxMod = 0.12;
+
+	public static final double patrioticMod = 0.15;
+	public static final double patrioticArmyShare = 0.15;
+
+	public static final double perConquestWarlikeRecruitmentMod = 0.05;
+	public static final double perConquestWarlikeTaxMod = 0.05;
+	public static final double warlikeArmyShare = 0.15;
+
+	public static final double mercantileTaxMod = 0.15;
+	public static final double mercantileGoldShare = 0.5;
+
+	public static final double stoicConqStrengthMod = 1.5;
+
+	// Regions
+	public static final double recruitmentPerPop = 1.0 / 2000.0;
+	public static final double taxPerPop = 1.0 / 10000.0;
+	public static final double unrestRecruitmentEffectThresh = 0.25;
+	public static final double unrestTaxEffectThresh = 0.25;
+
+	public static final double harvestPerCitizen = 25;
+	public static final double plantsPerCitizen = 13;
+
+	public static final double chaliceOfCompassionPlantPerCitizen = 0.2;
+
+	public static final double setupCropsPerCitizen = 7.5;
+	public static final double perFortMod = 0.15;
+	public static final double maxFortMod = 5.0;
+
+	public static final double clericalUnrestGoodwillFactor = 1E-2;
+
+	public static final double plotDecaySea = 0.9;
+	public static final double plotDecayFriendly = 0.9;
+	public static final double plotDecayNonFriendly = 0.8;
+
+	public static final double pirateThreatDoubleGold = 30;
+
+	public static final double baseCostFortifications = 20;
+	public static final double baseCostShipyard = 80;
+	public static final double baseCostTemple = 30;
+
+	// Church
+	public static final double antiapostasyOpinion = -10;
+	public static final double antiecumenismConstructionOpinion = -20;
+	public static final double antiecumenismStateOpinion = -5;
+	public static final double antischismaticismConstructionOpinion = -10;
+	public static final double defendersOfFaithCasualtyOpinion = .03;
+	public static final double defendersOfFaithConquestOpinion = 15;
+	public static final double worksOfIruhanConstructionOpinion = 10;
+	public static final double antiterrorismOpinion = -30;
+	public static final double plotPraiseOpinion = 10;
+	public static final double plotCondemnOpinion = -10;
+	public static final double inquisitionOpinion = -35;
+	public static final double crusadeOpinion = -35;
+	public static final double fraternityOpinion = -35;
+	public static final double mandatoryMinistryOpinion = -35;
+}

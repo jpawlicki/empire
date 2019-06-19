@@ -20,9 +20,6 @@ class CharacterReport extends HTMLElement {
 					<tooltip-element tooltip="Governors can increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
 					<tooltip-element tooltip="Spies can increase the power of your plots and plot defense. They improve their skill while hiding or captured.">Spy:</tooltip-element><div id="skill_spy"></div>
 				</div>
-				<h1 id="values_header">Values</h1>
-				<ul id="values">
-				</ul>
 			</div>
 		`;
 		// CSS
@@ -96,43 +93,10 @@ class CharacterReport extends HTMLElement {
 		shadow.appendChild(content);
 		// Add skills.
 		for (let skill of ["admiral", "general", "governor", "spy"]) {
-			let l = c.calcLevel(skill);
-			let s = "";
-			for (let i = 0; i < l; i++) {
-				s += "★";
-			}
-			let x = c.experience[skill];
-			let rem = x >= 24 ? -1 : x >= 15 ? 24 - x : x >= 8 ? 15 - x : x >= 3 ? 8 - x : 3 - x;
-			if (rem == -1) rem = "Max level.";
-			else rem = rem + " experience to next level.";
 			let t = document.createElement("tooltip-element");
-			t.innerHTML = s;
-			t.setAttribute("tooltip", getEffect(l, skill) + " " + rem);
+			t.innerHTML = Math.floor(c.calcLevel(skill) * 100) / 100;
+			t.setAttribute("tooltip", getEffect(l, skill));
 			shadow.getElementById("skill_" + skill).appendChild(t);
-		}
-		// If values, show them; else hide them.
-		let valueTooltips = {
-			"food": "Feeding their people.",
-			"happiness": "The happiness of their general population.",
-			"territory": "Expanding their borders.",
-			"glory": "Fighting in glorious combat.",
-			"religion": "Spreading their overall religion (vs other religions).",
-			"ideology": "Spreading their interpretation of their religion (among followers of their overall religion).",
-			"security": "Building large armies and navies (used or not).",
-			"riches": "Amassing wealth.",
-			"culture": "The happiness of all people of their culture.",
-		};
-		if (c.values.length > 0) {
-			for (let v of c.values) {
-				let li = document.createElement("li");
-				let tv = document.createElement("tooltip-element");
-				tv.innerHTML = capitalize(v);
-				tv.setAttribute("tooltip", valueTooltips[v]);
-				li.appendChild(tv);
-				shadow.getElementById("values").appendChild(li);
-			}
-		} else {
-			shadow.getElementById("values_header").style.display = "none";
 		}
 	}
 }

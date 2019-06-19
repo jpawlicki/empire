@@ -3,14 +3,21 @@ package com.empire;
 import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.security.SecureRandom;
 
 class NationData {
+	enum Gothi {
+		@SerializedName("Alyrja") ALYRJA,
+		@SerializedName("Rjinku") RJINKU,
+		@SerializedName("Lyskr") LYSKR,
+		@SerializedName("Syrjen") SYRJEN,
+	}
+
 	enum Tag {	
-		@SerializedName("Bloodthirsty") BLOODTHIRSTY,
-		@SerializedName("Coast-Dwelling") COAST_DWELLING,
 		@SerializedName("Defensive") DEFENSIVE,
 		@SerializedName("Disciplined") DISCIPLINED,
 		@SerializedName("Evangelical") EVANGELICAL,
@@ -24,11 +31,22 @@ class NationData {
 		@SerializedName("Patriotic") PATRIOTIC,
 		@SerializedName("Rebellious") REBELLIOUS,
 		@SerializedName("Republican") REPUBLICAN,
-		@SerializedName("Ruined") RUINED,
 		@SerializedName("Seafaring") SEAFARING,
 		@SerializedName("Ship-Building") SHIP_BUILDING,
 		@SerializedName("Stoic") STOIC,
 		@SerializedName("War-like") WARLIKE;
+	}
+
+	enum ScoreProfile {
+		CULTURE,
+		GLORY,
+		HAPPINESS,
+		IDEOLOGY,
+		PROSPERITY,
+		RELIGION,
+		RICHES,
+		SECURITY,
+		TERRITORY;
 	}
 
 	public static final String PIRATE_NAME = "Pirate";
@@ -44,13 +62,6 @@ class NationData {
 			@Override
 			Relationship getRelationship(String who) { return Relationship.NPC_RELATION; }
 		};
-	}
-
-	static boolean rulerValues(String kingdom, String value, World w) {
-		for (Character c : w.characters) if (c.kingdom.equals(kingdom) && c.hasTag("Ruler")) {
-			return c.values.contains(value);
-		}
-		return false;
 	}
 
 	static boolean isFriendly(String a, String b, World w) {
@@ -76,11 +87,15 @@ class NationData {
 		return false;
 	}
 
+	static boolean isAttackingOnSight(String a, String b, World w) {
+		return !a.equals(b) && w.getNation(a).getRelationship(b).battle == Relationship.War.ATTACK;
+	}
+
 	static Ideology getStateReligion(String kingdom, World w) {
 		HashMap<Ideology, Double> weights = new HashMap<>();
 		for (Region r : w.regions) {
 			if (!kingdom.equals(r.getKingdom())) continue;
-			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population * (r.noble != null && r.noble.hasTag("Pious") ? 3 : 1));
+			weights.put(r.religion, weights.getOrDefault(r.religion, 0.0) + r.population);
 		}
 		Ideology max = Ideology.COMPANY;
 		double maxVal = 0;
@@ -95,10 +110,12 @@ class NationData {
 
 	// Instance members.
 
-	HashMap<String, Double> score = new HashMap<>();
+	private Map<ScoreProfile, Double> score = new HashMap<>();
+	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
+	private Set<ScoreProfile> profiles = new HashSet<>();
 	double gold;
 	private Map<String, Relationship> relationships = new HashMap<>();
-	Map<String, Boolean> gothi = new HashMap<>();
+	Map<Gothi, Boolean> gothi = new HashMap<>();
 	double goodwill;
 	boolean loyalToCult;
 	List<Noble> court = new ArrayList<>();
@@ -134,6 +151,35 @@ class NationData {
 
 	void addTag(Tag tag) {
 		tags.add(tag);
+	}
+
+	void addProfile(ScoreProfile p) {
+		profiles.add(p);
+	}
+
+	boolean hasProfile(ScoreProfile p) {
+		return profiles.contains(p);
+	}
+
+	void toggleProfile(ScoreProfile p) {
+		if (profiles.contains(p)) profiles.remove(p);
+		else profiles.add(p);
+	}
+
+	void score(ScoreProfile p, double amount) {
+		if (profiles.contains(p)) score.put(p, score.getOrDefault(p, 0.0) + amount);
+		else shadowScore.put(p, shadowScore.getOrDefault(p, 0.0) + amount);
+	}
+
+	void filterForView(boolean filterScore) {
+		password = "";
+		email = "";
+		accessToken = "";
+		if (filterScore) {
+			score = new HashMap<>();
+			shadowScore = new HashMap<>();
+			profiles = new HashSet<>();
+		}
 	}
 }
 

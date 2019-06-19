@@ -1,5 +1,7 @@
 package com.empire;
 
+import com.google.gson.annotations.SerializedName;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -7,6 +9,19 @@ import java.util.HashMap;
 import java.util.Collections;
 
 class Character {
+	enum Tag {
+		@SerializedName("Cardinal") CARDINAL,
+		@SerializedName("Ruler") RULER,
+		@SerializedName("Tiecel") TIECEL;
+	}
+
+	static class Experience {
+		double general;
+		double admiral;
+		double spy;
+		double governor;
+	}
+
 	String name = "";
 	String kingdom = "";
 	String captor = "";
@@ -14,53 +29,79 @@ class Character {
 	int location = -1;
 	boolean hidden = false;
 	List<Preparation> preparation = new ArrayList<>();
-	private List<String> tags = new ArrayList<>();
-	Map<String, Double> experience = new HashMap<>();
-	List<String> values = new ArrayList<>();
+	private List<Tag> tags = new ArrayList<>();
+	private Experience experience = new Experience();
 	int leadingArmy = -1;
 	String orderhint = "";
 
-	// TODO: This function should technically be considered part of the game rules config IMHO
-	public int calcLevel(String dimension) {
-		return (int) Math.sqrt(experience.getOrDefault(dimension, 0.0) + 1);
+	private double calcLevel(double xp) {
+		return Math.sqrt(xp + 1);
+	}
+
+	public double calcLeadMod(Army.Type type) {
+		if (type == Army.Type.ARMY) return calcLevel(experience.general) * w.rules.perLevelLeaderMod;
+		else return calcLevel(experience.admiral) * w.rules.perLevelLeaderMod;
+	}
+
+	public double calcGovernRecruitMod() {
+		return calcLevel(experience.governor) * w.rules.perLevelGovernRecruitMod + w.rules.baseGovernRecruitMod;
+	}
+
+	public double calcGovernTaxMod() {
+		return calcLevel(experience.governor) * w.rules.perLevelGovernTaxMod + w.rules.baseGovernTaxMod;
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {
 		double power = w.rules.basePlotStrength;
 
-		power += calcLevel(w.rules.charDimSpy) * w.rules.perSpyLevelPlotMod;
+		power += calcLevel(experience.spy) * w.rules.perSpyLevelPlotMod;
 
 		if (boosted) power += w.rules.guardAgainstPlotMod;
 		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += w.rules.lyskrPlotMod;
 		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += w.rules.companyPlotMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * w.rules.perInspirePlotMod;
-		if (!w.rules.noCaptor.equals(captor)) power += w.rules.capturedPlotMod;
+		if (isCaptive()) power += w.rules.capturedPlotMod;
 
 		return power;
 	}
 
-	public void addExperience(String dimension, World w) {
-		List<String> dims = w.rules.charDimAll.equals(dimension) ? w.rules.charDims : Collections.singletonList(dimension);
-		double expBase = w.rules.charDimAll.equals(dimension) ? w.rules.allDimExpAdd : w.rules.oneDimExpAdd;
-		double expMult = w.getNation(kingdom).hasTag(NationData.Tag.HEROIC) ? w.rules.heroicExpMultiplier : 1.0;
-
-		dims.forEach(d -> experience.put(d, experience.get(d) + expBase * expMult));
+	public void addExperienceAll() {
+		experience.general += w.rules.allDimExpAdd;
+		experience.admiral += w.rules.allDimExpAdd;
+		experience.spy += w.rules.allDimExpAdd;
+		experience.governor += w.rules.allDimExpAdd;
 	}
 
-	public double getExperience(String dimension){
-		return experience.get(dimension);
+	public void addExperienceGeneral() {
+		experience.general += w.rules.oneDimExpAdd;
 	}
 
-	public boolean hasTag(String tag) {
+	public void addExperienceAdmiral() {
+		experience.admiral += w.rules.oneDimExpAdd;
+	}
+
+	public void addExperienceSpy() {
+		experience.spy += w.rules.oneDimExpAdd;
+	}
+
+	public void addExperienceGovernor() {
+		experience.governor += w.rules.oneDimExpAdd;
+	}
+
+	public boolean hasTag(Tag tag) {
 		return tags.contains(tag);
 	}
 
-	void addTag(String tag) {
+	void addTag(Tag tag) {
 		tags.add(tag);
 	}
 
-	void removeTag(String tag) {
+	void removeTag(Tag tag) {
 		tags.remove(tag);
+	}
+
+	boolean isCaptive() {
+		return !"".equals(captor);
 	}
 }
 

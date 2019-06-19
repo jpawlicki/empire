@@ -42,6 +42,7 @@ public class ArmyTest {
 		a.location = 0;
 
 		w = mockWorld();
+		w.church = new Church();
 		w.armies = Collections.singletonList(a);
 	}
 
@@ -65,7 +66,6 @@ public class ArmyTest {
 
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
-		r2.noble = Mocks.noble(rules.nobleLoyalTag, 0.0);
 		w.regions = Arrays.asList(r1, r2);
 		return w;
 	}
@@ -149,26 +149,6 @@ public class ArmyTest {
 	}
 
 	@Test
-	public void calcStrengthLoyalNavy() {
-		a.location = 1;
-		a.type = Army.Type.NAVY;
-		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
-	}
-
-	@Test
-	public void calcStrengthLoyalNotRegionOwner() {
-		a.location = 1;
-		when(w.regions.get(1).getKingdom()).thenReturn(k2);
-		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
-	}
-
-	@Test
-	public void calcStrengthLoyal() {
-		a.location = 1;
-		assertEquals(1.25, a.calcStrength(w, null, 0, false), DELTA);
-	}
-
-	@Test
 	public void calcStrengthSwordOfTruthNonIruhan() {
 		w.regions.get(0).religion = Ideology.ALYRJA;
 		when(w.getDominantIruhanIdeology()).thenReturn(Ideology.SWORD_OF_TRUTH);
@@ -212,23 +192,24 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthCaptured() {
-		Character leader = Mocks.character(3.0);
-		leader.captor = "DONTCARE";
+		Character leader = Mocks.character();
+		when(leader.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
+		when(leader.isCaptive()).thenReturn(true);
 		assertEquals(1.0, a.calcStrength(w, leader, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthGeneral() {
-		Character c = Mocks.character(3.0);
-		when(c.calcLevel(rules.charDimGeneral)).thenReturn(2);
+		Character c = Mocks.character();
+		when(c.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
 		assertEquals(1.4, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthAdmiral() {
 		a.type = Army.Type.NAVY;
-		Character c = Mocks.character(3.0);
-		when(c.calcLevel(rules.charDimAdmiral)).thenReturn(2);
+		Character c = Mocks.character();
+		when(c.calcLeadMod(Army.Type.NAVY)).thenReturn(.4);
 		assertEquals(140.0, a.calcStrength(w, c, 0, false), DELTA);
 	}
 

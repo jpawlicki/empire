@@ -23,7 +23,6 @@ class Region {
 	String name;
 	Type type;
 	Culture culture;
-	String climate;
 	double population;
 	Ideology religion;
 	double unrestPopular;
@@ -69,26 +68,18 @@ class Region {
 		return culture.getArmyTags();
 	}
 
-	public double calcRecruitment(World w, List<Character> governors, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population * w.rules.recruitmentPerPop;
-		double unrest = calcUnrest(w, w.rules);
+		double unrest = calcUnrest(w);
 		if (unrest > w.rules.unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - w.rules.unrestRecruitmentEffectThresh);
 
 		double mods = 1;
 		mods += calcSigningBonusMod(signingBonus);
 
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcLevel(w.rules.charDimGovernor) * w.rules.perLevelGovernRecruitMod + w.rules.baseGovernRecruitMod;
-			}
-		}
-
-		if (noble != null && noble.hasTag(w.rules.nobleInspiringTag)) mods += w.rules.nobleInspiringMod;
-		if (noble != null && noble.hasTag(w.rules.nobleUntrustingTag)) mods += w.rules.nobleUntrustngMod;
-		if (noble != null && noble.hasTag(w.rules.nobleTyrannicalTag)) mods += w.rules.nobleTyrannicalMod;
+		if (governor != null) governor.calcGovernRecruitMod();
+		if (hasNoble()) mods += noble.calcRecruitMod();
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += w.rules.coastDwellingRecruitMod;
 		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += w.rules.patrioticMod;
 		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
@@ -124,24 +115,17 @@ class Region {
 		return signingBonus <= 0 ? signingBonus * 0.5 : (Math.log(signingBonus) / Math.log(2)) * 0.5 + 0.5;
 	}
 
-	public double calcTaxIncome(World w, List<Character> governors, double taxRate, double rationing) {
+	public double calcTaxIncome(World w, Character governor, double taxRate, double rationing) {
 		double base = population * w.rules.taxPerPop;
-		double unrest = calcUnrest(w, w.rules);
+		double unrest = calcUnrest(w);
 		if (unrest > w.rules.unrestTaxEffectThresh) base *= 1.0 - (unrest - w.rules.unrestTaxEffectThresh);
 
 		double mods = taxRate;
 
-		if (governors != null) {
-			for (Character c : governors) {
-				mods += c.calcLevel(w.rules.charDimGovernor) * w.rules.perLevelGovernTaxMod + w.rules.baseGovernTaxMod;
-			}
-		}
-
-		if (noble != null && noble.hasTag(w.rules.nobleFrugalTag)) mods += w.rules.nobleFrugalMod;
-		if (noble != null && noble.hasTag(w.rules.nobleHoardingTag)) mods += w.rules.nobleHoardingMod;
+		if (governor != null) mods += governor.calcGovernTaxMod();
+		if (hasNoble()) mods += noble.calcTaxMod();
 
 		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.COAST_DWELLING) && isCoastal(w)) mods += w.rules.coastDwellingTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += w.rules.mercantileTaxMod;
 		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
@@ -175,8 +159,6 @@ class Region {
 	public double calcConsumption(World w, double foodMod) {
 		double base = population;
 		double mods = foodMod;
-		if (noble != null && noble.hasTag(w.rules.nobleRationingTag)) mods += w.rules.nobleRationingMod;
-		if (noble != null && noble.hasTag(w.rules.nobleWastefulTag)) mods += w.rules.nobleWastefulMod;
 		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += w.rules.chaliceOfCompassionFoodMod;
 		return Math.max(0, base * mods);
 	}
@@ -184,12 +166,10 @@ class Region {
 	public double calcPirateThreat(World w) {
 		if (isSea()) return 0;
 		if (religion == Ideology.ALYRJA) return 0;
-		if (noble != null && noble.hasTag(w.rules.noblePolicingTag)) return 0;
 
 		double unrest = calcUnrest(w, w.rules);
 		double mods = 1;
-		if (noble != null && noble.hasTag(w.rules.nobleShadyTag)) mods += w.rules.nobleShadyMod;
-		if (noble != null) mods += w.rules.noblePirateThreatMod;
+		if (hasNoble()) mods += w.rules.noblePirateThreatMod;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / w.rules.pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
 	}
@@ -218,10 +198,10 @@ class Region {
 		if (max != religion) {
 			for (String k : w.getNationNames()) {
 				Ideology si = NationData.getStateReligion(k, w);
-				if (max.religion == si.religion) w.score(k, w.rules.scoreProfReligion, w.rules.scoreReligionPerConverted);
-				if (religion.religion == si.religion) w.score(k, w.rules.scoreProfReligion, -w.rules.scoreReligionPerConverted);
-				if (max == si) w.score(k, w.rules.scoreProfIdeology, w.rules.scoreIdeologyPerConverted);
-				if (religion == si) w.score(k, w.rules.scoreProfIdeology, -w.rules.scoreIdeologyPerConverted);
+				if (max.religion == si.religion) w.score(k, NationData.ScoreProfile.RELIGION, w.rules.scoreReligionPerConverted);
+				if (religion.religion == si.religion) w.score(k, NationData.ScoreProfile.RELIGION, -w.rules.scoreReligionPerConverted);
+				if (max == si) w.score(k, NationData.ScoreProfile.IDEOLOGY, w.rules.scoreIdeologyPerConverted);
+				if (religion == si) w.score(k, NationData.ScoreProfile.IDEOLOGY, -w.rules.scoreIdeologyPerConverted);
 			}
 		}
 		religion = max;
@@ -236,8 +216,8 @@ class Region {
 	}
 
 	public void setKingdom(World w, String kingdom) {
-		w.score(kingdom, w.rules.scoreProfTerritory, w.rules.scorePerConqueredTerritory);
-		w.score(this.kingdom, w.rules.scoreProfTerritory, -w.rules.scorePerConqueredTerritory);
+		w.score(kingdom, NationData.ScoreProfile.TERRITORY, w.rules.scorePerConqueredTerritory);
+		w.score(this.kingdom, NationData.ScoreProfile.TERRITORY, -w.rules.scorePerConqueredTerritory);
 		this.kingdom = kingdom;
 	}
 
@@ -329,17 +309,15 @@ class Region {
 	// TODO: Some or all of the condition checking into Noble?
 	// TODO: Enforce [0.0, 1.0] range?
 	public double calcUnrestNoble(){
-		return noble != null && !"".equals(noble.name) ? noble.unrest : 0.0;
+		return hasNoble() ? noble.unrest : 0.0;
 	}
 
 	// TODO: Enfore min/max, add testing
 	public double calcMinConquestStrength(World w) {
 		double base = calcBaseConquestStrength(w);
 		double mods = 1;
-		if (noble != null && noble.hasTag(w.rules.nobleLoyalTag)) mods += w.rules.loyalMinConqMod;
-		if (noble != null && noble.hasTag(w.rules.nobleDesperateTag)) mods += w.rules.nobleDesperateMod;
 		if (w.getNation(kingdom).hasTag(NationData.Tag.STOIC)) mods += w.rules.stoicConqStrengthMod;
-		mods += calcFortificationMod(w.rules);
+		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
 	}
 
@@ -350,7 +328,10 @@ class Region {
 
 	// TODO: This is a game rule/equation
 	public double calcMinPatrolStrength(World w) {
-		return 0.03 * Math.sqrt(population) * (1 + (2 * calcUnrest(w, w.rules) - 0.7));
+		double mods = 1;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += w.rules.disciplinedPatrolStrengthMod;
+		mods += (2 * calcUnrest(w) - 0.7);
+		return 0.03 * Math.sqrt(population) * mods;
 	}
 
 	public double calcFortificationPct(Rules rules) {
@@ -371,10 +352,43 @@ class Region {
 		return type == Type.WATER;
 	}
 
-	void plant(boolean isHarvestTurn, Rules rules) {
-		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * rules.chaliceOfCompassionPlantPerCitizen;
+	public boolean hasNoble() {
+		return noble != null && !"".equals(noble.name);
+	}
+
+	/**
+	 * Returns a set of region ids that are within {@code limit} edges of this region.
+	 */
+	Set<Integer> getCloseRegionIds(World w, int limit) {
+		Set<Integer> closeRegions = new HashSet<>();
+		class Node {
+			final int r;
+			final int dist;
+			Node(int r, int dist) { this.r = r; this.dist = dist; }
+		}
+		PriorityQueue<Node> queue = new PriorityQueue<>(100, Comparator.comparingInt(n -> n.dist));
+		queue.add(new Node(w.regions.indexOf(this), 0));
+		while (!queue.isEmpty()) {
+			Node n = queue.poll();
+			if (closeRegions.contains(n.r)) continue;
+			closeRegions.add(n.r);
+			for (WorldConstantData.Border b : WorldConstantData.borders) {
+				if (b.a == n.r && b.size + n.dist < limit) {
+					queue.add(new Node(b.b, b.size + n.dist));
+				} else if (b.b == n.r && b.size + n.dist < limit) {
+					queue.add(new Node(b.a, b.size + n.dist));
+				}
+			}
+		}
+		return closeRegions;
+	}
+
+	void plant(boolean isHarvestTurn) {
+		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * w.rules.chaliceOfCompassionPlantPerCitizen;
+		double mod = 1;
+		if (hasNoble()) mod += noble.calcPlantMod();
 		if (isHarvestTurn) {
-			crops += population * rules.plantsPerCitizen;
+			crops += population * w.rules.plantsPerCitizen * mod;
 		}
 	}
 

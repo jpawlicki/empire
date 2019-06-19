@@ -35,24 +35,8 @@ class ChurchReport extends HTMLElement {
 				<h1>Dominant Ideology: <tooltip-element tooltip="${ideologyTooltips[dominantIdeology]}">${dominantIdeology}</tooltip-element></h1>
 				<div id="ideologies">
 				</div>
-				<h1>Rules Summary</h1>
-				<div class="summary">
-					<p>The Church of Iruhan is a powerful hierarchical religious organization that considers itself the central authority on all spiritual and ethical matters. Though believers in the Vessel of Faith ideology reject its authority, most Iruhan-worshipping people are strongly swayed by the official opinions of the Church, which can strongly impact unrest.</p>
-					<p>Additionally, the Church is charitable, and divides one share of its income (66 or more gold each week) among all nations facing starvation. It also divides two shares of its income (133 or more gold each week) between nations it has a positive opinion of, weighted by the magnitude of that opinion.</p>
-					<p>The Church will declare nations with -75 or lower opinion excommunicated, which allows other nations to build opinion by fighting or conquering them.</p>
-					The following actions change Church opinion:
-				</div>
-				<div class="striped">
-					<div></div><div>Changes Opinion By</div>
-					<div>Battle Excommunicated Ruler</div><div>+.03 per casualty inflicted</div>
-					<div>Conquer Excommunicated Region</div><div>+15</div>
-					<div>Construct Temple (Iruhan, not VoF)</div><div>+15</div>
-					<div>Inspire with a Cardinal</div><div>+5</div>
-					<div>Forcibly Relocate Civilians</div><div>-.0002 per person</div>
-					<div>Construct Temple (non-Iruhan)</div><div>-20</div>
-					<div>Battle in Sancta Civitate</div><div>-40</div>
-					<div>Execute a Captive</div><div>-40</div>
-					<div>Slay Civilians</div><div>-200</div>
+				<h1>Doctrines</h1>
+				<div id="doctrines" class="summary">
 				</div>
 			</div>
 		`;
@@ -118,6 +102,10 @@ class ChurchReport extends HTMLElement {
 			#content > #objects :nth-child(even) {
 				text-align: left;
 			}
+			#doctrines ul {
+				margin-top: 0;
+				font-size: 90%;
+			}
 			.summary {
 				margin-left: 0.7em;
 				font-size: 90%;
@@ -143,9 +131,6 @@ class ChurchReport extends HTMLElement {
 			d.innerHTML = i.k;
 			d.setAttribute("href", "kingdom/" + i.k);
 			dd.appendChild(d);
-			if (i.o <= -75) {
-				dd.appendChild(document.createTextNode(" (Excommunicated!)"));
-			}
 			odiv.appendChild(dd);
 			d = document.createElement("div");
 			d.innerHTML = Math.round(i.o * 10) / 10;
@@ -164,6 +149,21 @@ class ChurchReport extends HTMLElement {
 			d = document.createElement("div");
 			d.innerHTML = Math.round(i.v) + " souls";
 			idiv.appendChild(d);
+		}
+
+		// Add active doctrines.
+		{
+			let doctrines = shadow.getElementById("doctrines");
+			for (let doctrine of g_data.church.doctrines.slice().sort()) {
+				doctrines.appendChild(document.createTextNode(titleCase(doctrine)));
+				let d = document.createElement("ul");
+				for (let desc of doctrineDescriptions[doctrine]) {
+					let li = document.createElement("li");
+					li.appendChild(document.createTextNode(desc));
+					d.appendChild(li);
+				}
+				doctrines.appendChild(d);
+			}
 		}
 	}
 }

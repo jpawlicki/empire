@@ -24,7 +24,7 @@ class Nation {
 		public static String TYPE = "Nation";
 		public String rulerName = "";
 		public String title = "";
-		public String food = "";
+		public String prosperity = "";
 		public String happiness = "";
 		public String territory = "";
 		public String glory = "";
@@ -57,6 +57,25 @@ class Nation {
 			Entity e = new Entity(TYPE, gameId + "_" + nation);
 			e.setProperty("json", getGson().toJson(this));
 			return e;
+		}
+
+		public boolean hasTag(NationData.Tag tag) {
+			return trait1 == tag || trait2 == tag;
+		}
+
+		public boolean hasScoreProfile(NationData.ScoreProfile profile) {
+			switch (profile) {
+				case CULTURE: return "checked".equals(culture);
+				case GLORY: return "checked".equals(glory);
+				case HAPPINESS: return "checked".equals(happiness);
+				case IDEOLOGY: return "checked".equals(ideology);
+				case PROSPERITY: return "checked".equals(prosperity);
+				case RELIGION: return "checked".equals(religion);
+				case RICHES: return "checked".equals(riches);
+				case SECURITY: return "checked".equals(security);
+				case TERRITORY: return "checked".equals(territory);
+				default: throw new IllegalArgumentException("Nation did not implement support for " + profile);
+			}
 		}
 
 		@Override

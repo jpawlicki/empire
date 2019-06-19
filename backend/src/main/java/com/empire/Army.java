@@ -49,9 +49,8 @@ class Army {
 
 		if (hasTag(Tag.STEEL)) mods += w.rules.steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += w.rules.seafaringMod;
-		if (isArmy() && !w.rules.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += w.rules.disciplinedMod;
-		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod(w.rules);
-		if (isArmy() && r.noble != w.rules.noNoble && r.noble.hasTag(w.rules.nobleLoyalTag) && r.getKingdom().equals(kingdom)) mods += w.rules.loyalMod;
+		if (isArmy() && !w.rules.pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += w.rules.disciplinedArmyStrengthMod;
+		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
 			Ideology sr = NationData.getStateReligion(kingdom, w);
 			if (Ideology.SWORD_OF_TRUTH == sr) mods += w.rules.swordOfTruthMod;
@@ -59,8 +58,8 @@ class Army {
 		}
 		if (lastStand) mods += w.rules.lastStandMod;
 		if (isArmy() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * w.rules.perInspireMod;
-		if (leader != w.rules.noLeader && w.rules.noCaptor.equals(leader.captor)) {
-			mods += leader.calcLevel(isArmy() ? w.rules.charDimGeneral : w.rules.charDimAdmiral) * w.rules.perLevelLeaderMod;
+		if (leader != w.rules.noLeader && !leader.isCaptive()) {
+			mods += leader.calcLeadMod(type);
 		}
 
 		return strength * mods;
@@ -165,7 +164,7 @@ class Army {
 			nobleFate = " " + region.noble.name + " swore fealty to their new rulers.";
 			region.noble.unrest = .15;
 		}
-		if (w.getNation(region.getKingdom()).goodwill <= -75) w.getNation(kingdom).goodwill += 15;
+		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && w.getNation(region.getKingdom()).goodwill <= 0) w.getNation(kingdom).goodwill += w.rules.defendersOfFaithConquestOpinion;
 		region.constructions.removeIf(c -> c.type == Construction.Type.FORTIFICATIONS);
 		w.notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
 		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);
