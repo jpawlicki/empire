@@ -1,10 +1,13 @@
 package com.empire.svc;
 
+import com.empire.Message;
 import com.empire.Nation;
 import com.empire.NationData;
 import com.empire.Orders;
 import com.empire.World;
 import com.empire.store.DatastoreClient;
+import com.empire.util.JsonUtils;
+import com.empire.util.JsonUtilsTest;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +34,7 @@ public class EntryServletBackendTest {
   private static PasswordValidator passVal;
   private static LoginCache cache;
   private static Request req;
+  private JsonUtils json;
 
   private static final long gameIdTest = 42;
   private static final String kingdomTest = "TEST_KINGDOM";
@@ -50,6 +54,9 @@ public class EntryServletBackendTest {
     when(req.getKingdom()).thenReturn(kingdomTest);
     when(req.getTurn()).thenReturn(turnTest);
     when(req.getVersion()).thenReturn(versionTest);
+
+    json = mock(JsonUtils.class);
+    JsonUtilsTest.setJsonUtilInstance(json);
   }
 
   @Test
@@ -324,5 +331,39 @@ public class EntryServletBackendTest {
 
     assertTrue(backend.postAdvanceWorld(req));
     verify(dsClient).putWorld(gameIdTest, world);
+  }
+
+  @Test
+  public void postRtcRequiresPasswordSuccess() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
+
+    assertFalse(backend.postRealTimeCommunication(req));
+    verify(passVal).checkPassword(req);
+    verifyZeroInteractions(dsClient);
+  }
+
+  @Test
+  public void postRtcWorldNotFoundReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.postRealTimeCommunication(req));
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void postRtcUpdatesMessages() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+
+    World w = mock(World.class);
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(w));
+
+    when(req.getBody()).thenReturn("");
+    Message msg = mock(Message.class);
+    JsonUtilsTest.mockFromJson(json, "", com.empire.Message.class, msg);
+
+    assertTrue(backend.postRealTimeCommunication(req));
+    verify(w).addRtc(kingdomTest, msg);
+    verify(dsClient).putWorld(gameIdTest, w);
   }
 }
