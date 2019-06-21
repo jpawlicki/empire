@@ -321,7 +321,7 @@ class EntryServletBackend {
     return true;
   }
 
-  private static final class ChangePlayerRequestBody {
+  static class ChangePlayerRequestBody {
     public String email;
     public String password;
   }

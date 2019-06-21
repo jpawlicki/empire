@@ -8,6 +8,7 @@ import com.empire.World;
 import com.empire.store.DatastoreClient;
 import com.empire.util.JsonUtils;
 import com.empire.util.JsonUtilsTest;
+import com.google.gson.reflect.TypeToken;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,6 +42,7 @@ public class EntryServletBackendTest {
   private static final int turnTest = 2;
   private static final int versionTest = 5;
   private static final String emailTest = "email@test.com";
+  private static final String pwTest = "password123";
 
   @Before
   public void setup() {
@@ -295,6 +297,7 @@ public class EntryServletBackendTest {
     when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
     when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
     when(req.getBody()).thenReturn("{}");
+    JsonUtilsTest.mockFromJson(json, "{}", new TypeToken<Map<String, String>>(){}.getType(), Collections.emptyMap());
     when(dsClient.putOrders(any())).thenReturn(true);
 
     assertTrue(backend.postOrders(req));
@@ -360,10 +363,78 @@ public class EntryServletBackendTest {
 
     when(req.getBody()).thenReturn("");
     Message msg = mock(Message.class);
-    JsonUtilsTest.mockFromJson(json, "", com.empire.Message.class, msg);
+    JsonUtilsTest.mockFromJson(json, "", Message.class, msg);
 
     assertTrue(backend.postRealTimeCommunication(req));
     verify(w).addRtc(kingdomTest, msg);
+    verify(dsClient).putWorld(gameIdTest, w);
+  }
+
+  @Test
+  public void postChangePlayerPasswordSuccess() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.FAIL);
+
+    assertFalse(backend.postChangePlayer(req));
+    verify(passVal).checkPassword(req);
+    verifyZeroInteractions(dsClient);
+  }
+
+  @Test
+  public void postChangePlayerWorldDateNotFoundReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.postChangePlayer(req));
+    verify(dsClient).getWorldDate(gameIdTest);
+  }
+
+  @Test
+  public void postChangePlayerWorldNotFoundReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.postChangePlayer(req));
+    verify(dsClient).getWorld(gameIdTest, turnTest);
+  }
+
+  @Test
+  public void postChangePlayerPlayerNotFoundReturnsFalse() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(mock(World.class)));
+
+    when(req.getBody()).thenReturn("");
+    EntryServletBackend.ChangePlayerRequestBody changeReq = mock(EntryServletBackend.ChangePlayerRequestBody.class);
+    changeReq.email = emailTest;
+    JsonUtilsTest.mockFromJson(json, "", EntryServletBackend.ChangePlayerRequestBody.class, changeReq);
+
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.empty());
+
+    assertFalse(backend.postChangePlayer(req));
+    verify(dsClient).getPlayer(emailTest);
+  }
+
+  @Test
+  public void postChangePlayerUpdatesUserAndPassword() {
+    when(passVal.checkPassword(req)).thenReturn(PasswordValidator.PasswordCheck.PASS_PLAYER);
+    when(dsClient.getWorldDate(gameIdTest)).thenReturn(Optional.of(turnTest));
+
+    World w = mock(World.class);
+    NationData nd = mock(NationData.class);
+    when(w.getNation(kingdomTest)).thenReturn(nd);
+    when(dsClient.getWorld(gameIdTest, turnTest)).thenReturn(Optional.of(w));
+
+    when(req.getBody()).thenReturn("");
+    EntryServletBackend.ChangePlayerRequestBody changeReq = mock(EntryServletBackend.ChangePlayerRequestBody.class);
+    changeReq.email = emailTest;
+    JsonUtilsTest.mockFromJson(json, "", EntryServletBackend.ChangePlayerRequestBody.class, changeReq);
+
+    Player player = mock(Player.class);
+    when(player.getPassHash()).thenReturn(pwTest);
+    when(dsClient.getPlayer(emailTest)).thenReturn(Optional.of(player));
+
+    assertTrue(backend.postChangePlayer(req));
     verify(dsClient).putWorld(gameIdTest, w);
   }
 }
