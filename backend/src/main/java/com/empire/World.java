@@ -2090,24 +2090,31 @@ class World implements GoodwillProvider {
 					emigrations.add(new Emigration(r, d, d.calcImmigrationWeight() / totalWeight * eligibleToEmigrate));
 				}
 			}
-			Map<Region, Double> netMotion = new HashMap<>();
+			Map<Region, List<Emigration>> relevantEmigrations = new HashMap<>();
 			for (Emigration e : emigrations) {
-				netMotion.merge(e.source, -e.population, Double::sum);
-				netMotion.merge(e.destination, e.population, Double::sum);
+				relevantEmigrations.merge(e.source, Arrays.asList(e), (a, b) -> { List<Emigration> r = new ArrayList<>(a); r.addAll(b); return r; });
+				relevantEmigrations.merge(e.destination, Arrays.asList(e), (a, b) -> { List<Emigration> r = new ArrayList<>(a); r.addAll(b); return r; });
 				e.apply();
 			}
 			for (String k : kingdoms.keySet()) {
 				double popChange = 0;
 				double absPopChange = 0;
 				String note = "";
-				for (Map.Entry<Region, Double> e : netMotion.entrySet()) {
+				for (Map.Entry<Region, List<Emigration>> e : relevantEmigrations.entrySet()) {
 					if (!e.getKey().getKingdom().equals(k)) continue;
-					popChange += e.getValue();
-					absPopChange += Math.abs(e.getValue());
-					note += "\n" + e.getKey().name + ": " + (e.getValue() > 0 ? "+" : "") + Math.round(e.getValue()) + " people.";
+					String explain = "";
+					double localTotal = 0;
+					for (Emigration ee : e.getValue()) {
+						double delta = ee.population * (ee.source == e.getKey() ? -1 : 1);
+						explain += "\n&nbsp&nbsp&nbsp&nbsp(" + (delta > 0 ? "+" : "") + Math.round(delta) + " from " + (ee.source == e.getKey() ? ee.destination.name : ee.source.name) + ")";
+						popChange += delta;
+						localTotal += delta;
+						absPopChange += ee.population;
+					}
+					note += "\n" + e.getKey().name + ": " + (localTotal > 0 ? "+" : "") + Math.round(localTotal) + " people." + explain;
 				}
 				if (absPopChange > 1000) {
-					notifications.add(new Notification(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:" + note));
+					notifications.add(new Notification(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:\n" + note));
 				}
 			}
 
