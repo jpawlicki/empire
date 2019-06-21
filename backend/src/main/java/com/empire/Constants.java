@@ -76,6 +76,7 @@ public class Constants {
 	public static final double riverOfKuunTaxMod = 0.5;
 	public static final double riverOfKuunRecruitmentMod = 0.5;
 	public static final double riverOfKuunNeighborTaxMod = 0.5;
+	public static final double flameOfKithImmigrationWeightMod = 2;
 
 	public static final double tivarSpellContinueChance = 0.66;
 	public static final int tivarSpellGracePeriod = 2;
@@ -143,6 +144,9 @@ public class Constants {
 	public static final double plotDecayNonFriendly = 0.8;
 
 	public static final double pirateThreatDoubleGold = 30;
+
+	public static final double emigrationFactor = 0.1;
+	public static final double emigrationStarvationMod = 2;
 
 	public static final double baseCostFortifications = 20;
 	public static final double baseCostShipyard = 80;

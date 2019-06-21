@@ -68,6 +68,12 @@ class Region {
 		return culture.getArmyTags();
 	}
 
+	public double calcImmigrationWeight() {
+		double mod = 1;
+		if (religion == Ideology.FLAME_OF_KITH) mod += Constants.flameOfKithImmigrationWeightMod;
+		return (1 - unrestPopular) * mod;
+	}
+
 	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
 		double base = population * w.rules.recruitmentPerPop;
 		double unrest = calcUnrest(w, w.rules);

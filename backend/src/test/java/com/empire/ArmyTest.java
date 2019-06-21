@@ -172,7 +172,7 @@ public class ArmyTest {
 	public void calcStrengthInspireNavy() {
 		w.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
 		a.type = Army.Type.NAVY;
-		assertEquals(100.0, a.calcStrength(w, null, 2, false), DELTA);
+		assertEquals(110.0, a.calcStrength(w, null, 2, false), DELTA);
 	}
 
 	@Test
