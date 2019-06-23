@@ -72,7 +72,7 @@ public class EntryServlet extends HttpServlet {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 		String json = "";
-		if (req.getRequestURI().equals("/ping")) {
+		if (req.getRequestURI().equals("/entry/ping")) {
 			json = "{\"status\": \"success\"}";
 		} else if (req.getRequestURI().equals("/entry/orders")) {
 			json = getOrders(r, resp);
