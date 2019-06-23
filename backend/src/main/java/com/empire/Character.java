@@ -34,6 +34,18 @@ public class Character {
 	int leadingArmy = -1;
 	String orderhint = "";
 
+	public String getName() {
+		return name;
+	}
+
+	public int getLocation() {
+		return location;
+	}
+
+	public void setLocation(int location) {
+		this.location = location;
+	}
+
 	private double calcLevel(double xp) {
 		return Math.sqrt(xp + 1);
 	}

@@ -55,6 +55,34 @@ public class World implements GoodwillProvider {
 	long nextTurn;
 	boolean gameover;
 
+	public int getDate() {
+		return date;
+	}
+
+	public List<Character> getCharacters() {
+		return characters;
+	}
+
+	public String getGmPasswordHash() {
+		return gmPasswordHash;
+	}
+
+	public String getObsPasswordHash() {
+		return obsPasswordHash;
+	}
+
+	public long getNextTurn() {
+		return nextTurn;
+	}
+
+	public void setNextTurn(long nextTurn) {
+		this.nextTurn = nextTurn;
+	}
+
+	public boolean isGameover() {
+		return gameover;
+	}
+
 	private static Gson getGson() {
 		return new GsonBuilder()
 				.enableComplexMapKeySerialization()
