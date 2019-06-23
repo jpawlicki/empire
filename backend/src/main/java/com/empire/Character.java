@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 
-class Character {
+public class Character {
 	enum Tag {
 		@SerializedName("Cardinal") CARDINAL,
 		@SerializedName("Ruler") RULER,

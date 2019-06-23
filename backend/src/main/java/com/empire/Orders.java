@@ -8,7 +8,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
 import java.util.HashMap;
 
-final class Orders {
+public final class Orders {
 	public static String TYPE = "Orders";
 
 	public final String kingdom;

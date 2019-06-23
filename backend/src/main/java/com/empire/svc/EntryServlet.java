@@ -1,5 +1,9 @@
-package com.empire;
+package com.empire.svc;
 
+import com.empire.Nation;
+import com.empire.Orders;
+import com.empire.Player;
+import com.empire.World;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
@@ -469,7 +473,7 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			World w = World.load(4, getWorldDate(4, service), service);
-			for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
+			for (com.empire.Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
 			service.put(w.toEntity(4));
 			txn.commit();
 		} catch (EntityNotFoundException e) {

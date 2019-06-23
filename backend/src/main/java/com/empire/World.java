@@ -32,7 +32,7 @@ interface GoodwillProvider {
 	double getGoodwill(String nation);
 }
 
-class World implements GoodwillProvider {
+public class World implements GoodwillProvider {
 	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 

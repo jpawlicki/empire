@@ -1,5 +1,6 @@
-package com.empire;
+package com.empire.svc;
 
+import com.empire.Schedule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
