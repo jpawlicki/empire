@@ -300,7 +300,7 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postStartWorld(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		StartWorldGson s = StartWorldGson.fromJson(r.body);
+		StartWorld s = StartWorld.fromJson(r.body);
 		String passHash;
 		String obsPassHash;
 		try {
