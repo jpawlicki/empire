@@ -2,21 +2,15 @@ package com.empire;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.EmbeddedEntity;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
-import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.JsonSyntaxException;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +31,6 @@ import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.Transport;
-import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.servlet.ServletException;
@@ -164,7 +157,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		if (!checkPassword(r, service).passesRead()) return null;
 		try {
-			Order o = Order.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
+			Orders o = Orders.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
 			resp.setHeader("SJS-Version", "" + o.version);
 			return o.json;
 		} catch (EntityNotFoundException e) {
@@ -248,7 +241,7 @@ public class EntryServlet extends HttpServlet {
 						for (String kingdom : w.getNationNames()) {
 							kingdoms.add(kingdom);
 							try {
-								orders.put(kingdom, Order.loadOrder(gameId, kingdom, w.date, service).getOrders());
+								orders.put(kingdom, Orders.loadOrder(gameId, kingdom, w.date, service).getOrders());
 							} catch (EntityNotFoundException e) {
 								// Can't load the relevant orders - tool will make default orders.
 							}
@@ -411,7 +404,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
 			if (r.turn != getWorldDate(r.gameId, service)) return false;
-			service.put(new Order(r.gameId, r.kingdom, r.turn, r.version, r.body).toEntity());
+			service.put(new Orders(r.gameId, r.kingdom, r.turn, r.version, r.body).toEntity());
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");

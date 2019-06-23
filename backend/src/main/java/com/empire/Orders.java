@@ -8,8 +8,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
 import java.util.HashMap;
 
-final class Order {
-	public static String TYPE = "Order";
+final class Orders {
+	public static String TYPE = "Orders";
 
 	public final String kingdom;
 	public final int turn;
@@ -17,12 +17,12 @@ final class Order {
 	public final String json;
 	public final long gameId;
 
-	public static Order loadOrder(long gameId, String kingdom, int turn, DatastoreService service) throws EntityNotFoundException {
+	public static Orders loadOrder(long gameId, String kingdom, int turn, DatastoreService service) throws EntityNotFoundException {
 		Entity e = service.get(KeyFactory.createKey(TYPE, gameId + "_" + turn + "_" + kingdom));
-		return new Order(gameId, kingdom, turn, (int)((Long)e.getProperty("version")).longValue(), ((Text)e.getProperty("json")).getValue());
+		return new Orders(gameId, kingdom, turn, (int)((Long)e.getProperty("version")).longValue(), ((Text)e.getProperty("json")).getValue());
 	}
 
-	public Order(long gameId, String kingdom, int turn, int version, String json) {
+	public Orders(long gameId, String kingdom, int turn, int version, String json) {
 		this.gameId = gameId;
 		this.kingdom = kingdom;
 		this.turn = turn;
