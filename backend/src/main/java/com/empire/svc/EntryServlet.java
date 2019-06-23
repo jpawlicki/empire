@@ -2,7 +2,6 @@ package com.empire.svc;
 
 import com.empire.Nation;
 import com.empire.Orders;
-import com.empire.Player;
 import com.empire.World;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
