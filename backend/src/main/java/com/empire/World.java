@@ -105,7 +105,8 @@ class World extends RulesObject implements GoodwillProvider {
 	private static class RuleSet { int ruleSet; };
 
 	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) throws IOException {
-		World w = newWorld(Rules.loadRules(5));
+		World w = newWorld(Rules.loadRules(Rules.LATEST));
+		w.ruleSet = Rules.LATEST;
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
 		w.obsPasswordHash = obsPasswordHash;

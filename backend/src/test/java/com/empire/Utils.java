@@ -9,7 +9,7 @@ public class Utils {
 	static {
 		Rules r = null;
 		try {
-			r = Rules.loadRules(5);
+			r = Rules.loadRules(Rules.LATEST);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

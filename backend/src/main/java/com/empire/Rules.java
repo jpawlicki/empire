@@ -15,7 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * Each World operates based on a rule set, and scores are not comparable between different rule sets.
  */
 public class Rules {
-	private static Map<Integer, Rules> cache = new ConcurrentHashMap<Integer, Rules>();
+	public static final int LATEST = 5;
+
+	private static final Map<Integer, Rules> cache = new ConcurrentHashMap<Integer, Rules>();
 
 	static Rules loadRules(int ruleSetId) throws IOException {
 		if (!cache.containsKey(ruleSetId)) {
