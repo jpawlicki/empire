@@ -52,15 +52,15 @@ class Character extends RulesObject {
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = w.getRules().basePlotStrength;
+		double power = getRules().basePlotStrength;
 
-		power += calcLevel(experience.spy) * w.getRules().perSpyLevelPlotMod;
+		power += calcLevel(experience.spy) * getRules().perSpyLevelPlotMod;
 
-		if (boosted) power += w.getRules().guardAgainstPlotMod;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += w.getRules().lyskrPlotMod;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += w.getRules().companyPlotMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * w.getRules().perInspirePlotMod;
-		if (isCaptive()) power += w.getRules().capturedPlotMod;
+		if (boosted) power += getRules().guardAgainstPlotMod;
+		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += getRules().lyskrPlotMod;
+		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += getRules().companyPlotMod;
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * getRules().perInspirePlotMod;
+		if (isCaptive()) power += getRules().capturedPlotMod;
 
 		return power;
 	}
@@ -105,7 +105,7 @@ class Character extends RulesObject {
 	}
 
 	private Character(Rules rules) {
-		setRules(rules);
+		super(rules);
 	}
 
 	static Character newCharacter(Rules rules) {
