@@ -39,7 +39,7 @@
 						"trait2": nations[k].traits[1],
 						"dominant_ideology": nations[k].religion,
 						"bonus": nations[k].bonus,
-						"email": document.getElementById("email").value,
+						"email": "example@example.com",
 						"password": "player"
 					};
 					for (let s of nations[k].score) ns[s] = "checked";
@@ -66,7 +66,6 @@
 		To avoid local datastore contention, the initializations are spread over a few seconds. Wait for a 204 popup.
 		<form onsubmit="return postForm();">
 			<label>Game ID: <input id="gameId" type="number"/></label>
-			<label>Email: <input id="email" type="email"/></label>
 			<button>Start!</button>
 		</form>
 	</body>

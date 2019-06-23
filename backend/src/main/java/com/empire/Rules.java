@@ -103,6 +103,7 @@ public class Rules {
 	double riverOfKuunTaxMod;
 	double riverOfKuunRecruitmentMod;
 	double riverOfKuunNeighborTaxMod;
+	double flameOfKithImmigrationWeightMod;
 
 	double tivarSpellContinueChance;
 	int tivarSpellGracePeriod;
@@ -169,6 +170,9 @@ public class Rules {
 	double plotDecayNonFriendly;
 
 	double pirateThreatDoubleGold;
+
+	double emigrationFactor;
+	double emigrationStarvationMod;
 
 	double baseCostFortifications;
 	double baseCostShipyard;

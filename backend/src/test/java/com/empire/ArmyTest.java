@@ -27,7 +27,7 @@ public class ArmyTest {
 
 	@Before
 	public void setUpPlainArmy() throws IOException {
-		a = new Army();
+		a = Army.newArmy(Utils.rules);
 		a.type = Army.Type.ARMY;
 		a.size = 100.0;
 		a.kingdom = k1;
@@ -58,7 +58,7 @@ public class ArmyTest {
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		w.regions = Arrays.asList(r1, r2);
-		w.rules = Rules.loadRules(5);
+		when(w.getRules()).thenReturn(Utils.rules);
 		return w;
 	}
 
@@ -101,7 +101,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
-		a.kingdom = w.rules.pirateKingdom;
+		a.kingdom = Utils.rules.pirateKingdom;
 		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -115,13 +115,13 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthFortificationNavy() {
 		a.type = Army.Type.NAVY;
-		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortificationWater() {
-		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(false);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -129,13 +129,13 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthFortificationNotFriendly() {
 		a.kingdom = k2;
-		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthFortification() {
-		when(w.regions.get(0).calcFortificationMod(w.rules)).thenReturn(0.3);
+		when(w.regions.get(0).calcFortificationMod()).thenReturn(0.3);
 		when(w.regions.get(0).isLand()).thenReturn(true);
 		assertEquals(1.3, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -171,6 +171,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthInspireNavy() {
 		w.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
+		w.regions.get(0).population = 1E9;
 		a.type = Army.Type.NAVY;
 		assertEquals(110.0, a.calcStrength(w, null, 2, false), DELTA);
 	}
@@ -185,7 +186,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthCaptured() {
 		Character leader = Mocks.character();
-		when(leader.calcLeadMod(Army.Type.ARMY, w.rules)).thenReturn(.4);
+		when(leader.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
 		when(leader.isCaptive()).thenReturn(true);
 		assertEquals(1.0, a.calcStrength(w, leader, 0, false), DELTA);
 	}
@@ -193,7 +194,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthGeneral() {
 		Character c = Mocks.character();
-		when(c.calcLeadMod(Army.Type.ARMY, w.rules)).thenReturn(.4);
+		when(c.calcLeadMod(Army.Type.ARMY)).thenReturn(.4);
 		assertEquals(1.4, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
@@ -201,7 +202,7 @@ public class ArmyTest {
 	public void calcStrengthAdmiral() {
 		a.type = Army.Type.NAVY;
 		Character c = Mocks.character();
-		when(c.calcLeadMod(Army.Type.NAVY, w.rules)).thenReturn(.4);
+		when(c.calcLeadMod(Army.Type.NAVY)).thenReturn(.4);
 		assertEquals(140.0, a.calcStrength(w, c, 0, false), DELTA);
 	}
 
