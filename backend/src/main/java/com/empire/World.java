@@ -88,7 +88,7 @@ class World implements GoodwillProvider {
 		return getGson().fromJson(json, World.class);
 	}
 
-	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) {
+	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation> nationSetup) {
 		World w = new World();
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
@@ -140,7 +140,7 @@ class World implements GoodwillProvider {
 		double totalSharesFood = unruledNations / 2.0;
 		double totalSharesPopulation = unruledNations / 2.0;
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			totalSharesGold += 1;
 			totalSharesArmy += 1;
 			totalSharesNavy += 1;
@@ -158,7 +158,7 @@ class World implements GoodwillProvider {
 			else if ("gold".equals(setup.bonus)) totalSharesGold += 0.5;
 		}
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			NationData nation = new NationData();
 			WorldConstantData.Kingdom con = WorldConstantData.kingdoms.get(kingdom);
 			nation.email = setup.email;
@@ -226,7 +226,7 @@ class World implements GoodwillProvider {
 		// Un-own rebellious regions.
 		HashSet<String> rebelliousNations = new HashSet<>();
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			if (!"Rebellious".equals(setup.trait1) && !"Rebellious".equals(setup.trait2)) continue;
 			rebelliousNations.add(kingdom);
 			ArrayList<Region> ownedRegions = new ArrayList<>();
@@ -243,7 +243,7 @@ class World implements GoodwillProvider {
 		}
 		// Allocate nobles as necessary.
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			Culture culture = WorldConstantData.kingdoms.get(kingdom).culture;
 			if (setup.hasTag(NationData.Tag.REPUBLICAN)) continue;
 			ArrayList<Integer> ownedRegions = new ArrayList<>();
@@ -300,7 +300,7 @@ class World implements GoodwillProvider {
 		}
 		// Place armies, navies.
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			double sharesNavy = 1;
 			double sharesArmy = 1;
 			if (setup.hasTag(NationData.Tag.PATRIOTIC)) sharesArmy += 0.15;
@@ -378,7 +378,7 @@ class World implements GoodwillProvider {
 		}
 		// Add characters, incl Cardinals
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			ArrayList<Integer> regions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
 			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());

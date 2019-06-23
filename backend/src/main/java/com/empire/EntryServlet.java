@@ -173,7 +173,7 @@ public class EntryServlet extends HttpServlet {
 	private String getSetup(Request r) {
 		// TODO - should filter this data or display it.
 		try {
-			return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
+			return Nation.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
 		} catch (EntityNotFoundException e) {
 			return null;
 		}
@@ -316,11 +316,11 @@ public class EntryServlet extends HttpServlet {
 		HashSet<String> addresses = new HashSet<String>();
 		try {
 			// Collect setups.
-			HashMap<String, Nation.NationGson> nations = new HashMap<>();
+			HashMap<String, Nation> nations = new HashMap<>();
 			for (String kingdom : s.kingdoms) {
 				log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
 				try {
-					nations.put(kingdom, Nation.NationGson.loadNation(kingdom, r.gameId, service));
+					nations.put(kingdom, Nation.loadNation(kingdom, r.gameId, service));
 					addresses.add(nations.get(kingdom).email);
 				} catch (EntityNotFoundException e) {
 					// Nation is not in the game.
@@ -492,11 +492,11 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			Nation.NationGson.loadNation(r.kingdom, r.gameId, service);
+			Nation.loadNation(r.kingdom, r.gameId, service);
 			return false; // We expect an EntityNotFoundException.
 		} catch (EntityNotFoundException e) {
 			try {
-				Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
+				Nation nation = Nation.fromJson(r.body);
 				nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 				service.put(nation.toEntity(r.kingdom, r.gameId));
 				service.put(new Player(nation.email, nation.password).toEntity());
