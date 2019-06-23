@@ -1,4 +1,4 @@
-package com.empire;
+package com.empire.util;
 
 import java.util.Collection;
 
