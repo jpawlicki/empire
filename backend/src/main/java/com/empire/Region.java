@@ -409,7 +409,7 @@ class Region extends RulesObject {
 	}
 
 	private Region(Rules rules) {
-		setRules(rules);
+		super(rules);
 	}
 
 	static Region newRegion(Rules rules) {

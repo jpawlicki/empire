@@ -126,7 +126,7 @@ public class RegionTest {
 
 	@Test
 	public void calcUnrestNobleEmptyName(){
-		r.noble = Noble.makeNoble(Culture.ANPILAYN, 1, Utils.rules);
+		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
 		r.noble.name = "";
 		r.noble.unrest = unrestMiddle;
 		assertEquals(0.0, r.calcUnrestNoble(), DELTA);
@@ -134,7 +134,7 @@ public class RegionTest {
 
 	@Test
 	public void calcUnrestNoblePresent(){
-		r.noble = Noble.makeNoble(Culture.ANPILAYN, 1, Utils.rules);
+		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
 		r.noble.unrest = unrestMiddle;
 		assertEquals(unrestMiddle, r.calcUnrestNoble(), DELTA);
 	}
@@ -147,7 +147,7 @@ public class RegionTest {
 		r.religion = Ideology.SWORD_OF_TRUTH;
 		assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
 
-		r.noble = Noble.makeNoble(Culture.ANPILAYN, 1, Utils.rules);
+		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
 		r.noble.unrest = unrestHigher;
 		assertEquals(unrestHigher, r.calcUnrest(unused -> -25), DELTA);
 	}
@@ -240,7 +240,7 @@ public class RegionTest {
 
 	@Test
 	public void calcPirateThreatNoble(){
-		r.noble = Noble.makeNoble(Culture.ANPILAYN, 1, Utils.rules);
+		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
 		assertEquals(0.125, r.calcPirateThreat(w), DELTA);
 	}
 
@@ -294,7 +294,7 @@ public class RegionTest {
 
 	@Test
 	public void plantHarvestTurnNoble() {
-		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0, Utils.rules);
+		r.noble = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		r.population = 10000;
 		r.crops = 0;
 		r.plant(true);
@@ -303,7 +303,7 @@ public class RegionTest {
 
 	@Test
 	public void plantHarvestTurnNobleHighLevel() {
-		r.noble = Noble.makeNoble(Culture.ANPILAYN, 0, Utils.rules);
+		r.noble = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		for (int i = 0; i < 24; i++) r.noble.addExperience();
 		r.population = 10000;
 		r.crops = 0;

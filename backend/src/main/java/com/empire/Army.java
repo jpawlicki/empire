@@ -174,7 +174,7 @@ class Army extends RulesObject {
 	}
 
 	private Army(Rules rules) {
-		setRules(rules);
+		super(rules);
 	}
 
 	static Army newArmy(Rules rules) {

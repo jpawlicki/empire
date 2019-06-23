@@ -268,7 +268,7 @@ class World extends RulesObject implements GoodwillProvider {
 			Collections.shuffle(ownedRegions);
 			int placements = (int) Math.ceil(ownedRegions.size() * culture.nobleFraction.apply(w.getRules()));
 			for (int i = 0; i < placements; i++) {
-				w.regions.get(ownedRegions.get(i)).noble = Noble.makeNoble(culture, 0, w.getRules());
+				w.regions.get(ownedRegions.get(i)).noble = Noble.newNoble(culture, 0, w.getRules());
 			}
 		}
 		// Allocate unowned regions between non-rebellious nations.
@@ -1271,7 +1271,7 @@ class World extends RulesObject implements GoodwillProvider {
 					}
 				} else if (action.startsWith("Instate Noble")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom) || region.noble != null) continue;
-					region.noble = Noble.makeNoble(region.culture, date, getRules());
+					region.noble = Noble.newNoble(region.culture, date, getRules());
 					c.orderhint = "";
 					c.addExperienceGovernor();
 				} else if (action.startsWith("Govern")) {
@@ -2933,7 +2933,7 @@ class World extends RulesObject implements GoodwillProvider {
 	}
 	
 	private World(Rules rules) {
-		setRules(rules);
+		super(rules);
 	}
 
 	static World newWorld(Rules rules) {

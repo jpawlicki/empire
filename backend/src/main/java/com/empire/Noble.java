@@ -24,7 +24,7 @@ class Noble extends RulesObject {
 		return new Noble(rules);
 	}
 
-	static Noble makeNoble(Culture culture, int date, Rules rules) {
+	static Noble newNoble(Culture culture, int date, Rules rules) {
 		Noble n = newNoble(rules);
 		n.name = WorldConstantData.getRandomName(culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
 		n.unrest = 0;
@@ -97,7 +97,7 @@ class Noble extends RulesObject {
 	}
 
 	private Noble(Rules rules) {
-		setRules(rules);
+		super(rules);
 	}
 }
 
