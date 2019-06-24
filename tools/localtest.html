@@ -37,13 +37,37 @@
 					req.onerror = function (e) {
 						window.alert("Error setting up lobby: " + req.status);
 					};
-					req.onload = function (ev) {};
+					req.onload = function (ev) {
+						window.setTimeout(getGeo, 1500, gameId);
+					};
 					req.send(JSON.stringify({
 						"players": numPlayers
 					}));
 				}
-				for (let k in nations) {
+				return false;
+			}
+
+			function getGeo(gameId) {
+				let req = new XMLHttpRequest();
+				req.open("get", g_server + "/entry/setup?gid=" + gameId, true);
+				req.onerror = function (e) {
+					window.alert("Error setting up lobby: " + req.status);
+				};
+				req.onload = function (ev) {
+					let nameList = [];
+					for (let n of JSON.parse(req.response).geography.kingdoms) nameList.push(n.name);
+					postNationCreations(gameId, nameList);
+				};
+				req.send(JSON.stringify({
+					"players": numPlayers
+				}));
+			}
+
+			function postNationCreations(gameId, nationNameList) {
+				for (let k of nationNameList) {
+					if (commitCount >= numPlayers) continue;
 					commitCount++;
+					k = k.toLowerCase();
 					let ns = {
 						"ruler_name":  "Rulerfolk " + capitalize(k),
 						"title":  nations[k].title,
@@ -64,11 +88,8 @@
 						finalize();
 					};
 					// To avoid contention vs a local backend, we wait for the data store to initialize as a consequence of the startLobby, and spread these out a little.
-					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), 1500 + commitCount * 100, req, ns);
+					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), commitCount * 100, req, ns);
 				}
-
-				
-				return false;
 			}
 		</script>
 	</head>

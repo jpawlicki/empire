@@ -364,9 +364,9 @@ public class EntryServlet extends HttpServlet {
 		HashSet<String> addresses = new HashSet<String>();
 		try {
 			// Collect setups.
-			Map<String, Nation.NationGson> nations = Lobby.load(r.gameId, service).nations;
-			for (Nation.NationGson nation : nations.values()) addresses.add(nation.email);
-			World w = World.startNew(passHash, obsPassHash, nations);
+			Lobby lobby = Lobby.load(r.gameId, service);
+			for (Nation.NationGson nation : lobby.nations.values()) addresses.add(nation.email);
+			World w = World.startNew(passHash, obsPassHash, lobby);
 			service.put(w.toEntity(r.gameId));
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
 			g.setProperty("date", 1);
@@ -571,7 +571,8 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			Lobby lobby = Lobby.load(r.gameId, service);
-			// TODO: check that r.kingdom is actually a legal kingdom name for this map.
+			Geography geo = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
+			if (!geo.kingdoms.stream().anyMatch(k -> k.name.equals(r.kingdom))) return false;
 			Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
 			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 			if (!lobby.update(r.kingdom, nation)) return false;
@@ -583,7 +584,7 @@ public class EntryServlet extends HttpServlet {
 				service.put(new Player(nation.email, nation.password).toEntity());
 			}
 			txn.commit();
-		} catch (NoSuchAlgorithmException | EntityNotFoundException ee) {
+		} catch (NoSuchAlgorithmException | EntityNotFoundException | IOException ee) {
 			log.log(Level.SEVERE, "postSetup Failure for " + r.gameId + ", " + r.kingdom, ee);
 			return false;
 		} finally {

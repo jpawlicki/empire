@@ -288,6 +288,9 @@
 				data.players = parseInt(window.prompt("Number of players? (2 to 26)"));
 				for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
 				let siteCount = Math.floor((data.players * 6 + 3) * 1.9 + 6);
+				// TODO: Consider shrinking the map coordinate space itself for smaller games.
+				// width = 1000.0 * Math.sqrt(data.players / 26);
+				// height = 1000.0 * Math.sqrt(data.players / 26);
 				function newVoronoi() {
 					let sites = [];
 					function randAndPush() {
@@ -312,7 +315,7 @@
 						}
 					}
 					hexAndJostle();
-					let boundingBox = {xl: -10, xr: 1010, yt: -10, yb: 1010};
+					let boundingBox = {xl: -10, xr: width + 10, yt: -10, yb: height + 10};
 					let voronoi = new Voronoi();
 					let result = voronoi.compute(sites, boundingBox);
 					for (let i = 0; i < result.cells.length; i++) {

@@ -46,6 +46,20 @@
 						window.alert("HTTP " + req.status + " when trying to load game data.");
 					} else {
 						g_geo = JSON.parse(req.response);
+						// RETER	
+						let nation_opts = [];
+						for (let k of g_geo.kingdoms) {
+							nation_opts.push(k.name);
+						}
+						nation_opts.sort();
+						for (let o of nation_opts) {
+							let oe = document.createElement("option");
+							oe.appendChild(document.createTextNode(o));
+							document.getElementById("kingdom_input").appendChild(oe);
+						}
+						let oe = document.createElement("option");
+						oe.appendChild(document.createTextNode("(Observer)"));
+						document.getElementById("kingdom_input").appendChild(oe);
 						if (g_latest_date != 0) start(g_latest_date);
 					}
 				};
@@ -583,28 +597,6 @@
 		<form id="passwordBox" action="javascript:enterPassword();">
 			<label>Nation:
 				<select id="kingdom_input" name="username" autocomplete="username">
-					<option>Aefoss</option>
-					<option>Doomstoll</option>
-					<option>Balyucesu</option>
-					<option>Ejymsyn</option>
-					<option>Fiskrbaer</option>
-					<option>Celyn</option>
-					<option>Jaraslatr</option>
-					<option>Hosshofn</option>
-					<option>Gangrjata</option>
-					<option>Isla</option>
-					<option>Mabe</option>
-					<option>Landhylli</option>
-					<option>Kyaradis</option>
-					<option>Nysiunarri</option>
-					<option>Pernepulse</option>
-					<option>Slail</option>
-					<option>Tavia</option>
-					<option>Upiceil</option>
-					<option>Rettrsvelt</option>
-					<option>Yrslekye</option>
-					<option>Zemsim</option>
-					<option>(Observer)</option>
 				</select>
 			</label>
 			<label>Password: <input id="password_input" name="password" type="password" autocomplete="password"></input></label>

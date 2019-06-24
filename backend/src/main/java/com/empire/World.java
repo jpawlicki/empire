@@ -108,10 +108,11 @@ class World extends RulesObject implements GoodwillProvider {
 
 	private static class RuleSet { int ruleSet; };
 
-	public static World startNew(String gmPasswordHash, String obsPasswordHash, Map<String, Nation.NationGson> nationSetup) throws IOException {
-		World w = newWorld(Rules.loadRules(Rules.LATEST));
-		w.ruleSet = Rules.LATEST;
-		w.numPlayers = 26; // TODO: Replace this with a lobbying system that allows games of other size.
+	public static World startNew(String gmPasswordHash, String obsPasswordHash, Lobby lobby) throws IOException {
+		Map<String, Nation.NationGson> nationSetup = lobby.nations;
+		World w = newWorld(Rules.loadRules(lobby.ruleSet));
+		w.ruleSet = lobby.ruleSet;
+		w.numPlayers = lobby.numPlayers;
 		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
@@ -147,7 +148,7 @@ class World extends RulesObject implements GoodwillProvider {
 			while (w.regions.get(rid).isSea() || w.cultRegions.contains(rid)) rid = (int)(Math.random() * w.regions.size());
 			w.cultRegions.add(rid);
 		}
-		double totalPopulation = 21000000;
+		double totalPopulation = w.numPlayers * 1000000;
 		double totalFood = totalPopulation * 10;
 		double totalNavy = totalPopulation / 26000 * 3;
 		double totalArmy = totalPopulation / 26000 * 100;
