@@ -80,7 +80,7 @@
 				var images = {};
 				let count = 0;
 				for (let k of g_geo.kingdoms) {
-					let p = document.getElementById(count > g_geo.kingdoms.length / 2 ? "icons1" : "icons2");
+					let p = document.getElementById(count >= g_geo.kingdoms.length / 2 ? "icons2" : "icons1");
 					let img = document.createElement("img");
 					img.setAttribute("name", k.name.toLowerCase());
 					img.setAttribute("src", "images/heraldry/" + k.name.toLowerCase() + ".png");

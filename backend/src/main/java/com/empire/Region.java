@@ -231,6 +231,7 @@ class Region extends RulesObject {
 		int id = w.regions.indexOf(this);
 		Set<Region> neighbors = new HashSet<>();
 		for (Geography.Border b : w.getGeography().borders) {
+			if (b.b == null) continue;
 			if (b.a == id) neighbors.add(w.regions.get(b.b));
 			else if (b.b == id) neighbors.add(w.regions.get(b.a));
 		}

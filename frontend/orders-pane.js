@@ -382,7 +382,7 @@ class OrdersPane extends HTMLElement {
 				} else if (unit.captor != "") {
 					who.appendChild(document.createTextNode(" (Captive of " + unit.captor + ")"));
 				}
-				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_armies"));
+				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_nobles"));
 			}
 		}
 		let navyCount = 0;

@@ -283,6 +283,7 @@ class World extends RulesObject implements GoodwillProvider {
 			ArrayList<Geography.Border> borders = new ArrayList<>();
 			// Find all borders between owned and unowned land regions.
 			for (Geography.Border bo : w.geography.borders) {
+				if (bo.b == null) continue;
 				Region a = w.regions.get(bo.a);
 				Region b = w.regions.get(bo.b);
 				if ((a.getKingdom() == null && b.getKingdom() == null) || (a.getKingdom() != null && b.getKingdom() != null)) continue;
@@ -295,6 +296,7 @@ class World extends RulesObject implements GoodwillProvider {
 				// Pick a random border weighted by 1/border-size.
 				double v = Math.random() * totalWeight;
 				for (Geography.Border b : borders) {
+					if (b.b == null) continue;
 					v -= 1.0 / b.w;
 					if (v > 0) continue;
 					Region ra = w.regions.get(b.a);

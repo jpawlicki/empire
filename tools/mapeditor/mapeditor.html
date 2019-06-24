@@ -376,8 +376,8 @@
 								b.p2 = undefined;
 							}
 						}
-						data.kingdoms = [];
-						for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
+						delete data.nations;
+						for (let r of data.regions) delete r.climate;
 						paint();
 						makeCoreControls();
 					});
@@ -412,10 +412,8 @@
 					}
 				}
 				// Record nation metadata.
-				data.nations = [];
-				for (let n = 0; n < data.players; n++) {
-					data.nations.push({"name": nations[n].name, "culture": nations[n].culture, "color": nations[n].color});
-				}
+				data.kingdoms = [];
+				for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
 				paint();
 				window.open(URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/octet-stream"})));
 			}

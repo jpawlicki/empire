@@ -27,7 +27,7 @@ public class Geography {
 
 	static class Border {
 		int a;
-		int b;
+		Integer b; // b can be omitted for map boundary borders.
 		int w;
 		List<Point> path;
 	}
