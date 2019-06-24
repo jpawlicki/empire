@@ -110,7 +110,7 @@ let nations = {
 	},
 	"mabe": {
 		"culture": "hansa",
-		"description": "The sailors of Mabe are matchless in their tenacity and appetite for supremacy. A nation of ports, Mabe is discontiguous, holding multiple overseas colonies - and perhaps looking to establish more.",
+		"description": "The sailors of Mabe are matchless in their tenacity and appetite for conquest. A nation of ports, Mabe is well-equipped to form strong local alliances and expand overseas - but its ruler must be careful not to awaken the ancient alliances that would oppose it.",
 		"traits": ["Imperialistic", "War-like"],
 		"score": ["prosperity", "security", "territory"],
 		"religion": "Iruhan (Sword of Truth)",
@@ -191,7 +191,7 @@ let nations = {
 	},
 	"varthavaettr": {
 		"culture": "tyrgaetan",
-		"description": "Though all Tyrgaetan make their homes among inhospitable lands, the Varthavaettr are something else entirely. Legends say this tribe was born from the volcanic fires of Grind itself, and expanded over the lava-covered land, eating nothing but rock and drinking nothing but cups of smoke. Though other kingdoms dismisse such rumors as mere exaggerations, none that have met them in trade or in battle can deny that there is something different about these people...",
+		"description": "Though all Tyrgaetan make their homes among inhospitable lands, the Varthavaettr are something else entirely. Legends say this tribe was born from the volcanic fires of Grind itself, and expanded over the lava-covered land, eating nothing but rock and drinking nothing but cups of smoke. Though other kingdoms dismiss such rumors as mere exaggerations, none that have met them in trade or in battle can deny that there is something different about these people...",
 		"traits": ["Disciplined", "War-like"],
 		"score": ["prosperity", "territory", "culture"],
 		"religion": "Northern (Rjinku)",
@@ -200,8 +200,8 @@ let nations = {
 	},
 	"walymyn": {
 		"culture": "anpilayn",
-		"description": "Dulce et decorum est pro patria mori! The people of Walymyn clamor for a return to the days of old, when their holy armies swept aside resistance and razed to the foundations the temples to false gods. Yet a wise ruler knows that unsupported aggression will quickly reduce their kingdom to a defenseless target. It is doubtless that the might of Walymyn will again be felt - but what form will it take?",
-		"traits": ["Patriotic", "Evangelical"],
+		"description": "Walymyn has been kingless for generations, as its occupiers try to bury and forget its passionate past. But secrets lie in shallow graves, and ancient bloodlines conspire to return Walymyn to her former glory. The people clamor for a return to the days of old, when their armies swept aside heathen and heretic alike, and razed their evil monuments to the foundation stones. Yet a wise ruler knows that aggression must be measured and supported, or Walymyn will suffer again its previous fate. It is doubtless that the might of Walymyn will again be felt - but what form will it take?",
+		"traits": ["Patriotic", "Rebellious"],
 		"score": ["prosperity", "territory", "glory", "religion", "ideology"],
 		"religion": "Iruhan (Sword of Truth)",
 		"title": "King",
