@@ -67,6 +67,8 @@ class World extends RulesObject implements GoodwillProvider {
 	long nextTurn;
 	boolean gameover;
 
+	private transient Geography geography;
+
 	private static Gson getGson(Rules rules) {
 		InstanceCreator<World> icw = unused -> World.newWorld(rules);
 		InstanceCreator<Region> icr = unused -> Region.newRegion(rules);
@@ -97,9 +99,10 @@ class World extends RulesObject implements GoodwillProvider {
 		return fromJson(loadJson(gameId, turn, service));
 	}
 
-	public static World fromJson(String json) throws IOException {
+	private static World fromJson(String json) throws IOException {
 		RuleSet set = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().fromJson(json, RuleSet.class);
 		World w = getGson(Rules.loadRules(set.ruleSet)).fromJson(json, World.class);
+		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
 		return w;
 	}
 
@@ -109,7 +112,7 @@ class World extends RulesObject implements GoodwillProvider {
 		World w = newWorld(Rules.loadRules(Rules.LATEST));
 		w.ruleSet = Rules.LATEST;
 		w.numPlayers = 26; // TODO: Replace this with a lobbying system that allows games of other size.
-		Geography map = Geography.loadGeography(w.ruleSet, w.numPlayers);
+		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
 		w.date = 1;
 		w.gmPasswordHash = gmPasswordHash;
 		w.obsPasswordHash = obsPasswordHash;
@@ -129,12 +132,12 @@ class World extends RulesObject implements GoodwillProvider {
 		w.church.setDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH);
 		w.church.setDoctrine(Church.Doctrine.WORKS_OF_IRUHAN);
 		// Set up regions (culture, popular unrest).
-		for (Geography.Region r : map.regions) {
+		for (Geography.Region r : w.geography.regions) {
 			Region rr = Region.newRegion(w.getRules());
 			rr.type = r.type;
 			rr.name = r.name;
 			if (rr.isLand()) {
-				rr.culture = map.kingdoms.get(r.core).culture;
+				rr.culture = w.geography.kingdoms.get(r.core).culture;
 				rr.unrestPopular = 0.12;
 			}
 			w.regions.add(rr);
@@ -152,7 +155,7 @@ class World extends RulesObject implements GoodwillProvider {
 		double totalSharesGold = 0;
 		double totalSharesArmy = 0;
 		double totalSharesNavy = 0;
-		int unruledNations = map.kingdoms.size() - nationSetup.keySet().size();
+		int unruledNations = w.geography.kingdoms.size() - nationSetup.keySet().size();
 		double totalSharesFood = unruledNations / 2.0;
 		double totalSharesPopulation = unruledNations / 2.0;
 		for (String kingdom : nationSetup.keySet()) {
@@ -177,9 +180,9 @@ class World extends RulesObject implements GoodwillProvider {
 			Nation.NationGson setup = nationSetup.get(kingdom);
 			NationData nation = new NationData();
 			nation.email = setup.email;
-			nation.culture = map.getKingdom(kingdom).culture;
+			nation.culture = w.geography.getKingdom(kingdom).culture;
 			nation.coreRegions = new ArrayList<>();
-			for (int i = 0; i < map.regions.size(); i++) if (map.regions.get(i).core == map.getKingdomId(kingdom)) nation.coreRegions.add(i);
+			for (int i = 0; i < w.geography.regions.size(); i++) if (w.geography.regions.get(i).core == w.geography.getKingdomId(kingdom)) nation.coreRegions.add(i);
 			nation.goodwill = setup.hasTag(NationData.Tag.HOLY) ? 15 : 5;
 			for (NationData.Gothi g : NationData.Gothi.values()) nation.gothi.put(g, false);
 			nation.addTag(setup.trait1);
@@ -241,7 +244,7 @@ class World extends RulesObject implements GoodwillProvider {
 		HashSet<String> rebelliousNations = new HashSet<>();
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
-			if (!"Rebellious".equals(setup.trait1) && !"Rebellious".equals(setup.trait2)) continue;
+			if (!setup.hasTag(NationData.Tag.REBELLIOUS)) continue;
 			rebelliousNations.add(kingdom);
 			ArrayList<Region> ownedRegions = new ArrayList<>();
 			for (Region r : w.regions) if (kingdom.equals(r.getKingdom())) ownedRegions.add(r);
@@ -258,7 +261,7 @@ class World extends RulesObject implements GoodwillProvider {
 		// Allocate nobles as necessary.
 		for (String kingdom : nationSetup.keySet()) {
 			Nation.NationGson setup = nationSetup.get(kingdom);
-			Culture culture = map.getKingdom(kingdom).culture;
+			Culture culture = w.geography.getKingdom(kingdom).culture;
 			if (setup.hasTag(NationData.Tag.REPUBLICAN)) continue;
 			ArrayList<Integer> ownedRegions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) ownedRegions.add(i);
@@ -279,7 +282,7 @@ class World extends RulesObject implements GoodwillProvider {
 			double totalWeight = 0;
 			ArrayList<Geography.Border> borders = new ArrayList<>();
 			// Find all borders between owned and unowned land regions.
-			for (Geography.Border bo : map.borders) {
+			for (Geography.Border bo : w.geography.borders) {
 				Region a = w.regions.get(bo.a);
 				Region b = w.regions.get(bo.b);
 				if ((a.getKingdom() == null && b.getKingdom() == null) || (a.getKingdom() != null && b.getKingdom() != null)) continue;
@@ -407,7 +410,7 @@ class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(NationData.Tag.REPUBLICAN)) numCharacters += 1;
 			for (int i = 0; i < numCharacters; i++) {
 				Character c = Character.newCharacter(w.getRules());
-				c.name = WorldConstantData.getRandomName(map.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				c.name = WorldConstantData.getRandomName(w.geography.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
 				if (i == 0) {
 					c.name = setup.rulerName;
 					c.honorific = setup.title;
@@ -2561,6 +2564,10 @@ class World extends RulesObject implements GoodwillProvider {
 			addPopulation(from, -amount / destinations.size());
 			if (notify) notifications.add(new Notification(target.getKingdom(), "Refugees Arrive in " + target.name, "Refugees from " + from.name + " have arrived in " + target.name + "." + (targetUnrestFactor > 0 ? " They are distraught and upset, causing increased popular unrest." : "")));
 		}
+	}
+
+	Geography getGeography() {
+		return geography;
 	}
 
 	private class Plot implements Comparable<Plot> {

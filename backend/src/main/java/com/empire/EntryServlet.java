@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -50,8 +51,8 @@ import javax.servlet.http.HttpServletResponse;
 Basic design:
 GET /entry/orders?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and return the given orders entry JSON.
-GET /entry/setup?gid=1234&k=Aefoss
-	Return customization info for kingdom. If none, empty string.
+GET /entry/setup?gid=1234
+	Return lobby information for a game. If none, empty string.
 GET /entry/world?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and return the visible world view JSON.
 GET /entry/advancegamepoll
@@ -65,6 +66,8 @@ POST /entry/advanceworld?gid=1234
 	Check cadence and possibly advance world to next step, mail players.
 POST /entry/startworld?gid=1234
 	Start a new game.
+POST /entry/startlobby?gid=1234
+	Start a new lobby.
 
 TODO: Will eventually need a changePassword/change-email.
 */
@@ -85,6 +88,8 @@ public class EntryServlet extends HttpServlet {
 			json = getSetup(r);
 		} else if (req.getRequestURI().equals("/entry/world")) {
 			json = getWorld(r);
+		} else if (req.getRequestURI().equals("/entry/geography")) {
+			json = getGeography(r);
 		} else if (req.getRequestURI().equals("/entry/advanceworldpoll")) {
 			json = getAdvancePoll();
 		} else if (req.getRequestURI().equals("/entry/activity")) {
@@ -122,6 +127,10 @@ public class EntryServlet extends HttpServlet {
 			}
 		} else if (req.getRequestURI().equals("/entry/startworld")) {
 			if (!postStartWorld(r)) {
+				err = "Failure.";
+			}
+		} else if (req.getRequestURI().equals("/entry/startlobby")) {
+			if (!postStartLobby(r)) {
 				err = "Failure.";
 			}
 		} else if (req.getRequestURI().equals("/entry/migrate")) {
@@ -170,11 +179,23 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
+	static class GetSetupResponse {
+		int ruleSet;
+		int numPlayers;
+		Set<String> takenNations;
+		Geography geography;
+	}
 	private String getSetup(Request r) {
-		// TODO - should filter this data or display it.
 		try {
-			return Nation.NationGson.loadJson(r.kingdom, r.gameId, DatastoreServiceFactory.getDatastoreService());
-		} catch (EntityNotFoundException e) {
+			Lobby lobby = Lobby.load(r.gameId, DatastoreServiceFactory.getDatastoreService());
+			GetSetupResponse response = new GetSetupResponse();
+			response.ruleSet = lobby.ruleSet;
+			response.numPlayers = lobby.numPlayers;
+			response.takenNations = lobby.nations.keySet();
+			response.geography = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
+			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(response);
+		} catch (EntityNotFoundException | IOException e) {
+			log.log(Level.WARNING, "Failed to fetch setup information for game " + r.gameId, e);
 			return null;
 		}
 	}
@@ -200,6 +221,21 @@ public class EntryServlet extends HttpServlet {
 			return null;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return null;
+		}
+	}
+
+	private String getGeography(Request r) {
+		try {
+			DatastoreService service = DatastoreServiceFactory.getDatastoreService();
+			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			World w = World.load(r.gameId, date, service);
+			return Geography.loadGeography(w.ruleSet, w.numPlayers).toString();
+		} catch (EntityNotFoundException e) {
+			log.log(Level.INFO, "No such world.");
+			return null;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule/map data.", e);
 			return null;
 		}
 	}
@@ -328,16 +364,8 @@ public class EntryServlet extends HttpServlet {
 		HashSet<String> addresses = new HashSet<String>();
 		try {
 			// Collect setups.
-			HashMap<String, Nation.NationGson> nations = new HashMap<>();
-			for (String kingdom : s.kingdoms) {
-				log.log(Level.INFO, "Checking kingdom \"" + kingdom + "\"...");
-				try {
-					nations.put(kingdom, Nation.NationGson.loadNation(kingdom, r.gameId, service));
-					addresses.add(nations.get(kingdom).email);
-				} catch (EntityNotFoundException e) {
-					// Nation is not in the game.
-				}
-			}
+			Map<String, Nation.NationGson> nations = Lobby.load(r.gameId, service).nations;
+			for (Nation.NationGson nation : nations.values()) addresses.add(nation.email);
 			World w = World.startNew(passHash, obsPassHash, nations);
 			service.put(w.toEntity(r.gameId));
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
@@ -356,13 +384,34 @@ public class EntryServlet extends HttpServlet {
 			games.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(activeGames));
 			service.put(games);
 			txn.commit();
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
+		} catch (IOException | EntityNotFoundException e) {
+			log.log(Level.SEVERE, "Failed to start game " + r.gameId, e);
 			return false;
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
 		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
+		return true;
+	}
+
+	private static class StartLobbyBody {
+		int players;
+	}
+
+	private boolean postStartLobby(Request r) {
+		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
+		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+		try {
+			// If it exists, don't create another one.
+			try {
+				Lobby exists = Lobby.load(r.gameId, service);
+				return false;
+			} catch (EntityNotFoundException expected) {}
+			Lobby.newLobby(Rules.LATEST, new Gson().fromJson(r.body, StartLobbyBody.class).players).save(r.gameId, service);
+			txn.commit();
+		} finally {
+			if (txn.isActive()) txn.rollback();
+		}
 		return true;
 	}
 
@@ -517,24 +566,26 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-
 	private boolean postSetup(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			Nation.NationGson.loadNation(r.kingdom, r.gameId, service);
-			return false; // We expect an EntityNotFoundException.
-		} catch (EntityNotFoundException e) {
+			Lobby lobby = Lobby.load(r.gameId, service);
+			// TODO: check that r.kingdom is actually a legal kingdom name for this map.
+			Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
+			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
+			if (!lobby.update(r.kingdom, nation)) return false;
+			lobby.save(r.gameId, service);
 			try {
-				Nation.NationGson nation = Nation.NationGson.fromJson(r.body);
-				nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
-				service.put(nation.toEntity(r.kingdom, r.gameId));
+				Player unused = Player.loadPlayer(nation.email, service);
+			} catch (EntityNotFoundException e) {
+				// New player.
 				service.put(new Player(nation.email, nation.password).toEntity());
-				txn.commit();
-			} catch (NoSuchAlgorithmException ee) {
-				log.log(Level.SEVERE, "postSetup Failure", ee);
-				return false;
 			}
+			txn.commit();
+		} catch (NoSuchAlgorithmException | EntityNotFoundException ee) {
+			log.log(Level.SEVERE, "postSetup Failure for " + r.gameId + ", " + r.kingdom, ee);
+			return false;
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}

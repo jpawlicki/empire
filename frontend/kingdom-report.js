@@ -385,7 +385,7 @@ class KingdomReport extends HTMLElement {
 				}
 			}
 		} else {
-			shadow.getElementById("score_heading").style.display = "none";
+			shadow.getElementById("heading_score").style.display = "none";
 		}
 	}
 }

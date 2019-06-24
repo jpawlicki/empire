@@ -4,7 +4,6 @@
 		<title>Empire</title>
 		<script src="util.js"></script>
 		<script src="gamelib.js"></script>
-		<script src="geo.js"></script>
 		<script src="borders.js"></script>
 		<script src="geolib.js"></script>
 		<script src="report-link.js"></script>
@@ -25,8 +24,10 @@
 		<script src="score-report.js"></script>
 		<script src="scoredata.js"></script>
 		<script src="server.js"></script>
+		<script src="color.js"></script>
 		<script>
 			g_data = {};
+			g_geo = undefined;
 			g_latest_date = 0;
 			let whoami = getArg("k");
 			let password = getArg("p");
@@ -34,6 +35,23 @@
 			if (isNaN(gameId)) gameId = parseInt(getArg("gid")); // A bug in the server sent out mails with gid=X, so just accept either for now.
 			let currentTurn = parseInt(getArg("t"));
 			if (password != undefined) history.replaceState({}, "", window.location.href.replace(/p=[^&]*/, "p=_"));
+
+			// Fetch geography data right away.
+			{
+				let req = new XMLHttpRequest();
+				req.open("get", g_server + "/entry/geography?gid=" + gameId, true);
+				req.onerror = function (e) { window.alert("Failed to load geographic data: " + JSON.stringify(e)); };
+				req.onload = function (ev) {
+					if (req.status != 200) {
+						window.alert("HTTP " + req.status + " when trying to load game data.");
+					} else {
+						g_geo = JSON.parse(req.response);
+						if (g_latest_date != 0) start(g_latest_date);
+					}
+				};
+				req.send();
+			}
+
 			function regionClick(id) {
 				changeReport("region/" + g_data.regions[id].name);
 			}
@@ -219,6 +237,7 @@
 						document.getElementById("passwordBox").style.display = "none";
 						let d = JSON.parse(req.response);
 						g_turndata[d.date] = d;
+						if (g_latest_date < d.date) g_latest_date = d.date;
 						start(d.date);
 						callback();
 					}
@@ -227,6 +246,7 @@
 			}
 
 			function start(date) {
+				if (g_geo == undefined) return; // The geography loader will call start() again.
 				// Reset used points
 				for (let r of g_pointCache) if (r != undefined) r.nextuse = 0;
 				for (let e of ["regions", "sea_regions", "borders", "plannedMotions", "regionContents"]) document.getElementById(e).innerHTML = "";
@@ -284,10 +304,10 @@
 				`;
 				for (let ki in g_turndata[date].kingdoms) if (g_turndata[date].kingdoms.hasOwnProperty(ki)) {
 					let k = g_turndata[date].kingdoms[ki];
-					style += ".v_political ." + ki.toLowerCase() + "{ fill: " + k.color_bg + "; stroke: transparent; }\n";
-					style += "#regionContents ." + ki.toLowerCase() + "{ fill: " + k.color_bg + "; stroke: " + k.color_fg + "; color: " + k.color_fg + "; }\n";
-					style += "#regionContents circle." + ki.toLowerCase() + "{ fill: " + k.color_fg + "; stroke: transparent; }\n";
-					style += "#regionContents line." + ki.toLowerCase() + "{ stroke: " + k.color_bg + "; }\n";
+					style += ".v_political ." + ki.toLowerCase() + "{ fill: " + getColor(ki) + "; stroke: transparent; }\n";
+					style += "#regionContents ." + ki.toLowerCase() + "{ fill: " + getColor(ki) + "; stroke: " + getForegroundColor(ki) + "; color: " + getForegroundColor(ki) + "; }\n";
+					style += "#regionContents circle." + ki.toLowerCase() + "{ fill: " + getForegroundColor(ki) + "; stroke: transparent; }\n";
+					style += "#regionContents line." + ki.toLowerCase() + "{ stroke: " + getColor(ki) + "; }\n";
 				}
 				style += "#regionContents .pirate { fill: #000; stroke: #fff; color: #fff; }\n";
 				style += "#regionContents circle.pirate { fill: #fff; stroke: transparent; }\n";

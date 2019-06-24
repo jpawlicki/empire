@@ -5,48 +5,6 @@ import java.util.HashMap;
 import java.util.Arrays;
 
 class WorldConstantData {
-	static final HashMap<String, Kingdom> kingdoms = new HashMap<>();
-	static final ArrayList<Region> regions = new ArrayList<>();
-	static final ArrayList<Border> borders = new ArrayList<>();
-
-	static class Kingdom {
-		public final String colorBg;
-		public final String colorFg;
-		public final Culture culture;
-		public final int[] coreRegions;
-
-		public Kingdom(String colorFg, String colorBg, Culture culture, int... coreRegions) {
-			this.colorBg = colorBg;
-			this.colorFg = colorFg;
-			this.culture = culture;
-			this.coreRegions = coreRegions;
-		}
-	}
-
-	static class Region {
-		public final String name;
-		public final boolean land;
-		public final String climate;
-
-		public Region(String name, boolean land, String climate) {
-			this.name = name;
-			this.land = land;
-			this.climate = climate;
-		}
-	}
-
-	static class Border {
-		public final int a;
-		public final int b;
-		public final int size;
-
-		public Border(int a, int b, int size) {
-			this.a = a;
-			this.b = b;
-			this.size = size;
-		}
-	}
-
 	static enum Gender {
 		MAN,
 		WOMAN

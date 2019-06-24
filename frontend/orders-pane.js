@@ -657,8 +657,8 @@ class OrdersPane extends HTMLElement {
 				</select>
 			`;
 			kdiv.setAttribute("title", k);
-			kdiv.setAttribute("background", g_data.kingdoms[k].color_bg);
-			kdiv.setAttribute("color", g_data.kingdoms[k].color_fg);
+			kdiv.setAttribute("background", getColor(k));
+			kdiv.setAttribute("color", getForegroundColor(k));
 			kingdoms.appendChild(kdiv);
 		}
 		shadow.getElementById("nations_newgift").addEventListener("click", ()=>this.addGift(shadow));
@@ -712,7 +712,7 @@ class OrdersPane extends HTMLElement {
 							msg.to.push(msg.from);
 							msg.to.sort();
 							m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
-							m.style.background = "linear-gradient(90deg, #fff -50%, " + g_data.kingdoms[msg.from].color_bg + " 350%)";
+							m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
 							d.appendChild(m);
 						}
 					}
