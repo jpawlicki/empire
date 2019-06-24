@@ -3,7 +3,6 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>Empire Setup</title>
 		<script src="gamelib.js"></script>
-		<script src="geo.js"></script>
 		<script src="borders.js"></script>
 		<script src="geolib.js"></script>
 		<script src="report-link.js"></script>
@@ -20,11 +19,11 @@
 		<script src="orders-pane.js"></script>
 		<script src="zip-div.js"></script>
 		<script src="names.js"></script>
-		<script src="gamesetup.js"></script>
 		<script src="server.js"></script>
 		<script src="defaultnations.js"></script>
 		<script>
 			var gameId = 0;
+			let g_geo = undefined;
 			function regionClick() {
 			}
 			var taken = {};
@@ -36,45 +35,73 @@
 				if (e == -1) e = t.length;
 				gameId = parseInt(t.substring(s + 2, e));
 
+				let req = new XMLHttpRequest();
+				req.open("get", g_server + "/entry/setup?gid=" + gameId, true);
+				req.onerror = function (e) { window.alert("Error - check network connectivity: " + JSON.stringify(e)); };
+				req.onload = function (ev) {
+					if (req.status != 200) {
+						window.alert(req.status + " error - check g= parameter in URL.");
+						return;
+					}
+					let resp = JSON.parse(req.response);
+					g_geo = resp.geography;
+					start(resp);
+					for (let k of resp.taken_nations) {
+						document.querySelector("img[name=" + k.toLowerCase() + "]").className = "taken";
+						for (let r of document.querySelectorAll("path." + k.toLowerCase())) {
+							r.setAttribute("class", r.getAttribute("class") + " taken");
+						}
+						taken[k.toLowerCase()] = true;
+					}
+				};
+				req.send();
+			}
+
+			function start(numPlayers) {
 				// Styleize
 				let style = "";
-				for (let k of g_gamestate.kingdoms) {
+				for (let k of g_geo.kingdoms) {
 					style += "#svg.v_"  + k.name.toLowerCase() + " path." + k.name.toLowerCase() + "{ fill: #aaa; stroke: transparent; }\n";
 				}
 				document.getElementById("computed_styles").innerHTML = style;
 
 				// Geoize
 				geoize(false);
+				let cores = {};
+				for (let k of g_geo.kingdoms) cores[k.name] = [];
 				{
 					let kingdoms = [];
-					for (let r of g_regions) {
+					for (let r of g_geo.regions) {
 						if (r.core != -1 && r.core != undefined) {
-							g_gamestate.kingdoms[r.core].core_regions.push(r.id);
+							cores[g_geo.kingdoms[r.core].name].push(r.id);
 						}
 					}
 				}
 				var images = {};
-				for (let k of g_gamestate.kingdoms) {
+				let count = 0;
+				for (let k of g_geo.kingdoms) {
+					let p = document.getElementById(count > g_geo.kingdoms.length / 2 ? "icons1" : "icons2");
+					let img = document.createElement("img");
+					img.setAttribute("name", k.name.toLowerCase());
+					img.setAttribute("src", "images/heraldry/" + k.name.toLowerCase() + ".png");
+					p.appendChild(img);
 					images[k.name] = new Image();
 					images[k.name].src = "images/" + k.name.toLowerCase() + "_hd.jpg";
-					for (let i of k.core_regions) {
+					for (let i of cores[k.name]) {
 						document.getElementById("region_" + i).setAttribute("class", k.name.toLowerCase());
 					}
+					count++;
 				}
-
-				for (let k of g_gamestate.kingdoms) {
-					let req = new XMLHttpRequest();
-					req.open("get", g_server + "/entry/setup?k=" + k.name + "&gid=" + gameId, true);
-					req.onerror = function (e) {};
-					req.onload = function (ev) {
-						if (req.status == 404) return;
-						document.querySelector("img[name=" + k.name.toLowerCase() + "]").className = "taken";
-						for (let r of document.querySelectorAll("path." + k.name.toLowerCase())) {
-							r.setAttribute("class", r.getAttribute("class") + " taken");
-						}
-						taken[k.name.toLowerCase()] = true;
-					};
-					req.send();
+				for (let i of document.getElementsByTagName("img")) {
+					i.addEventListener("mouseover", function() {
+						document.getElementById("svg").setAttribute("class", "v_" + i.getAttribute("name"));
+					});
+					i.addEventListener("mouseout", function() {
+						document.getElementById("svg").setAttribute("class", "");
+					});
+					i.addEventListener("click", function() {
+						selectNation(i.getAttribute("name"));
+					});
 				}
 			};
 		</script>
@@ -165,9 +192,6 @@
 				box-sizing: border-box;
 				box-shadow: 0 0 10px #fff;
 			}
-			#nationDiv.aefoss {
-				color: #fff;
-			}
 			#nationDiv h1 {
 				text-transform: capitalize;
 				font-family: sans-serif;
@@ -210,16 +234,7 @@
   </head>
   <body>
 		<div id="body">
-			<div class="icons">
-				<img class="" name="aefoss" src="images/heraldry/aefoss.png"/>
-				<img class="" name="fiskrbaer" src="images/heraldry/fiskrbaer.png"/>
-				<img class="" name="hosshofn" src="images/heraldry/hosshofn.png"/>
-				<img class="" name="tavia" src="images/heraldry/tavia.png"/>
-				<img class="" name="isla" src="images/heraldry/isla.png"/>
-				<img class="" name="doomstoll" src="images/heraldry/doomstoll.png"/>
-				<img class="" name="tribes" src="images/heraldry/tribes.png"/>
-				<img class="" name="holmslatr" src="images/heraldry/holmslatr.png"/>
-				<img class="" name="ejymsyn" src="images/heraldry/ejymsyn.png"/>
+			<div id="icons1" class="icons">
 			</div>
 			<div id="map">
 				<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" id="svg" version="1.1">
@@ -236,16 +251,7 @@
 					</g>
 				</svg>
 			</div>
-			<div class="icons">
-				<img class="" name="dumm" src="images/heraldry/dumm.png"/>
-				<img class="" name="fulyn" src="images/heraldry/fulyn.png"/>
-				<img class="" name="mabe" src="images/heraldry/mabe.png"/>
-				<img class="" name="miycc" src="images/heraldry/miycc.png"/>
-				<img class="" name="muoem" src="images/heraldry/muoem.png"/>
-				<img class="" name="siylmae" src="images/heraldry/siylmae.png"/>
-				<img class="" name="slail" src="images/heraldry/slail.png"/>
-				<img class="" name="telmymsyn" src="images/heraldry/telmymsyn.png"/>
-				<img class="" name="zemsim" src="images/heraldry/zemsim.png"/>
+			<div id="icons2" class="icons">
 			</div>
 		</div>
 		<div id="nationDiv">
@@ -429,17 +435,6 @@
 				document.getElementById("ruler_name").value = generateName(nations[selected].culture, "mf");
 				document.getElementById("form").dispatchEvent(new Event("input"));
 			});
-			for (let i of document.getElementsByTagName("img")) {
-				i.addEventListener("mouseover", function() {
-					document.getElementById("svg").setAttribute("class", "v_" + i.getAttribute("name"));
-				});
-				i.addEventListener("mouseout", function() {
-					document.getElementById("svg").setAttribute("class", "");
-				});
-				i.addEventListener("click", function() {
-					selectNation(i.getAttribute("name"));
-				});
-			}
 			let submit = document.getElementById("submit");
 			submit.addEventListener("click", function() {
 				taken[selected] = true;
