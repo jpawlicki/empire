@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-class Noble {
+class Noble extends RulesObject {
 	String name;
 	Crisis crisis;
 	double unrest;
@@ -20,13 +20,17 @@ class Noble {
 	}
 	transient Action action = Action.OTHER;
 
-	static Noble makeNoble(Culture culture, int date) {
-		Noble n = new Noble();
+	static Noble newNoble(Rules rules) {
+		return new Noble(rules);
+	}
+
+	static Noble newNoble(Culture culture, int date, Rules rules) {
+		Noble n = newNoble(rules);
 		n.name = WorldConstantData.getRandomName(culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
 		n.unrest = 0;
 		n.crisis = new Crisis();
 		n.crisis.type = Crisis.Type.NONE;
-		n.crisis.deadline = date + Constants.nobleCrisisFrequency;		
+		n.crisis.deadline = date + rules.nobleCrisisFrequency;		
 		return n;
 	}
 
@@ -35,19 +39,19 @@ class Noble {
 	}
 
 	double calcPlantMod() {
-		return calcLevel() * Constants.noblePlantModPerLevel;
+		return calcLevel() * getRules().noblePlantModPerLevel;
 	}
 
 	double calcRecruitMod() {
-		double mod = calcLevel() * Constants.nobleRecruitModPerLevel;
-		if (action == Action.CONSCRIPT) mod += Constants.nobleActionConscriptionMod;
+		double mod = calcLevel() * getRules().nobleRecruitModPerLevel;
+		if (action == Action.CONSCRIPT) mod += getRules().nobleActionConscriptionMod;
 		return mod;
 	}
 
 	double calcTaxMod() {
-		double mod = calcLevel() * Constants.nobleTaxModPerLevel;
-		if (action == Action.LEVY) mod += Constants.nobleActionLevyMod;
-		if (action == Action.SOOTHE) mod += Constants.nobleActionSootheMod;
+		double mod = calcLevel() * getRules().nobleTaxModPerLevel;
+		if (action == Action.LEVY) mod += getRules().nobleActionLevyMod;
+		if (action == Action.SOOTHE) mod += getRules().nobleActionSootheMod;
 		return mod;
 	}
 
@@ -62,10 +66,10 @@ class Noble {
 	Optional<Notification> resolveCrisis(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 		if (crisis.type.isSolved(w, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) {
 			crisis.type = Crisis.Type.NONE;
-			unrest = Math.max(0, unrest + Constants.nobleCrisisSuccessUnrest);
+			unrest = Math.max(0, unrest + getRules().nobleCrisisSuccessUnrest);
 			return Optional.of(new Notification(r.getKingdom(), "Noble Crisis Resolved", crisis.type.getSuccessMessage(name, r.name)));
 		} else if (crisis.type != Crisis.Type.NONE && crisis.deadline == w.date) {
-			unrest = Math.min(1, unrest + Constants.nobleCrisisFailedUnrest);
+			unrest = Math.min(1, unrest + getRules().nobleCrisisFailedUnrest);
 			return Optional.of(new Notification(r.getKingdom(), "Noble Crisis Expired", crisis.type.getFailMessage(name, r.name)));
 		}
 		return Optional.empty();
@@ -79,7 +83,7 @@ class Noble {
 		if (crisis.deadline > w.date) return Optional.empty();
 		List<Crisis.Type> possibleCrises = new ArrayList<>();
 		for (Crisis.Type type : Crisis.Type.values()) {
-			if (type.isCreateable(w, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) possibleCrises.add(type);
+			if (type.isCreateable(w, r, getRules(), leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) possibleCrises.add(type);
 		}
 		if (possibleCrises.isEmpty()) {
 			crisis.type = Crisis.Type.NONE;
@@ -92,8 +96,9 @@ class Noble {
 		}
 	}
 
-	/** A no-args constructor is needed for GSON. */
-	private Noble() {}
+	private Noble(Rules rules) {
+		super(rules);
+	}
 }
 
 final class Crisis {
@@ -108,7 +113,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return false;
 			}
 		},
@@ -120,8 +125,8 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				Set<Integer> closeRegions = r.getCloseRegionIds(w, Constants.nobleCrisisFrequency);
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Set<Integer> closeRegions = r.getCloseRegionIds(w, rules.nobleCrisisFrequency);
 				for (Character c : w.characters) {
 					if (c.kingdom.equals(r.getKingdom()) && !c.isCaptive() && c.hasTag(Character.Tag.RULER) && closeRegions.contains(c.location)) {
 						return true;
@@ -137,7 +142,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return w.getNation(r.getKingdom()).gold < 20;
 			}
 		},
@@ -149,7 +154,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				double troopsInRegion = 0;
 				for (Army a : w.armies) if (a.isArmy() && a.kingdom.equals(r.getKingdom()) && a.location == w.regions.indexOf(r)) troopsInRegion += a.size;
 				return troopsInRegion < 1000;
@@ -163,7 +168,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && NationData.isEnemy(r.getKingdom(), n.getKingdom(), w)) return true;
 				return false;
 			}
@@ -175,7 +180,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return true;
 			}
 		},
@@ -186,7 +191,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return true;
 			}
 		},
@@ -197,8 +202,8 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				Set<Integer> closeRegions = r.getCloseRegionIds(w, Constants.nobleCrisisFrequency);
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Set<Integer> closeRegions = r.getCloseRegionIds(w, rules.nobleCrisisFrequency);
 				for (Character c : w.characters) {
 					if (c.kingdom.equals(r.getKingdom()) && !c.isCaptive() && closeRegions.contains(c.location)) {
 						return true;
@@ -214,7 +219,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return r.unrestPopular > .5;
 			}
 		},
@@ -225,7 +230,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return r.food == 0;
 			}
 		},
@@ -236,7 +241,7 @@ final class Crisis {
 			}
 
 			@Override
-			boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return true;
 			}
 		};
@@ -246,7 +251,7 @@ final class Crisis {
 		private final String failMessage;
 
 		abstract boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires);
-		abstract boolean isCreateable(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires);
+		abstract boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires);
 
 		String getStartMessage(String nobleName, String regionName) {
 			return format(startMessage, nobleName, regionName);

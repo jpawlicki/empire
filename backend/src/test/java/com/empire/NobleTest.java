@@ -8,8 +8,8 @@ public class NobleTest {
 	private static final double EPSILON = 1E-6;
 
 	@Test
-	public void makeNoble() {
-		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+	public void newNoble() {
+		Noble n = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		assertEquals(0, n.unrest, EPSILON);
 		assertNotEquals("", n.name);
 		assertEquals(Crisis.Type.NONE, n.crisis.type);
@@ -18,7 +18,7 @@ public class NobleTest {
 
 	@Test
 	public void calcLevel() {
-		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		Noble n = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		assertEquals(1, n.calcLevel(), EPSILON);
 		n.addExperience();
 		assertEquals(Math.sqrt(2), n.calcLevel(), EPSILON);
@@ -30,7 +30,7 @@ public class NobleTest {
 
 	@Test
 	public void levyActionMod() {
-		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		Noble n = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		n.action = Noble.Action.LEVY;
 		assertEquals(.1 + .25, n.calcTaxMod(), EPSILON);
 		assertEquals(.1, n.calcRecruitMod(), EPSILON);
@@ -38,7 +38,7 @@ public class NobleTest {
 
 	@Test
 	public void sootheActionMod() {
-		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		Noble n = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		n.action = Noble.Action.SOOTHE;
 		assertEquals(.1 - .25, n.calcTaxMod(), EPSILON);
 		assertEquals(.1, n.calcRecruitMod(), EPSILON);
@@ -46,7 +46,7 @@ public class NobleTest {
 
 	@Test
 	public void conscriptActionMod() {
-		Noble n = Noble.makeNoble(Culture.ANPILAYN, 0);
+		Noble n = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		n.action = Noble.Action.CONSCRIPT;
 		assertEquals(.1, n.calcTaxMod(), EPSILON);
 		assertEquals(.1 + .25, n.calcRecruitMod(), EPSILON);

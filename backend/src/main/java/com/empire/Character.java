@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Collections;
 
-class Character {
+class Character extends RulesObject {
 	enum Tag {
 		@SerializedName("Cardinal") CARDINAL,
 		@SerializedName("Ruler") RULER,
@@ -39,53 +39,53 @@ class Character {
 	}
 
 	public double calcLeadMod(Army.Type type) {
-		if (type == Army.Type.ARMY) return calcLevel(experience.general) * Constants.perLevelLeaderMod;
-		else return calcLevel(experience.admiral) * Constants.perLevelLeaderMod;
+		if (type == Army.Type.ARMY) return calcLevel(experience.general) * getRules().perLevelLeaderMod;
+		else return calcLevel(experience.admiral) * getRules().perLevelLeaderMod;
 	}
 
 	public double calcGovernRecruitMod() {
-		return calcLevel(experience.governor) * Constants.perLevelGovernRecruitMod + Constants.baseGovernRecruitMod;
+		return calcLevel(experience.governor) * getRules().perLevelGovernRecruitMod + getRules().baseGovernRecruitMod;
 	}
 
 	public double calcGovernTaxMod() {
-		return calcLevel(experience.governor) * Constants.perLevelGovernTaxMod + Constants.baseGovernTaxMod;
+		return calcLevel(experience.governor) * getRules().perLevelGovernTaxMod + getRules().baseGovernTaxMod;
 	}
 
 	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = Constants.basePlotStrength;
+		double power = getRules().basePlotStrength;
 
-		power += calcLevel(experience.spy) * Constants.perSpyLevelPlotMod;
+		power += calcLevel(experience.spy) * getRules().perSpyLevelPlotMod;
 
-		if (boosted) power += Constants.guardAgainstPlotMod;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += Constants.lyskrPlotMod;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += Constants.companyPlotMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * Constants.perInspirePlotMod;
-		if (isCaptive()) power += Constants.capturedPlotMod;
+		if (boosted) power += getRules().guardAgainstPlotMod;
+		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += getRules().lyskrPlotMod;
+		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += getRules().companyPlotMod;
+		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * getRules().perInspirePlotMod;
+		if (isCaptive()) power += getRules().capturedPlotMod;
 
 		return power;
 	}
 
 	public void addExperienceAll() {
-		experience.general += Constants.allDimExpAdd;
-		experience.admiral += Constants.allDimExpAdd;
-		experience.spy += Constants.allDimExpAdd;
-		experience.governor += Constants.allDimExpAdd;
+		experience.general += getRules().allDimExpAdd;
+		experience.admiral += getRules().allDimExpAdd;
+		experience.spy += getRules().allDimExpAdd;
+		experience.governor += getRules().allDimExpAdd;
 	}
 
 	public void addExperienceGeneral() {
-		experience.general += Constants.oneDimExpAdd;
+		experience.general += getRules().oneDimExpAdd;
 	}
 
 	public void addExperienceAdmiral() {
-		experience.admiral += Constants.oneDimExpAdd;
+		experience.admiral += getRules().oneDimExpAdd;
 	}
 
 	public void addExperienceSpy() {
-		experience.spy += Constants.oneDimExpAdd;
+		experience.spy += getRules().oneDimExpAdd;
 	}
 
 	public void addExperienceGovernor() {
-		experience.governor += Constants.oneDimExpAdd;
+		experience.governor += getRules().oneDimExpAdd;
 	}
 
 	public boolean hasTag(Tag tag) {
@@ -102,6 +102,14 @@ class Character {
 
 	boolean isCaptive() {
 		return !"".equals(captor);
+	}
+
+	private Character(Rules rules) {
+		super(rules);
+	}
+
+	static Character newCharacter(Rules rules) {
+		return new Character(rules);
 	}
 }
 
