@@ -1,5 +1,6 @@
 package com.empire;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -25,8 +26,8 @@ public class ArmyTest {
 	private static final String k2 = "k2";
 
 	@Before
-	public void setUpPlainArmy() {
-		a = new Army();
+	public void setUpPlainArmy() throws IOException {
+		a = Army.newArmy(Utils.rules);
 		a.type = Army.Type.ARMY;
 		a.size = 100.0;
 		a.kingdom = k1;
@@ -38,7 +39,7 @@ public class ArmyTest {
 	}
 
 
-	private World mockWorld() {
+	private World mockWorld() throws IOException {
 		World w = mock(World.class);
 		w.notifications = new ArrayList<>();
 
@@ -57,6 +58,7 @@ public class ArmyTest {
 		Region r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		Region r2 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.COMPANY);
 		w.regions = Arrays.asList(r1, r2);
+		when(w.getRules()).thenReturn(Utils.rules);
 		return w;
 	}
 
@@ -99,7 +101,7 @@ public class ArmyTest {
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
-		a.kingdom = Constants.pirateKingdom;
+		a.kingdom = Utils.rules.pirateKingdom;
 		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
@@ -169,6 +171,7 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthInspireNavy() {
 		w.regions.get(0).religion = Ideology.CHALICE_OF_COMPASSION;
+		w.regions.get(0).population = 1E9;
 		a.type = Army.Type.NAVY;
 		assertEquals(110.0, a.calcStrength(w, null, 2, false), DELTA);
 	}
