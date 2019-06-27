@@ -51,20 +51,6 @@ class Character extends RulesObject {
 		return calcLevel(experience.governor) * getRules().perLevelGovernTaxMod + getRules().baseGovernTaxMod;
 	}
 
-	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = getRules().basePlotStrength;
-
-		power += calcLevel(experience.spy) * getRules().perSpyLevelPlotMod;
-
-		if (boosted) power += getRules().guardAgainstPlotMod;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += getRules().lyskrPlotMod;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += getRules().companyPlotMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * getRules().perInspirePlotMod;
-		if (isCaptive()) power += getRules().capturedPlotMod;
-
-		return power;
-	}
-
 	public void addExperienceAll() {
 		experience.general += getRules().allDimExpAdd;
 		experience.admiral += getRules().allDimExpAdd;

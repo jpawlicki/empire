@@ -44,6 +44,7 @@ class World extends RulesObject implements GoodwillProvider {
 	List<Army> armies = new ArrayList<>();
 	List<Character> characters = new ArrayList<>();
 	List<Communication> communications = new ArrayList<>();
+	List<SpyRing> spyRings = new ArrayList<>();
 	Pirate pirate = new Pirate();
 	Tivar tivar = new Tivar();
 	String gmPasswordHash;
@@ -64,6 +65,8 @@ class World extends RulesObject implements GoodwillProvider {
 		InstanceCreator<Character> icc = unused -> Character.newCharacter(rules);
 		InstanceCreator<Army> ica = unused -> Army.newArmy(rules);
 		InstanceCreator<Noble> icn = unused -> Noble.newNoble(rules);
+		InstanceCreator<SpyRing> icsr = unused -> SpyRing.newSpyRing(rules);
+		InstanceCreator<Plot> icp = unused -> Plot.newPlot(rules);
 		return new GsonBuilder()
 				.enableComplexMapKeySerialization()
 				.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
@@ -72,6 +75,8 @@ class World extends RulesObject implements GoodwillProvider {
 				.registerTypeAdapter(Character.class, icc)
 				.registerTypeAdapter(Army.class, ica)
 				.registerTypeAdapter(Noble.class, icn)
+				.registerTypeAdapter(SpyRing.class, icsr)
+				.registerTypeAdapter(Plot.class, icp)
 				.create();
 	}
 
