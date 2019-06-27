@@ -41,10 +41,8 @@ class Lobby {
 		return fromJson(loadJson(gameId, service));
 	}
 
-	public boolean update(String nation, Nation.NationGson setup) {
-		if (nations.containsKey(nation)) return false;
-		nations.put(nation, setup);
-		return true;
+	public boolean update(String nation, Nation setup) {
+		return nations.putIfAbsent(nation, setup) != null;
 	}
 
 	public void save(long gameId, DatastoreService service) {

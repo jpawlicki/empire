@@ -76,4 +76,9 @@ final class Request {
 		}
 		return def;
 	}
+
+	/** Requests that don't specify the turn either are not turn-specific or they implicitly mean the latest turn. */
+	public boolean hasTurn() {
+		return turn == 0;
+	}
 }

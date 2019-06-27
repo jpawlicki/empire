@@ -174,21 +174,21 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	static class GetSetupResponse {
-		int ruleSet;
-		int numPlayers;
-		Set<String> takenNations;
-		Geography geography;
+	private static class GetSetupResponse {
+		final int ruleSet;
+		final int numPlayers;
+		final Set<String> takenNations;
+		final Geography geography;
+		GetSetupResponse(Lobby lobby) throws IOException {
+			this.ruleSet = lobby.ruleSet;
+			this.numPlayers = lobby.numPlayers;
+			this.takenNations = lobby.takenNations;
+			this.geography = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
+		}
 	}
 	private String getSetup(Request r) {
 		try {
-			Lobby lobby = Lobby.load(r.gameId, DatastoreServiceFactory.getDatastoreService());
-			GetSetupResponse response = new GetSetupResponse();
-			response.ruleSet = lobby.ruleSet;
-			response.numPlayers = lobby.numPlayers;
-			response.takenNations = lobby.nations.keySet();
-			response.geography = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
-			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(response);
+			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(new GetSetupResponse(Lobby.load(r.gameId, DatastoreServiceFactory.getDatastoreService())));
 		} catch (EntityNotFoundException | IOException e) {
 			log.log(Level.WARNING, "Failed to fetch setup information for game " + r.gameId, e);
 			return null;
@@ -206,7 +206,7 @@ public class EntryServlet extends HttpServlet {
 			return null;
 		}
 		try {
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
 			w.filter(r.kingdom);
@@ -223,7 +223,7 @@ public class EntryServlet extends HttpServlet {
 	private String getGeography(Request r) {
 		try {
 			DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			return Geography.loadGeography(w.ruleSet, w.numPlayers).toString();
 		} catch (EntityNotFoundException e) {
@@ -239,7 +239,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
 		try {
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
 			World w = World.load(r.gameId, date, service);
 			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
@@ -516,7 +516,7 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			if (!checkPassword(r, service).passesWrite()) return false;
-			int date = r.turn != 0 ? r.turn : getWorldDate(r.gameId, service);
+			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 			Player p = Player.loadPlayer(body.email, service);
