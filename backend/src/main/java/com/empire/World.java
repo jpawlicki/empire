@@ -1,13 +1,11 @@
 package com.empire;
 
+import com.empire.util.Compressor;
+import com.empire.util.StringUtil;
 import com.google.appengine.api.datastore.Blob;
 import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
-import com.google.appengine.api.datastore.EmbeddedEntity;
-import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Text;
 import com.google.common.primitives.Ints;
@@ -16,23 +14,17 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.InstanceCreator;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -109,7 +101,7 @@ class World extends RulesObject implements GoodwillProvider {
 	private static class RuleSet { int ruleSet; };
 
 	public static World startNew(String gmPasswordHash, String obsPasswordHash, Lobby lobby) throws IOException {
-		Map<String, Nation.NationGson> nationSetup = lobby.nations;
+		Map<String, Nation> nationSetup = lobby.nations;
 		World w = newWorld(Rules.loadRules(lobby.ruleSet));
 		w.ruleSet = lobby.ruleSet;
 		w.numPlayers = lobby.numPlayers;
@@ -160,7 +152,7 @@ class World extends RulesObject implements GoodwillProvider {
 		double totalSharesFood = unruledNations / 2.0;
 		double totalSharesPopulation = unruledNations / 2.0;
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			totalSharesGold += 1;
 			totalSharesArmy += 1;
 			totalSharesNavy += 1;
@@ -178,7 +170,7 @@ class World extends RulesObject implements GoodwillProvider {
 			else if ("gold".equals(setup.bonus)) totalSharesGold += 0.5;
 		}
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			NationData nation = new NationData();
 			nation.email = setup.email;
 			nation.culture = w.geography.getKingdom(kingdom).culture;
@@ -244,7 +236,7 @@ class World extends RulesObject implements GoodwillProvider {
 		// Un-own rebellious regions.
 		HashSet<String> rebelliousNations = new HashSet<>();
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			if (!setup.hasTag(NationData.Tag.REBELLIOUS)) continue;
 			rebelliousNations.add(kingdom);
 			ArrayList<Region> ownedRegions = new ArrayList<>();
@@ -261,7 +253,7 @@ class World extends RulesObject implements GoodwillProvider {
 		}
 		// Allocate nobles as necessary.
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			Culture culture = w.geography.getKingdom(kingdom).culture;
 			if (setup.hasTag(NationData.Tag.REPUBLICAN)) continue;
 			ArrayList<Integer> ownedRegions = new ArrayList<>();
@@ -320,7 +312,7 @@ class World extends RulesObject implements GoodwillProvider {
 		}
 		// Place armies, navies.
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			double sharesNavy = 1;
 			double sharesArmy = 1;
 			if (setup.hasTag(NationData.Tag.PATRIOTIC)) sharesArmy += 0.15;
@@ -398,7 +390,7 @@ class World extends RulesObject implements GoodwillProvider {
 		}
 		// Add characters, incl Cardinals
 		for (String kingdom : nationSetup.keySet()) {
-			Nation.NationGson setup = nationSetup.get(kingdom);
+			Nation setup = nationSetup.get(kingdom);
 			ArrayList<Integer> regions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
 			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());
