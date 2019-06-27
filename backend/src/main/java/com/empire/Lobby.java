@@ -22,7 +22,7 @@ class Lobby {
 
 	int numPlayers;
 	int ruleSet;
-	Map<String, Nation.NationGson> nations = new HashMap<>();
+	Map<String, Nation> nations = new HashMap<>();
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();

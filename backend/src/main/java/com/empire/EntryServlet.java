@@ -9,6 +9,7 @@ import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -182,7 +183,7 @@ public class EntryServlet extends HttpServlet {
 		GetSetupResponse(Lobby lobby) throws IOException {
 			this.ruleSet = lobby.ruleSet;
 			this.numPlayers = lobby.numPlayers;
-			this.takenNations = lobby.takenNations;
+			this.takenNations = lobby.nations.keySet();
 			this.geography = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
 		}
 	}
