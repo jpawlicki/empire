@@ -2,10 +2,27 @@
 	<head>
 		<script src="../frontend/server.js"></script>
 		<script>
-			function postForm() {
+			function postFormStartLobby() {
+				let gameId = parseInt(document.getElementById("gameIdLobby").value);
+				let numPlayers = parseInt(document.getElementById("numPlayers").value);
+				
+				let req = new XMLHttpRequest();
+				req.open("post", g_server + "/entry/startlobby?gid=" + gameId, true);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					window.alert(req.status);
+				};
+				req.send(JSON.stringify({
+					"players": numPlayers
+				}));
+				return false;
+			}
+
+			function postFormStartWorld() {
 				let pw = document.getElementById("gmPassword").value;
 				let pw2 = document.getElementById("obsPassword").value;
-				let nations = document.getElementById("nations").value.split("\n").map(x => x.trim()).filter(x => x.length > 0);
 				let gameId = parseInt(document.getElementById("gameId").value);
 				
 				let req = new XMLHttpRequest();
@@ -18,46 +35,27 @@
 				};
 				req.send(JSON.stringify({
 					"gm_password": pw,
-					"obs_password": pw2,
-					"kingdoms": nations
+					"obs_password": pw2
 				}));
 				return false;
 			}
 		</script>
 	</head>
 	<body>
-		<form onsubmit="return postForm();">
+		<h1>Start Lobby</h1>
+		<form onsubmit="return postFormStartLobby();">
+			<label>Game ID: <input id="gameIdLobby" type="number" value="0"/></label>
+			<label>Number of Players: <input id="numPlayers" type="number" value="26"/></label>
+			<button>Create Lobby</button>
+		</form>
+		<h1>Start Game</h1>
+		<form onsubmit="return postFormStartWorld();">
 			<label>GM Password: <input id="gmPassword" type="password"/></label>
 			<label>Observer Password: <input id="obsPassword" type="password"/></label>
-			<label>
-				Newline-Separated List of Nations:
-				<textarea id="nations">
-					Aefoss
-					Balyucesu
-					Celyn
-					Doomstoll
-					Ejymsyn
-					Fiskrbaer
-					Gangrjata
-					Hosshofn
-					Isla
-					Jaraslatr
-					Kyaradis
-					Landhylli
-					Mabe
-					Nysiunarri
-					Pernepulse
-					Rettrsvelt
-					Slail
-					Tavia
-					Upiceil
-					Yrslekye
-					Zemsim
-				</textarea>
-			</label>
 			<label>Game ID: <input id="gameId" type="number"/></label>
-			<button>Start!</button>
+			<button>Start</button>
 		</form>
+		<h1>Advance Game</h1>
 		<div id="advances"></div>
 		<script>
 			for (let i = 1; i < 30; i++) {
