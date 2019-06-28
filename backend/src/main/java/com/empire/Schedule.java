@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-final class Schedule {
+public final class Schedule {
 	List<DayOfWeek> days;
 	int time; // In minutes after 00:00.
 	String locale;

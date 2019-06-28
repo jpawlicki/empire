@@ -230,7 +230,7 @@ class InternationalReport extends HTMLElement {
 			c.setAttribute("cx", pp[0]);
 			c.setAttribute("cy", pp[1]);
 			c.setAttribute("r", .03);
-			c.setAttribute("fill", g_data.kingdoms[kingdoms[i]].color_bg);
+			c.setAttribute("fill", getColor(kingdoms[i]));
 			svg.appendChild(c);
 			c.addEventListener("mouseover", function () {
 				for (let l of allLines) {
@@ -245,7 +245,7 @@ class InternationalReport extends HTMLElement {
 			t.setAttribute("x", pp[0]);
 			t.setAttribute("y", pp[1] - .00475);
 			t.innerHTML = "&nbsp;" + kingdoms[i].substr(0, 1) + "&nbsp;";
-			t.setAttribute("fill", g_data.kingdoms[kingdoms[i]].color_fg);
+			t.setAttribute("fill", getForegroundColor(kingdoms[i]));
 			svg.appendChild(t);
 		}
 		legendEle.innerHTML = "";

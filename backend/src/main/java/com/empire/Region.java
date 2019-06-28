@@ -229,7 +229,8 @@ class Region extends RulesObject {
 	public Set<Region> getNeighbors(World w) {
 		int id = w.regions.indexOf(this);
 		Set<Region> neighbors = new HashSet<>();
-		for (WorldConstantData.Border b : WorldConstantData.borders) {
+		for (Geography.Border b : w.getGeography().borders) {
+			if (b.b == null) continue;
 			if (b.a == id) neighbors.add(w.regions.get(b.b));
 			else if (b.b == id) neighbors.add(w.regions.get(b.a));
 		}
@@ -325,11 +326,11 @@ class Region extends RulesObject {
 			Node n = queue.poll();
 			if (closeRegions.contains(n.r)) continue;
 			closeRegions.add(n.r);
-			for (WorldConstantData.Border b : WorldConstantData.borders) {
-				if (b.a == n.r && b.size + n.dist < limit) {
-					queue.add(new Node(b.b, b.size + n.dist));
-				} else if (b.b == n.r && b.size + n.dist < limit) {
-					queue.add(new Node(b.a, b.size + n.dist));
+			for (Geography.Border b : w.getGeography().borders) {
+				if (b.a == n.r && b.w + n.dist < limit) {
+					queue.add(new Node(b.b, b.w + n.dist));
+				} else if (b.b == n.r && b.w + n.dist < limit) {
+					queue.add(new Node(b.a, b.w + n.dist));
 				}
 			}
 		}

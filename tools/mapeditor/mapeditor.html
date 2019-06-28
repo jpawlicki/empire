@@ -31,7 +31,7 @@
 				{"color": "#20afe5", "name": "Tavia", "culture": "tavian", "default_region_names": ["Endless Beauty","Ebon Sands","Myriad Oases","Many Roads","Hundred Spires","Countless Histories"]},
 				{"color": "#007e00", "name": "Rettrsvelt", "culture": "tyrgaetan", "default_region_names": ["Crumble","Grind","Dread","Rust","Wear","Bend","Rot","Scour","Breach"]},
 				{"color": "#0300ef", "name": "Mabe", "culture": "hansa", "default_region_names": ["Highcliff","Sailkeep","Clothridge","Ashpeak Vale","Silverdell","Marbletop"]},
-				{"color": "#53f2cc", "name": "Pernepusle", "culture": "anpilayn", "default_region_names": ["Whitesand","Tumblebeach","Rocksand","Greenwood", "Sacred Way", "Sunlake"]},
+				{"color": "#53f2cc", "name": "Pernepulse", "culture": "anpilayn", "default_region_names": ["Whitesand","Tumblebeach","Rocksand","Greenwood", "Sacred Way", "Sunlake"]},
 				{"color": "#fe5a00", "name": "Hosshofn", "culture": "eolsung", "default_region_names": ["Bloodwater", "Graveyard", "Stillriver", "Silentwood", "Thornfear", "Bonesteel"]},
 				{"color": "#a20066", "name": "Balyucesu", "culture": "anpilayn", "default_region_names": ["Widow's Pyre", "Sailor's Grave", "Thievesend", "Soldier's Rest", "Hunter's Folly", "Kingspride"]},
 				{"color": "#5a3f00", "name": "Aefoss", "culture": "eolsung", "default_region_names": ["Timberhold","Darkmountain","Whitewater","Foreverfall","Grandfather Mountain","Grandmother Mountain"]},
@@ -283,9 +283,14 @@
 				data = {
 					regions: [],
 					borders: [],
+					kingdoms: [],
 				};
 				data.players = parseInt(window.prompt("Number of players? (2 to 26)"));
+				for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
 				let siteCount = Math.floor((data.players * 6 + 3) * 1.9 + 6);
+				// TODO: Consider shrinking the map coordinate space itself for smaller games.
+				// width = 1000.0 * Math.sqrt(data.players / 26);
+				// height = 1000.0 * Math.sqrt(data.players / 26);
 				function newVoronoi() {
 					let sites = [];
 					function randAndPush() {
@@ -310,7 +315,7 @@
 						}
 					}
 					hexAndJostle();
-					let boundingBox = {xl: -10, xr: 1010, yt: -10, yb: 1010};
+					let boundingBox = {xl: -10, xr: width + 10, yt: -10, yb: height + 10};
 					let voronoi = new Voronoi();
 					let result = voronoi.compute(sites, boundingBox);
 					for (let i = 0; i < result.cells.length; i++) {
@@ -374,6 +379,8 @@
 								b.p2 = undefined;
 							}
 						}
+						delete data.nations;
+						for (let r of data.regions) delete r.climate;
 						paint();
 						makeCoreControls();
 					});
@@ -408,10 +415,8 @@
 					}
 				}
 				// Record nation metadata.
-				data.nations = [];
-				for (let n = 0; n < data.players; n++) {
-					data.nations.push({"name": nations[n].name, "culture": nations[n].culture, "color": nations[n].color});
-				}
+				data.kingdoms = [];
+				for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
 				paint();
 				window.open(URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/octet-stream"})));
 			}

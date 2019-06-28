@@ -132,7 +132,7 @@ class GothiReport extends HTMLElement {
 			for (let tivar of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) {
 				let td = document.createElement("td");
 				td.innerHTML = votes[tivar].v > 0 ? votes[tivar].v : "";
-				if (g_data.kingdoms[k].gothi[r]) td.setAttribute("class", "voting");
+				if (k.gothi[tivar]) td.setAttribute("class", "voting");
 				tr.appendChild(td);
 			}
 			odiv.appendChild(tr);

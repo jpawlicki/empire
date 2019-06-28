@@ -1,18 +1,14 @@
 package com.empire;
 
 import com.google.gson.annotations.SerializedName;
-
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
 
-class Character extends RulesObject {
+public class Character extends RulesObject {
 	enum Tag {
 		@SerializedName("Cardinal") CARDINAL,
 		@SerializedName("Ruler") RULER,
-		@SerializedName("Tiecel") TIECEL;
+		@SerializedName("Tiecel") TIECEL
 	}
 
 	static class Experience {
@@ -33,6 +29,18 @@ class Character extends RulesObject {
 	private Experience experience = new Experience();
 	int leadingArmy = -1;
 	String orderhint = "";
+
+	public String getName() {
+		return name;
+	}
+
+	public int getLocation() {
+		return location;
+	}
+
+	public void setLocation(int location) {
+		this.location = location;
+	}
 
 	private double calcLevel(double xp) {
 		return Math.sqrt(xp + 1);
