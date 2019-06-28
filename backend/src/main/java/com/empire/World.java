@@ -34,7 +34,8 @@ interface GoodwillProvider {
 	double getGoodwill(String nation);
 }
 
-class World extends RulesObject implements GoodwillProvider {
+
+public class World extends RulesObject implements GoodwillProvider {
 	private static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
@@ -59,7 +60,44 @@ class World extends RulesObject implements GoodwillProvider {
 	long nextTurn;
 	boolean gameover;
 
+	public int getRuleSet() {
+		return ruleSet;
+	}
+
+	public int getNumPlayers() {
+		return numPlayers;
+	}
+
+	public int getDate() {
+		return date;
+	}
+
+	public List<Character> getCharacters() {
+		return characters;
+	}
+
+	public String getGmPasswordHash() {
+		return gmPasswordHash;
+	}
+
+	public String getObsPasswordHash() {
+		return obsPasswordHash;
+	}
+
+	public long getNextTurn() {
+		return nextTurn;
+	}
+
+	public void setNextTurn(long nextTurn) {
+		this.nextTurn = nextTurn;
+	}
+
+	public boolean isGameover() {
+		return gameover;
+	}
+
 	private transient Geography geography;
+
 
 	private static Gson getGson(Rules rules) {
 		InstanceCreator<World> icw = unused -> World.newWorld(rules);
@@ -67,6 +105,7 @@ class World extends RulesObject implements GoodwillProvider {
 		InstanceCreator<Character> icc = unused -> Character.newCharacter(rules);
 		InstanceCreator<Army> ica = unused -> Army.newArmy(rules);
 		InstanceCreator<Noble> icn = unused -> Noble.newNoble(rules);
+
 		return new GsonBuilder()
 				.enableComplexMapKeySerialization()
 				.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)

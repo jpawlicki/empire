@@ -1,5 +1,11 @@
-package com.empire;
+package com.empire.svc;
 
+import com.empire.Geography;
+import com.empire.Lobby;
+import com.empire.Nation;
+import com.empire.Orders;
+import com.empire.Rules;
+import com.empire.World;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
@@ -181,10 +187,10 @@ public class EntryServlet extends HttpServlet {
 		final Set<String> takenNations;
 		final Geography geography;
 		GetSetupResponse(Lobby lobby) throws IOException {
-			this.ruleSet = lobby.ruleSet;
-			this.numPlayers = lobby.numPlayers;
-			this.takenNations = lobby.nations.keySet();
-			this.geography = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
+			this.ruleSet = lobby.getRuleSet();
+			this.numPlayers = lobby.getNumPlayers();
+			this.takenNations = lobby.getNations().keySet();
+			this.geography = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
 		}
 	}
 	private String getSetup(Request r) {
@@ -209,7 +215,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).email, service);
+			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).getEmail(), service);
 			w.filter(r.kingdom);
 			return w.toString();
 		} catch (EntityNotFoundException e) {
@@ -226,7 +232,7 @@ public class EntryServlet extends HttpServlet {
 			DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			return Geography.loadGeography(w.ruleSet, w.numPlayers).toString();
+			return Geography.loadGeography(w.getRuleSet(), w.getNumPlayers()).toString();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No such world.");
 			return null;
@@ -243,7 +249,7 @@ public class EntryServlet extends HttpServlet {
 			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
 			World w = World.load(r.gameId, date, service);
-			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).email).collect(Collectors.toList());
+			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).getEmail()).collect(Collectors.toList());
 			List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
 			List<Map<String, Boolean>> result = new ArrayList<>();
 			for (List<Boolean> turnActives : actives) {
@@ -278,13 +284,13 @@ public class EntryServlet extends HttpServlet {
 				try {
 					int date = (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
 					World	w = World.load(gameId, date, service);
-					if (w.nextTurn < Instant.now().toEpochMilli()) {
+					if (w.getNextTurn() < Instant.now().toEpochMilli()) {
 						HashSet<String> kingdoms = new HashSet<>();
 						HashMap<String, Map<String, String>> orders = new HashMap<>();
 						for (String kingdom : w.getNationNames()) {
 							kingdoms.add(kingdom);
 							try {
-								orders.put(kingdom, Orders.loadOrder(gameId, kingdom, w.date, service).getOrders());
+								orders.put(kingdom, Orders.loadOrder(gameId, kingdom, w.getDate(), service).getOrders());
 							} catch (EntityNotFoundException e) {
 								// Can't load the relevant orders - tool will make default orders.
 							}
@@ -292,12 +298,12 @@ public class EntryServlet extends HttpServlet {
 						Map<String, String> emails = w.advance(orders);
 						service.put(w.toEntity(gameId));
 						Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
-						nudate.setProperty("date", (long)w.date);
+						nudate.setProperty("date", (long)w.getDate());
 						service.put(nudate);
 						for (String mail : emails.keySet()) {
 							mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
 						}
-						if (w.gameover) {
+						if (w.isGameover()) {
 							ActiveGames newActiveGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
 							newActiveGames.activeGameIds.remove(gameId);
 							Entity activeGames = new Entity("ACTIVEGAMES", "_");
@@ -329,7 +335,7 @@ public class EntryServlet extends HttpServlet {
 		HashSet<String> kingdoms = new HashSet<>();
 		try {
 			World	w = World.load(r.gameId, r.turn, service);
-			w.nextTurn = 0;
+			w.setNextTurn(0);
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
@@ -346,7 +352,7 @@ public class EntryServlet extends HttpServlet {
 
 	private boolean postStartWorld(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		StartWorldGson s = StartWorldGson.fromJson(r.body);
+		StartWorld s = StartWorld.fromJson(r.body);
 		String passHash;
 		String obsPassHash;
 		try {
@@ -361,7 +367,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			// Collect setups.
 			Lobby lobby = Lobby.load(r.gameId, service);
-			for (Nation nation : lobby.nations.values()) addresses.add(nation.email);
+			for (Nation nation : lobby.getNations().values()) addresses.add(nation.email);
 			World w = World.startNew(passHash, obsPassHash, lobby);
 			service.put(w.toEntity(r.gameId));
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
@@ -446,11 +452,11 @@ public class EntryServlet extends HttpServlet {
 			// }
 			int date = getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			byte[] gmPassHash = BaseEncoding.base16().decode(w.gmPasswordHash);
-			byte[] obsPassHash = BaseEncoding.base16().decode(w.obsPasswordHash);
+			byte[] gmPassHash = BaseEncoding.base16().decode(w.getGmPasswordHash());
+			byte[] obsPassHash = BaseEncoding.base16().decode(w.getObsPasswordHash());
 			// if (w.kingdoms.containsKey(r.kingdom) && w.getNation(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
 			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.getNation(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
-			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).email, service).passHash))) return CheckPasswordResult.PASS_PLAYER;
+			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).getEmail(), service).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
 			return CheckPasswordResult.FAIL;
@@ -521,8 +527,8 @@ public class EntryServlet extends HttpServlet {
 			World w = World.load(r.gameId, date, service);
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 			Player p = Player.loadPlayer(body.email, service);
-			w.getNation(r.kingdom).email = body.email;
-			w.getNation(r.kingdom).password = p.passHash;
+			w.getNation(r.kingdom).setEmail(body.email);
+			w.getNation(r.kingdom).setPassword(p.passHash);
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
@@ -545,7 +551,7 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			World w = World.load(4, getWorldDate(4, service), service);
-			for (Character c : w.characters) if (c.name.equals("Ea Rjinkuki")) c.location = 101;
+			for (com.empire.Character c : w.getCharacters()) if (c.getName().equals("Ea Rjinkuki")) c.setLocation(101);
 			service.put(w.toEntity(4));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
@@ -567,8 +573,8 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			Lobby lobby = Lobby.load(r.gameId, service);
-			Geography geo = Geography.loadGeography(lobby.ruleSet, lobby.numPlayers);
-			if (!geo.kingdoms.stream().anyMatch(k -> k.name.equals(r.kingdom))) return false;
+			Geography geo = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
+			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(r.kingdom))) return false;
 			Nation nation = Nation.fromJson(r.body);
 			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 			if (!lobby.update(r.kingdom, nation)) return false;

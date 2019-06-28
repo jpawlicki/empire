@@ -37,12 +37,12 @@ public class Geography {
 		double y;
 	}
 
-	static class Kingdom {
-		String name;
+	public static class Kingdom {
+		public String name;
 		Culture culture;
 	}
 
-	static Geography loadGeography(int ruleSetId, int numPlayers) throws IOException {
+	public static Geography loadGeography(int ruleSetId, int numPlayers) throws IOException {
 		Map<Integer, Geography> ruleGeography = cache.computeIfAbsent(ruleSetId, unused -> new ConcurrentHashMap<>());
 		if (!ruleGeography.containsKey(numPlayers)) {
 			ruleGeography.put(numPlayers, readGeography(ruleSetId, numPlayers));
@@ -58,6 +58,10 @@ public class Geography {
 				return new GsonBuilder().create().fromJson(r, Geography.class);
 			}
 		}
+	}
+
+	public List<Kingdom> getKingdoms() {
+		return kingdoms;
 	}
 
 	Kingdom getKingdom(String name) {

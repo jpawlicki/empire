@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.HashMap;
 
-class Lobby {
+public class Lobby {
 	public static final String TYPE = "Lobby";
 
 	int numPlayers;
@@ -60,6 +60,18 @@ class Lobby {
 
 	public static Lobby newLobby(int ruleSet, int numPlayers) {
 		return new Lobby(ruleSet, numPlayers);
+	}
+
+	public int getNumPlayers() {
+		return numPlayers;
+	}
+
+	public int getRuleSet() {
+		return ruleSet;
+	}
+
+	public Map<String, Nation> getNations() {
+		return nations;
 	}
 
 	@Override

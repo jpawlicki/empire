@@ -1,12 +1,13 @@
-package com.empire;
+package com.empire.svc;
 
+import com.empire.Schedule;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
 import java.util.List;
 import java.util.ArrayList;
 
-class StartWorldGson {
+class StartWorld {
 	public String gmPassword;
 	public String obsPassword;
 	public List<String> kingdoms = new ArrayList<String>(); 
@@ -16,7 +17,7 @@ class StartWorldGson {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 	}
 
-	public static StartWorldGson fromJson(String json) {
-		return getGson().fromJson(json, StartWorldGson.class);
+	public static StartWorld fromJson(String json) {
+		return getGson().fromJson(json, StartWorld.class);
 	}
 }

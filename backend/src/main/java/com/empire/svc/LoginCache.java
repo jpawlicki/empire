@@ -1,4 +1,4 @@
-package com.empire;
+package com.empire.svc;
 
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.Entity;

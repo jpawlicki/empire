@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.security.SecureRandom;
 
-class NationData {
+public class NationData {
 	enum Gothi {
 		@SerializedName("Alyrja") ALYRJA,
 		@SerializedName("Rjinku") RJINKU,
@@ -131,6 +131,22 @@ class NationData {
 	String password;
 	String email;
 	String accessToken;
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
 
 	void resetAccessToken() {
 		accessToken = Long.toString(new SecureRandom().nextLong(), java.lang.Character.MAX_RADIX);
