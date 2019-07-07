@@ -17,6 +17,7 @@ class OrdersPane extends HTMLElement {
 			<div id="tabs">
 				<div id="tab_units" class="tab_units">Units</div>
 				<div id="tab_plots" class="tab_plots">Plots</div>
+				<div id="tab_tiecel" class="tab_tiecel">Tiecel</div>
 				<div id="tab_nations" class="tab_nations">Nations</div>
 				<div id="tab_economy" class="tab_economy">Economy</div>
 				<div id="tab_game" class="tab_game">Game</div>
@@ -25,6 +26,7 @@ class OrdersPane extends HTMLElement {
 				<table id="content_units">
 					<tbody id="units">
 						<tr><th>Who</th><th></th><th>Action</th></tr>
+						<tr id="table_nobles"><th colspan="2">Nobles</th></tr>
 						<tr id="table_armies"><th colspan="2">Armies</th></tr>
 						<tr id="table_navies"><th colspan="2">Navies</th></tr>
 					</tbody>
@@ -48,10 +50,10 @@ class OrdersPane extends HTMLElement {
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
 					<expandable-snippet text="In exchange for loyalty, the Cult will give us an army of 5000 undead soldiers and 2 weeks of food in every region we control. However, the Cult will gain access to any regions we control, and we do not fully understand their objectives."></expandable-snippet>
 					<hr/>
-					<label id="gothi_Alyrja"><input type="checkbox" name="gothi_Alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds make all sea regions treacherous, blows vessels in sea regions to random adjacent regions, and destroy 3% of all crops each week they are active.">Warwinds</tooltip-element></label>
-					<label id="gothi_Rjinku"><input type="checkbox" name="gothi_Rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. The quake destroys 3% of all crops each week it is active.">Quake</tooltip-element></label>
-					<label id="gothi_Syrjen"><input type="checkbox" name="gothi_Syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge makes all land regions treacherous, allows navies to traverse land regions and participate in battles there (and prevents them from being captured). It also destroys 3% of all crops each week while active.">Deluge</tooltip-element></label>
-					<label id="gothi_Lyskr"><input type="checkbox" name="gothi_Lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It also destroys 3% of crops worldwide each week while active.">Veil</tooltip-element></label>
+					<label id="gothi_Alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
+					<label id="gothi_Rjinku"><input type="checkbox" name="gothi_rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
+					<label id="gothi_Syrjen"><input type="checkbox" name="gothi_syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge destroys 25% of any army or navy travelling into a land region, allows navies to traverse land regions and participate in battles there, and prevents navies from being captured. It will start to destroy crops worldwide after 2 weeks of activity.">Deluge</tooltip-element></label>
+					<label id="gothi_Lyskr"><input type="checkbox" name="gothi_lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It will start to destroy crops worldwide after 2 weeks of activity.">Veil</tooltip-element></label>
 				</div>
 				<div id="content_nations">
 					<h1><tooltip-element tooltip="These communications are usually delayed by 0 to 30 seconds.">Real-Time</tooltip-element> Communications</h1>
@@ -73,6 +75,10 @@ class OrdersPane extends HTMLElement {
 						<tr><td colspan="2" id="nations_newgift">Send Gold</td></tr>
 					</table>
 					<zip-div id="nations_cede" title="Cede Regions"></zip-div>
+				</div>
+				<div id="content_tiecel">
+					<h1 id="doctrine_header">Church Doctrine</h1>
+					<div id="doctrine_switches"></div>
 				</div>
 				<div id="content_economy">
 					<h1>Economic Controls</h1>
@@ -98,22 +104,6 @@ class OrdersPane extends HTMLElement {
 					</table>
 				</div>
 				<div id="content_game">
-					<h1 id="score_header">Score</h1>
-					<div id="score_switches">
-						<label><input type="checkbox" id="score_food" name="score_food"></input>Food</label>
-						<label><input type="checkbox" id="score_prosperity" name="score_prosperity"></input>Prosperity</label>
-						<label><input type="checkbox" id="score_happiness" name="score_happiness"></input>Happiness</label>
-						<label><input type="checkbox" id="score_unity" name="score_unity"></input>Unity</label>
-						<label><input type="checkbox" id="score_riches" name="score_riches"></input>Riches</label>
-						<label><input type="checkbox" id="score_conquest" name="score_conquest"></input>Conquest</label>
-						<label><input type="checkbox" id="score_glory" name="score_glory"></input>Glory</label>
-						<label><input type="checkbox" id="score_supremacy" name="score_supremacy"></input>Supremacy</label>
-						<label><input type="checkbox" id="score_religion" name="score_religion"></input>Religion</label>
-						<label><input type="checkbox" id="score_security" name="score_security"></input>Security</label>
-						<label><input type="checkbox" id="score_culture" name="score_culture"></input>Culture</label>
-						<label><input type="checkbox" id="score_ideology" name="score_ideology"></input>Ideology</label>
-						<expandable-snippet text="Your score profiles can be changed on every 7th turn.">
-					</div>
 					<div id="end_vote_div">
 						<h1 class="alert">Game Extension Vote</h1>
 						<select name="end_vote">
@@ -171,6 +161,11 @@ class OrdersPane extends HTMLElement {
 				border-left: 1.5px solid white;
 				border-right: 1.5px solid white;
 			}
+			.tab_tiecel {
+				border-bottom: 3px solid purple;
+				border-left: 1.5px solid white;
+				border-right: 1.5px solid white;
+			}
 			.tab_nations {
 				border-bottom: 3px solid gold;
 				border-left: 1.5px solid white;
@@ -204,7 +199,7 @@ class OrdersPane extends HTMLElement {
 			input[type=text], input[type=number] {
 				width: 5em;
 			}
-			#content_economy label, #score_switches label {
+			#content_economy label {
 				width: 100%;
 			}
 			input[type=range] {
@@ -220,6 +215,10 @@ class OrdersPane extends HTMLElement {
 			}
 			table tr td:last-child {
 				text-align: right;
+			}
+			#doctrine_switches ul {
+				margin-top: 0;
+				font-size: 90%;
 			}
 			#nations_nations > div {
 				font-family: sans-serif;
@@ -281,10 +280,10 @@ class OrdersPane extends HTMLElement {
 		content.innerHTML = html;
 		shadow.appendChild(content);
 		let form = shadow.getElementById("form");
-		for (let t of ["units", "plots", "nations", "economy", "game"]) shadow.getElementById("content_" + t).style.display = "none";
+		const tabList = ["units", "plots", "tiecel", "nations", "economy", "game"];
 		let changeTab = function (tab) {
 			shadow.getElementById("tabs").className = "tab_" + tab;
-			for (let t of ["units", "plots", "nations", "economy", "game"]) {
+			for (let t of tabList) {
 				shadow.getElementById("content_" + t).style.display = "none";
 				shadow.getElementById("tab_" + t).style.paddingBottom = "0.5em";
 				shadow.getElementById("tab_" + t).style.color = "#777";
@@ -295,11 +294,10 @@ class OrdersPane extends HTMLElement {
 			shadow.getElementById("tab_" + tab).style.paddingTop = "0.5em";
 			shadow.getElementById("tab_" + tab).style.color = "#000";
 		};
-		shadow.getElementById("tab_units").addEventListener("click", ()=>(changeTab("units")));
-		shadow.getElementById("tab_plots").addEventListener("click", ()=>(changeTab("plots")));
-		shadow.getElementById("tab_nations").addEventListener("click", ()=>(changeTab("nations")));
-		shadow.getElementById("tab_economy").addEventListener("click", ()=>(changeTab("economy")));
-		shadow.getElementById("tab_game").addEventListener("click", ()=>(changeTab("game")));
+		for (let t of tabList) {
+			shadow.getElementById("content_" + t).style.display = "none";
+			shadow.getElementById("tab_" + t).addEventListener("click", ((tt)=>()=>changeTab(tt))(t));
+		}
 		let addRow = function(ele, link, div, selec, before = undefined) {
 			let r = document.createElement("tr");
 			let t = document.createElement("td");
@@ -356,6 +354,17 @@ class OrdersPane extends HTMLElement {
 					if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;
 					opts.push("Transfer character to " + k);
 				}
+			} else {
+				if (unit.captor == "") {
+					for (let profile of Object.keys(g_scoreProfiles).sort()) {
+						if (!g_scoreProfiles[profile].selectable) continue;
+						if (g_data.kingdoms[whoami].profiles.includes(profile)) {
+							opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
+						} else {
+							opts.push("Reflect on " + profile.toLowerCase() + " (add)");
+						}
+					}
+				}
 			}
 			return opts;
 		};
@@ -373,9 +382,12 @@ class OrdersPane extends HTMLElement {
 				} else if (unit.captor != "") {
 					who.appendChild(document.createTextNode(" (Captive of " + unit.captor + ")"));
 				}
-				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_armies"));
+				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_nobles"));
 			}
 		}
+		let navyCount = 0;
+		let armyCount = 0;
+		let nobleCount = 0;
 		for (let unit of g_data.armies) {
 			if (unit.kingdom == kingdom.name) {
 				let tr = document.createElement("tr");
@@ -405,10 +417,36 @@ class OrdersPane extends HTMLElement {
 				wd.setAttribute("class", "warning");
 				td3.appendChild(wd);
 				tr.appendChild(td3);
-				if (unit.type == "army") unitTable.insertBefore(tr, shadow.getElementById("table_navies"));
-				else unitTable.appendChild(tr);
+				if (unit.type == "army") {
+					unitTable.insertBefore(tr, shadow.getElementById("table_navies"));
+					armyCount++;
+				} else {
+					unitTable.appendChild(tr);
+					navyCount++;
+				}
 			}
 		}
+		for (let r of g_data.regions) {
+			if (r.kingdom == whoami && r.noble.name != undefined && r.noble.unrest <= 0.5) {
+				let tr = document.createElement("tr");
+				let addCell = function(c) {
+					let td = document.createElement("td");
+					td.appendChild(c);
+					tr.appendChild(td);
+				}
+				let who = document.createElement("report-link");
+				who.setAttribute("href", "region/" + r.name);
+				who.appendChild(document.createTextNode(r.noble.name));
+				addCell(who);
+				addCell(document.createElement("div"));
+				addCell(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
+				unitTable.insertBefore(tr, shadow.getElementById("table_armies"));
+				nobleCount++;
+			}
+		}
+		if (armyCount == 0) shadow.getElementById("table_armies").style.display = "none";
+		if (navyCount == 0) shadow.getElementById("table_navies").style.display = "none";
+		if (nobleCount == 0) shadow.getElementById("table_nobles").style.display = "none";
 		changeTab("units");
 
 		// PLOT TAB
@@ -555,6 +593,33 @@ class OrdersPane extends HTMLElement {
 		});
 		plotTypeSel.dispatchEvent(new Event("change"));
 
+		// TIECEL TAB
+		{
+			let doctrines = shadow.getElementById("doctrine_switches");
+			for (let doctrine in doctrineDescriptions) {
+				let l = document.createElement("label");
+				let c = document.createElement("input");
+				c.setAttribute("type", "checkbox");
+				c.setAttribute("name", "church_" + doctrine);
+				c.setAttribute("id", "church_" + doctrine);
+				l.appendChild(c);
+				l.appendChild(document.createTextNode(titleCase(doctrine)));
+				doctrines.appendChild(l);
+				let d = document.createElement("ul");
+				for (let desc of doctrineDescriptions[doctrine]) {
+					let li = document.createElement("li");
+					li.appendChild(document.createTextNode(desc));
+					d.appendChild(li);
+				}
+				doctrines.appendChild(d);
+			}
+			let tiecel = undefined;
+			for (let c of g_data.characters) {
+				if (c.tags.includes("Tiecel")) tiecel = c;
+			}
+			if (tiecel == undefined || tiecel.kingdom != whoami) shadow.getElementById("tab_tiecel").style.display = "none";
+		}
+
 		// NATIONS
 		let o = this;
 		let kingdoms = shadow.getElementById("nations_nations");
@@ -592,8 +657,8 @@ class OrdersPane extends HTMLElement {
 				</select>
 			`;
 			kdiv.setAttribute("title", k);
-			kdiv.setAttribute("background", g_data.kingdoms[k].color_bg);
-			kdiv.setAttribute("color", g_data.kingdoms[k].color_fg);
+			kdiv.setAttribute("background", getColor(k));
+			kdiv.setAttribute("color", getForegroundColor(k));
 			kingdoms.appendChild(kdiv);
 		}
 		shadow.getElementById("nations_newgift").addEventListener("click", ()=>this.addGift(shadow));
@@ -647,7 +712,7 @@ class OrdersPane extends HTMLElement {
 							msg.to.push(msg.from);
 							msg.to.sort();
 							m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
-							m.style.background = "linear-gradient(90deg, #fff -50%, " + g_data.kingdoms[msg.from].color_bg + " 350%)";
+							m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
 							d.appendChild(m);
 						}
 					}
@@ -799,19 +864,10 @@ class OrdersPane extends HTMLElement {
 			};
 			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];
 		});
-		if (g_data.date % 7 == 0) {
-			shadow.querySelector("#tab_game").classList.add("alert");
-			shadow.querySelector("#score_header").classList.add("alert");
-		} else {
-			for (let e of shadow.querySelectorAll("#score_switches input")) e.disabled = true;
-		}
 		if (g_data.date >= 26 && (g_data.date - 26) % 6 == 0) {
 			shadow.querySelector("#tab_game").classList.add("alert");
 		} else {
 			shadow.querySelector("#end_vote_div").style.display = "none";
-		}
-		for (let value of g_data.kingdoms[whoami].getRuler().values) {
-			shadow.getElementById("score_" + value).checked = true;
 		}
 
 		// Load Old Orders
@@ -850,8 +906,11 @@ class OrdersPane extends HTMLElement {
 				}
 				for (let gothi in g_data.kingdoms[whoami].gothi) {
 					if (g_data.kingdoms[whoami].gothi.hasOwnProperty(gothi) && g_data.kingdoms[whoami].gothi[gothi]) {
-						shadow.querySelector("[name=gothi_" + gothi + "]").checked = true;
+						shadow.querySelector("[name=gothi_" + gothi.toLowerCase() + "]").checked = true;
 					}
+				}
+				for (let doctrine of g_data.church.doctrines) {
+					shadow.querySelector("[name=church_" + doctrine + "]").checked = true;
 				}
 				op.checkWarnings(shadow);
 				op.plannedMotions(shadow);
@@ -950,13 +1009,12 @@ class OrdersPane extends HTMLElement {
 				opts.push("Raze " + c);
 			}
 			if (r.kingdom == unit.kingdom && r.noble.name != undefined) opts.push("Oust Noble");
-			if (r.type == "land") opts.push("Slay Civilians");
 			for (let neighbor of r.getNeighbors()) opts.push("Travel to " + neighbor.name);
 			if (r.population > 1) for (let neighbor of r.getNeighbors()) if (neighbor.type == "land") opts.push("Force civilians to " + neighbor.name);
 		} else {
 			opts.push("Stay in " + r.name);
 			let nopts = [];
-			for (let neighbor of r.getNeighbors()) nopts.push(neighbor.name);
+			for (let neighbor of r.getNeighbors()) if (r.type == "water" || neighbor.type == "water" || g_data.tivar.deluge > 0) nopts.push(neighbor.name);
 			for (let neighbor of nopts.sort()) {
 				opts.push("Travel to " + neighbor);
 			}
@@ -971,6 +1029,18 @@ class OrdersPane extends HTMLElement {
 		if (!contains(unit.tags, "Higher Power")) opts.push("Disband");
 		return opts;
 	};
+
+	getNobleOptions(r) {
+		let opts = [];
+		opts.push("Relax", "Soothe Population", "Levy Tax", "Conscript Recruits");
+		if (r.isCoastal()) opts.push("Build Shipyard");
+		opts.push("Build Fortifications");
+		for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
+		for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
+		for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
+		return opts;
+	};
+
 
 	select(name, opts) {
 		let sel = document.createElement("select");
@@ -1178,39 +1248,34 @@ class OrdersPane extends HTMLElement {
 			if (o.value.startsWith("Travel to ")) {
 				let dest = undefined;
 				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
-				if (dest != undefined && (dest.type != "land" || dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].calcRelationship(g_data.kingdoms[a.kingdom]) != "friendly") && !contains(a.tags, "Weathered") && (dest.climate == "treacherous" || (dest.climate == "seasonal" && (g_data.date % 52 < 13 || g_data.date % 52 >= 39)))) {
-					warn = "(will suffer 25% attrition due to climate)";
-				}
-				if (a.type == "navy" && dest.type == "land" && g_data.regions[a.location].type == "land" && !g_data.tivar.deluge) {
-					warn += "(navies can only move between land regions during the Deluge)";
-				}
-				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && !g_data.tivar.deluge) {
-					warn += "(navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
+				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && g_data.tivar.deluge == 0) {
+					warn += " (navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
 			} else if (o.value.startsWith("Merge into army")) {
 				let ot = undefined;
 				for (let aa of g_data.armies) if (aa.id == parseInt(o.value.replace("Merge into army ", ""))) ot = aa;
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
-			} else if (o.value.startsWith("Slay")) {
-				warn = "(will anger the Church of Iruhan)";
 			} else if (o.value.startsWith("Patrol")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn = "(army may be too small to patrol)";
+					warn += " (army may be too small to patrol)";
+				}
+				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
+					warn += " (armies can only patrol friendly regions)";
 				}
 			} else if (o.value.startsWith("Oust")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn = "(army may be too small to oust)";
+					warn = " (army may be too small to oust)";
 				}
 			} else if (o.value.startsWith("Conquer")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
-					warn = "(army may be too small to conquer)";
+					warn = " (army may be too small to conquer)";
 				}
 				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
-					warn += "(conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
+					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
 			} else if (o.value.startsWith("Raze")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 2) {
-					warn = "(army may be too small to raze)";
+					warn = " (army may be too small to raze)";
 				}
 			}
 			shadow.getElementById("warning_army_" + a.id).innerHTML = warn;

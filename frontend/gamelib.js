@@ -32,6 +32,8 @@ class Calc {
 			this.v = args[0].v / args[1].v;
 		} else if (op == "max") {
 			this.v = args.reduce((a, b) => (a > b.v ? a : b.v), 0);
+		} else if (op == "min") {
+			this.v = args.reduce((a, b) => (a < b.v ? a : b.v), Number.POSITIVE_INFINITY);
 		} else if (op == "sqrt") {
 			this.v = Math.sqrt(args[0].v);
 		}
@@ -40,6 +42,7 @@ class Calc {
 	explain() {
 		if (this.op == "sqrt") return "√(" + this.explainArg(this.args[0]) + ")";
 		else if (this.op == "max") return "max(" + this.args.reduce((a, b) => (a + ", " + this.explainArg(b)), "").slice(2) + ")";
+		else if (this.op == "min") return "min(" + this.args.reduce((a, b) => (a + ", " + this.explainArg(b)), "").slice(2) + ")";
 		else return "(" + this.args.reduce((a, b) => (a + " " + this.op.replace("*", "×") + " " + this.explainArg(b)), "").slice(3) + ")";
 	}
 
@@ -153,7 +156,6 @@ class Region {
 		this.name = dataEntry.name;
 		this.type = dataEntry.type;
 		this.path = constEntry.path;
-		this.climate = dataEntry.climate;
 		this.culture = dataEntry.culture;
 		this.population = dataEntry.population;
 		this.kingdom = dataEntry.kingdom;
@@ -161,22 +163,28 @@ class Region {
 		this.noble = dataEntry.noble;
 		this.constructions = dataEntry.constructions;
 		this.food = dataEntry.food;
-		this.harvest = dataEntry.harvest;
+		this.crops = dataEntry.crops;
 		this.religion = dataEntry.religion;
 		this.date = date;
 		if (this.noble == undefined) this.noble = {};
 	}
 
+	calcNobleLevel() {
+		if (this.noble.experience == undefined) return 0;
+		return Math.sqrt(this.noble.experience + 1);
+	}
+
 	calcRecruitment(extraMod=0) {
-		let base = new Calc("*", [
+		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}]);
-		let mods = [];
+			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}];
 		let unrest = this.calcUnrest().v;
+		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
+		let base = new Calc("*", baseAmount);
+
+		let mods = [];
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
-		if (contains(this.noble.tags, "Inspiring")) mods.push({"v": .5, "unit": "%", "why": "Noble"});
-		if (contains(this.noble.tags, "Untrusting")) mods.push({"v": -.35, "unit": "%", "why": "Noble"});
-		if (contains(this.noble.tags, "Tyrannical")) mods.push({"v": -.5, "unit": "%", "why": "Noble"});
 		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
 		if (this.religion == "Iruhan (Sword of Truth)") mods.push({"v": 1, "unit": "%", "why": "Sword of Truth ideology"});
 		if (this.religion == "Iruhan (Tapestry of People)") {
@@ -184,7 +192,6 @@ class Region {
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
 		}
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
@@ -212,16 +219,16 @@ class Region {
 	}
 
 	calcTaxation(extraMod=0) {
-		let base = new Calc("*", [
+		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}]);
-		let mods = [];
+			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
-		if (contains(this.noble.tags, "Frugal")) mods.push({"v": .5, "unit": "%", "why": "Noble"});
-		if (contains(this.noble.tags, "Hoarding")) mods.push({"v": -.35, "unit": "%", "why": "Noble"});
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Coast-Dwelling") && this.isCoastal()) mods.push({"v": .12, "unit": "%", "why": "Coast-Dwelling rulers"});
+		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
+		let base = new Calc("*", baseAmount);
+
+		let mods = [];
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && getNation(r.kingdom).calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
@@ -244,26 +251,33 @@ class Region {
 		return Calc.moddedNum(base, mods);
 	}
 
-	calcHarvest() {
+	calcCrops() {
+		return Calc.moddedNum({"v": this.crops, "unit": " crops", "why": "Already Planted"}, []);
+	}
+
+	calcHarvestCapacity() {
 		let base = new Calc("*", [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": this.harvest, "unit": " measures / citizen", "why": "Regional Havest Rate"}]);
+			{"v": 25, "unit": " reaps / citizen", "why": "Global Havest Rate"}]);
 		let mods = [];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .5 && !contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .5 - unrest, "unit": "%", "why": "Unrest"});
-		if (contains(this.noble.tags, "Meticulous")) mods.push({"v": .15, "unit": "%", "why": "Noble"});
+		if (unrest > .25 && !contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		return Calc.moddedNum(base, mods);
 	}
 
+	calcHarvest() {
+		return new Calc("min", [this.calcCrops(), this.calcHarvestCapacity()]);
+	}
+
 	calcNextHarvest() {
-		let base = new Calc("*", [
-			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": g_data.harvests[(Math.floor((this.date + 1) / 13) + 1) % 4], "unit": " measures / citizen", "why": "Regional Havest Rate"}]);
 		let mods = [];
-		let unrest = this.calcUnrest().v;
-		if (unrest > .5) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
-		if (contains(this.noble.tags, "Meticulous")) mods.push({"v": .15, "unit": "%", "why": "Noble"});
-		return Calc.moddedNum(base, mods);
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .05, "unit": "%", "why": "Noble"});
+		let base = Calc.moddedNum(
+			new Calc("*", [
+				{"v": this.population, "unit": " citizens", "why": "Regional Population"},
+				{"v": 13, "unit": " plants / citizen", "why": "Global Planting Rate"}]),
+			mods);
+		return new Calc("max", base, this.calcHarvestCapacity());
 	}
 
 	calcHarvestWeeks() {
@@ -280,8 +294,6 @@ class Region {
 
 	calcConsumption() {
 		let mods = [];
-		if (contains(this.noble.tags, "Rationing")) mods.push({"v": -.2, "unit": "%", "why": "Noble"});
-		if (contains(this.noble.tags, "Wasteful")) mods.push({"v": .1, "unit": "%", "why": "Noble"});
 		if (this.kingdom != "Unruled" && getNation(this.kingdom).calcStateReligion() == "Iruhan (Chalice of Compassion)") mods.push({"v": -.15, "unit": "%", "why": "Chalice of Compassion state ideology"});
 		return Calc.moddedNum(
 			new Calc("*", [{"v": this.population, "unit": " citizens", "why": "Regional Population"},
@@ -306,9 +318,7 @@ class Region {
 
 	calcMinConquestSize() {
 		let mods = [];
-		if (this.noble != undefined && contains(this.noble.tags, "Loyal")) mods.push({"v": 1, "unit": "%", "why": "Loyal Noble"});
-		if (this.noble != undefined && contains(this.noble.tags, "Desperate")) mods.push({"v": -2, "unit": "%", "why": "Desperate Noble"});
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .75, "unit": "%", "why": "Stoic Nation"});
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": 1.5, "unit": "%", "why": "Stoic Nation"});
 		mods.push({"v": this.calcFortification().v - 1, "unit": "%", "why": "Fortification"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
 		return Calc.moddedNum(
@@ -322,6 +332,7 @@ class Region {
 
 	calcMinPatrolSize() {
 		let mods = [];
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Disciplined")) mods.push({"v": -.5, "unit": "%", "why": "Disciplined Nation"});
 		mods.push({"v": this.calcUnrest().v * 2 - 0.7, "unit": "%", "why": "Unrest"});
 		// √(the population of the region) × 3%
 		return Calc.moddedNum(
@@ -413,7 +424,6 @@ class Region {
 	calcPirateWeight() {
 		if (this.type == "water") return {"v": 0, "unit": " shares", "why": "Sea Region"};
 		if (this.religion == "Northern (Alyrja)") return {"v": 0, "unit": " shares", "why": "Follows Alyrja"};
-		if (this.noble != undefined && contains(this.noble.tags, "Policing")) return {"v": 0, "unit": "%", "why": "Policing Noble"};
 		let base = {"v": this.calcUnrest().v, "unit": " shares", "why": "Unrest"};
 		let mods = [];
 		if (this.noble.name != undefined) mods.push({"v": -0.5, "unit": "%", "why": "Noble"});
@@ -533,6 +543,7 @@ class Kingdom {
 		this.signingbonushint = dataEntry.signingbonushint;
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
+		this.profiles = dataEntry.profiles;
 	}
 
 	calcRecruitment(extraMod=0) {
@@ -585,7 +596,7 @@ class Kingdom {
 		for (let r of g_data.regions) {
 			if (r.kingdom != this.name) continue;
 			if (!weights.hasOwnProperty(r.religion)) weights[r.religion] = 0;
-			weights[r.religion] += r.population * (r.noble != undefined && contains(r.noble.tags, "Pious") ? 3 : 1);
+			weights[r.religion] += r.population;
 		}
 		return weights;
 	}
@@ -665,11 +676,7 @@ class Character {
 	}
 
 	calcLevel(dimension) {
-		if (this.experience[dimension] >= 24) return 5;
-		if (this.experience[dimension] >= 15) return 4;
-		if (this.experience[dimension] >= 8) return 3;
-		if (this.experience[dimension] >= 3) return 2;
-		return 1;
+		return Math.sqrt(this.experience[dimension] + 1);
 	}
 
 	calcPlotPower() {
@@ -716,7 +723,6 @@ class Army {
 				mods.push({"v": fort - 1, "unit": "%", "why": "Fortifications"});
 			}
 		}
-		if (this.type == "army" && r.noble != undefined && r.noble.tags != undefined && contains(r.noble.tags, "Loyal") && r.kingdom == this.kingdom) mods.push({"v": .25, "unit": "%", "why": "Loyal noble"});
 		if (k != undefined && World.calcGlobalIdeology() == "Iruhan (Sword of Truth)") {
 			let state = k.calcStateReligion();
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .25, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology matches state ideology"});
@@ -731,3 +737,31 @@ class Army {
 		return Calc.moddedNum(base, mods);
 	}
 }
+
+// ============ CHURCH CONSTANTS ============
+let doctrineDescriptions = {
+	"ANTIAPOSTASY": ["-10 opinion each turn for nations loyal to the Cult."],
+	"ANTIECUMENISM": ["-20 opinion for constructing a non-Iruhan temple.", "-5 opinion each turn for having a non-Iruhan, non-Company state ideology."],
+	"ANTISCHISMATICISM": ["-10 opinion for constructing a Vessel of Faith temple."],
+	"ANTITERRORISM": ["-30 opinion for voting to summon any Gothi spell."],
+	"CRUSADE": ["-35 opinion each turn for any Iruhan nation not attacking every non-Iruhan nation (except Companies)."],
+	"DEFENDERS_OF_FAITH": ["+3 opinion per 100 casualties inflicted on nations with negative opinion.", "+15 opinion for conquering a region belonging to a ruler with negative opinion."],
+	"FRATERNITY": ["-35 opinion each turn for any Iruhan nation attacking another Iruhan nation."],
+	"INQUISITION": ["-35 opinion each turn for any Iruhan nation not attacking every Vessel of Faith nation."],
+	"MANDATORY_MINISTRY": ["-35 opinion each turn for any nation controlling an unimprisoned Cardinal not in the Holy City."],
+	"WORKS_OF_IRUHAN": ["+10 opinion for constructing an Iruhan temple."]
+};
+
+// ============ SCORE CONSTANTS ============
+let g_scoreProfiles = {
+	"PROSPERITY": {"selectable": true,  "description": ["+2 points per million civilians you feed with plentiful rations.", "+1 point per million civilians you feed with normal rations.", "-1 point per 6000 civilians that starve to death in your core regions.", "-1 point per 12000 civilians that starve in the core regions of a nation paying you tribute."]},
+	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
+	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 5000 gold.", "+1 point per turn you have more than 1000 gold.", "-1 point per turn you have less than 500 gold."]},
+	"TERRITORY":  {"selectable": true,  "description": ["+4 points whenever you gain rulership of a region.", "-4 points whenever you lose rulership of a region."]},
+	"GLORY":      {"selectable": true,  "description": ["+1 point per battle in which you inflict or suffer more than 2000 casualties.", "-1 point any turn you inflict or suffer less than 500 casualties total."]},
+	"RELIGION":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion.", "-2 points whenever a region is converted away from your state religion."]},
+	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy or neutral army is within two regions of your core regions.", "+1 point per turn no enemy army is adjacent to or occupying any of your core regions.", "-1 point if neither of the above apply."]},
+	"CULTURE":    {"selectable": true,  "description": ["+2 points per turn the mean unrest of population of your culture is lower than the mean unrest of all other people.", "-2 points otherwise."]},
+	"IDEOLOGY":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion and ideology.", "-2 points whenever a region of your ideology is converted to another religion or ideology."]},
+	"CULTISM":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region that is not an objective region."]}
+};
