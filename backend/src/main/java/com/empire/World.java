@@ -452,20 +452,20 @@ public class World extends RulesObject implements GoodwillProvider {
 				c.kingdom = kingdom;
 				if (i == 0) c.addTag(Character.Tag.RULER);
 				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
-				c.addExperienceGeneral();
-				c.addExperienceAdmiral();
-				c.addExperienceSpy();
-				c.addExperienceGovernor();
 				if (i == 2) {
+					c.addExperienceGeneral();
 					c.addExperienceGeneral();
 					c.addExperienceGeneral();
 				} else if (i == 3) {
 					c.addExperienceAdmiral();
 					c.addExperienceAdmiral();
+					c.addExperienceAdmiral();
 				} else if (i == 0) {
 					c.addExperienceGovernor();
 					c.addExperienceGovernor();
+					c.addExperienceGovernor();
 				} else if (i == 1) {
+					c.addExperienceSpy();
 					c.addExperienceSpy();
 					c.addExperienceSpy();
 				}
@@ -1811,7 +1811,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void gainChurchIncome() {
-			double churchIncome = 200 + inspires * 20;
+			double churchIncome = getRules().churchIncomePerPlayer * numPlayers + inspires * 20;
 			HashMap<String, Double> foodBalance = new HashMap<>();
 			for (Region r : regions) {
 				if (r.isSea()) continue;
