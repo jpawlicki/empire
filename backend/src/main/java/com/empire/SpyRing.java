@@ -1,10 +1,13 @@
 package com.empire;
 
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.function.Function;
 
-class SpyRing extends RuleObject {
+class SpyRing extends RulesObject {
 	static SpyRing newSpyRing(Rules rules) { // For GSON.
 		return newSpyRing(rules, null, 0);
 	}
@@ -24,7 +27,7 @@ class SpyRing extends RuleObject {
 	private boolean hidden = true;
 	private String orderhint = "";
 
-	private transient Integer involvedInPlotId;
+	private transient Integer involvedInPlotId; // null indicates no involvement.
 	private transient InvolvementDisposition involvementType;
 
 	public double calcPlotPower(World w, Region target) {
@@ -40,8 +43,8 @@ class SpyRing extends RuleObject {
 		Function<Node, Node> getPower = n -> {
 			Region r = n.location;
 			if (r.isSea()) return new Node(n.power * getRules().plotDecaySea, n.location);
-			double unrestFactor = NationData.isFriendly(c.kingdom, r.kingdom, w) ? r.calcUnrest(w) : 1 - r.calcUnrest(w);
-			return new Node(n.power * (getRules().plotDecayMin + unrestFacor * (getRules().plotDecayMax - getRules().plotDecayMin)), n.location);
+			double unrestFactor = NationData.isFriendly(kingdom, r.getKingdom(), w) ? r.calcUnrest(w) : 1 - r.calcUnrest(w);
+			return new Node(n.power * (getRules().plotDecayMin + unrestFactor * (getRules().plotDecayMax - getRules().plotDecayMin)), n.location);
 		};
 
 		PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> -n.power));
@@ -73,17 +76,29 @@ class SpyRing extends RuleObject {
 		strength *= getRules().spyRingDamageFactor;
 	}
 
-	public void involve(String plotId, InvolvementDisposition involvement) {
+	public void involve(int plotId, InvolvementDisposition involvement) {
 		involvedInPlotId = plotId;
 		involvementType = involvement;
 	}
 
-	public Optional<InvolvementDisposition> isInvolved(String plotId) {
+	Optional<InvolvementDisposition> getInvolvementIn(int plotId) {
 		return plotId.equals(involvedInPlotId) ? Optional.of(involvementType) : Optional.empty();
 	}
 
+	void addContributionTo(int plotId, Region targetRegion, String defender, World w, PlotOutcomeWeights outcome) {
+		if (!kingdom.equals(defender) && involvedInPlotId != plotId) return;
+		double strength = calcPlotPower(w, targetRegion);
+		if (kingdom.equals(defender)) outcome.defend(strength);
+		else if (plotId == involvedInPlotId && involvementDisposition == InvolvementDisposition.SUPPORTING) outcome.support();
+		else if (plotId == involvedInPlotId && involvementDisposition == InvolvementDisposition.SABOTAGING) outcome.sabotage();
+	}
+
+	boolean belongsTo(String kingdom) {
+		return this.kingdom.equals(kingdom);
+	}
+
 	public void grow() {
-		strength += (rules.spyRingMaxStrength - strength) * rules.spyRingGrowthFactor;
+		strength += (getRules().spyRingMaxStrength - strength) * getRules().spyRingGrowthFactor;
 	}
 
 	private SpyRing(Rules rules, String nation, double strength) {

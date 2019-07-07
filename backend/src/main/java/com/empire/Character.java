@@ -42,6 +42,10 @@ public class Character extends RulesObject {
 		this.location = location;
 	}
 
+	public Region getLocationRegion(World w) {
+		return w.regions.get(location);
+	}
+
 	private double calcLevel(double xp) {
 		return Math.sqrt(xp + 1);
 	}

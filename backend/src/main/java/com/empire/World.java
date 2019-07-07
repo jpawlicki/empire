@@ -97,6 +97,20 @@ public class World extends RulesObject implements GoodwillProvider {
 		return gameover;
 	}
 
+	public List<SpyRing> getSpyRings() {
+		return spyRings;
+	}
+
+	public Optional<Character> getCharacterByName(String name) {
+		for (Character c : characters) if (c.name.equals(name)) return Optional.of(c);
+		return Optional.empty();
+	}
+
+	public Optional<Character> getRuler(String kingdom) {
+		for (Character c : characters) if (c.hasTag(Character.RULER) && c.kingdom.equals(kingdom)) return Optional.of(c);
+		return Optional.empty();
+	}
+
 	private transient Geography geography;
 
 
@@ -3001,7 +3015,7 @@ final class Communication {
 	String from = "";
 	String signed = "";
 	List<String> to = new ArrayList<>();
-	List<String> intercepted = new ArrayList<>();
+	Set<String> intercepted = new HashSet<>();
 	String text = "";
 	int postDate = -1;
 }
