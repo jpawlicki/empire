@@ -94,8 +94,8 @@ class CharacterReport extends HTMLElement {
 		// Add skills.
 		for (let skill of ["admiral", "general", "governor", "spy"]) {
 			let t = document.createElement("tooltip-element");
-			t.innerHTML = Math.floor(c.calcLevel(skill) * 100) / 100;
-			t.setAttribute("tooltip", getEffect(l, skill));
+			t.innerHTML = Math.floor(c.calcLevel(skill) * 10) / 10;
+			t.setAttribute("tooltip", getEffect(c.calcLevel(skill), skill));
 			shadow.getElementById("skill_" + skill).appendChild(t);
 		}
 	}
@@ -104,12 +104,12 @@ customElements.define("character-report", CharacterReport);
 
 let getEffect = function(level, skill) {
 	if (skill == "general") {
-		return "Armies led are +" + level * 20 + "% as effective.";
+		return "Armies led are +" + Math.round(level * 20) + "% as effective.";
 	} else if (skill == "admiral") {
-		return "Navies led are +" + level * 20 + "% as effective.";
+		return "Navies led are +" + Math.round(level * 20) + "% as effective.";
 	} else if (skill == "governor") {
-		return "The Govern action produces +" + level * 50 + "% more taxation and recruitment.";
+		return "The Govern action produces +" + Math.round(level * 50) + "% more taxation and recruitment.";
 	} else if (skill == "spy") {
-		return "+" + level * 30 + "% plot strength.";
+		return "+" + Math.round(level * 30) + "% plot strength.";
 	}
 }

@@ -536,7 +536,6 @@ public class World extends RulesObject implements GoodwillProvider {
 	}
 
 	class Advancer {
-		final Geography geo;
 		final Map<String, Map<String, String>> orders;
 		HashMap<String, List<String>> tributes = new HashMap<>();
 		HashSet<String> lastStands = new HashSet<>();
@@ -557,7 +556,6 @@ public class World extends RulesObject implements GoodwillProvider {
 
 		Advancer(Map<String, Map<String, String>> orders) throws IOException {
 			this.orders = orders;
-			this.geo = Geography.loadGeography(ruleSet, numPlayers);
 		}
 
 		Map<String, String> advance() {
@@ -780,7 +778,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				}
 				for (Region r : regions) {
 					if (r.religion == null) continue;
-					if (r.religion.toString().toLowerCase().equals(g.toString().toLowerCase())) {
+					if (r.religion.toString().toLowerCase().contains(g.toString().toLowerCase())) {
 						votesTotal++;
 						if (getNation(r.getKingdom()).gothi.getOrDefault(g, false)) votes++;
 					}
@@ -1224,7 +1222,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				}
 				if (tivar.deluge < 2 && army.isNavy() && region.isLand() && regions.get(toId).isLand()) continue;
 				int crossing = -1;
-				for (Geography.Border b : geo.borders) if ((b.a == army.location && b.b == toId) || (b.b == army.location && b.a == toId)) crossing = b.w;
+				for (Geography.Border b : geography.borders) if ((b.b != null && b.a == army.location && b.b == toId) || (b.b != null && b.b == army.location && b.a == toId)) crossing = b.w;
 				Preparation prep = null;
 				for (Preparation p : army.preparation) if (p.to == toId) prep = p;
 				int travelAmount = 1;
@@ -1282,7 +1280,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						if (regions.get(i).name.equals(destination)) toId = i;
 					}
 					int crossing = -1;
-					for (Geography.Border b : geo.borders) if ((b.a == c.location && b.b == toId) || (b.b == c.location && b.a == toId)) crossing = b.w;
+					for (Geography.Border b : geography.borders) if ((b.b != null && b.a == c.location && b.b == toId) || (b.b != null && b.b == c.location && b.a == toId)) crossing = b.w;
 					Preparation prep = null;
 					for (Preparation p : c.preparation) if (p.to == toId) prep = p;
 					if (prep == null) {
@@ -2358,7 +2356,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (String k : remove) unruled.remove(k);
 			for (String k : unruled) {
 				Character c = Character.newCharacter(getRules());
-				c.name = WorldConstantData.getRandomName(geo.getKingdom(k).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				c.name = WorldConstantData.getRandomName(geography.getKingdom(k).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
 				c.honorific = "Protector ";
 				c.kingdom = k;
 				c.addTag(Character.Tag.RULER);
