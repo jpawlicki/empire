@@ -2,17 +2,23 @@ package com.empire;
 
 import com.empire.util.StringUtil;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 class Plot extends RulesObject {
 	static Plot newPlot(Rules rules) { // For GSON.
 		return new Plot(rules);
 	}
 
-	static Plot newPlot(Rules rules, Set<Integer> existingPlotIds) {
+	static Plot newPlot(Rules rules, Set<Integer> existingPlotIds, PlotType type, String targetId, List<String> conspirators) {
 		Plot p = new Plot(rules);
 		int i = (int) (Math.random() * 10000);
 		int trials = 0;
@@ -25,9 +31,13 @@ class Plot extends RulesObject {
 			i = Collections.max(existingPlotIds) + 1;
 		}
 		p.plotId = i;
+		p.type = type;
+		p.targetId = targetId;
+		p.conspirators = new ArrayList<>(conspirators);
+		return p;
 	}
 
-	abstract enum PlotType {
+	enum PlotType {
 		// Character
 		ASSASSINATE(
 			(targetId, world) -> "Assassinate " + targetId,
@@ -52,7 +62,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "rescue " + targetId + world.getCharacterByName(targetId).map(c -> " (a hero of " + c.kingdom + ")").orElse(""),
 			PlotType::getTargetRegionCharacter,
 			PlotType::getDefenderCharacter,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				world.getCharacterByName(targetId).ifPresent(c -> c.captor = "");
 			},
 			PlotType::characterOutcomeInfluencer),
@@ -60,37 +70,37 @@ class Plot extends RulesObject {
 		// Region
 		BURN_SHIPYARD(
 			(targetId, world) -> "Burn Shipyard in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
-			(targetId, world) -> "Burn Shipyard in " + getTargetRegionRegion(targetId, world).map(r -> r.name).name + " (a ,
+			(targetId, world) -> "Burn Shipyard in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> {
 					r.constructions
 							.stream()
 							.filter(c -> c.type == Construction.Type.SHIPYARD)
-							.reduce((a, b) -> a.cost > b.cost ? a : b)
+							.reduce((a, b) -> a.originalCost > b.originalCost ? a : b)
 							.ifPresent(c -> r.constructions.remove(c));
 				});
 			},
 			PlotType::noOpOutcomeInfluencer),
 		SABOTAGE_FORTIFICATIONS(
-			"title",
-			"details",
+			(targetId, world) -> "Sabotage Fortifications in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Sabotage Fortifications in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> {
 					r.constructions
 							.stream()
 							.filter(c -> c.type == Construction.Type.FORTIFICATIONS)
-							.reduce((a, b) -> a.cost > b.cost ? a : b)
+							.reduce((a, b) -> a.originalCost > b.originalCost ? a : b)
 							.ifPresent(c -> r.constructions.remove(c));
 				});
 			},
 			PlotType::noOpOutcomeInfluencer),
 		SPOIL_FOOD(
-			"title",
-			"details",
+			(targetId, world) -> "Spoil Food in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Spoil Food in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
 			(targetId, world, perpetrator) -> {
@@ -98,8 +108,8 @@ class Plot extends RulesObject {
 			},
 			PlotType::noOpOutcomeInfluencer),
 		SPOIL_CROPS(
-			"title",
-			"details",
+			(targetId, world) -> "Spoil Crops in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Spoil Crops in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
 			(targetId, world, perpetrator) -> {
@@ -107,82 +117,88 @@ class Plot extends RulesObject {
 			},
 			PlotType::noOpOutcomeInfluencer),
 		INCITE_UNREST(
-			"title",
-			"details",
+			(targetId, world) -> "Incite Unrest in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Incite Unrest in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> r.unrestPopular = Math.min(1, r.unrestPopular + 0.4));
 			},
 			PlotType::noOpOutcomeInfluencer),
 		PIN_FOOD(
-			"title",
-			"details",
+			(targetId, world) -> "Pin Food in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Pin Food in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> r.pinFood());
 			},
 			PlotType::noOpOutcomeInfluencer),
 		MURDER_NOBLE(
-			"title",
-			"details",
+			(targetId, world) -> "Murder Noble in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Murder Noble in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				getTargetRegionRegion(targetId, world)
 						.ifPresent(
 								r -> {
-									if (r.hasNoble()) r.noble = Noble.newNoble(r.culture, date, getRules());
+									if (r.hasNoble()) r.noble = Noble.newNoble(r.culture, world.date, world.getRules());
 								});
 			},
 			PlotType::noOpOutcomeInfluencer),
 		POISON_RELATIONS(
-			"title",
-			"details",
+			(targetId, world) -> "Upset Noble in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region"),
+			(targetId, world) -> "Upset Noble in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) {
+			(targetId, world, perpetrator) -> {
 				getTargetRegionRegion(targetId, world).map(r -> r.noble).ifPresent(n -> n.unrest = Math.min(1, n.unrest + .15));
 			},
 			PlotType::noOpOutcomeInfluencer),
 
 		// Church
 		PRAISE(
-			"title",
-			"details",
+			(targetId, world) -> "Praise " + targetId,
+			(targetId, world) -> "Praise " + targetId,
 			PlotType::getTargetRegionChurch,
-			() -> { /* defender */ },
+			(targetId, world) -> {
+				// Defender is the nation with immediately greater goodwill; or the runner up if the target has the most.
+				List<String> nations = new ArrayList<>(world.getNationNames());
+				Collections.sort(nations, Comparator.comparingDouble(n -> world.getNation(n).goodwill));
+				int index = nations.indexOf(targetId);
+				return Optional.of(nations.get(index == nations.size() - 1 ? index - 1 : index + 1));
+			},
 			(targetId, world, perpetrator) -> {
 				world.getNation(targetId).goodwill += 20;
 			},
 			PlotType::noOpOutcomeInfluencer),
 		DENOUNCE(
-			"title",
-			"details",
+			(targetId, world) -> "Denounce " + targetId,
+			(targetId, world) -> "Denounce " + targetId,
 			PlotType::getTargetRegionChurch,
-			() -> { /* defender */ },
-			(targetId, world, perpetrator) {
+			(targetId, world) -> Optional.of(targetId),
+			(targetId, world, perpetrator) -> {
 				world.getNation(targetId).goodwill -= 20;
 			},
 			PlotType::noOpOutcomeInfluencer),
 
 		// Nation
 		INTERCEPT_COMMUNICATIONS(
-			"title",
-			"details",
+			(targetId, world) -> "Intercept " + targetId + " Communications",
+			(targetId, world) -> "Intercept the communications of " + targetId,
 			PlotType::getTargetRegionNation,
 			PlotType::getDefenderNation,
-			(targetId, world, perpetrator) {
-				for (Communication c : communications) if (c.from.equals(targetId) || c.to.contains(targetId)) c.intercepted.add(perpetrator);
+			(targetId, world, perpetrator) -> {
+				for (Communication c : world.communications) if (c.from.equals(targetId) || c.to.contains(targetId)) c.intercepted.add(perpetrator);
 			},
 			PlotType::noOpOutcomeInfluencer),
 		SURVEY_NATION(
-			"title",
-			"details",
+			(targetId, world) -> "Survey " + targetId,
+			(targetId, world) -> "Compile a report on the treasury and armed forces of " + targetId,
 			PlotType::getTargetRegionNation,
-			PlotType::getDefenderNation
-			(targetId, world, perpetrator) {
+			PlotType::getDefenderNation,
+			(targetId, world, perpetrator) -> {
 				double soldiers = 0;
 				double warships = 0;
 				for (Army a : world.armies) {
@@ -199,7 +215,7 @@ class Plot extends RulesObject {
 		}
 
 		private static Optional<Region> getTargetRegionRegion(String id, World w) {
-			return w.regions.get(Integer.parseInt(id));
+			return Optional.of(w.regions.get(Integer.parseInt(id)));
 		}
 
 		private static Optional<Region> getTargetRegionChurch(String id, World w) {
@@ -223,36 +239,40 @@ class Plot extends RulesObject {
 		}
 
 		private static interface OutcomeInfluencer {
-			void accept(String targetId, World world, PlotOutcomeWeights outcome);
+			void accept(String targetId, World world, OutcomeWeights outcome, Function<Army, Double> armyStrengthProvider);
 		}
 
-		private static void noOpOutcomeInfluencer(String targetId, World w, PlotOutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
+		private static interface OutcomeAction {
+			void accept(String targetId, World world, String perpetrator);
+		}
+
+		private static void noOpOutcomeInfluencer(String targetId, World w, OutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
 			/** Do nothing */
 		}
 
-		private static void characterOutcomeInfluencer(String targetId, World w, PlotOutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
+		private static void characterOutcomeInfluencer(String targetId, World w, OutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
 			Optional<Character> target = w.getCharacterByName(targetId);
-			if (target.isAbsent()) return;
+			if (!target.isPresent()) return;
 			Optional<String> defender = getDefenderCharacter(targetId, w);
-			if (defender.isAbsent()) return;
+			if (!defender.isPresent()) return;
 			for (Army a : w.armies) if (a.location == target.get().location && a.kingdom.equals(defender.get())) {
-				outcome.addFailureChance(armyStrengthProvider(a));
+				outcome.addFailureChance(armyStrengthProvider.apply(a));
 			}
 		}
 
-		private final String title;
-		private final String details;
+		private final BiFunction<String, World, String> title;
+		private final BiFunction<String, World, String> details;
 		private final BiFunction<String, World, Optional<Region>> targetFunction;
 		private final BiFunction<String, World, Optional<String>> defenderFunction;
-		private final BiConsumer<String, World> onSuccess;
+		private final OutcomeAction onSuccess;
 		private final OutcomeInfluencer outcomeInfluencer;
 
 		private PlotType(
-				String title,
-				String details,
+				BiFunction<String, World, String> title,
+				BiFunction<String, World, String> details,
 				BiFunction<String, World, Optional<Region>> targetFunction,
 				BiFunction<String, World, Optional<String>> defenderFunction,
-				BiConsumer<String, World> onSuccess,
+				OutcomeAction onSuccess,
 				OutcomeInfluencer outcomeInfluencer) {
 			this.title = title;
 			this.details = details;
@@ -262,12 +282,12 @@ class Plot extends RulesObject {
 			this.outcomeInfluencer = outcomeInfluencer;
 		}
 
-		String getTitle(String targetId) {
-			return title.replace("%TARGETID%", targetId);
+		String getTitle(String targetId, World world) {
+			return title.apply(targetId, world);
 		}
 
-		String getDetails(String targetId) {
-			return details.replace("%TARGETID%", targetId);
+		String getDetails(String targetId, World world) {
+			return details.apply(targetId, world);
 		}
 
 		Optional<Region> getTargetRegion(String targetId, World w) {
@@ -278,16 +298,16 @@ class Plot extends RulesObject {
 			return defenderFunction.apply(targetId, w);
 		}
 
-		void onSuccess(String targetId, World w) {
-			onSuccess.accept(targetId, w);
+		void onSuccess(String targetId, World w, String perpetrator) {
+			onSuccess.accept(targetId, w, perpetrator);
 		}
 		
-		void influenceOutcome(String targetId, World w, PlotOutcomeWeights outcome, armyStrengthProvider) {
+		void influenceOutcome(String targetId, World w, OutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
 			outcomeInfluencer.accept(targetId, w, outcome, armyStrengthProvider);
 		}
 	}
 
-	class PlotOutcomeWeights {
+	class OutcomeWeights {
 		private double success = 0;
 		private double failure = 0;
 		private double criticalFailure = 0;
@@ -338,75 +358,92 @@ class Plot extends RulesObject {
 
 	private double strengthBoost;
 
-	private List<String> consipirators;
+	private List<String> conspirators;
+
+	private String perpetrator;
+
+	public int getId() {
+		return plotId;
+	}
 
 	public void addConspirator(String kingdom) {
 		conspirators.add(kingdom);
 	}
 
+	public boolean hasConspirator(String nation) {
+		return conspirators.contains(nation);
+	}
+
+	public List<String> getConspirators() {
+		return Collections.unmodifiableList(conspirators);
+	}
+
 	public boolean hasAnySupport(Collection<SpyRing> rings) {
-		for (SpyRing ring : w.getSpyRings()) {
-			Optional<InvolvementDisposition> involvedIn = ring.getInvolvementIn(plotId);
+		for (SpyRing ring : rings) {
+			Optional<SpyRing.InvolvementDisposition> involvedIn = ring.getInvolvementIn(plotId);
 			if (involvedIn.isPresent() && involvedIn.get() == SpyRing.InvolvementDisposition.SUPPORTING) return true;
 		}
 		return false;
 	}
 
-	public void execute(World w) {
+	public void execute(World w, Function<Army, Double> armyStrengthProvider) {
 		// Find target.
-		Region targetRegion = type.getTargetRegion(w, targetId);
-		String defender = type.getDefender(w, targetId);
+		Optional<Region> targetRegion = type.getTargetRegion(targetId, w);
+		Optional<String> defender = type.getDefender(targetId, w);
+		if (!targetRegion.isPresent() || !defender.isPresent()) return;
 
-		PlotOutcomeWeights outcome = new PlotOutcomeWeights();
-		type.influenceOutcome(outcome, targetId, w);
+		OutcomeWeights outcome = new OutcomeWeights();
+		type.influenceOutcome(targetId, w, outcome, armyStrengthProvider);
 
 		// Get involved spy rings.
-		for (SpyRing ring : w.getSpyRings()) ring.addContributionTo(plotId, targetRegion, defender, w, outcome);
+		for (SpyRing ring : w.getSpyRings()) ring.addContributionTo(plotId, targetRegion.get(), defender.get(), w, outcome);
+
+		outcome.success *= 1 + strengthBoost;
 
 		// Compute probability of success / fail / critical failure.
 		double roll = Math.random() * (outcome.success + outcome.failure + outcome.criticalFailure);
 
 		// If the plot is supported by a ring belonging to the defender, it always succeeds.
-		for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId) == SpyRing.InvolvementDisposition.SUPPORTING && ring.belongsTo(defender)) roll = 0;
+		for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).get() == SpyRing.InvolvementDisposition.SUPPORTING && ring.belongsTo(defender.get())) roll = 0;
 
 		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chancee of success, assuming no sabotge.";
 		if (roll <=  outcome.success) {
-			type.onSuccess(targetId);
-			w.notifyAll("Plot: " + type.getTitle(targetId), "A plot to " + type.getDetails(targetId) + " has succeeded." + apparentChance);
+			type.onSuccess(targetId, w, perpetrator);
+			w.notifyAllPlayers("Plot: " + type.getTitle(targetId, w), "A plot to " + type.getDetails(targetId, w) + " has succeeded." + apparentChance);
 		} else if (roll <= outcome.failure + outcome.success) {
 			// Reveal a random supporting spy ring to everyone.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
-			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
+			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).get() == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
 			SpyRing unlucky = null;
 			if (!supporters.isEmpty()) {
 				unlucky = supporters.get((int) (Math.random() * supporters.size()));
 				unlucky.expose();
 			}
-			w.notifyAll("Plot: " + type.getTitle(targetId), "A plot to " + type.getDetails(targetId) + " has failed. " + (unlucky != null ? "The involvement of " + unlucky.getKingdom() + " was proven." : "In the end, all kingdoms withdrew support from the plot.") + apparentChance);
+			w.notifyAllPlayers("Plot: " + type.getTitle(targetId, w), "A plot to " + type.getDetails(targetId, w) + " has failed. " + (unlucky != null ? "The involvement of " + unlucky.getNation() + " was proven." : "In the end, all kingdoms withdrew support from the plot.") + apparentChance);
 		} else {
 			// Build reveal set. - One random supporting ring, then all others have a 50% chance.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
-			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
+			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).get() == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
 			Set<String> knownConspirators = new HashSet<String>();
 			if (!supporters.isEmpty()) {
 				SpyRing unlucky = supporters.remove((int) (Math.random() * supporters.size()));
 				unlucky.expose();
 				unlucky.damage();
-				knownConspirators.add(unlucky.getKingdom());
+				knownConspirators.add(unlucky.getNation());
 			}
 			for (SpyRing ring : supporters) if (Math.random() < 0.5) {
 				ring.expose();
 				ring.damage();
-				knownConspirators.add(ring.getKingdom());
+				knownConspirators.add(ring.getNation());
 			}
-			w.notifyAll("Plot: " + type.getTitle(targetId), "A plot to " + type.getDetails(targetId) + " has critically failed. " + (knownConsipirators.isEmpty() ? "In the end, all conspirators withdrew support from the plot." : "The involvement of " + StringUtil.and(knownConspirators) + " was proven.") + apparentChance);
+			w.notifyAllPlayers("Plot: " + type.getTitle(targetId, w), "A plot to " + type.getDetails(targetId, w) + " has critically failed. " + (knownConspirators.isEmpty() ? "In the end, all conspirators withdrew support from the plot." : "The involvement of " + StringUtil.and(knownConspirators) + " was proven.") + apparentChance);
 		}
 	}
 
 	/** Returns true if the plot has been executed. */
-	public boolean check(World w) {
-		if (Math.random() < getRules().plotEarlyTriggerChance) {
-			execute(w);
+	public boolean check(World w, boolean triggered, Function<Army, Double> armyStrengthProvider) {
+		if (triggered || Math.random() < getRules().plotEarlyTriggerChance) {
+			execute(w, armyStrengthProvider);
 			return true;
 		}
 		strengthBoost += getRules().plotStrengthGrowth;

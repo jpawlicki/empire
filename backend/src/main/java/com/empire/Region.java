@@ -33,6 +33,8 @@ class Region extends RulesObject {
 
 	private String kingdom;
 
+	private transient boolean foodPinned = false;
+
 	//TODO: does this method belong with kingdom/nation?
 	static int numUniqueIdeologies(String kingdom, World w) {
 		return (int) w.regions.stream()
@@ -354,6 +356,14 @@ class Region extends RulesObject {
 		maxHarvest = Math.min(crops, maxHarvest);
 		food += maxHarvest;
 		crops = 0;
+	}
+
+	void pinFood() {
+		foodPinned = true;
+	}
+
+	boolean getFoodPinned() {
+		return foodPinned;
 	}
 
 	private Region(Rules rules) {

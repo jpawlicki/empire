@@ -25,10 +25,8 @@ class SpyRing extends RulesObject {
 	private int location;
 	private double strength;
 	private boolean hidden = true;
-	private String orderhint = "";
-
-	private transient Integer involvedInPlotId; // null indicates no involvement.
-	private transient InvolvementDisposition involvementType;
+	private Integer involvedInPlotId; // null indicates no involvement.
+	private InvolvementDisposition involvementType;
 
 	public double calcPlotPower(World w, Region target) {
 		final class Node {
@@ -43,7 +41,7 @@ class SpyRing extends RulesObject {
 		Function<Node, Node> getPower = n -> {
 			Region r = n.location;
 			if (r.isSea()) return new Node(n.power * getRules().plotDecaySea, n.location);
-			double unrestFactor = NationData.isFriendly(kingdom, r.getKingdom(), w) ? r.calcUnrest(w) : 1 - r.calcUnrest(w);
+			double unrestFactor = NationData.isFriendly(nation, r.getKingdom(), w) ? r.calcUnrest(w) : 1 - r.calcUnrest(w);
 			return new Node(n.power * (getRules().plotDecayMin + unrestFactor * (getRules().plotDecayMax - getRules().plotDecayMin)), n.location);
 		};
 
@@ -64,6 +62,14 @@ class SpyRing extends RulesObject {
 		return 0;
 	}
 
+	public String getNation() {
+		return nation;
+	}
+
+	public int getLocation() {
+		return location;
+	}
+
 	public void expose() {
 		hidden = false;
 	}
@@ -72,7 +78,7 @@ class SpyRing extends RulesObject {
 		return !hidden;
 	}
 
-	public boolean damage() {
+	public void damage() {
 		strength *= getRules().spyRingDamageFactor;
 	}
 
@@ -82,19 +88,20 @@ class SpyRing extends RulesObject {
 	}
 
 	Optional<InvolvementDisposition> getInvolvementIn(int plotId) {
-		return plotId.equals(involvedInPlotId) ? Optional.of(involvementType) : Optional.empty();
+		if (involvedInPlotId == null) return Optional.empty();
+		return plotId == involvedInPlotId ? Optional.of(involvementType) : Optional.empty();
 	}
 
-	void addContributionTo(int plotId, Region targetRegion, String defender, World w, PlotOutcomeWeights outcome) {
-		if (!kingdom.equals(defender) && involvedInPlotId != plotId) return;
+	void addContributionTo(int plotId, Region targetRegion, String defender, World w, Plot.OutcomeWeights outcome) {
+		if (!nation.equals(defender) && involvedInPlotId != plotId) return;
 		double strength = calcPlotPower(w, targetRegion);
-		if (kingdom.equals(defender)) outcome.defend(strength);
-		else if (plotId == involvedInPlotId && involvementDisposition == InvolvementDisposition.SUPPORTING) outcome.support();
-		else if (plotId == involvedInPlotId && involvementDisposition == InvolvementDisposition.SABOTAGING) outcome.sabotage();
+		if (nation.equals(defender)) outcome.defend(strength);
+		else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SUPPORTING) outcome.support(strength);
+		else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SABOTAGING) outcome.sabotage(strength);
 	}
 
 	boolean belongsTo(String kingdom) {
-		return this.kingdom.equals(kingdom);
+		return nation.equals(kingdom);
 	}
 
 	public void grow() {

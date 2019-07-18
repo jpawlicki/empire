@@ -274,6 +274,8 @@
 				g_data.regions = [];
 				g_data.rtc = g_turndata[date].rtc;
 				g_data.tivar = g_turndata[date].tivar;
+				g_data.plots = g_turndata[date].plots;
+				g_data.spyrings = g_turndata[date].spy_rings;
 				for (let i = 0; i < g_regions.length; i++) {
 					g_data.regions.push(new Region(i, g_regions[i], g_turndata[date].regions[i], g_data.date));
 				}

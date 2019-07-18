@@ -113,6 +113,16 @@ public class Rules {
 
 	Character noLeader;
 
+	// Plots
+	double plotDecayMin;
+	double plotDecayMax;
+	double plotEarlyTriggerChance;
+	double plotStrengthGrowth;
+	double spyRingDamageFactor;
+	double spyRingGrowthFactor;
+	double spyRingMaxStrength;
+	double sabotagingRingFactor;
+	/*
 	double basePlotStrength;
 	double guardAgainstPlotMod;
 	double perSpyLevelPlotMod;
@@ -120,7 +130,9 @@ public class Rules {
 	double companyPlotMod;
 	double perInspirePlotMod;
 	double capturedPlotMod;
+	*/
 
+	// Characters
 	double oneDimExpAdd;
 	double allDimExpAdd;
 	double perLevelLeaderMod;
