@@ -58,6 +58,7 @@ public class Rules {
 	double seafaringMod;
 
 	double razeRefundFactor;
+	double razesPerNormalizedStrength;
 
 	String pirateKingdom = "Pirate";
 
@@ -207,4 +208,6 @@ public class Rules {
 	double crusadeOpinion;
 	double fraternityOpinion;
 	double mandatoryMinistryOpinion;
+
+	double churchIncomePerPlayer;
 }

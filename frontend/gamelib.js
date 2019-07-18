@@ -313,7 +313,7 @@ class Region {
 		if (forts == 0) {
 			return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}]);
 		}
-		return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]);
+		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 5, "unit": "%", "why": "Maximum Fortification"}]);
 	}
 
 	calcMinConquestSize() {

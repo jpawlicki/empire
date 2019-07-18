@@ -329,9 +329,9 @@ class Region extends RulesObject {
 			if (closeRegions.contains(n.r)) continue;
 			closeRegions.add(n.r);
 			for (Geography.Border b : w.getGeography().borders) {
-				if (b.a == n.r && b.w + n.dist < limit) {
+				if (b.b != null && b.a == n.r && b.w + n.dist < limit) {
 					queue.add(new Node(b.b, b.w + n.dist));
-				} else if (b.b == n.r && b.w + n.dist < limit) {
+				} else if (b.b != null && b.b == n.r && b.w + n.dist < limit) {
 					queue.add(new Node(b.a, b.w + n.dist));
 				}
 			}
