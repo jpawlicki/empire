@@ -89,7 +89,7 @@ class Army extends RulesObject {
 	public double raze(World w, String order, Character leader, int inspires, boolean lastStanding) {
 		if (!isArmy()) return 0;
 		Region region = w.regions.get(location);
-		int razes = (int) (calcStrength(w, leader, inspires, lastStanding) * 2 / region.calcMinConquestStrength(w));
+		int razes = (int) (calcStrength(w, leader, inspires, lastStanding) * getRules().razesPerNormalizedStrength / region.calcMinConquestStrength(w));
 		if (razes == 0) {
 			w.notifications.add(new Notification(kingdom, "Razing Failed", "Army " + id + " is not powerful enough to raze constructions in " + region.name + "."));
 			return 0;

@@ -42,7 +42,7 @@ public class Lobby {
 	}
 
 	public boolean update(String nation, Nation setup) {
-		return nations.putIfAbsent(nation, setup) != null;
+		return nations.putIfAbsent(nation, setup) == null;
 	}
 
 	public void save(long gameId, DatastoreService service) {

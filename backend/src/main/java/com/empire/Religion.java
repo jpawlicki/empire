@@ -25,9 +25,9 @@ enum Ideology {
 	SYRJEN("Syrjen", Religion.NORTHERN),
 
 	@SerializedName("Tavian (Flame of Kith)")
-	FLAME_OF_KITH("Tavian", Religion.TAVIAN),
+	FLAME_OF_KITH("Flame of Kith", Religion.TAVIAN),
 	@SerializedName("Tavian (River of Kuun)")
-	RIVER_OF_KUUN("Tavian", Religion.TAVIAN),
+	RIVER_OF_KUUN("River of Kuun", Religion.TAVIAN),
 
 	@SerializedName("Company")
 	COMPANY("Company", Religion.NONE);

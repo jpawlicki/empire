@@ -574,10 +574,16 @@ public class EntryServlet extends HttpServlet {
 		try {
 			Lobby lobby = Lobby.load(r.gameId, service);
 			Geography geo = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
-			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(r.kingdom))) return false;
+			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(r.kingdom))) {
+				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + r.kingdom);
+				return false;
+			}
 			Nation nation = Nation.fromJson(r.body);
 			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
-			if (!lobby.update(r.kingdom, nation)) return false;
+			if (!lobby.update(r.kingdom, nation)) {
+				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + r.kingdom);
+				return false;
+			}
 			lobby.save(r.gameId, service);
 			try {
 				Player unused = Player.loadPlayer(nation.email, service);
