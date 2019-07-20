@@ -122,16 +122,8 @@ public class Rules {
 	double spyRingDamageFactor;
 	double spyRingGrowthFactor;
 	double spyRingMaxStrength;
+	double setupSpyRingStrength;
 	double sabotagingRingFactor;
-	/*
-	double basePlotStrength;
-	double guardAgainstPlotMod;
-	double perSpyLevelPlotMod;
-	double lyskrPlotMod;
-	double companyPlotMod;
-	double perInspirePlotMod;
-	double capturedPlotMod;
-	*/
 
 	// Characters
 	double oneDimExpAdd;
@@ -141,6 +133,7 @@ public class Rules {
 	double baseGovernTaxMod;
 	double perLevelGovernRecruitMod;
 	double perLevelGovernTaxMod;
+	double perLevelSpyRingEstablishmentStrength;
 
 	// Nations
 	double heroicExpMultiplier;

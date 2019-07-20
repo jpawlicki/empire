@@ -37,7 +37,7 @@ interface GoodwillProvider {
 
 
 public class World extends RulesObject implements GoodwillProvider {
-	private static final String TYPE = "World";
+	static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
 	int date;
@@ -447,6 +447,12 @@ public class World extends RulesObject implements GoodwillProvider {
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 			}
+		}
+		// Place spy rings.
+		for (String kingdom : nationSetup.keySet()) {
+			List<Integer> candidates = new ArrayList<>();
+			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) candidates.add(i);
+			w.spyRings.add(SpyRing.newSpyRing(w.getRules(), kingdom, w.getRules().setupSpyRingStrength, candidates.get((int)(Math.random() * candidates.size()))));
 		}
 		// Add characters, incl Cardinals
 		for (String kingdom : nationSetup.keySet()) {
@@ -991,10 +997,10 @@ public class World extends RulesObject implements GoodwillProvider {
 		void resolveIntrigue() {
 			// Update spy ring orders.
 			for (SpyRing ring : spyRings) {
-				String involveIn = orders.getOrDefault(ring.getNation(), new HashMap<String, String>()).get("spyring_" + ring.getLocation());
-				SpyRing.InvolvementDisposition involveType = SpyRing.InvolvementDisposition.valueOf(orders.getOrDefault(ring.getNation(), new HashMap<String, String>()).get("spyring_type_" + ring.getLocation()));
-				if (involveIn == null || involveType == null) continue; // No orders exist for the spy ring - assume no change.
 				try {
+					String involveIn = orders.getOrDefault(ring.getNation(), new HashMap<String, String>()).get("spyring_" + ring.getLocation());
+					SpyRing.InvolvementDisposition involveType = SpyRing.InvolvementDisposition.valueOf(orders.getOrDefault(ring.getNation(), new HashMap<String, String>()).getOrDefault("spyring_type_" + ring.getLocation(), ""));
+					if (involveIn == null || involveType == null) continue; // No orders exist for the spy ring - assume no change.
 					int plotId = Integer.parseInt(involveIn);
 					plots
 							.stream()
@@ -1003,7 +1009,9 @@ public class World extends RulesObject implements GoodwillProvider {
 							.findAny()
 							.ifPresent(p -> ring.involve(p.getId(), involveType));
 				} catch (NumberFormatException e) {
-					log.log(Level.WARNING, "Bad spy ring order: " + ring.getNation() + ", " + ring.getLocation() + ": " + involveIn, e);
+					log.log(Level.WARNING, "Bad spy ring order: " + ring.getNation() + ", " + ring.getLocation(), e);
+				} catch (IllegalArgumentException e) {
+					// Do nothing. This is just a missing involveType order.
 				}
 			}
 			// Evaluate current plots.
@@ -1052,6 +1060,9 @@ public class World extends RulesObject implements GoodwillProvider {
 					}
 				}
 			}
+
+			// Grow spy rings.
+			for (SpyRing s : spyRings) s.grow();
 		}
 
 		void doctrineChanges() {
@@ -1381,6 +1392,11 @@ public class World extends RulesObject implements GoodwillProvider {
 					region.noble = Noble.newNoble(region.culture, date, getRules());
 					c.orderhint = "";
 					c.addExperienceGovernor();
+				} else if (action.startsWith("Establish Spy Ring")) {
+					if (!region.isLand() || spyRings.stream().filter(r -> r.getNation().equals(c.kingdom) && r.getLocation() == c.location).count() != 0) continue;
+					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
+					c.orderhint = "";
+					c.addExperienceSpy();
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
 					if (!governors.containsKey(region) || governors.get(region).calcGovernTaxMod() < c.calcGovernTaxMod()) governors.put(region, c);
@@ -2752,13 +2768,14 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (!kingdom.equals(n.who)) remove.add(n);
 		}
 		for (Notification n : remove) notifications.remove(n);
+		// Filter plots. Plots disclose some details about spy rings in their power hints, so this must be done before filtering spy rings.
+		plots.removeIf(p -> !p.hasConspirator(kingdom));
+		for (Plot p : plots) p.filter(this, a -> a.calcStrength(this, characters.stream().filter(c -> c.leadingArmy == a.id).findAny().orElse(null), inspiresHint, false));
 		// Filter spy rings.
 		spyRings.removeIf(r -> !r.isExposed() && !r.getNation().equals(kingdom));
 		for (SpyRing r : spyRings) if (!r.getNation().equals(kingdom)) {
 			r.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
 		}
-		// Filter plots.
-		plots.removeIf(p -> !p.hasConspirator(kingdom));
 		// Filter communications.
 		ArrayList<Communication> removeComm = new ArrayList<>();
 		for (Communication c : communications) {

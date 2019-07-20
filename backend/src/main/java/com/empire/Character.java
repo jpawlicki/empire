@@ -63,6 +63,10 @@ public class Character extends RulesObject {
 		return calcLevel(experience.governor) * getRules().perLevelGovernTaxMod + getRules().baseGovernTaxMod;
 	}
 
+	public double calcSpyRingEstablishmentStrength() {
+		return calcLevel(experience.spy) * getRules().perLevelSpyRingEstablishmentStrength;
+	}
+
 	public void addExperienceAll() {
 		experience.general += getRules().allDimExpAdd;
 		experience.admiral += getRules().allDimExpAdd;

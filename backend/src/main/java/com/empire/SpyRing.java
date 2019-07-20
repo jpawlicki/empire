@@ -9,11 +9,11 @@ import java.util.function.Function;
 
 class SpyRing extends RulesObject {
 	static SpyRing newSpyRing(Rules rules) { // For GSON.
-		return newSpyRing(rules, null, 0);
+		return newSpyRing(rules, null, 0, 0);
 	}
 
-	static SpyRing newSpyRing(Rules rules, String nation, double strength) {
-		return new SpyRing(rules, nation, strength);
+	static SpyRing newSpyRing(Rules rules, String nation, double strength, int location) {
+		return new SpyRing(rules, nation, strength, location);
 	}
 
 	enum InvolvementDisposition {
@@ -93,7 +93,7 @@ class SpyRing extends RulesObject {
 	}
 
 	void addContributionTo(int plotId, Region targetRegion, String defender, World w, Plot.OutcomeWeights outcome) {
-		if (!nation.equals(defender) && involvedInPlotId != plotId) return;
+		if (!nation.equals(defender) && (involvedInPlotId == null || involvedInPlotId != plotId)) return;
 		double strength = calcPlotPower(w, targetRegion);
 		if (nation.equals(defender)) outcome.defend(strength);
 		else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SUPPORTING) outcome.support(strength);
@@ -108,9 +108,10 @@ class SpyRing extends RulesObject {
 		strength += (getRules().spyRingMaxStrength - strength) * getRules().spyRingGrowthFactor;
 	}
 
-	private SpyRing(Rules rules, String nation, double strength) {
+	private SpyRing(Rules rules, String nation, double strength, int location) {
 		super(rules);
 		this.nation = nation;
 		this.strength = strength;
+		this.location = location;
 	}
 }

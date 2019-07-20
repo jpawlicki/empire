@@ -33,7 +33,7 @@ class Plot extends RulesObject {
 		p.plotId = i;
 		p.type = type;
 		p.targetId = targetId;
-		p.conspirators = new ArrayList<>(conspirators);
+		p.conspirators = new HashSet<>(conspirators);
 		return p;
 	}
 
@@ -215,7 +215,7 @@ class Plot extends RulesObject {
 		}
 
 		private static Optional<Region> getTargetRegionRegion(String id, World w) {
-			return Optional.of(w.regions.get(Integer.parseInt(id)));
+			return w.regions.stream().filter(r -> r.name.equals(id)).findAny();
 		}
 
 		private static Optional<Region> getTargetRegionChurch(String id, World w) {
@@ -347,7 +347,7 @@ class Plot extends RulesObject {
 	 * The target ID format depends on the plot type:
 	 * <ul>
 	 *  <li>Character: a character name</li>
-	 *  <li>Region: a region ID (a number)</li>
+	 *  <li>Region: a region name</li>
 	 *  <li>Church: a nation name</li>
 	 *  <li>Nation: a nation name</li>
 	 * </ul>
@@ -358,9 +358,14 @@ class Plot extends RulesObject {
 
 	private double strengthBoost;
 
-	private List<String> conspirators;
+	private Set<String> conspirators;
 
 	private String perpetrator;
+
+	private double powerHintRandomizer;
+	private double powerHintRandomizerTotal;
+	private double powerHint;
+	private double powerHintTotal;
 
 	public int getId() {
 		return plotId;
@@ -374,8 +379,8 @@ class Plot extends RulesObject {
 		return conspirators.contains(nation);
 	}
 
-	public List<String> getConspirators() {
-		return Collections.unmodifiableList(conspirators);
+	public Set<String> getConspirators() {
+		return Collections.unmodifiableSet(conspirators);
 	}
 
 	public boolean hasAnySupport(Collection<SpyRing> rings) {
@@ -386,57 +391,68 @@ class Plot extends RulesObject {
 		return false;
 	}
 
-	public void execute(World w, Function<Army, Double> armyStrengthProvider) {
+	private OutcomeWeights getOutcomeWeights(World w, Function<Army, Double> armyStrengthProvider) {
 		// Find target.
-		Optional<Region> targetRegion = type.getTargetRegion(targetId, w);
 		Optional<String> defender = type.getDefender(targetId, w);
-		if (!targetRegion.isPresent() || !defender.isPresent()) return;
+		Optional<Region> targetRegion = type.getTargetRegion(targetId, w);
+		if (!targetRegion.isPresent() || !defender.isPresent()) return null;
 
 		OutcomeWeights outcome = new OutcomeWeights();
 		type.influenceOutcome(targetId, w, outcome, armyStrengthProvider);
-
-		// Get involved spy rings.
 		for (SpyRing ring : w.getSpyRings()) ring.addContributionTo(plotId, targetRegion.get(), defender.get(), w, outcome);
-
 		outcome.success *= 1 + strengthBoost;
 
-		// Compute probability of success / fail / critical failure.
+		return outcome;
+	}
+
+	public void execute(World w, Function<Army, Double> armyStrengthProvider) {
+		Optional<String> defender = type.getDefender(targetId, w);
+		OutcomeWeights outcome = getOutcomeWeights(w, armyStrengthProvider);
+
+		if (outcome == null || !defender.isPresent()) return;
+
+		// Roll the outcome.
 		double roll = Math.random() * (outcome.success + outcome.failure + outcome.criticalFailure);
 
 		// If the plot is supported by a ring belonging to the defender, it always succeeds.
-		for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).get() == SpyRing.InvolvementDisposition.SUPPORTING && ring.belongsTo(defender.get())) roll = 0;
+		for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING && ring.belongsTo(defender.get())) roll = 0;
 
-		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chancee of success, assuming no sabotge.";
-		if (roll <=  outcome.success) {
+		String title = type.getTitle(targetId, w);
+		String details = type.getDetails(targetId, w);
+		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chancee of success, assuming no sabotage.";
+		if (roll <= outcome.success) {
 			type.onSuccess(targetId, w, perpetrator);
-			w.notifyAllPlayers("Plot: " + type.getTitle(targetId, w), "A plot to " + type.getDetails(targetId, w) + " has succeeded." + apparentChance);
+			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has succeeded." + apparentChance);
 		} else if (roll <= outcome.failure + outcome.success) {
 			// Reveal a random supporting spy ring to everyone.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
-			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).get() == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
+			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
 			SpyRing unlucky = null;
 			if (!supporters.isEmpty()) {
 				unlucky = supporters.get((int) (Math.random() * supporters.size()));
 				unlucky.expose();
 			}
-			w.notifyAllPlayers("Plot: " + type.getTitle(targetId, w), "A plot to " + type.getDetails(targetId, w) + " has failed. " + (unlucky != null ? "The involvement of " + unlucky.getNation() + " was proven." : "In the end, all kingdoms withdrew support from the plot.") + apparentChance);
+			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has failed. " + (unlucky != null ? "The involvement of " + unlucky.getNation() + " was proven and their spy ring in " + w.regions.get(unlucky.getLocation()).name + " exposed." : "In the end, all kingdoms withdrew support from the plot.") + apparentChance);
 		} else {
 			// Build reveal set. - One random supporting ring, then all others have a 50% chance.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
-			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).get() == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
+			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
 			Set<String> knownConspirators = new HashSet<String>();
+			Set<String> exposureLocations = new HashSet<String>();
 			if (!supporters.isEmpty()) {
 				SpyRing unlucky = supporters.remove((int) (Math.random() * supporters.size()));
 				unlucky.expose();
 				unlucky.damage();
 				knownConspirators.add(unlucky.getNation());
+				exposureLocations.add(w.regions.get(unlucky.getLocation()).name);
 			}
 			for (SpyRing ring : supporters) if (Math.random() < 0.5) {
 				ring.expose();
 				ring.damage();
 				knownConspirators.add(ring.getNation());
+				exposureLocations.add(w.regions.get(ring.getLocation()).name);
 			}
-			w.notifyAllPlayers("Plot: " + type.getTitle(targetId, w), "A plot to " + type.getDetails(targetId, w) + " has critically failed. " + (knownConspirators.isEmpty() ? "In the end, all conspirators withdrew support from the plot." : "The involvement of " + StringUtil.and(knownConspirators) + " was proven.") + apparentChance);
+			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has critically failed. " + (knownConspirators.isEmpty() ? "In the end, all conspirators withdrew support from the plot." : "The involvement of " + StringUtil.and(knownConspirators) + " was proven. Spy rings were exposed in " + StringUtil.and(exposureLocations) + ".") + apparentChance);
 		}
 	}
 
@@ -444,13 +460,26 @@ class Plot extends RulesObject {
 	public boolean check(World w, boolean triggered, Function<Army, Double> armyStrengthProvider) {
 		if (triggered || Math.random() < getRules().plotEarlyTriggerChance) {
 			execute(w, armyStrengthProvider);
+			for (SpyRing s : w.spyRings) if (s.getInvolvementIn(plotId).isPresent()) s.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
 			return true;
 		}
 		strengthBoost += getRules().plotStrengthGrowth;
+		powerHintRandomizer = Math.random() * .2 + .9;
+		powerHintRandomizerTotal = Math.random() * .2 + .9;
 		return false;
+	}
+
+	public void filter(World w, Function<Army, Double> armyStrengthProvider) {
+		OutcomeWeights outcome = getOutcomeWeights(w, armyStrengthProvider);
+		powerHint = outcome.pretendSuccess * powerHintRandomizer;
+		powerHintTotal = (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure) * powerHintRandomizerTotal;
+		powerHintRandomizer = 0;
+		powerHintRandomizerTotal = 0;
 	}
 
 	private Plot(Rules rules) {
 		super(rules);
+		powerHintRandomizer = Math.random() * .2 + .9;
+		powerHintRandomizerTotal = Math.random() * .2 + .9;
 	}
 }

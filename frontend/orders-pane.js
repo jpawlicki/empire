@@ -6,6 +6,7 @@ class OrdersPane extends HTMLElement {
 		this.bribeRowCount = 0;
 		this.giftRowCount = 0;
 		this.letterCount = 0;
+		this.plotCount = 0;
 		this.currentlySubmitting = false;
 		this.submitQueued = false;
 		this.syncDisabled = true;
@@ -202,6 +203,9 @@ class OrdersPane extends HTMLElement {
 				text-align: center;
 				color: #00f;
 			}
+			#plot_rings label {
+				display: block;
+			}
 			table {
 				width: 100%;
 			}
@@ -227,18 +231,53 @@ class OrdersPane extends HTMLElement {
 				padding-bottom: 0.5em;
 				border-bottom: 2px solid black;
 			}
-			#nations_letters > div > div:first-child {
+			#nations_letters > div > div:first-child, #plot_newplots > div > div {
 				display: flex;
 				flex-direction: row;
 				flex-wrap: wrap;
 				justify-content: space-between;
 			}
-			#nations_letters label {
+			#nations_letters label, #plot_newplots label {
+				background-color: #eee;
+				border-radius: .5em;
 				margin-left: .3em;
 				margin-right: .3em;
+				padding-left: .3em;
+				padding-right: .3em;
 			}
 			#nations_letters label input[type=checkbox]:checked ~ span {
 				text-decoration: underline;
+			}
+			#plot_plots h2 {
+				font-size: 110%;
+				text-align: center;
+				border-top: 1px solid black;
+				margin-top: 1em;
+				background-color: #fee;
+			}
+			#plot_plots .objective {
+				font-weight: bold;
+				text-align: center;
+			}
+			#plot_plots .trigger {
+				font-size: 120%;
+			}
+			#plot_plots .conspirators {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+				justify-content: space-between;
+			}
+			#plot_plots .conspirators label {
+				background-color: #eee;
+				border-radius: .5em;
+				margin-left: .3em;
+				margin-right: .3em;
+				padding-left: .3em;
+				padding-right: .3em;
+			}
+			#plot_plots .conspirators label.selected {
+				font-weight: bold;
 			}
 			textarea {
 				width: 100%;
@@ -319,6 +358,9 @@ class OrdersPane extends HTMLElement {
 					}
 				}
 				if (r.type == "land") {
+					if (g_data.spy_rings.find(ring => ring.nation == unit.kingdom && ring.location == r.id) == undefined) {
+						opts.push("Establish Spy Ring");
+					}
 					if (r.isCoastal()) opts.push("Build Shipyard");
 					opts.push("Build Fortifications");
 					for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
@@ -441,29 +483,82 @@ class OrdersPane extends HTMLElement {
 
 		// PLOT TAB
 		{
-			let plots = shadow.getElementById("plots_plots");
-			for (let p of g_data.plots) {
-				let pr = document.createElement("plot-data");
-				pr.setAttribute("plot", p.plotId);
+			let computePlotSuccessChances = () => {
+				for (let plot of g_data.plots) {
+					let support_mods = 0;
+					let sabotage_mods = 0;
+					let targetRegion = plot.getTargetRegion();
+					if (targetRegion != undefined) {
+						for (let ring of shadow.querySelectorAll("#plot_rings select")) {
+							if (ring.name.startsWith("spyring_type_")) continue;
+							let realRing = g_data.spy_rings.find(r => r.location == parseInt(ring.name.replace("spyring_", "")));
+							let strength = realRing.calcStrengthIn(targetRegion.id)
+							if (realRing.involved_in_plot_id == plot.plot_id) {
+								// Discount the strength of the ring from the apparent success strength. Add it back based on whether the ring is currently ordered to support or sabotage, etc.
+								support_mods -= strength;
+							}
+							if (parseInt(ring.value) != plot.plot_id) continue;
+							if (shadow.querySelector("[name=" + ring.name.replace("spyring_", "spyring_type_") + "]").value == "SUPPORTING") {
+								support_mods += strength;
+							} else {
+								sabotage_mods += strength * 2;
+							}
+						}
+					}
+					let minSuccess = Math.floor(100 * Math.max(0, (plot.power_hint * 0.9 + support_mods) / (plot.power_hint_total * 1.1 + sabotage_mods + support_mods)));
+					let maxSuccess = Math.ceil(100 * Math.min(1, (plot.power_hint * 1.1 + support_mods) / (plot.power_hint_total * 0.9 + sabotage_mods + support_mods)));
+					shadow.getElementById("power_" + plot.plot_id).innerHTML = minSuccess + "% to " + maxSuccess + "% chance of success." + (targetRegion == undefined ? " Because the target's location is unknown, it is not possible to update these numbers interactively." : "");
+				}
+			}
+			let plots = shadow.getElementById("plot_plots");
+			for (let plot of g_data.plots) {
+				let pr = document.createElement("div");
+				pr.innerHTML = `
+					<h2>Operation ${rainbowCode(plot.plot_id)}</h2>
+					<div class="objective">${plot.getObjective()}</div>
+					<div id="power_${plot.plot_id}"></div>
+					<label class="trigger"><input type="checkbox" name="plot_execute_${plot.plot_id}"></input>Trigger Operation!</label>
+					<div class="conspirators"></div>`
+				let cdiv = pr.querySelector(".conspirators");
+				let invitees = [];
+				for (let k in g_data.kingdoms) invitees.push(k);
+				invitees.sort();
+				for (let k of invitees) {
+					let l = document.createElement("label");
+					let i = document.createElement("input");
+					i.setAttribute("type", "checkbox");
+					i.setAttribute("name", "plot_invite_" + plot.plot_id + "_" + k);
+					l.appendChild(i);
+					l.appendChild(document.createTextNode(k));
+					if (plot.conspirators.includes(k)) {
+						i.setAttribute("disabled", "true");
+						i.setAttribute("checked", "true");
+						l.className = "selected";
+					}
+					cdiv.appendChild(l);
+				}
 				plots.appendChild(pr);
 			}
-			let rings = shadow.getElementById("plots_rings");
-			for (let r of g_data.spyrings) if (whoami == r.nation) {
+			let rings = shadow.getElementById("plot_rings");
+			for (let r of g_data.spy_rings) if (whoami == r.nation) {
 				let l = document.createElement("label")
-				l.appendChild(document.createTextNode("Spy Ring "));
 				let link = document.createElement("report-link");
 				link.setAttribute("href", "region/" + g_data.regions[r.location].name);
+				link.appendChild(document.createTextNode(g_data.regions[r.location].name));
 				l.appendChild(link);
 				l.appendChild(document.createTextNode(": "));
-				l.appendChild(selectPretty("spyring_type_" + r.location, [{"name": "Support", "value": "SUPPORT"}, {"name": "Sabotage", "value": "SABOTAGE"}]));
+				let s1 = this.selectPretty("spyring_type_" + r.location, [{"name": "Support", "value": "SUPPORTING"}, {"name": "Sabotage", "value": "SABOTAGING"}]);
+				s1.addEventListener("change", computePlotSuccessChances);
+				l.appendChild(s1);
 				let plotOpts = [{"name": "[Nothing]", "value": -1}];
-				for (let p of g_data.plots) plotOpts.push({"name": "Operation " + p.plotId, "value": p.plotId});
-				l.appendChild(selectPretty("spyring_" + r.location, plotOpts));
+				for (let p of g_data.plots) plotOpts.push({"name": "Operation " + rainbowCode(p.plot_id), "value": p.plot_id});
+				let s2 = this.selectPretty("spyring_" + r.location, plotOpts);
+				s2.addEventListener("change", computePlotSuccessChances);
+				l.appendChild(s2);
 				rings.appendChild(l);
 			}
-			let newplot = shadow.getElementById("nations_newletter");
-			newplot.addEventListener("click", ()=>this.addPlot(shadow));
-			// TODO: new plot UI
+			shadow.getElementById("plot_newplot").addEventListener("click", ()=>this.addPlot(shadow));
+			computePlotSuccessChances();
 		}
 
 		// TIECEL TAB
@@ -785,8 +880,16 @@ class OrdersPane extends HTMLElement {
 				for (let doctrine of g_data.church.doctrines) {
 					shadow.querySelector("[name=church_" + doctrine + "]").checked = true;
 				}
+				for (let ring of g_data.spy_rings) {
+					if (ring.nation != whoami) continue;
+					if (ring.involvement_type == undefined) continue;
+					shadow.querySelector("[name=spyring_" + ring.location + "]").value = ring.involved_in_plot_id;
+					shadow.querySelector("[name=spyring_type_" + ring.location + "]").value = ring.involvement_type;
+					shadow.querySelector("[name=spyring_" + ring.location + "]").dispatchEvent(new Event("change"));
+				}
 				op.checkWarnings(shadow);
 				op.plannedMotions(shadow);
+				op.calcPlo
 				op.syncDisabled = false;
 				return;
 			}
@@ -922,7 +1025,7 @@ class OrdersPane extends HTMLElement {
 		sel.setAttribute("name", name);
 		for (let o of opts) {
 			let oe = document.createElement("option");
-			oe.setAttribute(o.value);
+			oe.setAttribute("value", o.value);
 			oe.appendChild(document.createTextNode(o.name));
 			sel.appendChild(oe);
 		}
@@ -1131,30 +1234,14 @@ class OrdersPane extends HTMLElement {
 	addPlot(shadow) {
 		let id = this.plotCount;
 		this.plotCount++;
+		if (this.plotCount > 20) window.alert("Come on. Do you really need this many plots?"); // It would be nice to have a mechanism to prevent a player from plot-spamming the UIs of other players. In lieu of that for now, shame them.
 		let d = document.createElement("div");
-		let to = document.createElement("div");
-		to.appendChild(document.createTextNode("Conspirators: "));
-		let boxes = [];
-		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
-			if (k == whoami) continue;
-			let label = document.createElement("label");
-			let box = document.createElement("input");
-			box.setAttribute("name", "plot_new_involve_" + k + "_" + plotCount);
-			box.setAttribute("type", "checkbox");
-			boxes.push(box);
-			label.appendChild(box);
-			let sp = document.createElement("span");
-			sp.appendChild(document.createTextNode(k));
-			label.appendChild(sp);
-			to.appendChild(label);
-		}
-		d.appendChild(to);
 		let targetProviderNone = () => [];
 		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
 		let targetProviderCharacterRescue = () => g_data.characters.filter(c => c.captor != undefined && c.captor != "").map(c => { return {"name": "(" + c.kingdom + ")" + c.name, "value": c.name}});
 		let targetProviderRegion = () => g_data.regions.map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
 		let targetProviderRegionNoble = () => g_data.regions.filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
-		let targetProviderNation = () => g_data.kingdoms.map(k => { return {"name": k, "value": k}});
+		let targetProviderNation = () => Object.keys(g_data.kingdoms).map(k => { return {"name": k, "value": k}});
 		let plotTypes = [
 			{"name": "", "value": "", "targetType": targetProviderNone},
 			{"name": "Assassinate", "value": "ASSASSINATE", "targetType": targetProviderCharacter},
@@ -1173,10 +1260,10 @@ class OrdersPane extends HTMLElement {
 			{"name": "Intercept communications of", "value": "INTERCEPT_COMMUNICATIONS", "targetType": targetProviderNation},
 			{"name": "Gather intelligence on", "value": "SURVEY_NATION", "targetType": targetProviderNation},
 		];
-		let sel = selectPretty("plot_new_type_" + plotCount, plotTypes);
+		let sel = this.selectPretty("plot_new_type_" + id, plotTypes);
 		d.appendChild(sel);
-		let targetsel = document.createElement("select");
-		targetSel.setAttribute("name", "plot_new_target_" + plotCount);
+		let targetSel = document.createElement("select");
+		targetSel.setAttribute("name", "plot_new_target_" + id);
 		d.appendChild(targetSel);
 		sel.addEventListener("change", () => {
 			while (targetSel.firstChild) targetSel.removeChild(targetSel.firstChild);
@@ -1189,6 +1276,24 @@ class OrdersPane extends HTMLElement {
 				targetSel.appendChild(opt);
 			}
 		});
+		let to = document.createElement("div");
+		to.appendChild(document.createTextNode("Conspirators: "));
+		let boxes = [];
+		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
+			if (k == whoami) continue;
+			let label = document.createElement("label");
+			let box = document.createElement("input");
+			box.setAttribute("name", "plot_new_involve_" + k + "_" + id);
+			box.setAttribute("type", "checkbox");
+			boxes.push(box);
+			label.appendChild(box);
+			let sp = document.createElement("span");
+			sp.appendChild(document.createTextNode(k));
+			label.appendChild(sp);
+			to.appendChild(label);
+		}
+		d.appendChild(to);
+		d.appendChild(document.createElement("hr"));
 		shadow.getElementById("plot_newplots").appendChild(d);
 	}
 
