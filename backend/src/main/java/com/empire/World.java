@@ -35,7 +35,6 @@ interface GoodwillProvider {
 	double getGoodwill(String nation);
 }
 
-
 public class World extends RulesObject implements GoodwillProvider {
 	static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());

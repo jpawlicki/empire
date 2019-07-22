@@ -1238,15 +1238,12 @@ class OrdersPane extends HTMLElement {
 		let d = document.createElement("div");
 		let targetProviderNone = () => [];
 		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
-		let targetProviderCharacterRescue = () => g_data.characters.filter(c => c.captor != undefined && c.captor != "").map(c => { return {"name": "(" + c.kingdom + ")" + c.name, "value": c.name}});
 		let targetProviderRegion = () => g_data.regions.map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
 		let targetProviderRegionNoble = () => g_data.regions.filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
 		let targetProviderNation = () => Object.keys(g_data.kingdoms).map(k => { return {"name": k, "value": k}});
 		let plotTypes = [
 			{"name": "", "value": "", "targetType": targetProviderNone},
 			{"name": "Assassinate", "value": "ASSASSINATE", "targetType": targetProviderCharacter},
-			{"name": "Capture", "value": "CAPTURE", "targetType": targetProviderCharacter},
-			{"name": "Rescue", "value": "RESCUE", "targetType": targetProviderCharacterRescue},
 			{"name": "Burn a shipyard in", "value": "BURN_SHIPYARD", "targetType": targetProviderRegion},
 			{"name": "Sabotage fortifications in", "value": "SABOTAGE_FORTIFICATIONS", "targetType": targetProviderRegion},
 			{"name": "Spoil food in", "value": "SPOIL_FOOD", "targetType": targetProviderRegion},

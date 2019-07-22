@@ -44,26 +44,8 @@ class Plot extends RulesObject {
 			(targetId, world) -> "assassinate " + targetId + world.getCharacterByName(targetId).map(c -> " (a hero of " + c.kingdom + ")").orElse(""),
 			PlotType::getTargetRegionCharacter,
 			PlotType::getDefenderCharacter,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				world.characters.remove(world.getCharacterByName(targetId).get());
-			},
-			PlotType::characterOutcomeInfluencer),
-		CAPTURE(
-			(targetId, world) -> "Capture " + targetId,
-			(targetId, world) -> "capture " + targetId + world.getCharacterByName(targetId).map(c -> " (a hero of " + c.kingdom + ")").orElse(""),
-			PlotType::getTargetRegionCharacter,
-			PlotType::getDefenderCharacter,
-			(targetId, world, perpetrator) -> {
-				world.getCharacterByName(targetId).ifPresent(c -> c.captor = perpetrator);
-			},
-			PlotType::characterOutcomeInfluencer),
-		RESCUE(
-			(targetId, world) -> "Rescue " + targetId,
-			(targetId, world) -> "rescue " + targetId + world.getCharacterByName(targetId).map(c -> " (a hero of " + c.kingdom + ")").orElse(""),
-			PlotType::getTargetRegionCharacter,
-			PlotType::getDefenderCharacter,
-			(targetId, world, perpetrator) -> {
-				world.getCharacterByName(targetId).ifPresent(c -> c.captor = "");
 			},
 			PlotType::characterOutcomeInfluencer),
 
@@ -73,7 +55,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Burn Shipyard in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> {
 					r.constructions
 							.stream()
@@ -88,7 +70,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Sabotage Fortifications in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> {
 					r.constructions
 							.stream()
@@ -103,7 +85,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Spoil Food in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> r.food /= 2);
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -112,7 +94,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Spoil Crops in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> r.crops /= 2);
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -121,7 +103,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Incite Unrest in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> r.unrestPopular = Math.min(1, r.unrestPopular + 0.4));
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -130,7 +112,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Pin Food in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).ifPresent(r -> r.pinFood());
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -139,7 +121,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Murder Noble in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world)
 						.ifPresent(
 								r -> {
@@ -152,7 +134,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Upset Noble in " + getTargetRegionRegion(targetId, world).map(r -> r.name).orElse(" an Unknown Region") + " (a region of " + getTargetRegionRegion(targetId, world).map(r -> r.getKingdom()).orElse(" an Unknown Nation") + ")",
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				getTargetRegionRegion(targetId, world).map(r -> r.noble).ifPresent(n -> n.unrest = Math.min(1, n.unrest + .15));
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -169,7 +151,7 @@ class Plot extends RulesObject {
 				int index = nations.indexOf(targetId);
 				return Optional.of(nations.get(index == nations.size() - 1 ? index - 1 : index + 1));
 			},
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				world.getNation(targetId).goodwill += 20;
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -178,7 +160,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Denounce " + targetId,
 			PlotType::getTargetRegionChurch,
 			(targetId, world) -> Optional.of(targetId),
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				world.getNation(targetId).goodwill -= 20;
 			},
 			PlotType::noOpOutcomeInfluencer),
@@ -189,8 +171,8 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Intercept the communications of " + targetId,
 			PlotType::getTargetRegionNation,
 			PlotType::getDefenderNation,
-			(targetId, world, perpetrator) -> {
-				for (Communication c : world.communications) if (c.from.equals(targetId) || c.to.contains(targetId)) c.intercepted.add(perpetrator);
+			(targetId, world, conspirators) -> {
+				for (Communication c : world.communications) if (c.postDate == world.date && (c.from.equals(targetId) || c.to.contains(targetId))) c.intercepted.addAll(conspirators);
 			},
 			PlotType::noOpOutcomeInfluencer),
 		SURVEY_NATION(
@@ -198,7 +180,7 @@ class Plot extends RulesObject {
 			(targetId, world) -> "Compile a report on the treasury and armed forces of " + targetId,
 			PlotType::getTargetRegionNation,
 			PlotType::getDefenderNation,
-			(targetId, world, perpetrator) -> {
+			(targetId, world, conspirators) -> {
 				double soldiers = 0;
 				double warships = 0;
 				for (Army a : world.armies) {
@@ -206,7 +188,7 @@ class Plot extends RulesObject {
 					if (a.type == Army.Type.ARMY) soldiers += a.size;
 					else warships += a.size;
 				}
-				world.notifications.add(new Notification(perpetrator, "Report on " + targetId, "Treasury: " + world.getNation(targetId).gold + "\nSoldiers: " + soldiers + "\nWarships: " + warships));
+				for (String conspirator : conspirators) world.notifications.add(new Notification(conspirator, "Report on " + targetId, "Treasury: " + world.getNation(targetId).gold + "\nSoldiers: " + soldiers + "\nWarships: " + warships));
 			},
 			PlotType::noOpOutcomeInfluencer);
 
@@ -243,7 +225,7 @@ class Plot extends RulesObject {
 		}
 
 		private static interface OutcomeAction {
-			void accept(String targetId, World world, String perpetrator);
+			void accept(String targetId, World world, Collection<String> conspirators);
 		}
 
 		private static void noOpOutcomeInfluencer(String targetId, World w, OutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
@@ -298,8 +280,8 @@ class Plot extends RulesObject {
 			return defenderFunction.apply(targetId, w);
 		}
 
-		void onSuccess(String targetId, World w, String perpetrator) {
-			onSuccess.accept(targetId, w, perpetrator);
+		void onSuccess(String targetId, World w, Collection<String> conspirators) {
+			onSuccess.accept(targetId, w, conspirators);
 		}
 		
 		void influenceOutcome(String targetId, World w, OutcomeWeights outcome, Function<Army, Double> armyStrengthProvider) {
@@ -360,8 +342,6 @@ class Plot extends RulesObject {
 
 	private Set<String> conspirators;
 
-	private String perpetrator;
-
 	private double powerHintRandomizer;
 	private double powerHintRandomizerTotal;
 	private double powerHint;
@@ -421,7 +401,7 @@ class Plot extends RulesObject {
 		String details = type.getDetails(targetId, w);
 		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chancee of success, assuming no sabotage.";
 		if (roll <= outcome.success) {
-			type.onSuccess(targetId, w, perpetrator);
+			type.onSuccess(targetId, w, conspirators);
 			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has succeeded." + apparentChance);
 		} else if (roll <= outcome.failure + outcome.success) {
 			// Reveal a random supporting spy ring to everyone.

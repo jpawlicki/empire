@@ -752,20 +752,18 @@ class Plot {
 			let character = g_data.kingdoms[this.target_id].getRuler();
 			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
 		}
-		if (this.type == "ASSASSINATE" || this.type == "CAPTURE" || this.type == "RESCUE") return getTargetRegionCharacter();
+		if (this.type == "ASSASSINATE") return getTargetRegionCharacter();
 		if (this.type == "BURN_SHIPYARD" || this.type == "SABOTAGE_FORTIFICATIONS" || this.type == "SPOIL_FOOD" || this.type == "SPOIL_CROPS" || this.type == "INCITE_UNREST" || this.type == "PIN_FOOD" || this.type == "MURDER_NOBLE" || this.type == "POISON_RELATIONS") return getTargetRegionRegion();
 		if (this.type == "PRAISE" || this.type == "DENOUNCE") return getTargetRegionChurch();
 		if (this.type == "INTERCEPT_COMMUNICATIONS" || this.type == "SURVEY_NATION") return getTargetRegionNation();
 	}
 
 	getDefender() {
-		let characterPlots = ["ASSASSINATE", "CAPTURE"];
-		let characterPlotsCaptor = ["RESCUE"];
+		let characterPlots = ["ASSASSINATE"];
 		let regionPlots = ["BURN_SHIPYARD", "SABOTAGE_FORTIFICATIONS", "SPOIL_FOOD", "SPOIL_CROPS", "INCITE_UNREST", "PIN_FOOD", "MURDER_NOBLE", "POISON_RELATIONS"];
 		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION"];
 		let goodwillPlots = ["PRAISE"];
 		if (characterPlots.includes(this.type)) return g_data.characters.find(c => c.name == this.target_id).kingdom;
-		if (characterPlotsCaptor.includes(this.type)) return g_data.characters.find(c => c.name == this.target_id).captor;
 		if (regionPlots.includes(this.type)) return g_data.regions.find(c => c.name == this.target_id).kingdom;
 		if (nationPlots.includes(this.type)) return this.target_id;
 		if (goodwillPlots.includes(this.type)) {
@@ -781,8 +779,6 @@ class Plot {
 	getObjective() {
 		let desc = "";
 		if (this.type == "ASSASSINATE") desc = "Assassinate";
-		else if (this.type == "CAPTURE") desc = "Capture";
-		else if (this.type == "RESCUE") desc = "Rescue";
 		else if (this.type == "BURN_SHIPYARD") desc = "Burn a shipyard in";
 		else if (this.type == "SABOTAGE_FORTIFICATIONS") desc = "Sabotage a fortifications in";
 		else if (this.type == "SPOIL_FOOD") desc = "Spoil food in";
