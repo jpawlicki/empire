@@ -289,7 +289,7 @@ class Plot extends RulesObject {
 		}
 	}
 
-	class OutcomeWeights {
+	static class OutcomeWeights extends RulesObject {
 		private double success = 0;
 		private double failure = 0;
 		private double criticalFailure = 0;
@@ -298,6 +298,10 @@ class Plot extends RulesObject {
 		private double pretendSuccess = 0;
 		private double pretendFailure = 0;
 		private double pretendCriticalFailure = 0;
+
+		public OutcomeWeights(Rules rules) {
+			super(rules);
+		}
 
 		public void support(double amount) {
 			success += amount;
@@ -319,6 +323,18 @@ class Plot extends RulesObject {
 		public void sabotage(double amount) {
 			criticalFailure += getRules().sabotagingRingFactor * amount;
 			pretendSuccess += amount;
+		}
+
+		public double getSuccess() {
+			return success;
+		}
+
+		public double getFailure() {
+			return failure;
+		}
+
+		public double getCriticalFailure() {
+			return criticalFailure;
 		}
 	}
 
@@ -377,7 +393,7 @@ class Plot extends RulesObject {
 		Optional<Region> targetRegion = type.getTargetRegion(targetId, w);
 		if (!targetRegion.isPresent() || !defender.isPresent()) return null;
 
-		OutcomeWeights outcome = new OutcomeWeights();
+		OutcomeWeights outcome = new OutcomeWeights(getRules());
 		type.influenceOutcome(targetId, w, outcome, armyStrengthProvider);
 		for (SpyRing ring : w.getSpyRings()) ring.addContributionTo(plotId, targetRegion.get(), defender.get(), w, outcome);
 		outcome.success *= 1 + strengthBoost;

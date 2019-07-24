@@ -28,7 +28,7 @@ class SpyRing extends RulesObject {
 	private Integer involvedInPlotId; // null indicates no involvement.
 	private InvolvementDisposition involvementType;
 
-	public double calcPlotPower(World w, Region target) {
+	private double calcPlotPower(World w, Region target) {
 		final class Node {
 			public final double power;
 			public final Region location;
@@ -41,7 +41,7 @@ class SpyRing extends RulesObject {
 		Function<Node, Node> getPower = n -> {
 			Region r = n.location;
 			if (r.isSea()) return new Node(n.power * getRules().plotDecaySea, n.location);
-			double unrestFactor = NationData.isFriendly(nation, r.getKingdom(), w) ? r.calcUnrest(w) : 1 - r.calcUnrest(w);
+			double unrestFactor = NationData.isFriendly(nation, r.getKingdom(), w) ? 1 - r.calcUnrest(w) : r.calcUnrest(w);
 			return new Node(n.power * (getRules().plotDecayMin + unrestFactor * (getRules().plotDecayMax - getRules().plotDecayMin)), n.location);
 		};
 
