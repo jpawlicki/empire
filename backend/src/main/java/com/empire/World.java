@@ -1976,6 +1976,10 @@ public class World extends RulesObject implements GoodwillProvider {
 					}
 					double amount = Math.max(0, Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000));
 					if (amount == 0) continue;
+					if (from.getFoodPinned() || to.getFoodPinned()) {
+						notifications.add(new Notification(k, "Food Transfer from " + from.name + " Failed", "Due to a nefarious plot, our orders to transfer food from " + from.name + " to " + to.name + " were lost!"));
+						continue;
+					}
 					double cost = amount / 50000;
 					if (cost > getNation(k).gold) {
 						amount *= getNation(k).gold / cost;
