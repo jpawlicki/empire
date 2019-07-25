@@ -665,7 +665,6 @@ class Character {
 		this.name = dataEntry.name;
 		this.honorific = dataEntry.honorific;
 		this.kingdom = dataEntry.kingdom;
-		this.captor = dataEntry.captor;
 		this.location = dataEntry.location;
 		this.preparation = dataEntry.preparation;
 		this.tags = dataEntry.tags;

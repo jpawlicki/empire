@@ -839,16 +839,15 @@ public class World extends RulesObject implements GoodwillProvider {
 
 		void setDefaultOrderHints() {
 			for (Character c : characters) {
-				c.orderhint = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				c.orderhint = orders.getOrDefault(c.kingdom, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				c.leadingArmy = 0;
 			}
 		}
 
 		void countInspires() {
 			for (Character c : characters) {
-				String action = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				String action = orders.getOrDefault(c.kingdom, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
-				if (c.isCaptive()) continue; // inspire can't be done by captives.
 				if (action.equals("Inspire the Faithful") && "Sancta Civitate".equals(region.name)) {
 					c.addExperienceSpy();
 					getNation(c.kingdom).goodwill += 5;
@@ -900,9 +899,8 @@ public class World extends RulesObject implements GoodwillProvider {
 
 		void markLeaders() {
 			for (Character c : characters) {
-				String action = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				String action = orders.getOrDefault(c.kingdom, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
-				if (c.isCaptive()) continue; // lead cannot be done by captives.
 				if (action.startsWith("Lead ")) {
 					c.orderhint = action;
 					int targetId = Integer.parseInt(action.substring(action.lastIndexOf(" ") + 1, action.length()));
@@ -1118,13 +1116,12 @@ public class World extends RulesObject implements GoodwillProvider {
 					ArrayList<String> who = new ArrayList<>();
 					for (Character c : characters) {
 						if (c.location == army.location) {
-							who.add(c.name + " (" + c.kingdom + ")" + (!c.isCaptive() ? "" : " (captive of " + c.captor + ")"));
-							if (NationData.isEnemy(c.kingdom, army.kingdom, World.this) && !c.isCaptive()) {
+							who.add(c.name + " (" + c.kingdom + ")");
+							if (NationData.isEnemy(c.kingdom, army.kingdom, World.this)) {
 								boolean guard = false;
 								for (Army a : armies) if (a.isArmy() && a.location == c.location && NationData.isFriendly(a.kingdom, c.kingdom, World.this)) guard = true;
 								if (!guard) {
-									c.captor = army.kingdom;
-									notifications.add(new Notification(c.kingdom, c.name + " Captured", c.name + " was captured by a patrolling army."));
+									notifications.add(new Notification(c.kingdom, c.name + " Discovered", c.name + " was discovered by a patrolling army."));
 								}
 							}
 						}
@@ -1259,17 +1256,14 @@ public class World extends RulesObject implements GoodwillProvider {
 		void characterActions() {
 			ArrayList<Character> removeCharacters = new ArrayList<>();
 			for (Character c : characters) {
-				if (c.isCaptive()) c.addExperienceSpy();
-				String action = orders.getOrDefault(!c.isCaptive() ? c.kingdom : c.captor, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
+				String action = orders.getOrDefault(c.kingdom, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
 				c.hidden = action.startsWith("Hide in ");
 				if (action.startsWith("Stay in ")) {
-					if (!c.isCaptive()) c.addExperienceAll();
+					c.addExperienceAll();
 				} else if (action.startsWith("Hide in ") || action.startsWith("Travel to ")) {
-					if (!c.isCaptive()) {
-						if (c.hidden) c.addExperienceSpy();
-						else c.addExperienceAll();
-					}
+					if (c.hidden) c.addExperienceSpy();
+					else c.addExperienceAll();
 					String destination = action.replace("Travel to ", "").replace("Hide in ", "");
 					if (region.name.equals(destination)) continue;
 					boolean isNeighbor = false;
@@ -1313,7 +1307,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (!governors.containsKey(region) || governors.get(region).calcGovernTaxMod() < c.calcGovernTaxMod()) governors.put(region, c);
 				} else if (action.startsWith("Reflect")) {
 					if (!c.hasTag(Character.Tag.RULER)) continue;
-					if (c.isCaptive()) continue;
 					NationData.ScoreProfile profile = null;
 					for (NationData.ScoreProfile p : NationData.ScoreProfile.values()) if (action.contains(p.toString().toLowerCase())) profile = p;
 					if (profile == null) continue;
@@ -1322,31 +1315,9 @@ public class World extends RulesObject implements GoodwillProvider {
 				} else if (action.startsWith("Transfer character to ")) {
 					String target = action.replace("Transfer character to ", "");
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
-					if (!c.isCaptive()) {
-						notifications.add(new Notification(target, "Hero from " + c.kingdom, c.name + ", formerly a hero of " + c.kingdom + " has sworn fealty and loyalty to us."));
-						c.kingdom = target;
-					} else {
-						notifications.add(new Notification(target, "Captive from " + c.captor, c.name + ", a hero of " + c.kingdom + " and formerly a captive of " + c.captor + " has been transferred to our care."));
-						c.captor = target;
-					}
+					notifications.add(new Notification(target, "Hero from " + c.kingdom, c.name + ", formerly a hero of " + c.kingdom + " has sworn fealty and loyalty to us."));
+					c.kingdom = target;
 					c.orderhint = "";
-				} else if (action.startsWith("Execute")) {
-					String notification = "The sovereign power " + c.captor + " has tried, convicted, and executed " + c.name + ".";
-					if (region.getKingdom() == null || region.getKingdom().equals(c.captor)) notification += " " + c.name + " was not present at their trial.";
-					String[] flavor = new String[]{
-						c.name + "'s last words were loving reassurances to their family.",
-						c.name + "'s last words reaffirmed their loyalty to " + c.kingdom + " and condemned " + c.captor + ".",
-						c.name + " attempted a daring escape at the last moment, but was unable to get free."
-					};
-					notification += flavor[(int)(Math.random() * flavor.length)];
-					notifyAllPlayers("Execution of " + c.name, notification);
-					removeCharacters.add(c);
-					if (c.hasTag(Character.Tag.RULER)) {
-						notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
-					}
-				} else if (action.startsWith("Set Free")) {
-					notifications.add(new Notification(c.kingdom, c.name + " Freed", c.name + "'s captors have released " + c.name + " from captivity."));
-					c.captor = "";
 				}
 			}
 			for (Character gov : governors.values()) gov.addExperienceGovernor();
@@ -1775,7 +1746,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				iruhanNations
 						.stream()
 						.filter(k ->
-								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && !c.isCaptive() && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate"))
+								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate"))
 						.map(World.this::getNation)
 						.forEach(n -> n.goodwill += getRules().mandatoryMinistryOpinion);
 			}
@@ -2447,19 +2418,9 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void advanceDate() {
-			Season currentSeason = getSeason();
 			date++;
 			nextTurn = turnSchedule.getNextTime();
 			for (String k : kingdoms.keySet()) getNation(k).previousTributes = tributes.get(k);
-
-			// Notify of season change.
-			if (getSeason() != currentSeason) {
-				if (getSeason() == Season.WINTER) {
-					notifyAllPlayers("Winter Arrives", "The days are shortening and the temperature plummets. The air carries the smell of distant snow. It is now winter.");
-				} else {
-					notifyAllPlayers("Summer Arrives", "The days are lengthening and the flowers beginning to bloom. The air carries the sounds of songbirds. It is now summer.");
-				}
-			}
 
 			// Notify of upcoming harvest.
 			if (isHarvestTurn()) {
@@ -2659,7 +2620,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			switch (type) {
 				case CHARACTER:
 					for (Character c : characters) if (c.name.equals(target)) {
-						defender = !c.isCaptive() ? c.kingdom : c.captor;
+						defender = c.kingdom;
 					}
 					if ("".equals(defender)) {
 						notifications.add(new Notification(perpetrator, "Plot Pre-empted", target + " was killed and therefore our plot could not be enacted."));
@@ -2714,57 +2675,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (success) {
 						if (c == null) notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
 						else notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-					}
-				} else if ("arrest".equals(action)) {
-					title += "Arrest " + target;
-					details += "locate " + target + " and arrest them if trespassing.";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							if (perpetrator.equals(regions.get(targetRegion).getKingdom())) {
-								if (partialSuccess) {
-									details += " They were trespassing and arrested.";
-									c.captor = perpetrator; 
-									c.orderhint = "";
-								} else {
-									details += " The soldiers they were leading saved them from arrest.";
-								}
-							} else {
-								details += " They were not trespassing and therefore left alone.";
-							}
-						}
-					}
-				} else if ("capture".equals(action)) {
-					title += "Abduct " + target;
-					details += "abduct " + target + (c != null ? ", a hero of " + c.kingdom : "") + ".";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							if (partialSuccess) {
-								c.captor = perpetrator; 
-								c.orderhint = "";
-							} else {
-								details += " The soldiers they were leading saved them from captured.";
-							}
-						}
-					}
-				} else if ("rescue".equals(action)) {
-					title += "Rescue " + target;
-					details += "free " + target + (c != null ? ", a hero of " + c.kingdom : "") + " from captivity.";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else if (!c.isCaptive()) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were not in captivity. " + order));
-						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							c.captor = ""; 
-							c.orderhint = "";
-						}
 					}
 				} else if ("kill".equals(action)) {
 					title += "Assassinate " + target;
@@ -2889,7 +2799,6 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	private boolean isHidden(Character c, String kingdom) {
 		if (c.kingdom.equals(kingdom)) return false;
-		if (c.captor.equals(kingdom)) return false;
 		if (NationData.getStateReligion(kingdom, this) == Ideology.ALYRJA) {
 			if (isHiddenAlyrjaHelper(c.location, kingdom)) return false;
 		}
@@ -2946,15 +2855,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		ArrayList<Message> removeList = new ArrayList<Message>();
 		for (Message m : rtc) if (!m.from.equals(kingdom) && !m.to.contains(kingdom)) removeList.add(m);
 		for (Message m : removeList) rtc.remove(m);
-	}
-
-	static enum Season {
-		SUMMER,
-		WINTER
-	}
-
-	public Season getSeason() {
-		return (date + 52 - 13) % 52 < 26 ? Season.SUMMER: Season.WINTER;
 	}
 
 	public boolean isHarvestTurn() {

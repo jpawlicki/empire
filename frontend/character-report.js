@@ -11,7 +11,6 @@ class CharacterReport extends HTMLElement {
 			<div id="name">${c.name}</div>
 			<div id="kingdom">${c.tags.length == 0 ? "" : c.tags.join(" and ") + " of "}<report-link href="kingdom/${c.kingdom}">${c.kingdom}</report-link></div>
 			<div id="location">In ${c.location == -1 ? "Hiding" : "<report-link href=\"region/" + g_data.regions[c.location].name + "\">" + g_data.regions[c.location].name + "</report-link>"}</div>
-			<div id="status">${c.captor == "" ? "" : "Captive of <report-link href=\"kingdom/" + c.captor + "\">" + c.captor + "</report-link>"}</div>
 			<div id="content">
 				<h1>Skills</h1>
 				<div>

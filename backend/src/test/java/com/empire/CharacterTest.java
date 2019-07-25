@@ -82,10 +82,4 @@ public class CharacterTest {
 		r1.religion = Ideology.SWORD_OF_TRUTH;
 		assertEquals(1.4, c.calcPlotPower(w, false, 2), DELTA);
 	}
-
-	@Test
-	public void calcPlotPowerCaptive() {
-		c.captor = "DONTCARE";
-		assertEquals(0.8, c.calcPlotPower(w, false, 0), DELTA);
-	}
 }

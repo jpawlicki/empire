@@ -20,7 +20,6 @@ public class Character extends RulesObject {
 
 	String name = "";
 	String kingdom = "";
-	String captor = "";
 	String honorific = "";
 	int location = -1;
 	boolean hidden = false;
@@ -68,7 +67,6 @@ public class Character extends RulesObject {
 		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += getRules().lyskrPlotMod;
 		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += getRules().companyPlotMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * getRules().perInspirePlotMod;
-		if (isCaptive()) power += getRules().capturedPlotMod;
 
 		return power;
 	}
@@ -106,10 +104,6 @@ public class Character extends RulesObject {
 
 	void removeTag(Tag tag) {
 		tags.remove(tag);
-	}
-
-	boolean isCaptive() {
-		return !"".equals(captor);
 	}
 
 	private Character(Rules rules) {
