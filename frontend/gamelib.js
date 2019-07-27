@@ -166,7 +166,7 @@ class Region {
 		this.crops = dataEntry.crops;
 		this.religion = dataEntry.religion;
 		this.date = date;
-		this.cult_accessed = cult_accessed;
+		this.cult_accessed = dataEntry.cult_accessed;
 		if (this.noble == undefined) this.noble = {};
 	}
 
