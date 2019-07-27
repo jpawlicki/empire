@@ -24,6 +24,7 @@
 		"companyPlotMod": 0.2,
 		"crusadeOpinion": -35,
 		"cultEventTriggerFraction": 0.666666,
+		"cultRaiseFraction": 0.5,
 		"defendersOfFaithCasualtyOpinion": 0.03,
 		"defendersOfFaithConquestOpinion": 15,
 		"disciplinedArmyStrengthMod": 0.1,

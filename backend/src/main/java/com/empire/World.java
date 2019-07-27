@@ -1374,7 +1374,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (String kingdom : orders.keySet()) {
 				if ("checked".equals(orders.get(kingdom).get("plot_cult")) && !getNation(kingdom).loyalToCult) {
 					getNation(kingdom).loyalToCult = true;
-					getNation(kingdom).toggleScoreProfile(NationData.ScoreProfile.CULTIST);
+					getNation(kingdom).toggleProfile(NationData.ScoreProfile.CULTIST);
 					new ArrayList<CultCache>(cultCaches).stream().filter(c -> c.isEligible(kingdom)).forEach(c -> {
 						Army a = Army.newArmy(getRules());
 						a.location = c.getLocation();
