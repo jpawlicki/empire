@@ -48,7 +48,7 @@ class OrdersPane extends HTMLElement {
 					<div id="plot_risks">(No risks.)</div>
 					<hr/>
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
-					<expandable-snippet text="In exchange for loyalty, the Cult will give us an army of 5000 undead soldiers and 2 weeks of food in every region we control. However, the Cult will gain access to any regions we control, and we do not fully understand their objectives."></expandable-snippet>
+					<expandable-snippet text="In exchange for loyalty, the Cult will give us <span id="undead_count"></span> undead soldiers. The Cult will gain access to any regions we control, and you should continue to expand their influence by annexing additional territory."></expandable-snippet>
 					<hr/>
 					<label id="gothi_alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
 					<label id="gothi_rjinku"><input type="checkbox" name="gothi_rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
@@ -590,6 +590,13 @@ class OrdersPane extends HTMLElement {
 			stateDetailsAndRisk();
 		});
 		plotTypeSel.dispatchEvent(new Event("change"));
+		{
+			let undeadCount = 0;
+			for (let c of g_data.cult_caches) {
+				if (c.eligible_nations.includes(whoami)) undeadCount += c.size;
+			}
+			shadow.getElementById("undead_count").appendChild(document.createTextNode(Math.round(undeadCount)));
+		}
 
 		// TIECEL TAB
 		{
