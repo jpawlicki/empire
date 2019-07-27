@@ -56,6 +56,7 @@ public class World extends RulesObject implements GoodwillProvider {
 	List<Integer> cultRegions = new ArrayList<>();
 	Church church = new Church();
 	Schedule turnSchedule = new Schedule();
+	List<CultCache> cultCaches = new ArrayList<>();
 	boolean cultTriggered;
 	int inspiresHint;
 	int ruleSet;
@@ -1372,15 +1373,13 @@ public class World extends RulesObject implements GoodwillProvider {
 		void spawnCultists() {
 			for (String kingdom : orders.keySet()) {
 				if ("checked".equals(orders.get(kingdom).get("plot_cult")) && !getNation(kingdom).loyalToCult) {
-					// TODO: Spawn armies.
 					getNation(kingdom).loyalToCult = true;
-					/*
-					if (kRegions.size() != 0) {
-						int spawnRegion = kRegions.get((int)(Math.random() * kRegions.size()));
+					getNation(kingdom).toggleScoreProfile(NationData.ScoreProfile.CULTIST);
+					new ArrayList<CultCache>(cultCaches).stream().filter(c -> c.isEligible(kingdom)).forEach(c -> {
 						Army a = Army.newArmy(getRules());
-						a.location = spawnRegion;
+						a.location = c.getLocation();
 						a.type = Army.Type.ARMY;
-						a.size = 5000;
+						a.size = c.getSize();
 						a.tags = new ArrayList<>();
 						a.id = getNewArmyId();
 						a.kingdom = kingdom;
@@ -1389,8 +1388,9 @@ public class World extends RulesObject implements GoodwillProvider {
 						a.addTag(Army.Tag.UNDEAD);
 						a.addTag(Army.Tag.HIGHER_POWER);
 						armies.add(a);
-						notifyAllPlayers(kingdom + " Joins Cult", "Throughout " + kingdom + ", the dead crawl forth from their graves, animated by some ancient magic. Meats of unknown origin begin to appear in butchershops, and the shambling sight of a corpse searching for an unknown quarry becomes commonplace. A skeletal army gathers in " + regions.get(spawnRegion).name + ".");
-					}*/
+						cultCaches.remove(c);
+					});
+					notifyAllPlayers(kingdom + " Joins Cult", "Throughout " + kingdom + ", the dead crawl forth from their graves, animated by some ancient magic. The shambling sight of a corpse searching for an unknown quarry becomes commonplace.");
 				}
 			}
 		}
@@ -1511,12 +1511,14 @@ public class World extends RulesObject implements GoodwillProvider {
 				ArrayList<Army> localUndeadArmies = new ArrayList<>();
 				for (Army a : localArmies) if (a.hasTag(Army.Tag.UNDEAD) && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
 				if (localUndeadArmies.size() > 0) {
-					battleDetails += "After the fighting, " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult.";
-					double raised = dead / 2 / localUndeadArmies.size();
+					battleDetails += "After the fighting, " + Math.round(dead * getRules().cultRaiseFraction) + " soldiers rose from the dead to serve the Cult.";
+					double raised = dead * getRules().cultRaiseFraction / localUndeadArmies.size();
 					for (Army u : localUndeadArmies) {
 						u.size += raised;
 						u.composition.put("Undead", u.composition.getOrDefault("Undead", 0.0) + raised);
 					}
+				} else {
+					cultCaches.add(CultCache.newCache(dead * getRules().cultRaiseFraction, localArmies.stream().map(a -> a.kingdom).collect(Collectors.toSet()), i));
 				}
 				HashSet<String> localKingdoms = new HashSet<>();
 				for (Army a : localArmies) localKingdoms.add(a.kingdom);
