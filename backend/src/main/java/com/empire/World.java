@@ -921,6 +921,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		void mergeArmies() {
 			HashMap<Army, Double> originalSizes = new HashMap<>();
 			for (Army a : armies) originalSizes.put(a, a.size);
+			// TODO: Pirates ought to merge.
 			for (String k : orders.keySet()) {
 				Map<String, String> kOrders = orders.get(k);
 				Map<Integer, Integer> alreadyMerged = new HashMap<>(); 
@@ -2136,9 +2137,9 @@ public class World extends RulesObject implements GoodwillProvider {
 				destinations.removeIf(d -> !d.getKingdom().equals(r.getKingdom()) && (patrolledRegions.contains(r) || getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.REFUSE));
 				if (destinations.isEmpty() || eligibleToEmigrate < 1) continue;
 				double totalWeight = 0;
-				for (Region d : destinations) totalWeight += d.calcImmigrationWeight();
+				for (Region d : destinations) totalWeight += d.calcImmigrationWeight(World.this);
 				for (Region d : destinations) {
-					emigrations.add(new Emigration(r, d, d.calcImmigrationWeight() / totalWeight * eligibleToEmigrate));
+					emigrations.add(new Emigration(r, d, d.calcImmigrationWeight(World.this) / totalWeight * eligibleToEmigrate));
 				}
 			}
 			Map<Region, List<Emigration>> relevantEmigrations = new HashMap<>();
@@ -2383,7 +2384,10 @@ public class World extends RulesObject implements GoodwillProvider {
 				for (Character c : characters) if (k.equals(c.kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c;
 				if ("salt_the_earth".equals(final_action)) {
 					for (Region r : regions) if (k.equals(r.getKingdom())) {
+						r.constructions.clear();
+						r.unrestPopular = Math.min(0.75, r.unrestPopular);
 						r.food /= 2;
+						r.crops /= 2;
 					}
 					notifyAllPlayers(k + " Salts the Earth", "In a final act of defiance, " + ruler.name + " orders their agents to destroy their lands, making them unfit for inhabitation. In a week of violence and terror, the people rise up and overthrow their rulers, but not before much of " + k + " is ruined beyond recognition.");
 				}
@@ -2582,10 +2586,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		for (Region target : destinations) {
 			double targetUnrestFactor = 1;
 			double fromUnrestFactor = 1;
-			if (getNation(target.getKingdom()).hasTag(NationData.Tag.NOMADIC)) {
-				targetUnrestFactor = 0.2;
-				fromUnrestFactor = 0.2;
-			}
 			if (Ideology.CHALICE_OF_COMPASSION == getDominantIruhanIdeology()) {
 				if (target.religion.religion == Religion.IRUHAN) targetUnrestFactor = 0;
 				if (from.religion.religion == Religion.IRUHAN) fromUnrestFactor = 0;

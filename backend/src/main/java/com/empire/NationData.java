@@ -27,14 +27,14 @@ public class NationData {
 		@SerializedName("Industrial") INDUSTRIAL,
 		@SerializedName("Mercantile") MERCANTILE,
 		@SerializedName("Mystical") MYSTICAL,
-		@SerializedName("Nomadic") NOMADIC,
 		@SerializedName("Patriotic") PATRIOTIC,
 		@SerializedName("Rebellious") REBELLIOUS,
 		@SerializedName("Republican") REPUBLICAN,
 		@SerializedName("Seafaring") SEAFARING,
 		@SerializedName("Ship-Building") SHIP_BUILDING,
 		@SerializedName("Stoic") STOIC,
-		@SerializedName("War-like") WARLIKE;
+		@SerializedName("War-like") WARLIKE,
+		@SerializedName("Welcoming") WELCOMING;
 	}
 
 	enum ScoreProfile {

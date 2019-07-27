@@ -68,9 +68,10 @@ class Region extends RulesObject {
 		return culture.getArmyTags();
 	}
 
-	public double calcImmigrationWeight() {
+	public double calcImmigrationWeight(World w) {
 		double mod = 1;
 		if (religion == Ideology.FLAME_OF_KITH) mod += getRules().flameOfKithImmigrationWeightMod;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.WELCOMING)) mod += 1;
 		return (1 - unrestPopular) * mod;
 	}
 
