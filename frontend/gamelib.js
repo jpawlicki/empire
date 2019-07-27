@@ -763,5 +763,5 @@ let g_scoreProfiles = {
 	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy or neutral army is within two regions of your core regions.", "+1 point per turn no enemy army is adjacent to or occupying any of your core regions.", "-1 point if neither of the above apply."]},
 	"CULTURE":    {"selectable": true,  "description": ["+2 points per turn the mean unrest of population of your culture is lower than the mean unrest of all other people.", "-2 points otherwise."]},
 	"IDEOLOGY":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion and ideology.", "-2 points whenever a region of your ideology is converted to another religion or ideology."]},
-	"CULTISM":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region that is not an objective region."]}
+	"CULTIST":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region that is not an objective region."]}
 };

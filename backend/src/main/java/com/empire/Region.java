@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ class Region extends RulesObject {
 	List<Construction> constructions = new ArrayList<>();
 	double food;
 	double crops;
-	boolean gotCultFood;
+	boolean cultAccessed;
 
 	private String kingdom;
 
@@ -407,6 +408,17 @@ class Region extends RulesObject {
 		maxHarvest = Math.min(crops, maxHarvest);
 		food += maxHarvest;
 		crops = 0;
+	}
+
+	void cultAccess(Collection<NationData> nations, boolean isCriticalCultRegion) {
+		if (cultAccessed || !isLand()) return;
+		cultAccessed = true;
+		for (NationData n : nations) n.score(NationData.ScoreProfile.CULTIST, getRules().scoreCultistRegionAccess);
+		if (isCriticalCultRegion) for (NationData n : nations) n.score(NationData.ScoreProfile.CULTIST, getRules().scoreCultistCriticalRegionAccess);
+	}
+
+	boolean hasBeenCultAccessed() {
+		return cultAccessed;
 	}
 
 	private Region(Rules rules) {
