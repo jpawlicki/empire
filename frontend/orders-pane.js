@@ -353,7 +353,7 @@ class OrdersPane extends HTMLElement {
 					opts.push("Transfer character to " + k);
 				}
 			} else {
-				if (unit.captor == "") {
+				if (unit.captor == "" && !g_data.kingdoms[whoami].score_profiles_locked) {
 					for (let profile of Object.keys(g_scoreProfiles).sort()) {
 						if (!g_scoreProfiles[profile].selectable) continue;
 						if (g_data.kingdoms[whoami].profiles.includes(profile)) {
@@ -590,6 +590,7 @@ class OrdersPane extends HTMLElement {
 			stateDetailsAndRisk();
 		});
 		plotTypeSel.dispatchEvent(new Event("change"));
+		if (g_data.cult_triggered) shadow.querySelector("[name=plot_cult]").disabled = true;
 		{
 			let undeadCount = 0;
 			for (let c of g_data.cult_caches) {

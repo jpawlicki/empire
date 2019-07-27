@@ -166,6 +166,7 @@ class Region {
 		this.crops = dataEntry.crops;
 		this.religion = dataEntry.religion;
 		this.date = date;
+		this.cult_accessed = cult_accessed;
 		if (this.noble == undefined) this.noble = {};
 	}
 
@@ -544,6 +545,7 @@ class Kingdom {
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
 		this.profiles = dataEntry.profiles;
+		this.score_profiles_locked = dataEntry.score_profiles_locked;
 	}
 
 	calcRecruitment(extraMod=0) {
