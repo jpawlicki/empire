@@ -550,6 +550,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		double incomeRaze;
 		double incomeExecution;
 		double incomeArmyDelivery;
+		double incomeShipSales;
 		double spentTribute;
 		double spentSoldiers;
 		double spentRecruits;
@@ -557,9 +558,10 @@ public class World extends RulesObject implements GoodwillProvider {
 		double spentConstruction;
 		double spentFoodTransfers;
 		double spentBribes;
+		double spentSpyEstablishments;
 
 		public double sum() {
-			return incomeTax + incomeSea + incomeTribute + incomeChurch + incomeGift + incomeRaze + incomeExecution + incomeArmyDelivery - spentTribute - spentSoldiers - spentRecruits - spentConstruction - spentGift - spentBribes - spentFoodTransfers;
+			return incomeTax + incomeSea + incomeTribute + incomeChurch + incomeGift + incomeRaze + incomeExecution + incomeArmyDelivery + incomeShipSales - spentTribute - spentSoldiers - spentRecruits - spentConstruction - spentGift - spentBribes - spentFoodTransfers - spentSpyEstablishments;
 		}
 	}
 
@@ -1413,8 +1415,10 @@ public class World extends RulesObject implements GoodwillProvider {
 					c.addExperienceGovernor();
 				} else if (action.startsWith("Establish Spy Ring")) {
 					if (!region.isLand() || spyRings.stream().filter(r -> r.getNation().equals(c.kingdom) && r.getLocation() == c.location).count() != 0) continue;
-					if (getNation(c.kingdom).gold < getRules().spyRingEstablishCost) continue;
-					getNation(c.kingdom).gold -= getRules().spyRingEstablishCost;
+					double cost = getRules().spyRingEstablishCost;
+					if (getNation(c.kingdom).gold < cost) continue;
+					getNation(c.kingdom).gold -= cost;
+					incomeSources.get(c.kingdom).spentSpyEstablishments += cost;
 					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
 					c.orderhint = "";
 					c.addExperienceSpy();
@@ -2077,7 +2081,9 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (max == null || !NationData.isEnemy(r.getKingdom(), max.kingdom, World.this)) {
 						double shipRate = Math.min(getRules().numShipsBuiltPerShipyard, Math.max(0, Integer.parseInt(orders.getOrDefault(r.getKingdom(), new HashMap<String, String>()).getOrDefault("economy_ship", "5"))));
 						buildShips(r.getKingdom(), i, shipyards * shipRate);
-						getNation(r.getKingdom()).gold += shipyards * (getRules().numShipsBuiltPerShipyard - shipRate) * getRules().shipSellProfit;
+						double profit = shipyards * (getRules().numShipsBuiltPerShipyard - shipRate) * getRules().shipSellProfit;
+						getNation(r.getKingdom()).gold += profit;
+						incomeSources.get(r.getKingdom()).incomeShipSales += profit;
 					}
 				}
 			}
@@ -2145,6 +2151,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				if (b.incomeRaze > 0) notification += "\n" + Math.round(b.incomeRaze) + " gold gained from razing constructions.";
 				if (b.incomeExecution > 0) notification += "\n" + Math.round(b.incomeExecution) + " gold gained from ceremonial execution rituals.";
 				if (b.incomeArmyDelivery > 0) notification += "\n" + Math.round(b.incomeArmyDelivery) + " gold delivered from our armies.";
+				if (b.incomeShipSales > 0) notification += "\n" + Math.round(b.incomeShipSales) + " gold earned from ship sales.";
 				if (b.spentTribute > 0) notification += "\n" + Math.round(b.spentTribute) + " gold spent paying tribute to other nations.";
 				if (b.spentSoldiers > 0) notification += "\n" + Math.round(b.spentSoldiers) + " gold spent to pay our sailors and soldiers.";
 				if (b.spentRecruits > 0) notification += "\n" + Math.round(b.spentRecruits) + " gold spent to pay our soldiers' bonuses.";
@@ -2152,6 +2159,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				if (b.spentGift > 0) notification += "\n" + Math.round(b.spentGift) + " gold given to other nations (non-tribute).";
 				if (b.spentFoodTransfers > 0) notification += "\n" + Math.round(b.spentFoodTransfers) + " gold spent to transfer food.";
 				if (b.spentBribes > 0) notification += "\n" + Math.round(b.spentBribes) + " gold spent to bribe pirates.";
+				if (b.spentSpyRingEstablishments > 0) notification += "\n" + Math.round(b.spentSpyRingEstablishments) + " gold spent establishing new spy rings.";
 				notifications.add(new Notification(k, "Budget", notification));
 			}
 		}

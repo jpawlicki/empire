@@ -45,7 +45,7 @@ class OrdersPane extends HTMLElement {
 					<div id="plot_rings"></div>
 					<h1>Cult</h1>
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
-					<expandable-snippet text="In exchange for loyalty, the Cult will give us ${undeadCount} undead soldiers. The Cult will gain access to any regions we control, and you should continue to expand their influence by annexing additional territory."></expandable-snippet>
+					<expandable-snippet text="In exchange for loyalty, the Cult will give us ${Math.round(undeadCount)} undead soldiers. The Cult will gain access to any regions we control, and you should continue to expand their influence by annexing additional territory."></expandable-snippet>
 					<hr/>
 					<h1>Gothi Votes</h1>
 					<label id="gothi_alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
@@ -81,7 +81,7 @@ class OrdersPane extends HTMLElement {
 				<div id="content_economy">
 					<h1>Economic Controls</h1>
 					<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
-					<label>Ship Sales: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="25" value="5"/></label>
+					<label>Shipbuilding: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="1" value="5"/></label>
 					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="75" max="125" step="25" value="100"/></label>
 					<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
 					<div id="economy_consequences">

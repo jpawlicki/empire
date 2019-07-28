@@ -779,7 +779,7 @@ class Plot {
 			let nations = [];
 			for (let k in g_data.kingdoms) nations.push(k);
 			nations.sort((a, b) => g_data.kingdoms[b].goodwill - g_data.kingdoms[a].goodwill);
-			let index = nations.findIndex(this.target_id);
+			let index = nations.findIndex(a => a == this.target_id);
 			return nations[index == nations.size - 1 ? index - 1 : index + 1];
 		}
 		return undefined;
@@ -800,7 +800,7 @@ class Plot {
 		else if (this.type == "DENOUNCE") desc = "Denounce the deeds of";
 		else if (this.type == "INTERCEPT_COMMUNICATIONS") desc = "Intercept communications of";
 		else if (this.type == "SURVEY_NATION") desc = "Survey";
-		return desc + " " + this.target_id + " (" + this.getDefender() + ")";
+		return desc + " " + this.target_id + " (vs " + this.getDefender() + ")";
 		return undefined;
 	}
 }
