@@ -44,8 +44,6 @@ public class Rules {
 	double scoreReligionPerConverted;
 	double scoreIdeologyPerConverted;
 	double scorePerConqueredTerritory;
-	double numShipsBuiltPerShipyard;
-	double shipBuildingTraitWeeksProduction;
 	double gloryCasualtyRewardThreshold;
 	double gloryCasualtyPunishmentThreshold;
 
@@ -90,7 +88,7 @@ public class Rules {
 
 	//Religion
 	double rjinkuRecruitmentMod;
-	double rjinkuBattledRecruitmentMod;
+	double rjinkuCasualtyRecovery;
 	double syrjenTaxMod;
 	double swordOfTruthRecruitmentMod;
 	double chaliceOfCompassionTaxMod;
@@ -180,6 +178,10 @@ public class Rules {
 	double baseCostFortifications;
 	double baseCostShipyard;
 	double baseCostTemple;
+
+	double shipBuildingTraitWeeksProduction;
+	double numShipsBuiltPerShipyard;
+	double shipSellProfit;
 
 	// Church
 	double antiapostasyOpinion;

@@ -83,6 +83,7 @@ class OrdersPane extends HTMLElement {
 				<div id="content_economy">
 					<h1>Economic Controls</h1>
 					<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
+					<label>Ship Sales: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="25" value="5"/></label>
 					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="75" max="125" step="25" value="100"/></label>
 					<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
 					<div id="economy_consequences">
@@ -772,6 +773,7 @@ class OrdersPane extends HTMLElement {
 
 		// ECONOMY
 		let eTax = shadow.getElementById("economy_tax");
+		let eShip = shadow.getElementById("economy_ship");
 		let eRation = shadow.getElementById("economy_ration");
 		let eBonus = shadow.getElementById("economy_recruit_bonus");
 		let economyConsequences = shadow.getElementById("economy_consequences");
@@ -793,14 +795,18 @@ class OrdersPane extends HTMLElement {
 			let newTaxation = kingdom.calcTaxation(taxRate).v;
 			let soldiers = 0;
 			let consumptionRate = parseInt(eRation.value) - 100;
+			let shipyardCount = 0;
+			for (let region of g_data.regions) if (region.kingdom == kingdom.name) for (let c of region.constructions) if (c.type == "shipyard") shipyardCount++;
 			for (let army of g_data.armies) if (army.kingdom == kingdom.name && !contains(army.tags, "Higher Power")) soldiers += army.size;
 			if (taxRate != 0) economyConsequences.innerHTML += "<p>" + ((taxRate > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income (~ " + (newTaxation > baseTaxation ? "+" : "") + Math.round(newTaxation - baseTaxation) + " gold)</p>";
+			economyConsequences.innerHTML += "<p>" + (shipyardCount * parseInt(eShip.value)) + " new warships and +" + (shipyardCount * (5 - parseInt(eShip.value))) + " gold.</p>";
 			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
 			if (recruitRate != 0) economyConsequences.innerHTML += "<p>" + ((recruitRate > 0 ? "+" : "") + Math.round(recruitRate * 100)) + "% Recruitment (~ " + (newRecruits > baseRecruits ? "+" : "") + Math.round(newRecruits - baseRecruits) + " recruits)</p>";
 			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (newRecruits + soldiers) / 100) + " gold total)</p>";
 			if (consumptionRate != 0) economyConsequences.innerHTML += "<p>Regions consume " + (consumptionRate > 0 ? "+" : "") + consumptionRate + "% food.</p>";
 		}
 		eTax.addEventListener("input", computeEconomyConsequences);	
+		eShip.addEventListener("input", computeEconomyConsequences);	
 		eRation.addEventListener("input", computeEconomyConsequences);	
 		eBonus.addEventListener("input", computeEconomyConsequences);
 		computeEconomyConsequences();
@@ -890,6 +896,7 @@ class OrdersPane extends HTMLElement {
 					shadow.querySelector("[name=action_army_" + c.id + "]").value = c.orderhint;
 				}
 				if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
+				if (g_data.kingdoms[whoami].shipratehint != undefined) shadow.querySelector("[name=economy_ship]").value = g_data.kingdoms[whoami].shipratehint;
 				if (g_data.kingdoms[whoami].signingbonushint != undefined) shadow.querySelector("[name=economy_recruit_bonus]").value = g_data.kingdoms[whoami].signingbonushint;
 				if (g_data.kingdoms[whoami].rationhint != undefined) shadow.querySelector("[name=economy_ration]").value = g_data.kingdoms[whoami].rationhint;
 				shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));

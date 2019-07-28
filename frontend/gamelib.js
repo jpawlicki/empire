@@ -221,7 +221,8 @@ class Region {
 	calcTaxation(extraMod=0) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}];
+			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"},
+			{"v": extraMod + 1, "unit": "%", "why": "Hypothetical Tax Rate"}];
 		let unrest = this.calcUnrest().v;
 		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
 		let base = new Calc("*", baseAmount);
@@ -247,7 +248,6 @@ class Region {
 		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : getNation(this.kingdom).calcNumUniqueIdeologies();
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
-		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
 		return Calc.moddedNum(base, mods);
 	}
 
@@ -313,7 +313,7 @@ class Region {
 		if (forts == 0) {
 			return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}]);
 		}
-		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 5, "unit": "%", "why": "Maximum Fortification"}]);
+		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 3.5, "unit": "%", "why": "Maximum Fortification"}]);
 	}
 
 	calcMinConquestSize() {

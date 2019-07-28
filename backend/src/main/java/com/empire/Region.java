@@ -75,7 +75,7 @@ class Region extends RulesObject {
 		return (1 - unrestPopular) * mod;
 	}
 
-	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, Character governor, double signingBonus, double nationalCasualties, double rationing, Army largestInRegion) {
 		double base = population * getRules().recruitmentPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - getRules().unrestRecruitmentEffectThresh);
@@ -106,7 +106,6 @@ class Region extends RulesObject {
 			mods += getRules().riverOfKuunRecruitmentMod;
 		}
 
-		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w) && rulerBattled) mods += getRules().rjinkuBattledRecruitmentMod;
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryRecruitmentMod * numUniqueIdeologies(kingdom, w);
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) {
 			mods += getRules().perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
@@ -114,7 +113,10 @@ class Region extends RulesObject {
 
 		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += getRules().armyPillagersRecruitmentMod;
 
-		return Math.max(0, base * mods);
+		double flatBonus = 0;
+		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w)) flatBonus += nationalCasualties * getRules().rjinkuCasualtyRecovery / w.regions.stream().filter(r -> kingdom.equals(r.getKingdom())).count();
+
+		return Math.max(0, base * mods) + flatBonus;
 	}
 
 	// TODO: this belongs alongside the game constants, should determine a way to parameterize these function-type rules
@@ -127,7 +129,7 @@ class Region extends RulesObject {
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestTaxEffectThresh) base *= 1.0 - (unrest - getRules().unrestTaxEffectThresh);
 
-		double mods = taxRate;
+		double mods = 1;
 
 		if (governor != null) mods += governor.calcGovernTaxMod();
 		if (hasNoble()) mods += noble.calcTaxMod();
@@ -160,7 +162,7 @@ class Region extends RulesObject {
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += getRules().perIdeologyTapestryTaxModGlobal * numUniqueIdeologies(kingdom, w);
 
-		return Math.max(0, base * mods);
+		return Math.max(0, base * mods * taxRate);
 	}
 
 	public double calcConsumption(World w, double foodMod) {

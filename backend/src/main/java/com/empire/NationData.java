@@ -126,6 +126,7 @@ public class NationData {
 	private List<Tag> tags = new ArrayList<>();
 	List<String> previousTributes = new ArrayList<>();
 	String taxratehint = "100";
+	String shipratehint = "5";
 	String rationhint = "100";
 	String signingbonushint = "0";
 	String password;
