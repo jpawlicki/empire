@@ -1246,7 +1246,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				Preparation prep = null;
 				for (Preparation p : army.preparation) if (p.to == toId) prep = p;
 				int travelAmount = 1;
-				if (army.hasTag(Army.Tag.PATHFINDERS) && regions.get(toId).getKingdom() != null && NationData.isFriendly(army.kingdom, regions.get(toId).getKingdom(), World.this)) travelAmount = 3;
+				if (army.hasTag(Army.Tag.PATHFINDERS)) travelAmount = 3;
 				if (prep == null) {
 					prep = new Preparation();
 					prep.to = toId;
@@ -2213,6 +2213,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (tivar.warwinds != 0) {
 				HashSet<Character> moved = new HashSet<>();
 				for (Army a : armies) {
+					if (a.hasTag(Army.Tag.WEATHERED)) continue;
 					Region r = regions.get(a.location);
 					if (r.isSea()) {
 						a.size *= 0.75;
