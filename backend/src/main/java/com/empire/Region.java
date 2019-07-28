@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.function.Function;
 
 class Region extends RulesObject {
 	enum Type {
@@ -33,6 +32,8 @@ class Region extends RulesObject {
 	boolean gotCultFood;
 
 	private String kingdom;
+
+	private transient boolean foodPinned = false;
 
 	//TODO: does this method belong with kingdom/nation?
 	static int numUniqueIdeologies(String kingdom, World w) {
@@ -246,58 +247,6 @@ class Region extends RulesObject {
 		return false;
 	}
 
-	public Map<String, Double> calcPlotPowers(World w, List<String> boosts, int inspires) {
-		Map<String, Double> powers = new HashMap<>();
-		for (String kingdom : w.getNationNames()) {
-			powers.put(kingdom, 0.0);
-		}
-		final class Node {
-			public final double power;
-			public final Region location;
-			public Node(double power, Region location) {
-				this.power = power;
-				this.location = location;
-			}
-		}
-
-		for (final Character c : w.characters) {
-			Function<Node, Node> getPower = (Node n) -> {
-				Region r = n.location;
-				if (r.isSea()) return new Node(n.power * getRules().plotDecaySea, n.location);
-				if (NationData.isFriendly(c.kingdom, r.kingdom, w)) {
-					if (r.religion == Ideology.LYSKR) return new Node(n.power, n.location);
-					return new Node(n.power * (getRules().plotDecayFriendly - r.calcUnrest(w) / 10), n.location);
-				}
-				return new Node(n.power * (getRules().plotDecayNonFriendly + r.calcUnrest(w) / 10), n.location);
-			};
-
-			// TODO: try this function-style equivalent instead once unit tests are created
-			// PriorityQueue<Node> pq = new PriorityQueue<>(100, Comparator.comparingDouble(n -> -n.power));
-			PriorityQueue<Node> pq = new PriorityQueue<>(100, new Comparator<Node>() {
-				@Override
-				public int compare(Node a, Node b) {
-					return a.power > b.power ? -1 : a.power < b.power ? 1 : 0;
-				}
-			});
-
-			Set<Region> visited = new HashSet<>();
-			pq.add(getPower.apply(new Node(c.calcPlotPower(w, boosts.contains(c.kingdom), inspires), w.regions.get(c.location))));
-			while (!pq.isEmpty()) {
-				Node n = pq.poll();
-				if (visited.contains(n.location)) continue;
-				visited.add(n.location);
-				if (n.location == this) {
-					powers.put(c.kingdom, Math.max(powers.get(c.kingdom), n.power));
-					break;
-				}
-				for (Region r : n.location.getNeighbors(w)) {
-					if (!visited.contains(r)) pq.add(getPower.apply(new Node(n.power, r)));
-				}
-			}
-		}
-		return powers;
-	}
-
 	public double calcUnrest(GoodwillProvider w) {
 		return Math.min(1.0, Math.max(getUnrestPopular(), Math.max(calcUnrestClerical(w), calcUnrestNoble())));
 	}
@@ -407,6 +356,14 @@ class Region extends RulesObject {
 		maxHarvest = Math.min(crops, maxHarvest);
 		food += maxHarvest;
 		crops = 0;
+	}
+
+	void pinFood() {
+		foodPinned = true;
+	}
+
+	boolean getFoodPinned() {
+		return foodPinned;
 	}
 
 	private Region(Rules rules) {

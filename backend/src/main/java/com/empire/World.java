@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
@@ -34,9 +35,8 @@ interface GoodwillProvider {
 	double getGoodwill(String nation);
 }
 
-
 public class World extends RulesObject implements GoodwillProvider {
-	private static final String TYPE = "World";
+	static final String TYPE = "World";
 	private static final Logger log = Logger.getLogger(World.class.getName());
 
 	int date;
@@ -45,6 +45,8 @@ public class World extends RulesObject implements GoodwillProvider {
 	List<Army> armies = new ArrayList<>();
 	List<Character> characters = new ArrayList<>();
 	List<Communication> communications = new ArrayList<>();
+	List<Plot> plots = new ArrayList<>();
+	List<SpyRing> spyRings = new ArrayList<>();
 	Pirate pirate = new Pirate();
 	Tivar tivar = new Tivar();
 	String gmPasswordHash;
@@ -96,6 +98,20 @@ public class World extends RulesObject implements GoodwillProvider {
 		return gameover;
 	}
 
+	public List<SpyRing> getSpyRings() {
+		return spyRings;
+	}
+
+	public Optional<Character> getCharacterByName(String name) {
+		for (Character c : characters) if (c.name.equals(name)) return Optional.of(c);
+		return Optional.empty();
+	}
+
+	public Optional<Character> getRuler(String kingdom) {
+		for (Character c : characters) if (c.hasTag(Character.Tag.RULER) && c.kingdom.equals(kingdom)) return Optional.of(c);
+		return Optional.empty();
+	}
+
 	private transient Geography geography;
 
 
@@ -105,6 +121,8 @@ public class World extends RulesObject implements GoodwillProvider {
 		InstanceCreator<Character> icc = unused -> Character.newCharacter(rules);
 		InstanceCreator<Army> ica = unused -> Army.newArmy(rules);
 		InstanceCreator<Noble> icn = unused -> Noble.newNoble(rules);
+		InstanceCreator<SpyRing> icsr = unused -> SpyRing.newSpyRing(rules);
+		InstanceCreator<Plot> icp = unused -> Plot.newPlot(rules);
 
 		return new GsonBuilder()
 				.enableComplexMapKeySerialization()
@@ -114,6 +132,8 @@ public class World extends RulesObject implements GoodwillProvider {
 				.registerTypeAdapter(Character.class, icc)
 				.registerTypeAdapter(Army.class, ica)
 				.registerTypeAdapter(Noble.class, icn)
+				.registerTypeAdapter(SpyRing.class, icsr)
+				.registerTypeAdapter(Plot.class, icp)
 				.create();
 	}
 
@@ -426,6 +446,12 @@ public class World extends RulesObject implements GoodwillProvider {
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 			}
+		}
+		// Place spy rings.
+		for (String kingdom : nationSetup.keySet()) {
+			List<Integer> candidates = new ArrayList<>();
+			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) candidates.add(i);
+			w.spyRings.add(SpyRing.newSpyRing(w.getRules(), kingdom, w.getRules().setupSpyRingStrength, candidates.get((int)(Math.random() * candidates.size()))));
 		}
 		// Add characters, incl Cardinals
 		for (String kingdom : nationSetup.keySet()) {
@@ -968,17 +994,74 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void resolveIntrigue() {
-			ArrayList<String> boosts = new ArrayList<>();
-			ArrayList<Plot> kingdomPlotsToResolve = new ArrayList<>();
-			for (String k : orders.keySet()) if ("defend".equals(orders.get(k).get("plot_type"))) boosts.add(k);
-			for (String k : orders.keySet()) {
-				Map<String, String> kOrders = orders.get(k);
-				if (!"defend".equals(kOrders.get("plot_type"))) {
-					kingdomPlotsToResolve.add(new Plot(k, PlotType.valueOf(kOrders.get("plot_type")), kOrders.get("plot_target"), kOrders.get("plot_action"), boosts, inspires, leaders.values()));
+			// Update spy ring orders.
+			for (SpyRing ring : spyRings) {
+				try {
+					String involveIn = orders.getOrDefault(ring.getNation(), new HashMap<String, String>()).get("spyring_" + ring.getLocation());
+					SpyRing.InvolvementDisposition involveType = SpyRing.InvolvementDisposition.valueOf(orders.getOrDefault(ring.getNation(), new HashMap<String, String>()).getOrDefault("spyring_type_" + ring.getLocation(), ""));
+					if (involveIn == null || involveType == null) continue; // No orders exist for the spy ring - assume no change.
+					int plotId = Integer.parseInt(involveIn);
+					plots
+							.stream()
+							.filter(p -> p.getId() == plotId)
+							.filter(p -> p.hasConspirator(ring.getNation()))
+							.findAny()
+							.ifPresent(p -> ring.involve(p.getId(), involveType));
+				} catch (NumberFormatException e) {
+					log.log(Level.WARNING, "Bad spy ring order: " + ring.getNation() + ", " + ring.getLocation(), e);
+				} catch (IllegalArgumentException e) {
+					// Do nothing. This is just a missing involveType order.
 				}
 			}
-			Collections.sort(kingdomPlotsToResolve);
-			for (Plot p : kingdomPlotsToResolve) p.evaluate(orders);
+			// Evaluate current plots.
+			Collections.shuffle(plots);
+			plots.removeIf(
+					p -> p.check(
+							World.this,
+							p.getConspirators()
+									.stream()
+									.map(e -> orders.getOrDefault(e, new HashMap<>()).get("plot_execute_" + p.getId()))
+									.anyMatch(v -> "checked".equals(v)),
+							a -> a.calcStrength(World.this, leaders.get(a), inspires, lastStands.contains(a.kingdom))));
+
+			// Create new plots.
+			for (String k : orders.keySet()) {
+				for (String o : orders.get(k).keySet()) {
+					if (!o.startsWith("plot_new_type")) continue;
+					Plot.PlotType type = Plot.PlotType.valueOf(orders.get(k).get(o));
+					if (type == null) continue;
+					String target = orders.get(k).get(o.replace("type", "target"));
+					List<String> conspirators = new ArrayList<>();
+					conspirators.add(k);
+					for (String s : getNationNames()) if ("checked".equals(orders.get(k).get(o.replace("type", "involve_" + s)))) conspirators.add(s);
+					plots.add(Plot.newPlot(getRules(), plots.stream().map(p -> p.getId()).collect(Collectors.toSet()), type, target, conspirators));
+				}
+			}
+
+			// Update conspirators for old plots.
+			for (String k : orders.keySet()) {
+				for (String o : orders.get(k).keySet()) {
+					if (!o.startsWith("plot_invite_")) continue;
+					if (!"checked".equals(orders.get(k).get(o))) continue;
+					String[] op = o.substring("plot_invite_".length()).split("_");
+					if (op.length != 2) continue;
+					if (!getNationNames().contains(op[1])) continue;
+					try {
+						int plotId = Integer.parseInt(op[0]);
+						plots
+								.stream()
+								.filter(p -> p.getId() == plotId)
+								.filter(p -> p.hasConspirator(k))
+								.findAny()
+								.ifPresent(p -> p.addConspirator(op[1]));
+					} catch (NumberFormatException e) {
+						log.log(Level.WARNING, "Bad plot invitation: " + k + ", " + o + ": " + orders.get(k).get(o), e);
+					}
+				}
+			}
+
+			// Grow spy rings.
+			for (SpyRing s : spyRings) s.grow();
 		}
 
 		void doctrineChanges() {
@@ -1308,6 +1391,11 @@ public class World extends RulesObject implements GoodwillProvider {
 					region.noble = Noble.newNoble(region.culture, date, getRules());
 					c.orderhint = "";
 					c.addExperienceGovernor();
+				} else if (action.startsWith("Establish Spy Ring")) {
+					if (!region.isLand() || spyRings.stream().filter(r -> r.getNation().equals(c.kingdom) && r.getLocation() == c.location).count() != 0) continue;
+					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
+					c.orderhint = "";
+					c.addExperienceSpy();
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
 					if (!governors.containsKey(region) || governors.get(region).calcGovernTaxMod() < c.calcGovernTaxMod()) governors.put(region, c);
@@ -1888,6 +1976,10 @@ public class World extends RulesObject implements GoodwillProvider {
 					}
 					double amount = Math.max(0, Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000));
 					if (amount == 0) continue;
+					if (from.getFoodPinned() || to.getFoodPinned()) {
+						notifications.add(new Notification(k, "Food Transfer from " + from.name + " Failed", "Due to a nefarious plot, our orders to transfer food from " + from.name + " to " + to.name + " were lost!"));
+						continue;
+					}
 					double cost = amount / 50000;
 					if (cost > getNation(k).gold) {
 						amount *= getNation(k).gold / cost;
@@ -2602,251 +2694,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		return geography;
 	}
 
-	private class Plot implements Comparable<Plot> {
-		final String perpetrator;
-		final String action;
-		final PlotType type;
-		final String target;
-		final Map<String, Double> power;
-		final int targetRegion;
-		final Collection<Character> leaders;
-
-		public Plot(String perpetrator, PlotType type, String target, String action, List<String> boosts, int inspires, Collection<Character> leaders) {
-			this.perpetrator = perpetrator;
-			this.type = type;
-			this.target = target;
-			this.action = action;
-			this.leaders = leaders;
-			int targetRegion = -1;
-			switch (type) {
-				case CHARACTER:
-					for (Character c : characters) if (c.name.equals(target)) {
-						targetRegion = c.location;
-					}
-					break;
-				case REGION:
-					for (int i = 0; i < regions.size(); i++) if (regions.get(i).name.equals(target)) {
-						targetRegion = i;
-					}
-					break;
-				case CHURCH:
-					for (int i = 0; i < regions.size(); i++) if (regions.get(i).name.equals("Sancta Civitate")) {
-						targetRegion = i;
-					}
-					break;
-				case INTERNATIONAL:
-					for (Character c : characters) if (c.kingdom.equals(target) && c.hasTag(Character.Tag.RULER)) {
-						targetRegion = c.location;
-					}
-					break;
-			}
-			this.targetRegion = targetRegion;
-			if (targetRegion != -1) this.power = regions.get(targetRegion).calcPlotPowers(World.this, boosts, inspires);
-			else this.power = new HashMap<>();
-		}
-
-		@Override
-		public int compareTo(Plot other) {
-			return power.get(perpetrator) > other.power.get(other.perpetrator) ? -1 : power.get(perpetrator) < other.power.get(other.perpetrator) ? 1 : 0;
-		}
-
-		public void evaluate(Map<String, Map<String, String>> orders) {
-			if (targetRegion == -1) {
-				notifications.add(new Notification(perpetrator, "Plot Invalid", type == PlotType.INTERNATIONAL ? target + " currently has no ruler, therefore our plot could not be enacted." : "The target of our plot does not exist."));
-				return;
-			}
-			String defender = "";
-			switch (type) {
-				case CHARACTER:
-					for (Character c : characters) if (c.name.equals(target)) {
-						defender = !c.isCaptive() ? c.kingdom : c.captor;
-					}
-					if ("".equals(defender)) {
-						notifications.add(new Notification(perpetrator, "Plot Pre-empted", target + " was killed and therefore our plot could not be enacted."));
-						return;
-					}
-					break;
-				case REGION:
-					for (int i = 0; i < regions.size(); i++) if (regions.get(i).name.equals(target)) {
-						defender = regions.get(i).getKingdom();
-					}
-					break;
-				case CHURCH:
-					for (int i = 0; i < regions.size(); i++) if (regions.get(i).name.equals("Sancta Civitate")) {
-						defender = regions.get(i).getKingdom();
-					}
-					break;
-				case INTERNATIONAL:
-					defender = target;
-					break;
-			}
-			boolean success = power.get(perpetrator) > power.get(defender) || perpetrator.equals(defender);
-			boolean partialSuccess = success;
-			if (type == PlotType.CHURCH) {
-				success = success || (NationData.isFriendly(target, defender, World.this) && "praise".equals(action)) || (NationData.isEnemy(target, defender, World.this) && "denounce".equals(action));
-			} else if (type == PlotType.CHARACTER) {
-				for (Character cc : leaders) if (cc.name.equals(target) && power.get(perpetrator) < power.get(defender) * 1.5) partialSuccess = false;
-			}
-			String title = success ? (partialSuccess ? "Successful Plot: " : "Partially Successful Plot: ") : "Failed Plot: ";
-			String details = "Our spies have become aware of " + (success ? "a successful" : "an unsuccessful") + " plot to ";
-			if (type == PlotType.REGION) {
-				if ("burn".equals(action)) {
-					title += "Burn Food in " + regions.get(targetRegion).name;
-					details += "destroy " + Math.round(regions.get(targetRegion).food / 2000) + "k measures of food in " + regions.get(targetRegion).name;
-					if (success) regions.get(targetRegion).food /= 2;
-				} else if ("rebel".equals(action)) {
-					title += "Incite Rebellion in " + regions.get(targetRegion).name;
-					details += "incite popular unrest in " + regions.get(targetRegion).name;
-					if (success) regions.get(targetRegion).unrestPopular = Math.min(1, regions.get(targetRegion).unrestPopular + 0.4);
-				} else {
-					throw new RuntimeException("Unreocognized plot action: " + action);
-				}
-			} else if (type == PlotType.CHARACTER) {
-				Character c = null;
-				for (Character cc : characters) if (cc.name.equals(target)) c = cc;
-				String order = "";
-				if (c != null && orders.get(c.kingdom) != null) {
-					order = "They were ordered to " + orders.get(c.kingdom).get("action_" + c.name.replace(" ", "_").replace("'", "_"));
-				}
-				if ("find".equals(action)) {
-					title += "Find " + target;
-					details += "locate " + target + (c != null ? ", a hero of " + c.kingdom : "") + ".";
-					if (success) {
-						if (c == null) notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						else notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-					}
-				} else if ("arrest".equals(action)) {
-					title += "Arrest " + target;
-					details += "locate " + target + " and arrest them if trespassing.";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							if (perpetrator.equals(regions.get(targetRegion).getKingdom())) {
-								if (partialSuccess) {
-									details += " They were trespassing and arrested.";
-									c.captor = perpetrator; 
-									c.orderhint = "";
-								} else {
-									details += " The soldiers they were leading saved them from arrest.";
-								}
-							} else {
-								details += " They were not trespassing and therefore left alone.";
-							}
-						}
-					}
-				} else if ("capture".equals(action)) {
-					title += "Abduct " + target;
-					details += "abduct " + target + (c != null ? ", a hero of " + c.kingdom : "") + ".";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							if (partialSuccess) {
-								c.captor = perpetrator; 
-								c.orderhint = "";
-							} else {
-								details += " The soldiers they were leading saved them from captured.";
-							}
-						}
-					}
-				} else if ("rescue".equals(action)) {
-					title += "Rescue " + target;
-					details += "free " + target + (c != null ? ", a hero of " + c.kingdom : "") + " from captivity.";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else if (!c.isCaptive()) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were not in captivity. " + order));
-						} else {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-							c.captor = ""; 
-							c.orderhint = "";
-						}
-					}
-				} else if ("kill".equals(action)) {
-					title += "Assassinate " + target;
-					details += "murder " + target + (c != null ? ", a hero of " + c.kingdom : "") + ".";
-					if (success) {
-						if (c == null) {
-							notifications.add(new Notification(perpetrator, "Location of " + target, "We located " + target + " in " + regions.get(targetRegion).name + ", but by the time our agents got there, they were already dead. " + order));
-						} else {
-							if (partialSuccess) {
-								notifications.add(new Notification(perpetrator, "Location of " + target, "We have located " + target + " in " + regions.get(targetRegion).name + ". " + order));
-								characters.remove(c);
-								if (c.hasTag(Character.Tag.RULER)) {
-									notifications.add(new Notification(c.kingdom, c.name + " Killed", " You have been killed. Your nation mourns, but your government is prepared for this eventuality, and another ruler rises to power. Your new ruler may have different values and therefore change what you earn or lose score points for. Points accumulated so far are kept."));
-								}
-							} else {
-								details += " The soldiers they were leading saved them from being killed.";
-							}
-						}
-					}
-				} else {
-					throw new RuntimeException("Unreocognized plot action: " + action);
-				} 
-			} else if (type == PlotType.CHURCH) {
-				if ("praise".equals(action)) {
-					title += "Praise " + target + " in Sancta Civitate";
-					details += "sing the praises of " + target + " among the clergy of Iruhan.";
-					if (success) {
-						getNation(target).goodwill += getRules().plotPraiseOpinion;
-					}
-				} else if ("denounce".equals(action)) {
-					title += "Denounce " + target + " in Sancta Civitate";
-					details += "announce and condemn the crimes of " + target + " among the clergy of Iruhan.";
-					if (success) {
-						getNation(target).goodwill += getRules().plotCondemnOpinion;
-					}
-				} else {
-					throw new RuntimeException("Unreocognized plot action: " + action);
-				} 
-			} else if (type == PlotType.INTERNATIONAL) {
-				if ("eavesdrop".equals(action)) {
-					title += "Eavesdrop on " + target;
-					details += "intercept and monitor the communications of " + target + ".";
-					if (success) {
-						for (Communication c : communications) {
-							if (c.postDate == date && (target.equals(c.from) || c.to.contains(target))) c.intercepted.add(perpetrator);
-						}
-					}
-				} else {
-					throw new RuntimeException("Unreocognized plot action: " + action);
-				} 
-			}
-			ArrayList<String> knows = new ArrayList<>();
-			for (String kingdom : power.keySet()) {
-				if (kingdom.equals(perpetrator)) continue;
-				ArrayList<String> suspects = new ArrayList<>();
-				if (power.get(kingdom) > power.get(perpetrator)) {
-					suspects.add(perpetrator);
-				} else {
-					for (String k : power.keySet()) {
-						if (k.equals(kingdom)) continue;
-						if (power.get(k) <= power.get(kingdom)) continue;
-						suspects.add(k);
-					}
-				}
-				if (suspects.size() == 1) {
-					knows.add(kingdom);
-					notifications.add(new Notification(kingdom, title, details + "\nWe are confident that the plot was orchestrated by " + suspects.get(0) + "."));
-				} else {
-					notifications.add(new Notification(kingdom, title, details + "\nWe are confident that the plot was orchestrated by one of " + String.join(", ", suspects) + "."));
-				}
-			}
-			notifications.add(new Notification(perpetrator, "Our " + title, "We were discovered by " + String.join(", ", knows) + ". Other nations likely suspect us but lack proof."));
-		}
-	}
-
-	private static enum PlotType {
-		CHARACTER,
-		REGION,
-		CHURCH,
-		INTERNATIONAL;
-	}
-
 	void notifyAllPlayers(String title, String notification) {
 		for (String k : kingdoms.keySet()) {
 			notifications.add(new Notification(k, title, notification));
@@ -2924,6 +2771,14 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (!kingdom.equals(n.who)) remove.add(n);
 		}
 		for (Notification n : remove) notifications.remove(n);
+		// Filter plots. Plots disclose some details about spy rings in their power hints, so this must be done before filtering spy rings.
+		plots.removeIf(p -> !p.hasConspirator(kingdom));
+		for (Plot p : plots) p.filter(this, a -> a.calcStrength(this, characters.stream().filter(c -> c.leadingArmy == a.id).findAny().orElse(null), inspiresHint, false));
+		// Filter spy rings.
+		spyRings.removeIf(r -> !r.isExposed() && !r.getNation().equals(kingdom));
+		for (SpyRing r : spyRings) if (!r.getNation().equals(kingdom)) {
+			r.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
+		}
 		// Filter communications.
 		ArrayList<Communication> removeComm = new ArrayList<>();
 		for (Communication c : communications) {
@@ -2994,7 +2849,7 @@ final class Communication {
 	String from = "";
 	String signed = "";
 	List<String> to = new ArrayList<>();
-	List<String> intercepted = new ArrayList<>();
+	Set<String> intercepted = new HashSet<>();
 	String text = "";
 	int postDate = -1;
 }

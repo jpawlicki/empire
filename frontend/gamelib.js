@@ -384,43 +384,6 @@ class Region {
 		return n;
 	}
 
-	calcPlotPowersInRegion() {
-		let maxPlotPowers = {};
-		for (let k in g_data.kingdoms) {
-			if (g_data.kingdoms.hasOwnProperty(k)) {
-				maxPlotPowers[k] = 0;
-			}
-		}
-		for (let c of g_data.characters) {
-			if (c.location == -1) continue;
-			let gp = function(power, loc) {
-				let r = g_data.regions[loc];
-				if (r.kingdom == undefined || "Unruled" == r.kingdom) return [power * .9, loc];
-				if (getNation(c.kingdom).calcRelationship(getNation(r.kingdom)) == "friendly") {
-					if (r.religion == "Northern (Lyskr)") return [power, loc];
-					return [power * (.9 - r.calcUnrest().v / 10), loc];
-				}
-				return [power * (.8 + r.calcUnrest().v / 10), loc];
-			}
-			let pq = new PriorityQueue((a, b) => (a[0] > b[0]));
-			let visited = {};
-			pq.push(gp(c.calcPlotPower().v, c.location));
-			while (!pq.isEmpty()) {
-				let i = pq.pop();
-				if (visited[i[1]]) continue;
-				visited[i[1]] = true;
-				if (i[1] == this.id) {
-					if (i[0] > maxPlotPowers[c.kingdom]) maxPlotPowers[c.kingdom] = i[0];
-					break;
-				}
-				for (let b of g_data.regions[i[1]].getNeighbors()) {
-					if (!visited[b.id]) pq.push(gp(i[0], b.id));
-				}
-			}
-		}
-		return maxPlotPowers;
-	}
-
 	calcPirateWeight() {
 		if (this.type == "water") return {"v": 0, "unit": " shares", "why": "Sea Region"};
 		if (this.religion == "Northern (Alyrja)") return {"v": 0, "unit": " shares", "why": "Follows Alyrja"};
@@ -678,17 +641,6 @@ class Character {
 	calcLevel(dimension) {
 		return Math.sqrt(this.experience[dimension] + 1);
 	}
-
-	calcPlotPower() {
-		let mods = [];
-		mods.push({"v": 0.3 * this.calcLevel("spy"), "unit": "%", "why": "Experience"});
-		if (getNation(this.kingdom).calcStateReligion() == "Northern (Lyskr)") mods.push({"v": .4, "unit": "%", "why": "State Ideology (Lyskr)"});
-		if (getNation(this.kingdom).calcStateReligion() == "Company") mods.push({"v": .2, "unit": "%", "why": "State Ideology (Company)"});
-		if (getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && g_data.inspires_hint > 0) {
-			mods.push(new Calc("*", [{"v": .05, "unit": "%", "why": "bonus per inspiration"}, {"v": g_data.inspires_hint, "unit": " Inspirations", "why": g_data.inspires_hint + " Iruhan cardinals inspiring in Sancta Civitate"}]));
-		}
-		return Calc.moddedNum({"v": 1, "unit": "power", "why": "Base Plot Power"}, mods);
-	}
 }
 
 
@@ -735,6 +687,112 @@ class Army {
 			if (c.leadingArmy == this.id) mods.push({"v": c.calcLevel(this.type == "army" ? "general" : "admiral") * 0.2, "unit": "%", "why": "Led by " + c.name});
 		}
 		return Calc.moddedNum(base, mods);
+	}
+}
+
+// ============ SPY RING ============
+class SpyRing {
+	constructor(dataEntry) {
+		this.nation = dataEntry.nation;
+		this.location = dataEntry.location;
+		this.strength = dataEntry.strength;
+		this.hidden = dataEntry.hidden;
+		this.involved_in_plot_id = dataEntry.involved_in_plot_id;
+		this.involvement_type = dataEntry.involvement_type;
+	}
+
+	calcStrengthIn(region) {
+		let ring = this;
+		let gp = function(power, loc) {
+			let r = g_data.regions[loc];
+			if (r.kingdom == undefined || "Unruled" == r.kingdom) return [power * .8, loc];
+			if (getNation(ring.nation).calcRelationship(getNation(r.kingdom)) == "friendly") {
+				if (r.religion == "Northern (Lyskr)") return [power, loc];
+				return [power * (.9 - r.calcUnrest().v / 5), loc];
+			}
+			return [power * (.7 + r.calcUnrest().v / 5), loc];
+		}
+		let pq = new PriorityQueue((a, b) => (a[0] > b[0]));
+		let visited = {};
+		pq.push(gp(this.strength, this.location));
+		while (!pq.isEmpty()) {
+			let i = pq.pop();
+			if (visited[i[1]]) continue;
+			visited[i[1]] = true;
+			if (i[1] == region) {
+				return i[0];
+			}
+			for (let b of g_data.regions[i[1]].getNeighbors()) {
+				if (!visited[b.id]) pq.push(gp(i[0], b.id));
+			}
+		}
+		return maxPlotPowers;
+	}
+}
+
+// ============ PLOT ============
+class Plot {
+	constructor(dataEntry) {
+		this.plot_id = dataEntry.plot_id;
+		this.power_hint = dataEntry.power_hint;
+		this.power_hint_total = dataEntry.power_hint_total;
+		this.target_id = dataEntry.target_id;
+		this.type = dataEntry.type;
+		this.conspirators = dataEntry.conspirators;
+	}
+
+	getTargetRegion() {
+		let getTargetRegionCharacter = () => {
+			let character = g_data.characters.find(c => c.name == this.target_id);
+			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
+		}
+		let getTargetRegionRegion = () => g_data.regions.find(r => r.name == this.target_id);
+		let getTargetRegionChurch = () => g_data.regions[g_geo.holycity];
+		let getTargetRegionNation = () => {
+			let character = g_data.kingdoms[this.target_id].getRuler();
+			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
+		}
+		if (this.type == "ASSASSINATE") return getTargetRegionCharacter();
+		if (this.type == "BURN_SHIPYARD" || this.type == "SABOTAGE_FORTIFICATIONS" || this.type == "SPOIL_FOOD" || this.type == "SPOIL_CROPS" || this.type == "INCITE_UNREST" || this.type == "PIN_FOOD" || this.type == "MURDER_NOBLE" || this.type == "POISON_RELATIONS") return getTargetRegionRegion();
+		if (this.type == "PRAISE" || this.type == "DENOUNCE") return getTargetRegionChurch();
+		if (this.type == "INTERCEPT_COMMUNICATIONS" || this.type == "SURVEY_NATION") return getTargetRegionNation();
+	}
+
+	getDefender() {
+		let characterPlots = ["ASSASSINATE"];
+		let regionPlots = ["BURN_SHIPYARD", "SABOTAGE_FORTIFICATIONS", "SPOIL_FOOD", "SPOIL_CROPS", "INCITE_UNREST", "PIN_FOOD", "MURDER_NOBLE", "POISON_RELATIONS"];
+		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION"];
+		let goodwillPlots = ["PRAISE"];
+		if (characterPlots.includes(this.type)) return g_data.characters.find(c => c.name == this.target_id).kingdom;
+		if (regionPlots.includes(this.type)) return g_data.regions.find(c => c.name == this.target_id).kingdom;
+		if (nationPlots.includes(this.type)) return this.target_id;
+		if (goodwillPlots.includes(this.type)) {
+			let nations = [];
+			for (let k in g_data.kingdoms) nations.push(k);
+			nations.sort((a, b) => g_data.kingdoms[b].goodwill - g_data.kingdoms[a].goodwill);
+			let index = nations.findIndex(this.target_id);
+			return nations[index == nations.size - 1 ? index - 1 : index + 1];
+		}
+		return undefined;
+	}
+
+	getObjective() {
+		let desc = "";
+		if (this.type == "ASSASSINATE") desc = "Assassinate";
+		else if (this.type == "BURN_SHIPYARD") desc = "Burn a shipyard in";
+		else if (this.type == "SABOTAGE_FORTIFICATIONS") desc = "Sabotage a fortifications in";
+		else if (this.type == "SPOIL_FOOD") desc = "Spoil food in";
+		else if (this.type == "SPOIL_CROPS") desc = "Spoil crops in";
+		else if (this.type == "INCITE_UNREST") desc = "Incite unrest in";
+		else if (this.type == "PIN_FOOD") desc = "Pin food in";
+		else if (this.type == "MURDER_NOBLE") desc = "Murder the noble of";
+		else if (this.type == "POISON_RELATIONS") desc = "Poison noble/ruler relations in";
+		else if (this.type == "PRAISE") desc = "Praise the deeds of";
+		else if (this.type == "DENOUNCE") desc = "Denounce the deeds of";
+		else if (this.type == "INTERCEPT_COMMUNICATIONS") desc = "Intercept communications of";
+		else if (this.type == "SURVEY_NATION") desc = "Survey";
+		return desc + " " + this.target_id + " (" + this.getDefender() + ")";
+		return undefined;
 	}
 }
 

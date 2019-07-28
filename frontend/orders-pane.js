@@ -6,6 +6,7 @@ class OrdersPane extends HTMLElement {
 		this.bribeRowCount = 0;
 		this.giftRowCount = 0;
 		this.letterCount = 0;
+		this.plotCount = 0;
 		this.currentlySubmitting = false;
 		this.submitQueued = false;
 		this.syncDisabled = true;
@@ -32,24 +33,16 @@ class OrdersPane extends HTMLElement {
 					</tbody>
 				</table>
 				<div id="content_plots">
-					<h1>Objective</h1>
-					<div>
-						<select name="plot_type" id="plot_type">
-							<option value="defend">Discover / Defend From Plots</option>
-							<option value="CHARACTER">Hatch a Character Plot</option>
-							<option value="REGION">Hatch a Regional Plot</option>
-							<option value="CHURCH">Hatch a Church Plot</option>
-							<option value="INTERNATIONAL">Hatch a International Plot</option>
-						</select>
-					</div>
-					<h1>Details</h1>
-					<div id="plot_details"></div>
-					<h1>Risk</h1>
-					<div id="plot_risks">(No risks.)</div>
-					<hr/>
+					<h1>Known Plots</h1>
+					<div id="plot_plots"></div>
+					<div id="plot_newplots"></div>
+					<div id="plot_newplot">Instigate New Plot</div>
+					<h1>Spy Rings</h1>
+					<div id="plot_rings"></div>
+					<h1>Cult</h1>
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
 					<expandable-snippet text="In exchange for loyalty, the Cult will give us an army of 5000 undead soldiers and 2 weeks of food in every region we control. However, the Cult will gain access to any regions we control, and we do not fully understand their objectives."></expandable-snippet>
-					<hr/>
+					<h1>Gothi Votes</h1>
 					<label id="gothi_alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
 					<label id="gothi_rjinku"><input type="checkbox" name="gothi_rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
 					<label id="gothi_syrjen"><input type="checkbox" name="gothi_syrjen"/>Vote to summon the <tooltip-element tooltip="The deluge destroys 25% of any army or navy travelling into a land region, allows navies to traverse land regions and participate in battles there, and prevents navies from being captured. It will start to destroy crops worldwide after 2 weeks of activity.">Deluge</tooltip-element></label>
@@ -205,10 +198,13 @@ class OrdersPane extends HTMLElement {
 			input[type=range] {
 				width: 90%;
 			}
-			#economy_newtransfer, #nations_newletter, #economy_newbribe, #nations_newgift {
+			#plot_newplot, #economy_newtransfer, #nations_newletter, #economy_newbribe, #nations_newgift {
 				cursor: pointer;
 				text-align: center;
 				color: #00f;
+			}
+			#plot_rings label {
+				display: block;
 			}
 			table {
 				width: 100%;
@@ -235,18 +231,53 @@ class OrdersPane extends HTMLElement {
 				padding-bottom: 0.5em;
 				border-bottom: 2px solid black;
 			}
-			#nations_letters > div > div:first-child {
+			#nations_letters > div > div:first-child, #plot_newplots > div > div {
 				display: flex;
 				flex-direction: row;
 				flex-wrap: wrap;
 				justify-content: space-between;
 			}
-			#nations_letters label {
+			#nations_letters label, #plot_newplots label {
+				background-color: #eee;
+				border-radius: .5em;
 				margin-left: .3em;
 				margin-right: .3em;
+				padding-left: .3em;
+				padding-right: .3em;
 			}
 			#nations_letters label input[type=checkbox]:checked ~ span {
 				text-decoration: underline;
+			}
+			#plot_plots h2 {
+				font-size: 110%;
+				text-align: center;
+				border-top: 1px solid black;
+				margin-top: 1em;
+				background-color: #fee;
+			}
+			#plot_plots .objective {
+				font-weight: bold;
+				text-align: center;
+			}
+			#plot_plots .trigger {
+				font-size: 120%;
+			}
+			#plot_plots .conspirators {
+				display: flex;
+				flex-direction: row;
+				flex-wrap: wrap;
+				justify-content: space-between;
+			}
+			#plot_plots .conspirators label {
+				background-color: #eee;
+				border-radius: .5em;
+				margin-left: .3em;
+				margin-right: .3em;
+				padding-left: .3em;
+				padding-right: .3em;
+			}
+			#plot_plots .conspirators label.selected {
+				font-weight: bold;
 			}
 			textarea {
 				width: 100%;
@@ -327,6 +358,9 @@ class OrdersPane extends HTMLElement {
 					}
 				}
 				if (r.type == "land") {
+					if (g_data.spy_rings.find(ring => ring.nation == unit.kingdom && ring.location == r.id) == undefined) {
+						opts.push("Establish Spy Ring");
+					}
 					if (r.isCoastal()) opts.push("Build Shipyard");
 					opts.push("Build Fortifications");
 					for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
@@ -448,148 +482,84 @@ class OrdersPane extends HTMLElement {
 		changeTab("units");
 
 		// PLOT TAB
-		let plotTypeSel = shadow.getElementById("plot_type");
-		let details = shadow.getElementById("plot_details");
-		let risks = shadow.getElementById("plot_risks");
-		plotTypeSel.addEventListener("change", function() {
-			details.innerHTML = {
-				"defend": "Our characters will have +50% strength for investigating and defending against plots.",
-				"CHARACTER": `
-					<div>
-						Find <select id="plot_target_character" name="plot_target"></select>
-						and <select id="plot_action" name="plot_action">
-							<option value="find">that's all</option>
-							<option value="arrest">capture them if they are trespassing in our territory</option>
-							<option value="capture">capture them</option>
-							<option value="rescue">rescue them</option>
-							<option value="kill">kill them</option>
-						</select>.
-					</div>
-				`,
-				"REGION": `
-					<div>
-						<select id="plot_action" name="plot_action">
-							<option value="rebel">Incite rebellion</option>
-							<option value="burn">Burn food</option>
-						</select>
-						in <select id="plot_target_region" name="plot_target"></select>.
-					</div>
-				`,
-				"CHURCH": `
-					<div>
-						<select id="plot_action" name="plot_action">
-							<option value="praise">Sing the praises of</option>
-							<option value="denounce">Denounce and condemn</option>
-						</select>
-						<select id="plot_target_kingdom" name="plot_target"></select> among the elite members of the Church of Iruhan.
-					</div>
-				`,
-				"INTERNATIONAL": `
-					<div>
-						<select id="plot_action" name="plot_action">
-							<option value="eavesdrop">Intercept the communications of</option>
-						</select>
-						<select id="plot_target_kingdom" name="plot_target"></select>.
-					</div>
-				`,
-			}[plotTypeSel.value];
-			let stateDetailsAndRisk = function() {
-				let action = shadow.getElementById("plot_action");
-				if (action == undefined) {
-				  shadow.getElementById("plot_risks").innerHTML = "(No risks.)";
-					return;
-				} else {
-					action = action.value;
-				}
-				let ptk = shadow.getElementById("plot_target_kingdom");
-				let ptc = shadow.getElementById("plot_target_character");
-				let ptr = shadow.getElementById("plot_target_region");
-				let targetRegion = -1;
-				let defender = "";
-				if (plotTypeSel.value == "CHARACTER") {
-					for (let c of g_data.characters) if (c.name == ptc.value) {
-						targetRegion = c.location;
-						defender = c.captor == "" ? c.kingdom : c.captor;
+		{
+			let computePlotSuccessChances = () => {
+				for (let plot of g_data.plots) {
+					let support_mods = 0;
+					let sabotage_mods = 0;
+					let targetRegion = plot.getTargetRegion();
+					if (targetRegion != undefined) {
+						for (let ring of shadow.querySelectorAll("#plot_rings select")) {
+							if (ring.name.startsWith("spyring_type_")) continue;
+							let realRing = g_data.spy_rings.find(r => r.location == parseInt(ring.name.replace("spyring_", "")));
+							let strength = realRing.calcStrengthIn(targetRegion.id)
+							if (realRing.involved_in_plot_id == plot.plot_id) {
+								// Discount the strength of the ring from the apparent success strength. Add it back based on whether the ring is currently ordered to support or sabotage, etc.
+								support_mods -= strength;
+							}
+							if (parseInt(ring.value) != plot.plot_id) continue;
+							if (shadow.querySelector("[name=" + ring.name.replace("spyring_", "spyring_type_") + "]").value == "SUPPORTING") {
+								support_mods += strength;
+							} else {
+								sabotage_mods += strength * 2;
+							}
+						}
 					}
-				} else if (plotTypeSel.value == "CHURCH") {
-					for (let r of g_data.regions) if (r.name == "Sancta Civitate") targetRegion = r.id;
-					defender = g_data.regions[targetRegion].kingdom;
-				} else if (plotTypeSel.value == "REGION") {
-					for (let r of g_data.regions) if (r.name == ptr.value) targetRegion = r.id;
-					defender = g_data.regions[targetRegion].kingdom;
-				} else if (plotTypeSel.value == "INTERNATIONAL") {
-					targetRegion = g_data.kingdoms[ptk.value].getRuler().location;
-					defender = ptk.value;
-				}
-				let riskText = "<p>All nations will learn the details of the plot, but not necessarily of our involvement.</p>";
-				if (targetRegion == -1) {
-					let tc = ptc == undefined ? g_data.kingdoms[ptk.value].getRuler().name : ptc.value;
-					riskText += "<p>We do not know where " + tc + " is, so our spymasters cannot predict our chances of success.</p>";
-				} else {
-					let strengths = g_data.regions[targetRegion].calcPlotPowersInRegion();
-					let ourStrength = strengths[kingdom.name];
-					let unknown = [];
-					let inferior = [];
-					let inferiorWithDefense = [];
-					let inferiorWithDoubleDefense = [];
-					let superior = [];
-					for (let k in strengths) if (strengths.hasOwnProperty(k)) {
-						if (k == kingdom.name) continue;
-						let positionsKnown = true;
-						for (let c of g_data.characters) if (c.kingdom == k && c.location == -1) positionsKnown = false;
-						if (strengths[k] >= ourStrength) superior.push(k);
-						else if (!positionsKnown) unknown.push(k);
-						else if (strengths[k] * 1.5 * 1.5 < ourStrength) inferiorWithDoubleDefense.push(k);
-						else if (strengths[k] * 1.5 < ourStrength) inferiorWithDefense.push(k);
-						else if (strengths[k] < ourStrength) inferior.push(k);
-					}
-					unknown.sort();
-					inferior.sort();
-					inferiorWithDefense.sort();
-					inferiorWithDoubleDefense.sort();
-					superior.sort();
-					if (defender == kingdom.name) riskText += "<p>Our plot will obviously succeed, as we are the \"defenders\".</p>";
-					else if (plotTypeSel.value == "CHURCH"
-						&& ((action == "praise" && g_data.kingdoms[defender].calcRelationship(g_data.kingdoms[ptk.value]) == "friendly")
-						|| (action == "denounce" && g_data.kingdoms[defender].calcRelationship(g_data.kingdoms[ptk.value]) == "enemy"))) riskText += "<p>Our plot will succeed, because the defenders will not oppose us.</p>";
-					else if (contains(superior, defender)) riskText += "<p>Our plot will fail.</p>";
-					else if (contains(unknown, defender)) riskText += "<p>Our plot may succeed or fail.</p>";
-					else if (contains(inferior, defender)) riskText += "<p>Our plot will succeed unless " + defender + " spies devote this week to defense" + (plotTypeSel.value == "CHARACTER" ? " or the character leads an army or navy this turn" : "") + ".</p>";
-					else if (contains(inferiorWithDefense, defender)) riskText += "<p>Our plot will succeed" + (plotTypeSel.value == "CHARACTER" ? " unless the enemy devotes their spies to defense this week and the character leads an army or navy this turn" : "") + ".</p>";
-					else if (contains(inferiorWithDoubleDefense, defender)) riskText += "<p>Our plot will succeed.</p>";
-					if (superior.length > 0) riskText += "<p>" + superior.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will know of our involvement.</p>";
-					if (unknown.length > 0) riskText += "<p>" + unknown.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " may know of our involvement, depending on the location of their hidden characters.</p>";
-					if (inferior.length > 0) riskText += "<p>" + inferior.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will know of our involvement only if they devote their spies to discovering plots this week" + (superior.length == 0 ? " or if we are the only nation with greater plot strength than them" : "") + ".</p>";
-					if (inferiorWithDefense.length > 0) riskText += "<p>" + inferiorWithDefense.map(x => "<report-link href=\"kingdom/" + x + "\">" + x + "</report-link>").join(", ") + " will not know of our involvement" + (superior.length == 0 ? " unless we are the only nation with greater plot strength than them" : "") + ".</p>";
-					if (superior.length == 0) riskText += "<p>At least one nation will know of our involvement.</p>";
-				}
-				riskText += "<expandable-snippet text=\"If international friendships shift this turn, theses estimations of risk may be invalid.\"></expandable-snippet>";
-				shadow.getElementById("plot_risks").innerHTML = riskText;
-			};
-			let setVal = function (vals, element) {
-				if (element != undefined) {
-					vals.sort();
-					for (let v of vals) {
-						let opt = document.createElement("option");
-						opt.innerHTML = v;
-						opt.setAttribute("value", v.replace(/\(.*\) /, ""));
-						element.appendChild(opt);
-					}
-					element.addEventListener("change", stateDetailsAndRisk);
+					let minSuccess = Math.floor(100 * Math.max(0, (plot.power_hint * 0.9 + support_mods) / (plot.power_hint_total * 1.1 + sabotage_mods + support_mods)));
+					let maxSuccess = Math.ceil(100 * Math.min(1, (plot.power_hint * 1.1 + support_mods) / (plot.power_hint_total * 0.9 + sabotage_mods + support_mods)));
+					shadow.getElementById("power_" + plot.plot_id).innerHTML = minSuccess + "% to " + maxSuccess + "% chance of success." + (targetRegion == undefined ? " Because the target's location is unknown, it is not possible to update these numbers interactively." : "");
 				}
 			}
-			let kingdoms = [];
-			for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k) && k != kingdom.name) kingdoms.push(k);
-			let characters = [];
-			for (let k of g_data.characters) characters.push("(" + k.kingdom + ") " + k.name);
-			let regions = [];
-			for (let k of g_data.regions) if (k.type == "land") regions.push("(" + k.kingdom + ") " + k.name);
-			setVal(kingdoms, shadow.getElementById("plot_target_kingdom"));
-			setVal(characters, shadow.getElementById("plot_target_character"));
-			setVal(regions, shadow.getElementById("plot_target_region"));
-			stateDetailsAndRisk();
-		});
-		plotTypeSel.dispatchEvent(new Event("change"));
+			let plots = shadow.getElementById("plot_plots");
+			for (let plot of g_data.plots) {
+				let pr = document.createElement("div");
+				pr.innerHTML = `
+					<h2>Operation ${rainbowCode(plot.plot_id)}</h2>
+					<div class="objective">${plot.getObjective()}</div>
+					<div id="power_${plot.plot_id}"></div>
+					<label class="trigger"><input type="checkbox" name="plot_execute_${plot.plot_id}"></input>Trigger Operation!</label>
+					<div class="conspirators"></div>`
+				let cdiv = pr.querySelector(".conspirators");
+				let invitees = [];
+				for (let k in g_data.kingdoms) invitees.push(k);
+				invitees.sort();
+				for (let k of invitees) {
+					let l = document.createElement("label");
+					let i = document.createElement("input");
+					i.setAttribute("type", "checkbox");
+					i.setAttribute("name", "plot_invite_" + plot.plot_id + "_" + k);
+					l.appendChild(i);
+					l.appendChild(document.createTextNode(k));
+					if (plot.conspirators.includes(k)) {
+						i.setAttribute("disabled", "true");
+						i.setAttribute("checked", "true");
+						l.className = "selected";
+					}
+					cdiv.appendChild(l);
+				}
+				plots.appendChild(pr);
+			}
+			let rings = shadow.getElementById("plot_rings");
+			for (let r of g_data.spy_rings) if (whoami == r.nation) {
+				let l = document.createElement("label")
+				let link = document.createElement("report-link");
+				link.setAttribute("href", "region/" + g_data.regions[r.location].name);
+				link.appendChild(document.createTextNode(g_data.regions[r.location].name));
+				l.appendChild(link);
+				l.appendChild(document.createTextNode(": "));
+				let s1 = this.selectPretty("spyring_type_" + r.location, [{"name": "Support", "value": "SUPPORTING"}, {"name": "Sabotage", "value": "SABOTAGING"}]);
+				s1.addEventListener("change", computePlotSuccessChances);
+				l.appendChild(s1);
+				let plotOpts = [{"name": "[Nothing]", "value": -1}];
+				for (let p of g_data.plots) plotOpts.push({"name": "Operation " + rainbowCode(p.plot_id), "value": p.plot_id});
+				let s2 = this.selectPretty("spyring_" + r.location, plotOpts);
+				s2.addEventListener("change", computePlotSuccessChances);
+				l.appendChild(s2);
+				rings.appendChild(l);
+			}
+			shadow.getElementById("plot_newplot").addEventListener("click", ()=>this.addPlot(shadow));
+			computePlotSuccessChances();
+		}
 
 		// TIECEL TAB
 		{
@@ -910,8 +880,16 @@ class OrdersPane extends HTMLElement {
 				for (let doctrine of g_data.church.doctrines) {
 					shadow.querySelector("[name=church_" + doctrine + "]").checked = true;
 				}
+				for (let ring of g_data.spy_rings) {
+					if (ring.nation != whoami) continue;
+					if (ring.involvement_type == undefined) continue;
+					shadow.querySelector("[name=spyring_" + ring.location + "]").value = ring.involved_in_plot_id;
+					shadow.querySelector("[name=spyring_type_" + ring.location + "]").value = ring.involvement_type;
+					shadow.querySelector("[name=spyring_" + ring.location + "]").dispatchEvent(new Event("change"));
+				}
 				op.checkWarnings(shadow);
 				op.plannedMotions(shadow);
+				op.calcPlo
 				op.syncDisabled = false;
 				return;
 			}
@@ -935,6 +913,8 @@ class OrdersPane extends HTMLElement {
 					op.addBribe(shadow);
 				} else if (p.startsWith("letter_") && p.endsWith("_sig")) {
 					op.addLetter(shadow);
+				} else if (p.startsWith("plot_new_type")) {
+					op.addPlot(shadow);
 				} else if (p.startsWith("nations_gift_target_")) {
 					op.addGift(shadow);
 				}
@@ -1039,7 +1019,20 @@ class OrdersPane extends HTMLElement {
 		return opts;
 	};
 
+	// opts is a list of {name: string, value: string}.
+	selectPretty(name, opts) {
+		let sel = document.createElement("select");
+		sel.setAttribute("name", name);
+		for (let o of opts) {
+			let oe = document.createElement("option");
+			oe.setAttribute("value", o.value);
+			oe.appendChild(document.createTextNode(o.name));
+			sel.appendChild(oe);
+		}
+		return sel;
+	}
 
+	// opts is a list of option contents
 	select(name, opts) {
 		let sel = document.createElement("select");
 		sel.setAttribute("name", name);
@@ -1236,6 +1229,69 @@ class OrdersPane extends HTMLElement {
 		let sendAs = this.select("letter_" + id + "_sig", ["Signed, " + g_data.kingdoms[whoami].getRuler().honorific + " " + g_data.kingdoms[whoami].getRuler().name + " of " + whoami, "Anonymous"]);
 		d.appendChild(sendAs);
 		shadow.getElementById("nations_letters").appendChild(d);
+	}
+
+	addPlot(shadow) {
+		let id = this.plotCount;
+		this.plotCount++;
+		if (this.plotCount > 20) window.alert("Come on. Do you really need this many plots?"); // It would be nice to have a mechanism to prevent a player from plot-spamming the UIs of other players. In lieu of that for now, shame them.
+		let d = document.createElement("div");
+		let targetProviderNone = () => [];
+		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
+		let targetProviderRegion = () => g_data.regions.map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+		let targetProviderRegionNoble = () => g_data.regions.filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+		let targetProviderNation = () => Object.keys(g_data.kingdoms).map(k => { return {"name": k, "value": k}});
+		let plotTypes = [
+			{"name": "", "value": "", "targetType": targetProviderNone},
+			{"name": "Assassinate", "value": "ASSASSINATE", "targetType": targetProviderCharacter},
+			{"name": "Burn a shipyard in", "value": "BURN_SHIPYARD", "targetType": targetProviderRegion},
+			{"name": "Sabotage fortifications in", "value": "SABOTAGE_FORTIFICATIONS", "targetType": targetProviderRegion},
+			{"name": "Spoil food in", "value": "SPOIL_FOOD", "targetType": targetProviderRegion},
+			{"name": "Spoil crops in", "value": "SPOIL_CROPS", "targetType": targetProviderRegion},
+			{"name": "Incite popular unrest in", "value": "INCITE_UNREST", "targetType": targetProviderRegion},
+			{"name": "Prevent food transfers in", "value": "PIN_FOOD", "targetType": targetProviderRegion},
+			{"name": "Murder the noble of", "value": "MURDER_NOBLE", "targetType": targetProviderRegionNoble},
+			{"name": "Poison noble relations in", "value": "POISON_RELATIONS", "targetType": targetProviderRegionNoble},
+			{"name": "Sing the praises of", "value": "PRAISE", "targetType": targetProviderNation},
+			{"name": "Denounce the deeds of", "value": "DENOUNCE", "targetType": targetProviderNation},
+			{"name": "Intercept communications of", "value": "INTERCEPT_COMMUNICATIONS", "targetType": targetProviderNation},
+			{"name": "Gather intelligence on", "value": "SURVEY_NATION", "targetType": targetProviderNation},
+		];
+		let sel = this.selectPretty("plot_new_type_" + id, plotTypes);
+		d.appendChild(sel);
+		let targetSel = document.createElement("select");
+		targetSel.setAttribute("name", "plot_new_target_" + id);
+		d.appendChild(targetSel);
+		sel.addEventListener("change", () => {
+			while (targetSel.firstChild) targetSel.removeChild(targetSel.firstChild);
+			let plotType = undefined;
+			for (let o of plotTypes) if (o.value == sel.value) plotType = o;
+			for (let o of plotType.targetType().sort((a, b) => a.name.localeCompare(b.name))) {
+				let opt = document.createElement("option");
+				opt.setAttribute("value", o.value);
+				opt.appendChild(document.createTextNode(o.name));
+				targetSel.appendChild(opt);
+			}
+		});
+		let to = document.createElement("div");
+		to.appendChild(document.createTextNode("Conspirators: "));
+		let boxes = [];
+		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
+			if (k == whoami) continue;
+			let label = document.createElement("label");
+			let box = document.createElement("input");
+			box.setAttribute("name", "plot_new_involve_" + k + "_" + id);
+			box.setAttribute("type", "checkbox");
+			boxes.push(box);
+			label.appendChild(box);
+			let sp = document.createElement("span");
+			sp.appendChild(document.createTextNode(k));
+			label.appendChild(sp);
+			to.appendChild(label);
+		}
+		d.appendChild(to);
+		d.appendChild(document.createElement("hr"));
+		shadow.getElementById("plot_newplots").appendChild(d);
 	}
 
 	checkWarnings(shadow) {
