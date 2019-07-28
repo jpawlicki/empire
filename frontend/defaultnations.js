@@ -6,7 +6,7 @@ let nations = {
 		"score": ["prosperity", "culture"],
 		"religion": "Northern (Alyrja)",
 		"title": "Jarl",
-		"bonus": "prosperity",
+		"bonus": "food",
 	},
 	"balyucesu": {
 		"culture": "anpilayn",
@@ -24,7 +24,7 @@ let nations = {
 		"score": ["prosperity", "religion"],
 		"religion": "Iruhan (Chalice of Compassion)",
 		"title": "King",
-		"bonus": "prosperity",
+		"bonus": "food",
 	},
 	"doomstoll": {
 		"culture": "eolsung",
@@ -42,7 +42,7 @@ let nations = {
 		"score": ["prosperity"],
 		"religion": "Iruhan (Tapestry of People)",
 		"title": "King",
-		"bonus": "prosperity",
+		"bonus": "food",
 		"legalIdeologiesOverride": ["Iruhan (Chalice of Compassion)", "Iruhan (Sword of Truth)", "Iruhan (Tapestry of People)", "Iruhan (Vessel of Faith)"],
 	},
 	"fiskrbaer": {
@@ -52,7 +52,7 @@ let nations = {
 		"score": ["prosperity", "happiness"],
 		"religion": "Northern (Lyskr)",
 		"title": "Chieftess",
-		"bonus": "prosperity",
+		"bonus": "food",
 	},
 	"gangrjata": {
 		"culture": "eolsung",
