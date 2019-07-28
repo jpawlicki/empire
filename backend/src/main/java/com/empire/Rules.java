@@ -114,14 +114,18 @@ public class Rules {
 
 	Character noLeader;
 
-	double basePlotStrength;
-	double guardAgainstPlotMod;
-	double perSpyLevelPlotMod;
-	double lyskrPlotMod;
-	double companyPlotMod;
-	double perInspirePlotMod;
-	double capturedPlotMod;
+	// Plots
+	double plotDecayMin;
+	double plotDecayMax;
+	double plotEarlyTriggerChance;
+	double plotStrengthGrowth;
+	double spyRingDamageFactor;
+	double spyRingGrowthFactor;
+	double spyRingMaxStrength;
+	double setupSpyRingStrength;
+	double sabotagingRingFactor;
 
+	// Characters
 	double oneDimExpAdd;
 	double allDimExpAdd;
 	double perLevelLeaderMod;
@@ -129,6 +133,7 @@ public class Rules {
 	double baseGovernTaxMod;
 	double perLevelGovernRecruitMod;
 	double perLevelGovernTaxMod;
+	double perLevelSpyRingEstablishmentStrength;
 
 	// Nations
 	double heroicExpMultiplier;

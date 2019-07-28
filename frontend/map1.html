@@ -276,6 +276,10 @@
 				g_data.tivar = g_turndata[date].tivar;
 				g_data.cult_caches = g_turndata[date].cult_caches;
 				g_data.cult_triggered = g_turndata[date].cult_triggered;
+				g_data.plots = [];
+				for (let p of g_turndata[date].plots) g_data.plots.push(new Plot(p));
+				g_data.spy_rings = [];
+				for (let r of g_turndata[date].spy_rings) g_data.spy_rings.push(new SpyRing(r));
 				for (let i = 0; i < g_regions.length; i++) {
 					g_data.regions.push(new Region(i, g_regions[i], g_turndata[date].regions[i], g_data.date));
 				}
