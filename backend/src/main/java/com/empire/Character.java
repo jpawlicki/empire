@@ -20,7 +20,6 @@ public class Character extends RulesObject {
 
 	String name = "";
 	String kingdom = "";
-	String captor = "";
 	String honorific = "";
 	int location = -1;
 	boolean hidden = false;
@@ -100,10 +99,6 @@ public class Character extends RulesObject {
 
 	void removeTag(Tag tag) {
 		tags.remove(tag);
-	}
-
-	boolean isCaptive() {
-		return !"".equals(captor);
 	}
 
 	private Character(Rules rules) {

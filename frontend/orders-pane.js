@@ -349,36 +349,35 @@ class OrdersPane extends HTMLElement {
 		let getCharacterOptions = function(unit) {
 			let opts = [];
 			let r = g_data.regions[unit.location];
-			if (unit.captor == "") {
-				if (contains(unit.tags, "Cardinal") && g_data.regions[unit.location].name == "Sancta Civitate") opts.push("Inspire the Faithful");
-				if (r.kingdom == unit.kingdom) {
-					opts.push("Govern " + r.name);
-					if (r.noble.name == undefined) {
-						opts.push("Instate Noble");
-					}
+			if (contains(unit.tags, "Cardinal") && g_data.regions[unit.location].name == "Sancta Civitate") opts.push("Inspire the Faithful");
+			if (r.kingdom == unit.kingdom) {
+				opts.push("Govern " + r.name);
+				if (r.noble.name == undefined) {
+					opts.push("Instate Noble");
 				}
-				if (r.type == "land") {
-					if (g_data.spy_rings.find(ring => ring.nation == unit.kingdom && ring.location == r.id) == undefined) {
-						opts.push("Establish Spy Ring");
-					}
-					if (r.isCoastal()) opts.push("Build Shipyard");
-					opts.push("Build Fortifications");
-					for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
-					for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
-					for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
+			}
+			if (r.type == "land") {
+				if (g_data.spy_rings.find(ring => ring.nation == unit.kingdom && ring.location == r.id) == undefined) {
+					opts.push("Establish Spy Ring");
 				}
+				if (r.isCoastal()) opts.push("Build Shipyard");
+				opts.push("Build Fortifications");
+				for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
+				for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
+				for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
+			}
+			if (r.type == "land") {
+				if (r.isCoastal()) opts.push("Build Shipyard");
+				opts.push("Build Fortifications");
+				for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
+				for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
+				for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
 			}
 			opts.push("Stay in " + r.name);
-			if (unit.captor == "") {
-				for (let a of g_data.armies) if (a.kingdom == unit.kingdom && a.location == unit.location) {
-					opts.push("Lead " + a.type + " " + a.id);
-				}
+			for (let a of g_data.armies) if (a.kingdom == unit.kingdom && a.location == unit.location) {
+				opts.push("Lead " + a.type + " " + a.id);
 			}
 			for (let neighbor of r.getNeighbors()) opts.push("Travel to " + neighbor.name);
-			if (unit.captor != "") {
-				opts.push("Execute");
-				opts.push("Set Free");
-			}
 			opts.push("Hide in " + r.name);
 			for (let neighbor of r.getNeighbors()) opts.push("Hide in " + neighbor.name);
 			if (!contains(unit.tags, "Ruler")) {
@@ -387,14 +386,12 @@ class OrdersPane extends HTMLElement {
 					opts.push("Transfer character to " + k);
 				}
 			} else {
-				if (unit.captor == "") {
-					for (let profile of Object.keys(g_scoreProfiles).sort()) {
-						if (!g_scoreProfiles[profile].selectable) continue;
-						if (g_data.kingdoms[whoami].profiles.includes(profile)) {
-							opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
-						} else {
-							opts.push("Reflect on " + profile.toLowerCase() + " (add)");
-						}
+				for (let profile of Object.keys(g_scoreProfiles).sort()) {
+					if (!g_scoreProfiles[profile].selectable) continue;
+					if (g_data.kingdoms[whoami].profiles.includes(profile)) {
+						opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
+					} else {
+						opts.push("Reflect on " + profile.toLowerCase() + " (add)");
 					}
 				}
 			}
@@ -403,17 +400,12 @@ class OrdersPane extends HTMLElement {
 
 		let unitTable = shadow.getElementById("units");
 		for (let unit of g_data.characters) {
-			if (unit.kingdom == kingdom.name || unit.captor == kingdom.name) {
+			if (unit.kingdom == kingdom.name) {
 				let who = document.createElement("div");
 				let whor = document.createElement("report-link");
 				whor.setAttribute("href", "character/" + unit.name);
 				whor.innerHTML = unit.name;
 				who.appendChild(whor);
-				if (unit.captor == kingdom.name) {
-					who.appendChild(document.createTextNode(" (Our Captive)"));
-				} else if (unit.captor != "") {
-					who.appendChild(document.createTextNode(" (Captive of " + unit.captor + ")"));
-				}
 				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_nobles"));
 			}
 		}
@@ -850,8 +842,7 @@ class OrdersPane extends HTMLElement {
 			if (req.status != 200) {
 				for (let c of g_data.characters) {
 					if (c.orderhint == "" || c.orderhint == undefined) continue;
-					if (c.captor == "" && c.kingdom != whoami) continue;
-					else if (c.captor != "" && c.captor != whoami) continue;
+					if (c.kingdom != whoami) continue;
 					shadow.querySelector("[name=action_" + c.name.replace(/[ ']/g, "_") + "]").value = c.orderhint;
 				}
 				for (let c of g_data.armies) {
@@ -1085,7 +1076,7 @@ class OrdersPane extends HTMLElement {
 			td.appendChild(o.select("action_div_" + id, o.getArmyOptions(entity)));
 			tr.appendChild(td);
 			child.parentNode.insertBefore(tr, child.nextSibling);
-			for (let c of g_data.characters) if (c.location == entity.location && c.captor == "") {
+			for (let c of g_data.characters) if (c.location == entity.location) {
 				for (let n of shadow.querySelectorAll("select[name=action_" + c.name.replace(/[ ']/g, "_"))) {
 					let o = document.createElement("option");
 					o.innerHTML = "Lead division " + id;
