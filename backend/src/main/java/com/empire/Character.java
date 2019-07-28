@@ -41,6 +41,10 @@ public class Character extends RulesObject {
 		this.location = location;
 	}
 
+	public Region getLocationRegion(World w) {
+		return w.regions.get(location);
+	}
+
 	private double calcLevel(double xp) {
 		return Math.sqrt(xp + 1);
 	}
@@ -58,17 +62,8 @@ public class Character extends RulesObject {
 		return calcLevel(experience.governor) * getRules().perLevelGovernTaxMod + getRules().baseGovernTaxMod;
 	}
 
-	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = getRules().basePlotStrength;
-
-		power += calcLevel(experience.spy) * getRules().perSpyLevelPlotMod;
-
-		if (boosted) power += getRules().guardAgainstPlotMod;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += getRules().lyskrPlotMod;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += getRules().companyPlotMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * getRules().perInspirePlotMod;
-
-		return power;
+	public double calcSpyRingEstablishmentStrength() {
+		return calcLevel(experience.spy) * getRules().perLevelSpyRingEstablishmentStrength;
 	}
 
 	public void addExperienceAll() {

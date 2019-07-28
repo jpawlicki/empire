@@ -40,46 +40,4 @@ public class CharacterTest {
 
 		return world;
 	}
-
-	@Test
-	public void calcPlotPowerBasic() {
-		assertEquals(1.3, c.calcPlotPower(w, false, 0), DELTA);
-	}
-
-	@Test
-	public void calcPlotPowerSpyLevel() {
-		c.addExperienceSpy();
-		c.addExperienceSpy();
-		c.addExperienceSpy();
-		assertEquals(1.6, c.calcPlotPower(w, false, 0), DELTA);
-	}
-
-	@Test
-	public void calcPlotPowerGuarding() {
-		assertEquals(1.8, c.calcPlotPower(w, true, 0), DELTA);
-	}
-
-	@Test
-	public void calcPlotPowerLyskr() {
-		r1.religion = Ideology.LYSKR;
-		assertEquals(1.7, c.calcPlotPower(w, false, 0), DELTA);
-	}
-
-	@Test
-	public void calcPlotPowerCompany() {
-		r1.religion = Ideology.COMPANY;
-		assertEquals(1.5, c.calcPlotPower(w, false, 0), DELTA);
-	}
-
-	@Test
-	public void calcPlotPowerInspireNonIruhan() {
-		r1.religion = Ideology.ALYRJA;
-		assertEquals(1.3, c.calcPlotPower(w, false, 2), DELTA);
-	}
-
-	@Test
-	public void calcPlotPowerInspireIruhan() {
-		r1.religion = Ideology.SWORD_OF_TRUTH;
-		assertEquals(1.4, c.calcPlotPower(w, false, 2), DELTA);
-	}
 }

@@ -18,7 +18,7 @@ public final class Orders {
 	public final long gameId;
 
 	public static Orders loadOrder(long gameId, String kingdom, int turn, DatastoreService service) throws EntityNotFoundException {
-		Entity e = service.get(KeyFactory.createKey(TYPE, gameId + "_" + turn + "_" + kingdom));
+		Entity e = service.get(KeyFactory.createKey(KeyFactory.createKey(World.TYPE, gameId + "_" + turn), TYPE, gameId + "_" + turn + "_" + kingdom));
 		return new Orders(gameId, kingdom, turn, (int)((Long)e.getProperty("version")).longValue(), ((Text)e.getProperty("json")).getValue());
 	}
 
@@ -39,7 +39,7 @@ public final class Orders {
 	}
 
 	public Entity toEntity() {
-		Entity e = new Entity(TYPE, gameId + "_" + turn + "_" + kingdom);
+		Entity e = new Entity(TYPE, gameId + "_" + turn + "_" + kingdom, KeyFactory.createKey(World.TYPE, gameId + "_" + turn));
 		e.setProperty("json", new Text(json));
 		e.setProperty("version", version);
 		return e;
