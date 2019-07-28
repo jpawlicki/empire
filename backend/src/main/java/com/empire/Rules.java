@@ -203,4 +203,11 @@ public class Rules {
 	double mandatoryMinistryOpinion;
 
 	double churchIncomePerPlayer;
+
+	// Cult
+	double cultEventTriggerFraction;
+	double cultRaiseFraction;
+	double scoreCultistPerTurnPenalty;
+	double scoreCultistRegionAccess;
+	double scoreCultistCriticalRegionAccess;
 }

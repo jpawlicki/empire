@@ -38,6 +38,7 @@ public class NationData {
 	}
 
 	enum ScoreProfile {
+		CULTIST,
 		CULTURE,
 		GLORY,
 		HAPPINESS,
@@ -125,6 +126,7 @@ public class NationData {
 	List<Integer> coreRegions = new ArrayList<>();
 	private List<Tag> tags = new ArrayList<>();
 	List<String> previousTributes = new ArrayList<>();
+	boolean scoreProfilesLocked;
 	String taxratehint = "100";
 	String rationhint = "100";
 	String signingbonushint = "0";
@@ -180,6 +182,22 @@ public class NationData {
 	void toggleProfile(ScoreProfile p) {
 		if (profiles.contains(p)) profiles.remove(p);
 		else profiles.add(p);
+	}
+
+	void clearProfiles() {
+		profiles.clear();
+	}
+
+	void removeProfile(ScoreProfile p) {
+		profiles.remove(p);
+	}
+
+	void lockScoreProfiles() {
+		scoreProfilesLocked = true;
+	}
+
+	boolean scoreProfilesLocked() {
+		return scoreProfilesLocked;
 	}
 
 	void score(ScoreProfile p, double amount) {

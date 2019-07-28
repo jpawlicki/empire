@@ -14,6 +14,10 @@ class OrdersPane extends HTMLElement {
 	connectedCallback() {
 		let kingdom = g_data.kingdoms[this.getAttribute("kingdom")];
 		let shadow = this.attachShadow({mode: "open"});
+		let undeadCount = 0;
+		for (let c of g_data.cult_caches) {
+			if (c.eligible_nations.includes(whoami)) undeadCount += c.size;
+		}
 		let html = `
 			<div id="tabs">
 				<div id="tab_units" class="tab_units">Units</div>
@@ -41,7 +45,8 @@ class OrdersPane extends HTMLElement {
 					<div id="plot_rings"></div>
 					<h1>Cult</h1>
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
-					<expandable-snippet text="In exchange for loyalty, the Cult will give us an army of 5000 undead soldiers and 2 weeks of food in every region we control. However, the Cult will gain access to any regions we control, and we do not fully understand their objectives."></expandable-snippet>
+					<expandable-snippet text="In exchange for loyalty, the Cult will give us ${undeadCount} undead soldiers. The Cult will gain access to any regions we control, and you should continue to expand their influence by annexing additional territory."></expandable-snippet>
+					<hr/>
 					<h1>Gothi Votes</h1>
 					<label id="gothi_alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
 					<label id="gothi_rjinku"><input type="checkbox" name="gothi_rjinku"/>Vote to summon the <tooltip-element tooltip="Each construction has a 33% chance of being destroyed each week the quake is active. It will start to destroy crops worldwide after 2 weeks of activity.">Quake</tooltip-element></label>
@@ -386,12 +391,14 @@ class OrdersPane extends HTMLElement {
 					opts.push("Transfer character to " + k);
 				}
 			} else {
-				for (let profile of Object.keys(g_scoreProfiles).sort()) {
-					if (!g_scoreProfiles[profile].selectable) continue;
-					if (g_data.kingdoms[whoami].profiles.includes(profile)) {
-						opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
-					} else {
-						opts.push("Reflect on " + profile.toLowerCase() + " (add)");
+				if (!g_data.kingdoms[whoami].score_profiles_locked) {
+					for (let profile of Object.keys(g_scoreProfiles).sort()) {
+						if (!g_scoreProfiles[profile].selectable) continue;
+						if (g_data.kingdoms[whoami].profiles.includes(profile)) {
+							opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
+						} else {
+							opts.push("Reflect on " + profile.toLowerCase() + " (add)");
+						}
 					}
 				}
 			}
@@ -552,6 +559,7 @@ class OrdersPane extends HTMLElement {
 			shadow.getElementById("plot_newplot").addEventListener("click", ()=>this.addPlot(shadow));
 			computePlotSuccessChances();
 		}
+		if (g_data.cult_triggered) shadow.querySelector("[name=plot_cult]").disabled = true;
 
 		// TIECEL TAB
 		{

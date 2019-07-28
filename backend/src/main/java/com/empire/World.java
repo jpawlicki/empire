@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -56,6 +57,8 @@ public class World extends RulesObject implements GoodwillProvider {
 	List<Integer> cultRegions = new ArrayList<>();
 	Church church = new Church();
 	Schedule turnSchedule = new Schedule();
+	List<CultCache> cultCaches = new ArrayList<>();
+	boolean cultTriggered;
 	int inspiresHint;
 	int ruleSet;
 	int numPlayers;
@@ -1398,6 +1401,8 @@ public class World extends RulesObject implements GoodwillProvider {
 					NationData.ScoreProfile profile = null;
 					for (NationData.ScoreProfile p : NationData.ScoreProfile.values()) if (action.contains(p.toString().toLowerCase())) profile = p;
 					if (profile == null) continue;
+					if (profile == NationData.ScoreProfile.CULTIST) continue;
+					if (getNation(c.kingdom).scoreProfilesLocked()) continue;
 					getNation(c.kingdom).toggleProfile(profile);
 					c.orderhint = "";
 				} else if (action.startsWith("Transfer character to ")) {
@@ -1427,23 +1432,12 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (String kingdom : orders.keySet()) {
 				if ("checked".equals(orders.get(kingdom).get("plot_cult")) && !getNation(kingdom).loyalToCult) {
 					getNation(kingdom).loyalToCult = true;
-					ArrayList<Integer> kRegions = new ArrayList<>();
-					for (int i = 0; i < regions.size(); i++) {
-						Region r = regions.get(i);
-						if (kingdom.equals(r.getKingdom())) {
-							kRegions.add(i);
-							if (!r.gotCultFood) {
-								r.food += r.population * 2;
-								r.gotCultFood = true;
-							}
-						}
-					}
-					if (kRegions.size() != 0) {
-						int spawnRegion = kRegions.get((int)(Math.random() * kRegions.size()));
+					getNation(kingdom).toggleProfile(NationData.ScoreProfile.CULTIST);
+					new ArrayList<CultCache>(cultCaches).stream().filter(c -> c.isEligible(kingdom)).forEach(c -> {
 						Army a = Army.newArmy(getRules());
-						a.location = spawnRegion;
+						a.location = c.getLocation();
 						a.type = Army.Type.ARMY;
-						a.size = 5000;
+						a.size = c.getSize();
 						a.tags = new ArrayList<>();
 						a.id = getNewArmyId();
 						a.kingdom = kingdom;
@@ -1452,8 +1446,9 @@ public class World extends RulesObject implements GoodwillProvider {
 						a.addTag(Army.Tag.UNDEAD);
 						a.addTag(Army.Tag.HIGHER_POWER);
 						armies.add(a);
-						notifyAllPlayers(kingdom + " Joins Cult", "Throughout " + kingdom + ", the dead crawl forth from their graves, animated by some ancient magic. Meats of unknown origin begin to appear in butchershops, and the shambling sight of a corpse searching for an unknown quarry becomes commonplace. A skeletal army gathers in " + regions.get(spawnRegion).name + ".");
-					}
+						cultCaches.remove(c);
+					});
+					notifyAllPlayers(kingdom + " Joins Cult", "Throughout " + kingdom + ", the dead crawl forth from their graves, animated by some ancient magic. The shambling sight of a corpse searching for an unknown quarry becomes commonplace.");
 				}
 			}
 		}
@@ -1574,12 +1569,14 @@ public class World extends RulesObject implements GoodwillProvider {
 				ArrayList<Army> localUndeadArmies = new ArrayList<>();
 				for (Army a : localArmies) if (a.hasTag(Army.Tag.UNDEAD) && casualties.getOrDefault(a, 0.0) < 1) localUndeadArmies.add(a);
 				if (localUndeadArmies.size() > 0) {
-					battleDetails += "After the fighting, " + Math.round(dead / 2) + " soldiers rose from the dead to serve the Cult.";
-					double raised = dead / 2 / localUndeadArmies.size();
+					battleDetails += "After the fighting, " + Math.round(dead * getRules().cultRaiseFraction) + " soldiers rose from the dead to serve the Cult.";
+					double raised = dead * getRules().cultRaiseFraction / localUndeadArmies.size();
 					for (Army u : localUndeadArmies) {
 						u.size += raised;
 						u.composition.put("Undead", u.composition.getOrDefault("Undead", 0.0) + raised);
 					}
+				} else {
+					cultCaches.add(CultCache.newCache(dead * getRules().cultRaiseFraction, localArmies.stream().map(a -> a.kingdom).collect(Collectors.toSet()), i));
 				}
 				HashSet<String> localKingdoms = new HashSet<>();
 				for (Army a : localArmies) localKingdoms.add(a.kingdom);
@@ -2309,21 +2306,34 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void checkCultVictory() {
-			if (!cultRegions.isEmpty()) {
-				ArrayList<Integer> removals = new ArrayList<>();
-				for (int i : cultRegions) {
-					Region r = regions.get(i);
-					if (getNation(r.getKingdom()).loyalToCult) removals.add(i);
-					for (Army a : armies) if (a.hasTag(Army.Tag.HIGHER_POWER) && a.location == i) removals.add(i);
-				}
-				for (Integer i : removals) cultRegions.remove(i);
-				if (cultRegions.size() <= 3) {
-					notifyAllPlayers("Cult Objectives Accomplished", "Rumors abound that Cult has accomplished its mysterious objective - the world waits with bated breath.");
-				}
+			armies.stream().filter(a -> a.hasTag(Army.Tag.HIGHER_POWER)).map(a -> a.location).forEach(rid -> regions.get(rid).cultAccess(kingdoms.values(), cultRegions.contains(rid)));
+			Set<String> cultists = getNationNames().stream().filter(n -> getNation(n).loyalToCult).collect(Collectors.toSet());
+			regions.stream().filter(r -> cultists.contains(r.getKingdom())).forEach(r -> r.cultAccess(kingdoms.values(), cultRegions.contains(regions.indexOf(r))));
+			if (!cultTriggered && cultRegions.stream().filter(id -> regions.get(id).hasBeenCultAccessed()).count() >= cultRegions.size() * getRules().cultEventTriggerFraction) {
+				HashMap<String, Double> higherPowerCount = new HashMap<>();
+				armies.stream().filter(a -> a.hasTag(Army.Tag.HIGHER_POWER)).forEach(a -> higherPowerCount.put(a.kingdom, higherPowerCount.getOrDefault(a.kingdom, 0.0)));
+				Optional<String> overlord = getNationNames().stream().filter(n -> getNation(n).loyalToCult).max(Comparator.comparingDouble(a -> higherPowerCount.getOrDefault(a, 0.0)));
+				if (!overlord.isPresent()) return;
+				cultTriggered = true;
+				// The overlord loses all score profiles, gains Territory, are marked to turn off Reflect.
+				NationData overlordNation = getNation(overlord.get());
+				overlordNation.clearProfiles();
+				overlordNation.toggleProfile(NationData.ScoreProfile.TERRITORY);
+				overlordNation.lockScoreProfiles();
+				// All other Cultist players transfer all regions / armies / navies / non-Ruler characters, then lose the Cultist profile.
+				armies.stream().filter(a -> cultists.contains(a.kingdom)).forEach(a -> a.kingdom = overlord.get());
+				armies.stream().filter(a -> a.hasTag(Army.Tag.HIGHER_POWER)).forEach(a -> a.kingdom = overlord.get());
+				characters.stream().filter(c -> !c.hasTag(Character.Tag.RULER)).filter(c -> cultists.contains(c.kingdom)).forEach(c -> c.kingdom = overlord.get());
+				regions.stream().filter(r -> cultists.contains(r.getKingdom())).forEach(r -> r.setKingdom(World.this, overlord.get()));
+				getNationNames().stream().forEach(k -> getNation(k).removeProfile(NationData.ScoreProfile.CULTIST));
+				notifyAllPlayers("Cult Rises", "The Cult of the Witness has drawn close to accomplishing their mysterious objective! Agents of the Cult throughout the world reveal themselves, establishing de facto rule under " + overlord.get() + ". Other rulers loyal to the Cult are discarded, having outlived their usefulness, and are forced to flee for their lives with nothing but the clothes on their backs.");
 			}
 		}
 
 		void miscScoreProfiles() {
+			// Cultist
+			getNationNames().stream().map(n -> getNation(n)).filter(n -> n.loyalToCult).forEach(n -> n.score(NationData.ScoreProfile.CULTIST, getRules().scoreCultistPerTurnPenalty));
+
 			// Happiness
 			for (String k : kingdoms.keySet()) {
 				double below25 = 0;
