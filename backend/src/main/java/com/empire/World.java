@@ -977,8 +977,12 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (Army a : armies) if (a.size >= 2 * originalSizes.get(a)) a.preparation.clear();
 			for (Army a : leaders.keySet()) {
 				Character l = leaders.get(a);
-				if (a.isArmy()) leaders.get(a).addExperienceGeneral();
-				else leaders.get(a).addExperienceAdmiral();
+				if (a.isArmy()) {
+					leaders.get(a).addExperienceGeneral();
+					if (a.hasTag(Army.Tag.SCHEMING)) leaders.get(a).addExperienceSpy();
+				} else {
+					leaders.get(a).addExperienceAdmiral();
+				}
 				leaders.get(a).leadingArmy = a.id;
 			}
 		}
@@ -1242,7 +1246,6 @@ public class World extends RulesObject implements GoodwillProvider {
 				Preparation prep = null;
 				for (Preparation p : army.preparation) if (p.to == toId) prep = p;
 				int travelAmount = 1;
-				if (army.hasTag(Army.Tag.RIDERS)) travelAmount = 2;
 				if (army.hasTag(Army.Tag.PATHFINDERS) && regions.get(toId).getKingdom() != null && NationData.isFriendly(army.kingdom, regions.get(toId).getKingdom(), World.this)) travelAmount = 3;
 				if (prep == null) {
 					prep = new Preparation();

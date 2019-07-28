@@ -100,6 +100,7 @@ public class Rules {
 	double perIdeologyTapestryRecruitmentModGlobal;
 	double perIdeologyTapestryTaxMod;
 	double perIdeologyTapestryTaxModGlobal;
+	double riverOfKuunPerNeighborTaxMod;
 	double riverOfKuunRationingThresh;
 	double riverOfKuunTaxMod;
 	double riverOfKuunRecruitmentMod;

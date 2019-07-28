@@ -246,6 +246,14 @@ class Region {
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
 		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : getNation(this.kingdom).calcNumUniqueIdeologies();
+		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Tavian (River of Kuun)") {
+			let kingdoms = {};
+			for (let r of this.getNeighbors()) if (r.type == "land") kingdoms[r.kingdom] = true;
+			kingdoms[kingdom] = false;
+			let kCount = 0;
+			for (let k in kingdoms) if (kingdoms[k]) kCount++;
+			if (kCount > 0) mods.push({"v": kCount * .2, "unit": "%", "why": "River of Kuun state ideology with " + kCount + " neighboring kingdoms."});
+		}
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
 		return Calc.moddedNum(base, mods);

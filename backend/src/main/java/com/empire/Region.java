@@ -102,7 +102,7 @@ class Region extends RulesObject {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += getRules().tapestryRecruitmentMod;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= getRules().riverOfKuunRationingThresh) {
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= getRules().riverOfKuunRationingThresh && food > 0) {
 			mods += getRules().riverOfKuunRecruitmentMod;
 		}
 
@@ -153,10 +153,14 @@ class Region extends RulesObject {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += getRules().tapestryTaxMod;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == getRules().riverOfKuunRationingThresh) {
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == getRules().riverOfKuunRationingThresh && food > 0) {
 			mods += getRules().riverOfKuunTaxMod;
 		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
 			mods += getRules().chaliceOfCompassionTaxMod;
+		}
+
+		if (Ideology.RIVER_OF_KUUN == NationData.getStateReligion(kingdom, w)) {
+			mods += getRules().riverOfKuunPerNeighborTaxMod * getNeighborRegions().stream().filter(r -> r.isLand()).map(r -> r.getKingdom()).filter(k -> !kingdom.equals(k)).distinct().count();
 		}
 
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);

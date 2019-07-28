@@ -22,7 +22,7 @@ class Army extends RulesObject {
 		@SerializedName("Raiders") RAIDERS,
 		@SerializedName("Seafaring") SEAFARING,
 		@SerializedName("Impressment") IMPRESSMENT,
-		@SerializedName("Riders") RIDERS,
+		@SerializedName("Scheming") SCHEMING,
 		@SerializedName("Crafts-soldiers") CRAFTS_SOLDIERS,
 		@SerializedName("Weathered") WEATHERED,
 		@SerializedName("Pathfinders") PATHFINDERS,

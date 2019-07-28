@@ -90,6 +90,7 @@
 		"razesPerNormalizedStrength": 5,
 		"recruitmentPerPop": 0.0005,
 		"riverOfKuunNeighborTaxMod": 0.5,
+		"riverOfKuunPerNeighborTaxMod": 0.2,
 		"riverOfKuunRationingThresh": 1.25,
 		"riverOfKuunRecruitmentMod": 0.75,
 		"riverOfKuunTaxMod": 0.75,
