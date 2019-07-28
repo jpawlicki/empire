@@ -2159,7 +2159,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				if (b.spentGift > 0) notification += "\n" + Math.round(b.spentGift) + " gold given to other nations (non-tribute).";
 				if (b.spentFoodTransfers > 0) notification += "\n" + Math.round(b.spentFoodTransfers) + " gold spent to transfer food.";
 				if (b.spentBribes > 0) notification += "\n" + Math.round(b.spentBribes) + " gold spent to bribe pirates.";
-				if (b.spentSpyRingEstablishments > 0) notification += "\n" + Math.round(b.spentSpyRingEstablishments) + " gold spent establishing new spy rings.";
+				if (b.spentSpyEstablishments > 0) notification += "\n" + Math.round(b.spentSpyEstablishments) + " gold spent establishing new spy rings.";
 				notifications.add(new Notification(k, "Budget", notification));
 			}
 		}
