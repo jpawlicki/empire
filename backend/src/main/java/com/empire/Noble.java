@@ -128,7 +128,7 @@ final class Crisis {
 			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				Set<Integer> closeRegions = r.getCloseRegionIds(w, rules.nobleCrisisFrequency);
 				for (Character c : w.characters) {
-					if (c.kingdom.equals(r.getKingdom()) && !c.isCaptive() && c.hasTag(Character.Tag.RULER) && closeRegions.contains(c.location)) {
+					if (c.kingdom.equals(r.getKingdom()) && c.hasTag(Character.Tag.RULER) && closeRegions.contains(c.location)) {
 						return true;
 					}
 				}
@@ -205,7 +205,7 @@ final class Crisis {
 			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				Set<Integer> closeRegions = r.getCloseRegionIds(w, rules.nobleCrisisFrequency);
 				for (Character c : w.characters) {
-					if (c.kingdom.equals(r.getKingdom()) && !c.isCaptive() && closeRegions.contains(c.location)) {
+					if (c.kingdom.equals(r.getKingdom()) && closeRegions.contains(c.location)) {
 						return true;
 					}
 				}

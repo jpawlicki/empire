@@ -224,30 +224,13 @@ class RegionReport extends HTMLElement {
 				ctn.appendChild(d);
 			}
 		}
-		let cknown = {};
-		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) cknown[k] = true;
-		for (let c of g_data.characters) if (c.location == -1) cknown[c.kingdom] = false;
-		let plots = r.calcPlotPowersInRegion();
-		let s = [];
-		for (let p in plots) {
-			if (!plots.hasOwnProperty(p)) continue;
-			s.push([p, plots[p]]);
-		}
-		s.sort((a, b)=>(b[1] - a[1]));
-		let ss = [];
-		for (let i = 0; i < Math.ceil(s.length / 2); i++) {
-			ss.push(s[i]);
-			if (i + Math.ceil(s.length / 2) < s.length) ss.push(s[i + Math.ceil(s.length / 2)]);
-		}
-		for (let i of ss) {
-			let ik = document.createElement("div");
-			let n = document.createElement("report-link");
-			n.innerHTML = i[0];
-			n.setAttribute("href", "kingdom/" + i[0]);
-			ik.appendChild(n);
-			ik.appendChild(document.createTextNode(": " + (Math.round(i[1] * 100) + "%")));
-			if (!cknown[i[0]]) ik.appendChild(document.createTextNode(" (or more)"));
-			shadow.getElementById("intrigue").appendChild(ik);
+		let localRings = [];
+		for (let ring of g_data.spy_rings) if (ring.location == r.id) localRings.push(ring);
+		localRings.sort((a, b) => b.strength - a.strength);
+		for (let ring of localRings) {
+			let d = document.createElement("div");
+			d.innerHTML = "Spy Ring (" + ring.nation + ", Strength " + Math.round(ring.strength) + ", " + (ring.hidden ? "Hidden)" : "Exposed)");
+			ctn.appendChild(d);
 		}
 	}
 }

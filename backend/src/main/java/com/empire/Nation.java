@@ -38,6 +38,7 @@ public class Nation {
 
 	public boolean hasScoreProfile(NationData.ScoreProfile profile) {
 		switch (profile) {
+			case CULTIST: return false;
 			case CULTURE: return "checked".equals(culture);
 			case GLORY: return "checked".equals(glory);
 			case HAPPINESS: return "checked".equals(happiness);

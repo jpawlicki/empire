@@ -59,7 +59,7 @@ class Army extends RulesObject {
 		}
 		if (lastStand) mods += getRules().lastStandMod;
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * getRules().perInspireMod;
-		if (leader != getRules().noLeader && !leader.isCaptive()) {
+		if (leader != getRules().noLeader) {
 			mods += leader.calcLeadMod(type);
 		}
 
