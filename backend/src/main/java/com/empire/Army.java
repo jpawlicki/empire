@@ -159,6 +159,7 @@ class Army extends RulesObject {
 		String nobleFate = "";
 		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(NationData.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
+			if (!w.spyRings.stream().anyMatch(r -> r.getLocation() == location && r.getNation() == region.getKingdom())) w.spyRings.add(SpyRing.newSpyRing(getRules(), region.getKingdom(), region.noble.calcPosthumousSpyRingStrength(), location));
 			region.noble = null;
 		}
 		if (region.noble != null) {

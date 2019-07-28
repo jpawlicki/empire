@@ -218,52 +218,57 @@ public class RegionTest {
 	@Test
 	public void calcPirateThreatBasic(){
 		r.unrestPopular = 0.0;
-		assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatUnrest(){
-		assertEquals(0.25, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.25, r.calcPirateThreat(w, false), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatWaterZero(){
 		r.type = Region.Type.WATER;
-		assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatAlyrjaZero(){
 		r.religion = Ideology.ALYRJA;
-		assertEquals(0.0, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatNoble(){
 		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
-		assertEquals(0.125, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.125, r.calcPirateThreat(w, false), DELTA);
+	}
+
+	@Test
+	public void calcPirateThreatPatrolled(){
+		assertEquals(0.125, r.calcPirateThreat(w, true), DELTA);
 	}
 
 
 	@Test
 	public void calcPirateThreatBribe(){
 		w.pirate.bribes.put(k1, -90.0);
-		assertEquals(0.03125, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.03125, r.calcPirateThreat(w, false), DELTA);
 
 		w.pirate.bribes.put(k1, -60.0);
-		assertEquals(0.0625, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.0625, r.calcPirateThreat(w, false), DELTA);
 
 		w.pirate.bribes.put(k1, -30.0);
-		assertEquals(0.125, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.125, r.calcPirateThreat(w, false), DELTA);
 
 		w.pirate.bribes.put(k1, 30.0);
-		assertEquals(0.5, r.calcPirateThreat(w), DELTA);
+		assertEquals(0.5, r.calcPirateThreat(w, false), DELTA);
 
 		w.pirate.bribes.put(k1, 60.0);
-		assertEquals(1.0, r.calcPirateThreat(w), DELTA);
+		assertEquals(1.0, r.calcPirateThreat(w, false), DELTA);
 
 		w.pirate.bribes.put(k1, 90.0);
-		assertEquals(2.0, r.calcPirateThreat(w), DELTA);
+		assertEquals(2.0, r.calcPirateThreat(w, false), DELTA);
 	}
 
 	@Test

@@ -1240,7 +1240,9 @@ class OrdersPane extends HTMLElement {
 	addPlot(shadow) {
 		let id = this.plotCount;
 		this.plotCount++;
-		if (this.plotCount > 20) window.alert("Come on. Do you really need this many plots?"); // It would be nice to have a mechanism to prevent a player from plot-spamming the UIs of other players. In lieu of that for now, shame them.
+		if (this.plotCount >= 5) {
+			shadow.getElementById("plot_newplot").style.display = "none";
+		}
 		let d = document.createElement("div");
 		let targetProviderNone = () => [];
 		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});

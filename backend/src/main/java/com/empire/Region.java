@@ -162,7 +162,7 @@ class Region extends RulesObject {
 		}
 
 		if (Ideology.RIVER_OF_KUUN == NationData.getStateReligion(kingdom, w)) {
-			mods += getRules().riverOfKuunPerNeighborTaxMod * getNeighborRegions().stream().filter(r -> r.isLand()).map(r -> r.getKingdom()).filter(k -> !kingdom.equals(k)).distinct().count();
+			mods += getRules().riverOfKuunPerNeighborTaxMod * getNeighbors(w).stream().filter(r -> r.isLand()).map(r -> r.getKingdom()).filter(k -> !kingdom.equals(k)).distinct().count();
 		}
 
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
@@ -178,13 +178,14 @@ class Region extends RulesObject {
 		return Math.max(0, base * mods);
 	}
 
-	public double calcPirateThreat(World w) {
+	public double calcPirateThreat(World w, boolean wasPatrolled) {
 		if (isSea()) return 0;
 		if (religion == Ideology.ALYRJA) return 0;
 
 		double unrest = calcUnrest(w);
 		double mods = 1;
 		if (hasNoble()) mods += getRules().noblePirateThreatMod;
+		if (wasPatrolled) mods += getRules().patrolledPirateThreatMod;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / getRules().pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
 	}

@@ -65,6 +65,8 @@ public class Rules {
 	double lastStandMod;
 	double perInspireMod;
 
+	double patrolledPirateThreatMod;
+
 	// Nobles
 	double noblePirateThreatMod;
 	int nobleCrisisFrequency;
@@ -96,6 +98,7 @@ public class Rules {
 	double tapestryRecruitmentMod;
 	double tapestryTaxMod;
 	double vesselOfFaithSetRelUnrestMod;
+	double lyskrSabotageMod;
 	double perIdeologyTapestryRecruitmentMod;
 	double perIdeologyTapestryRecruitmentModGlobal;
 	double perIdeologyTapestryTaxMod;
@@ -119,10 +122,12 @@ public class Rules {
 	double plotEarlyTriggerChance;
 	double plotStrengthGrowth;
 	double spyRingDamageFactor;
+	double spyRingEstablishCost;
 	double spyRingGrowthFactor;
 	double spyRingMaxStrength;
 	double setupSpyRingStrength;
 	double sabotagingRingFactor;
+	int plotInstigationLimit;
 
 	// Characters
 	double oneDimExpAdd;
@@ -188,6 +193,8 @@ public class Rules {
 	double shipBuildingTraitWeeksProduction;
 	double numShipsBuiltPerShipyard;
 	double shipSellProfit;
+
+	double setupShipyardsPerNation;
 
 	// Church
 	double antiapostasyOpinion;

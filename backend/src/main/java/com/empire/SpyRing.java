@@ -95,9 +95,15 @@ class SpyRing extends RulesObject {
 	void addContributionTo(int plotId, Region targetRegion, String defender, World w, Plot.OutcomeWeights outcome) {
 		if (!nation.equals(defender) && (involvedInPlotId == null || involvedInPlotId != plotId)) return;
 		double strength = calcPlotPower(w, targetRegion);
-		if (nation.equals(defender)) outcome.defend(strength);
-		else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SUPPORTING) outcome.support(strength);
-		else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SABOTAGING) outcome.sabotage(strength);
+		if (nation.equals(defender)) {
+			outcome.defend(strength);
+		} else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SUPPORTING) {
+			outcome.support(strength);
+		} else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SABOTAGING) {
+			double mod = 1;
+			if (NationData.getStateReligion(nation, w) == Ideology.LYSKR) mod += getRules().lyskrSabotageMod;
+			outcome.sabotage(strength * mod);
+		}
 	}
 
 	boolean belongsTo(String kingdom) {

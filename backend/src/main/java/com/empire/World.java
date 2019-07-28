@@ -432,13 +432,12 @@ public class World extends RulesObject implements GoodwillProvider {
 				r.religion = nationSetup.get(r.getKingdom()).dominantIdeology;
 			}
 		}
-		// Place shipyards. Want ~80 total, split among all nations.
-		int shipyardsPerNation = (int)(Math.ceil(80.0 / nationSetup.keySet().size()));
+		// Place shipyards.
 		for (String kingdom : nationSetup.keySet()) {
 			ArrayList<Region> regions = new ArrayList<>();
 			for (Region r : w.regions) if (kingdom.equals(r.getKingdom()) && r.isCoastal(w)) regions.add(r);
 			if (!regions.isEmpty()) {
-				for (int i = 0; i < shipyardsPerNation; i++) {
+				for (int i = 0; i < w.getRules().setupShipyardsPerNation; i++) {
 					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(w.getRules().baseCostShipyard));
 				}
 			}
@@ -680,7 +679,6 @@ public class World extends RulesObject implements GoodwillProvider {
 						aiOrders.put("rel_" + kk + "_fealty", getNation(k).getRelationship(kk).fealty.toString());
 						aiOrders.put("rel_" + kk + "_construct", getNation(k).getRelationship(kk).construct.toString());
 					}
-					aiOrders.put("plot_type", "defend");
 					orders.put(k, aiOrders);
 				}
 			}
@@ -1048,6 +1046,12 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (String k : orders.keySet()) {
 				for (String o : orders.get(k).keySet()) {
 					if (!o.startsWith("plot_new_type")) continue;
+					try {
+						int plotId = Integer.parseInt(o.substring("plot_new_type_".length()));
+						if (plotId < 0 || plotId > getRules().plotInstigationLimit) continue;
+					} catch (NumberFormatException e) {
+						continue; // Forged orders - ignore.
+					}
 					Plot.PlotType type = Plot.PlotType.valueOf(orders.get(k).get(o));
 					if (type == null) continue;
 					String target = orders.get(k).get(o.replace("type", "target"));
@@ -1231,6 +1235,7 @@ public class World extends RulesObject implements GoodwillProvider {
 							}
 						}
 					}
+					spyRings.removeIf(r -> r.isExposed() && NationData.isEnemy(r.getNation(), army.kingdom, World.this, region) && r.getLocation() == army.location);
 				} else if (action.startsWith("Raze ")) {
 					incomeSources.getOrDefault(army.kingdom, new Budget()).incomeRaze += army.raze(World.this, action, leaders.get(army), inspires, lastStands.contains(army.kingdom));
 				} else if (action.startsWith("Force civilians to ")) {
@@ -1408,6 +1413,8 @@ public class World extends RulesObject implements GoodwillProvider {
 					c.addExperienceGovernor();
 				} else if (action.startsWith("Establish Spy Ring")) {
 					if (!region.isLand() || spyRings.stream().filter(r -> r.getNation().equals(c.kingdom) && r.getLocation() == c.location).count() != 0) continue;
+					if (getNation(c.kingdom).gold < getRules().spyRingEstablishCost) continue;
+					getNation(c.kingdom).gold -= getRules().spyRingEstablishCost;
 					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
 					c.orderhint = "";
 					c.addExperienceSpy();
@@ -1492,11 +1499,11 @@ public class World extends RulesObject implements GoodwillProvider {
 			double piratesSpawned = 0;
 			Set<String> pirateNotes = new HashSet<>();
 			while (piratesSpawned < pirateArmies) {
-				for (Region r : regions) totalPirateThreat += r.calcPirateThreat(World.this);
+				for (Region r : regions) totalPirateThreat += r.calcPirateThreat(World.this, patrolledRegions.contains(r));
 				if (totalPirateThreat == 0) return; // Probably 0% unhappiness globally.
 				totalPirateThreat *= Math.random();
 				for (int i = 0; i < regions.size(); i++) {
-					totalPirateThreat -= regions.get(i).calcPirateThreat(World.this);
+					totalPirateThreat -= regions.get(i).calcPirateThreat(World.this, patrolledRegions.contains(regions.get(i)));
 					if (totalPirateThreat < 0) {
 						int loc = i;
 						Optional<Army> pirates = armies.stream().filter(a -> NationData.PIRATE_NAME.equals(a.kingdom)).filter(a -> a.location == loc).findAny();

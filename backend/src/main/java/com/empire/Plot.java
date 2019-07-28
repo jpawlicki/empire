@@ -238,7 +238,9 @@ class Plot extends RulesObject {
 			Optional<String> defender = getDefenderCharacter(targetId, w);
 			if (!defender.isPresent()) return;
 			for (Army a : w.armies) if (a.location == target.get().location && a.kingdom.equals(defender.get())) {
-				outcome.addFailureChance(armyStrengthProvider.apply(a));
+				double mod = 1;
+				if (NationData.getStateReligion(a.kingdom, w) == Ideology.ALYRJA) mod += 1;
+				outcome.addFailureChance(armyStrengthProvider.apply(a) * mod);
 			}
 		}
 
@@ -423,6 +425,7 @@ class Plot extends RulesObject {
 			// Reveal a random supporting spy ring to everyone.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
 			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
+			supporters.removeIf(r -> w.regions.get(r.getLocation()).religion == Ideology.LYSKR && r.getNation().equals(w.regions.get(r.getLocation()).getKingdom()));
 			SpyRing unlucky = null;
 			if (!supporters.isEmpty()) {
 				unlucky = supporters.get((int) (Math.random() * supporters.size()));
@@ -433,6 +436,7 @@ class Plot extends RulesObject {
 			// Build reveal set. - One random supporting ring, then all others have a 50% chance.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
 			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
+			supporters.removeIf(r -> w.regions.get(r.getLocation()).religion == Ideology.LYSKR && r.getNation().equals(w.regions.get(r.getLocation()).getKingdom()));
 			Set<String> knownConspirators = new HashSet<String>();
 			Set<String> exposureLocations = new HashSet<String>();
 			if (!supporters.isEmpty()) {
