@@ -234,7 +234,7 @@ class Region {
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && getNation(r.kingdom).calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
-		if (this.religion == "Northern (Syrjen)") mods.push({"v": 1.25, "unit": "%", "why": "Worships Syrjen"});
+		if (this.religion == "Northern (Syrjen)") mods.push({"v": 0.75, "unit": "%", "why": "Worships Syrjen"});
 		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});
 		if (this.religion == "Iruhan (Tapestry of People)") {
 			let getTapestryBonus = false;
