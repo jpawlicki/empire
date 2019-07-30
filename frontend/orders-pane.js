@@ -1365,7 +1365,24 @@ class OrdersPane extends HTMLElement {
 				}
 			}
 		}
-		updateMotions(amotions); /* map1.html */
+		let dmotions = {};
+		for (let i = 0; i < this.divisions; i++) {
+			let o = shadow.querySelector("select[name=action_div_" + i + "]");
+			if (o != undefined) {
+				let paren = "a" + shadow.querySelector("[name=div_parent_" + i + "]").value;
+				if (!dmotions.hasOwnProperty(paren)) dmotions[paren] = [];
+				if (o.value.startsWith("Travel to ")) {
+					let dest = undefined;
+					for (let i = 0; i < g_data.regions.length; i++) if (g_data.regions[i].name == o.value.replace("Travel to ", "")) dest = i;
+					if (dest != undefined) dmotions[paren].push(dest);
+				} else if (o.value.startsWith("Merge into ")) {
+					let dest = undefined;
+					for (let i = 0; i < g_data.armies.length; i++) if (g_data.armies[i].id == parseInt(o.value.replace("Merge into ", "").replace("army ", "").replace("navy ",""))) dest = g_data.armies[i];
+					dmotions[paren].push(dest);
+				}
+			}
+		}
+		updateMotions(amotions, dmotions); /* map1.html */
 	}
 }
 customElements.define("orders-pane", OrdersPane);
