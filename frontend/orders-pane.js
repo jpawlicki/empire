@@ -1089,6 +1089,10 @@ class OrdersPane extends HTMLElement {
 			tr.appendChild(td);
 			td = document.createElement("td");
 			td.appendChild(o.select("action_div_" + id, o.getArmyOptions(entity)));
+			let warn = document.createElement("div");
+			warn.setAttribute("id", "warning_div_" + id);
+			warn.setAttribute("class", "warning");
+			td.appendChild(warn);
 			tr.appendChild(td);
 			child.parentNode.insertBefore(tr, child.nextSibling);
 			for (let c of g_data.characters) if (c.location == entity.location) {
@@ -1303,44 +1307,66 @@ class OrdersPane extends HTMLElement {
 	}
 
 	checkWarnings(shadow) {
+		let warmies = [];
 		for (let a of g_data.armies) {
 			let o = shadow.querySelector("select[name=action_army_" + a.id + "]");
 			if (o == undefined) continue;
+			warmies.push({"army": a, "o": o.value, "w": shadow.getElementById("warning_army_" + a.id)});
+		}
+		for (let i = 0; i < this.divisions; i++) {
+			let o = shadow.querySelector("select[name=action_div_" + i + "]");
+			if (o == undefined) conitinue;
+			let source = g_data.armies[parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value)];
+			let fakeArmy = {
+				"type": source.type,
+				"size": parseInt(shadow.querySelector("[name=div_size_" + i + "]").value),
+				"kingdom": source.kingdom,
+				"location": source.location,
+				"preparation": [],
+				"tags": source.tags,
+				"orderhint": "",
+				"gold": 0
+			};
+			warmies.push({"army": new Army(fakeArmy), "o": o.value, "w": shadow.getElementById("warning_div_" + i)});
+		}
+		for (let entry of warmies) {
+			let a = entry.army;
+			let o = entry.o;
 			let warn = "";
-			if (o.value.startsWith("Travel to ")) {
+			if (o.startsWith("Travel to ")) {
 				let dest = undefined;
-				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
+				for (let r of g_data.regions) if (r.name == o.replace("Travel to ", "")) dest = r;
 				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && g_data.tivar.deluge == 0) {
 					warn += " (navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
-			} else if (o.value.startsWith("Merge into army")) {
+			} else if (o.startsWith("Merge into army")) {
 				let ot = undefined;
-				for (let aa of g_data.armies) if (aa.id == parseInt(o.value.replace("Merge into army ", ""))) ot = aa;
+				for (let aa of g_data.armies) if (aa.id == parseInt(o.replace("Merge into army ", ""))) ot = aa;
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
-			} else if (o.value.startsWith("Patrol")) {
+			} else if (o.startsWith("Patrol")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn += " (army may be too small to patrol)";
 				}
 				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
 					warn += " (armies can only patrol friendly regions)";
 				}
-			} else if (o.value.startsWith("Oust")) {
+			} else if (o.startsWith("Oust")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn = " (army may be too small to oust)";
 				}
-			} else if (o.value.startsWith("Conquer")) {
+			} else if (o.startsWith("Conquer")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
 					warn = " (army may be too small to conquer)";
 				}
 				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
 					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
-			} else if (o.value.startsWith("Raze")) {
+			} else if (o.startsWith("Raze")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 2) {
 					warn = " (army may be too small to raze)";
 				}
 			}
-			shadow.getElementById("warning_army_" + a.id).innerHTML = warn;
+			entry.w.innerHTML = warn;
 		}
 	}
 
