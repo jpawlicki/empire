@@ -41,7 +41,12 @@
 						window.setTimeout(getGeo, 1500, gameId);
 					};
 					req.send(JSON.stringify({
-						"players": numPlayers
+						"players": numPlayers,
+						"schedule": {
+							"days": ["MONDAY", "WEDNESDAY", "FRIDAY"],
+							"times": [180],
+							"locale": "America/Los_Angeles"
+						}
 					}));
 				}
 				return false;

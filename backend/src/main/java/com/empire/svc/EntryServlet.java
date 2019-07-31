@@ -5,6 +5,7 @@ import com.empire.Lobby;
 import com.empire.Nation;
 import com.empire.Orders;
 import com.empire.Rules;
+import com.empire.Schedule;
 import com.empire.World;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
@@ -13,6 +14,8 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
+import com.google.appengine.api.taskqueue.QueueFactory;
+import com.google.appengine.api.taskqueue.TaskOptions;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -55,8 +58,8 @@ GET /entry/setup?gid=1234
 	Return lobby information for a game. If none, empty string.
 GET /entry/world?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and return the visible world view JSON.
-GET /entry/advancegamepoll
-	Advance all games one turn.
+GET /entry/advanceworldpoll
+	Advance all games one turn, if they need it.
 
 POST /entry/orders?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and post the given order data.
@@ -309,6 +312,8 @@ public class EntryServlet extends HttpServlet {
 							Entity activeGames = new Entity("ACTIVEGAMES", "_");
 							activeGames.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(newActiveGames));
 							service.put(activeGames);
+						} else {
+							QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
 						}
 					}
 					txn.commit();
@@ -386,6 +391,7 @@ public class EntryServlet extends HttpServlet {
 			games.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(activeGames));
 			service.put(games);
 			txn.commit();
+			QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
 		} catch (IOException | EntityNotFoundException e) {
 			log.log(Level.SEVERE, "Failed to start game " + r.gameId, e);
 			return false;
@@ -398,6 +404,7 @@ public class EntryServlet extends HttpServlet {
 
 	private static class StartLobbyBody {
 		int players;
+		Schedule schedule;
 	}
 
 	private boolean postStartLobby(Request r) {
@@ -409,7 +416,8 @@ public class EntryServlet extends HttpServlet {
 				Lobby exists = Lobby.load(r.gameId, service);
 				return false;
 			} catch (EntityNotFoundException expected) {}
-			Lobby.newLobby(Rules.LATEST, new Gson().fromJson(r.body, StartLobbyBody.class).players).save(r.gameId, service);
+			StartLobbyBody startLobby = new Gson().fromJson(r.body, StartLobbyBody.class);
+			Lobby.newLobby(Rules.LATEST, startLobby.players, startLobby.schedule).save(r.gameId, service);
 			txn.commit();
 		} finally {
 			if (txn.isActive()) txn.rollback();

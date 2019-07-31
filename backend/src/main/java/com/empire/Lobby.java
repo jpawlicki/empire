@@ -14,6 +14,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.DayOfWeek;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -22,6 +24,7 @@ public class Lobby {
 
 	int numPlayers;
 	int ruleSet;
+	Schedule schedule;
 	Map<String, Nation> nations = new HashMap<>();
 
 	private static Gson getGson() {
@@ -53,13 +56,14 @@ public class Lobby {
 
 	private Lobby() {} // For GSON.
 
-	private Lobby(int ruleSet, int numPlayers) {
+	private Lobby(int ruleSet, int numPlayers, Schedule schedule) {
 		this.ruleSet = ruleSet;
 		this.numPlayers = numPlayers;
+		this.schedule = schedule;
 	}
 
-	public static Lobby newLobby(int ruleSet, int numPlayers) {
-		return new Lobby(ruleSet, numPlayers);
+	public static Lobby newLobby(int ruleSet, int numPlayers, Schedule schedule) {
+		return new Lobby(ruleSet, numPlayers, schedule);
 	}
 
 	public int getNumPlayers() {
