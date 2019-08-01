@@ -358,7 +358,7 @@ class OrdersPane extends HTMLElement {
 			if (contains(unit.tags, "Cardinal") && g_data.regions[unit.location].name == "Sancta Civitate") opts.push("Inspire the Faithful");
 			if (r.kingdom == unit.kingdom) {
 				opts.push("Govern " + r.name);
-				if (r.noble.name == undefined) {
+				if (r.noble.name == undefined && !g_data.kingdoms[unit.kingdom].tags.includes("Republic")) {
 					opts.push("Instate Noble");
 				}
 			}

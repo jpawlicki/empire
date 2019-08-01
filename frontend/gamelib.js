@@ -250,7 +250,7 @@ class Region {
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Tavian (River of Kuun)") {
 			let kingdoms = {};
 			for (let r of this.getNeighbors()) if (r.type == "land") kingdoms[r.kingdom] = true;
-			kingdoms[kingdom] = false;
+			kingdoms[this.kingdom] = false;
 			let kCount = 0;
 			for (let k in kingdoms) if (kingdoms[k]) kCount++;
 			if (kCount > 0) mods.push({"v": kCount * .2, "unit": "%", "why": "River of Kuun state ideology with " + kCount + " neighboring kingdoms."});
@@ -512,6 +512,7 @@ class Kingdom {
 		this.loyal_to_cult = dataEntry.loyal_to_cult;
 		this.court = dataEntry.court;
 		this.taxratehint = dataEntry.taxratehint;
+		this.shipratehint = dataEntry.taxratehint;
 		this.signingbonushint = dataEntry.signingbonushint;
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;

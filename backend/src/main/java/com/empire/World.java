@@ -1369,7 +1369,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (Character c : characters) {
 				String action = orders.getOrDefault(c.kingdom, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
 				Region region = regions.get(c.location);
-				c.hidden = action.startsWith("Hide in ");
+				c.hidden = action.startsWith("Hide in ") || action.equals("Establish Spy Ring");
 				if (action.startsWith("Stay in ")) {
 					c.addExperienceAll();
 				} else if (action.startsWith("Hide in ") || action.startsWith("Travel to ")) {
@@ -1384,23 +1384,9 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (int i = 0; i < regions.size(); i++) {
 						if (regions.get(i).name.equals(destination)) toId = i;
 					}
-					int crossing = -1;
-					for (Geography.Border b : geography.borders) if ((b.b != null && b.a == c.location && b.b == toId) || (b.b != null && b.b == c.location && b.a == toId)) crossing = b.w;
-					Preparation prep = null;
-					for (Preparation p : c.preparation) if (p.to == toId) prep = p;
-					if (prep == null) {
-						prep = new Preparation();
-						prep.to = toId;
-						prep.amount = 1;
-						c.preparation.add(prep);
-					} else {
-						prep.amount++;
-					}
-					if (prep.amount >= crossing) {
-						c.location = toId;
-						c.orderhint = c.hidden ? "Hide in " + regions.get(toId).name : "";
-						c.preparation.clear();
-					}
+					c.location = toId;
+					c.orderhint = c.hidden ? "Hide in " + regions.get(toId).name : "";
+					c.preparation.clear(); // Can still have preparation from travelling w/ an army.
 				} else if (action.startsWith("Build ")) {
 					c.addExperienceGovernor();
 					if (!c.kingdom.equals(region.getKingdom()) && getNation(region.getKingdom()).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
@@ -1611,7 +1597,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						u.size += raised;
 						u.composition.put("Undead", u.composition.getOrDefault("Undead", 0.0) + raised);
 					}
-				} else {
+				} else if (dead > 0) {
 					cultCaches.add(CultCache.newCache(dead * getRules().cultRaiseFraction, localArmies.stream().map(a -> a.kingdom).collect(Collectors.toSet()), i));
 				}
 				HashSet<String> localKingdoms = new HashSet<>();
