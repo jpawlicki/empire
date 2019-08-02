@@ -2413,7 +2413,7 @@ public class World extends RulesObject implements GoodwillProvider {
 
 		void appointHeirs() {
 			HashSet<String> unruled = new HashSet<>();
-			for (String k : kingdoms.keySet()) unruled.add(k);
+			for (String k : kingdoms.keySet()) if (!kingdoms.get(k).tookFinalAction()) unruled.add(k);
 			for (Character c : characters) if (c.hasTag(Character.Tag.RULER)) unruled.remove(c.kingdom);
 			ArrayList<String> remove = new ArrayList<>();
 			for (String k : unruled) {
@@ -2497,7 +2497,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				}
 				armies.removeAll(aremovals);
 				for (Region r : regions) if (k.equals(r.getKingdom())) r.setKingdom(World.this, "Unruled");
-				kingdoms.remove(k);
+				getNation(k).takeFinalAction();
 			}
 		}
 

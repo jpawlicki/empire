@@ -126,7 +126,8 @@ public class NationData {
 	List<Integer> coreRegions = new ArrayList<>();
 	private List<Tag> tags = new ArrayList<>();
 	List<String> previousTributes = new ArrayList<>();
-	boolean scoreProfilesLocked;
+	private boolean scoreProfilesLocked;
+	private boolean tookFinalAction;
 	String taxratehint = "100";
 	String rationhint = "100";
 	String signingbonushint = "0";
@@ -198,6 +199,14 @@ public class NationData {
 
 	boolean scoreProfilesLocked() {
 		return scoreProfilesLocked;
+	}
+
+	void takeFinalAction() {
+		tookFinalAction = true;
+	}
+
+	boolean tookFinalAction() {
+		return tookFinalAction;
 	}
 
 	void score(ScoreProfile p, double amount) {
