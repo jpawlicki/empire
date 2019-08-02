@@ -192,7 +192,7 @@
 				box-sizing: border-box;
 				box-shadow: 0 0 10px #fff;
 			}
-			#nationDiv h1 {
+			#nationDiv > div > h1 {
 				text-transform: capitalize;
 				font-family: sans-serif;
 				text-align: center;
@@ -217,7 +217,7 @@
 			input[type=text], input[type=password] {
 				width: 20em;
 			}
-			#nationDiv > h1 {
+			#confirmation {
 				display: none;
 				position: absolute;
 				top: 40%;
@@ -225,6 +225,8 @@
 				margin: auto;
 				z-index: 1;
 				text-shadow: 1px 1px 3px #fff, -1px 1px 3px #fff, 1px -1px 3px #fff, -1px -1px 3px #fff;
+				font-family: sans-serif;
+				font-size: 120%;
 			}
 			#nationDiv > div.selectionDone {
 				pointer-events: none;
@@ -280,7 +282,7 @@
 							<option>Warlady</option>
 							<option>Warlord</option>
 						</select>
-						<input type="text" name="ruler_name" id="ruler_name" placeholder="Press button to generate." disabled></label><button id="newname_male">Masculine Name</button><button id="newname_female">Feminine Name</button><button id="newname_unisex">Ungendered Name</button>
+						<input type="text" name="ruler_name" id="ruler_name" placeholder="Press button to generate." disabled></label><button id="newname_male" type="button">Masculine Name</button><button id="newname_female" type="button">Feminine Name</button><button id="newname_unisex" type="button">Ungendered Name</button>
 						<div><tooltip-element tooltip="Your selections here determine how you are scored at the end of the game. You can select any number, and you will receive points for doing well in that dimension, but will lose points for doing poorly. You are also free to ignore the score and role-play your character as you wish - in this case these choices will inform other rulers of your reputation.">You care deeply about:</tooltip-element>
 							<label><input type="checkbox" name="prosperity"/>Feeding your people. (Recommended)</label>
 							<label><input type="checkbox" name="happiness"/>The happiness of your people.</label>
@@ -313,7 +315,7 @@
 					<div id="warning"></div>
 				</form>
 			</div>
-			<h1>Selection Confirmed - You will be e-mailed when all players are ready.</h1>
+			<section id="confirmation"><h1>You rule <span id="nationnameconfirm"></span></h1>Your selection has been confirmed and you will be e-mailed when all other players are ready.</section>
 		</div>
 		<script>
 			let selected = "";
@@ -458,8 +460,9 @@
 					if (req.status == 400) {
 						submit.innerHTML = "A different player has already claimed this nation";
 					} else if (req.status == 204) {
+						document.querySelector("#nationnameconfirm").innerHTML = capitalize(selected);
 						document.querySelector("#nationDiv > div").className = "selectionDone";
-						document.querySelector("#nationDiv > h1").style.display = "block";
+						document.querySelector("#confirmation").style.display = "block";
 						for (let e of document.querySelectorAll("img")) e.style.display = "none";
 					} else {
 						window.alert("HTTP " + req.status + ". Contact Josh (gilgarn@gmail.com)");
