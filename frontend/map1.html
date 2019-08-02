@@ -94,10 +94,10 @@
 				}
 			}
 			let motionMapPointCache = {};
-			function updateMotions(plannedMotions) {
+			function updateMotions(plannedMotions, divisionMotions) {
 				let pm = document.getElementById("plannedMotions");
 				pm.innerHTML = "";
-				let motions = {};
+				let motions = {}; // Motions is keyed by [moverID][destinationID].
 				let movers = [];
 				for (let a of g_data.armies) movers.push(a);
 				for (let a of g_data.characters) if (a.location != -1) movers.push(a);
@@ -116,28 +116,30 @@
 							};
 						}
 					}
-					if (plannedMotions != undefined) {
-						if (plannedMotions[k] != undefined) {
-							let mp = m["r" + plannedMotions[k]];
+					if (plannedMotions != undefined && divisionMotions != undefined) {
+						let subMotions = divisionMotions[k] == undefined ? [] : Array.from(divisionMotions[k]);
+						if (plannedMotions[k] != undefined) subMotions.push(plannedMotions[k]);
+						for (let subMotion of subMotions) {
+							let mp = m["r" + subMotion];
 							if (mp == undefined) {
-								if (plannedMotions[k].hasOwnProperty("id")) {
-									m["rmerge" + plannedMotions[k].id] = {
+								if (subMotion.hasOwnProperty("id")) {
+									m["rmerge" + subMotion.id] = {
 										"sofar": 0,
-										"p": plannedMotions[k].mapPoint,
+										"p": subMotion.mapPoint,
 										"planned": true,
 										"type": "merge"
 									};
 								} else {
-									if (!motionMapPointCache.hasOwnProperty(k + "_r" + plannedMotions[k])) motionMapPointCache[k + "_r" + plannedMotions[k]] = g_data.regions[plannedMotions[k]].getRandomPointInRegion(.75);
-									m["r" + plannedMotions[k]] = {
+									if (!motionMapPointCache.hasOwnProperty(k + "_r" + subMotion)) motionMapPointCache[k + "_r" + subMotion] = g_data.regions[subMotion].getRandomPointInRegion(.75);
+									m["r" + subMotion] = {
 										"sofar": 0,
-										"p": motionMapPointCache[k + "_r" + plannedMotions[k]],
+										"p": motionMapPointCache[k + "_r" + subMotion],
 										"planned": true,
 										"type": "travel"
 									};
 								}
 							} else {
-								m["r" + plannedMotions[k]].planned = true;
+								m["r" + subMotion].planned = true;
 							}
 						}
 					}
