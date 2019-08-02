@@ -16,6 +16,7 @@ import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
 import com.google.appengine.api.taskqueue.QueueFactory;
 import com.google.appengine.api.taskqueue.TaskOptions;
+import com.google.apphosting.api.ApiProxy.OverQuotaException;
 import com.google.common.io.BaseEncoding;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -27,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,7 +98,7 @@ public class EntryServlet extends HttpServlet {
 		} else if (req.getRequestURI().equals("/entry/geography")) {
 			json = getGeography(r);
 		} else if (req.getRequestURI().equals("/entry/advanceworldpoll")) {
-			json = getAdvancePoll();
+			json = getAdvancePoll(r.skipMail);
 		} else if (req.getRequestURI().equals("/entry/activity")) {
 			json = getActivity(r);
 		} else {
@@ -279,7 +281,7 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private String getAdvancePoll() {
+	private String getAdvancePoll(boolean skipMail) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		try {
 			for (Long gameId : ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games")).activeGameIds) {
@@ -303,8 +305,10 @@ public class EntryServlet extends HttpServlet {
 						Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
 						nudate.setProperty("date", (long)w.getDate());
 						service.put(nudate);
-						for (String mail : emails.keySet()) {
-							mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+						if (!skipMail && Instant.ofEpochMilli(w.getNextTurn()).isAfter(Instant.now().plus(5, ChronoUnit.HOURS))) {
+							for (String mail : emails.keySet()) {
+								mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+							}
 						}
 						if (w.isGameover()) {
 							ActiveGames newActiveGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
@@ -351,7 +355,7 @@ public class EntryServlet extends HttpServlet {
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
-		getAdvancePoll();
+		getAdvancePoll(r.skipMail);
 		return true;
 	}
 
@@ -625,7 +629,7 @@ public class EntryServlet extends HttpServlet {
 			msg.setSubject(subject);
 			msg.setText(body);
 			Transport.send(msg);
-		} catch (MessagingException | UnsupportedEncodingException | NoClassDefFoundError e) {
+		} catch (MessagingException | UnsupportedEncodingException | NoClassDefFoundError | OverQuotaException e) {
 			log.log(Level.SEVERE, "Failed to send mail", e);
 		}
 	}
