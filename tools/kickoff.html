@@ -4,7 +4,6 @@
 		<script>
 			function postFormStartLobby() {
 				let gameId = parseInt(document.getElementById("gameIdLobby").value);
-				let numPlayers = parseInt(document.getElementById("numPlayers").value);
 				
 				let req = new XMLHttpRequest();
 				req.open("post", g_server + "/entry/startlobby?gid=" + gameId, true);
@@ -15,7 +14,12 @@
 					window.alert(req.status);
 				};
 				req.send(JSON.stringify({
-					"players": numPlayers
+					"players": parseInt(document.getElementById("numPlayers").value),
+					"schedule": {
+						"times": Array.from(document.getElementById("times").selectedOptions).map(e => parseInt(e.value)),
+						"days": Array.from(document.getElementById("daysOfWeek").selectedOptions).map(e => e.value),
+						"locale": "America/Los_Angeles"
+					}
 				}));
 				return false;
 			}
@@ -46,6 +50,16 @@
 		<form onsubmit="return postFormStartLobby();">
 			<label>Game ID: <input id="gameIdLobby" type="number" value="0"/></label>
 			<label>Number of Players: <input id="numPlayers" type="number" value="26"/></label>
+			<label>Days Of Week: <select id="daysOfWeek" multiple>
+				<option>MONDAY</option>
+				<option>TUESDAY</option>
+				<option>WEDNESDAY</option>
+				<option>THURSDAY</option>
+				<option>FRIDAY</option>
+				<option>SATURDAY</option>
+				<option>SUNDAY</option>
+			</select></label>
+			<label>Time(s) (America/Los_Angeles): <select id="times" multiple></select></label>
 			<button>Create Lobby</button>
 		</form>
 		<h1>Start Game</h1>
@@ -66,6 +80,12 @@
 				b.appendChild(document.createTextNode("Advance game 0 turn " + i));
 				f.appendChild(b);
 				document.getElementById("advances").appendChild(f);
+			}
+			for (let i = 0; i < 60 / 5 * 24; i++) {
+				let o = document.createElement("option");
+				o.setAttribute("value", i * 5);
+				o.appendChild(document.createTextNode(Math.floor(i * 5 / 60).toString().padStart(2, "0") + ":" + ((i * 5) % 60).toString().padStart(2, "0")));
+				document.getElementById("times").appendChild(o);
 			}
 		</script>
 	</body>

@@ -6,6 +6,7 @@ class TimelineReport extends HTMLElement {
 				<div>Timeline</div>
 				<input id="timeline" type="range" min="1" max="${g_turndata.length - 1}" step="1" value="${g_data.date}"/>
 				<div id="weekdisplay">Week ${g_data.date}</div>
+				<div id="timeleft"></div>
 			</div>
 		`;
 		// CSS
@@ -52,6 +53,26 @@ class TimelineReport extends HTMLElement {
 				shadow.getElementById("weekdisplay").innerHTML = "Week " + newDate;
 			}
 		});
+		function recalcTime() {
+			let view = "";
+			if (g_turndata[g_turndata.length - 1].gameover) {
+				view = "This game is over.";
+			} else {
+				let msRemaining = g_turndata[g_turndata.length - 1].next_turn - Date.now();
+				if (msRemaining < 0) {
+					view = "Turn expired - waiting for new turn data from server...";
+				} else if (msRemaining < 1000 * 60) { // a minute
+					view = "Orders due in " + Math.round(msRemaining / 1000) + " seconds";
+				} else if (msRemaining < 1000 * 60 * 10) { // an hour
+					view = "Orders due in " + Math.floor(msRemaining / 1000 / 60) + " minutes, " + Math.round(msRemaining / 1000) % 60 + " seconds";
+				} else {
+					view = "Orders due in " + Math.floor(msRemaining / 1000 / 60 / 60) + " hours, " + Math.floor(msRemaining / 1000 / 60) % 60 + " minutes";
+				}
+				if (shadow.isConnected) window.setTimeout(recalcTime, 500 - msRemaining % 1000);
+			}
+			shadow.getElementById("timeleft").innerHTML = view;
+		}
+		recalcTime();
 	}
 }
 customElements.define("timeline-report", TimelineReport);

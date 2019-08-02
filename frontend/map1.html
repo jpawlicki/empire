@@ -236,29 +236,39 @@
 			function enterPassword() {
 				password = encodeURIComponent(document.getElementById("password_input").value);
 				whoami = document.getElementById("kingdom_input").value;
-				startRequest();
+				startRequest(-1, function() {}, function() {
+					window.alert("HTTP " + req.status + " when trying to load game data. Perhaps the password is incorrect.");
+					document.getElementById("passwordBox").style.display = "flex";
+					document.getElementById("password_submit").disabled = false;
+				});
 			}
 
-			function startRequest(date = -1, callback = function(){}) {
+			function startRequest(date = -1, callback = function(){}, errorCallback = function(){}) {
 				document.getElementById("password_submit").disabled = true;
 				let req = new XMLHttpRequest();
 				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (date != -1 ? "&t=" + date : ""), true);
 				req.onerror = function (e) {};
 				req.onload = function (ev) {
 					if (req.status != 200) {
-						window.alert("HTTP " + req.status + " when trying to load game data. Perhaps the password is incorrect.");
-						document.getElementById("passwordBox").style.display = "flex";
-						document.getElementById("password_submit").disabled = false;
+						errorCallback();
 					} else {
 						document.getElementById("passwordBox").style.display = "none";
 						let d = JSON.parse(req.response);
 						g_turndata[d.date] = d;
-						if (g_latest_date < d.date) g_latest_date = d.date;
+						if (g_latest_date < d.date) {
+							g_latest_date = d.date;
+							startTurnReloadTimer(1000);
+						}
 						start(d.date);
 						callback();
 					}
 				};
 				req.send();
+			}
+
+			function startTurnReloadTimer(backoff) {
+				let msRemaining = Math.max(backoff, g_turndata[g_turndata.length - 1].next_turn - Date.now());
+				window.setTimeout(function() { startRequest(g_latest_date + 1, function() {}, c => startTurnReloadTimer(backoff * 2)); }, msRemaining);
 			}
 
 			function start(date) {
