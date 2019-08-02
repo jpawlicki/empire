@@ -456,18 +456,10 @@ public class EntryServlet extends HttpServlet {
 			if (r.password == null) return CheckPasswordResult.FAIL;
 			MessageDigest digest = MessageDigest.getInstance("SHA-256");
 			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
-			// try {
-			// 	byte[] passHash = BaseEncoding.base16().decode(Nation.NationGson.loadNation(r.kingdom, r.gameId, service).password);
-			// 	if (Arrays.equals(attemptHash, passHash)) return CheckPasswordResult.PASS;
-			// } catch (EntityNotFoundException e) {
-			// 	// Do nothing.
-			// }
 			int date = getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
 			byte[] gmPassHash = BaseEncoding.base16().decode(w.getGmPasswordHash());
 			byte[] obsPassHash = BaseEncoding.base16().decode(w.getObsPasswordHash());
-			// if (w.kingdoms.containsKey(r.kingdom) && w.getNation(r.kingdom).accessToken.equals(r.password)) return CheckPasswordResult.PASS_PLAYER;
-			// if (w.kingdoms.containsKey(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(w.getNation(r.kingdom).password))) return CheckPasswordResult.PASS_PLAYER;
 			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).getEmail(), service).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
 			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
@@ -540,7 +532,6 @@ public class EntryServlet extends HttpServlet {
 			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
 			Player p = Player.loadPlayer(body.email, service);
 			w.getNation(r.kingdom).setEmail(body.email);
-			w.getNation(r.kingdom).setPassword(p.passHash);
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
@@ -591,17 +582,17 @@ public class EntryServlet extends HttpServlet {
 				return false;
 			}
 			Nation nation = Nation.fromJson(r.body);
-			nation.password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 			if (!lobby.update(r.kingdom, nation)) {
 				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + r.kingdom);
 				return false;
 			}
 			lobby.save(r.gameId, service);
+			String password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 			try {
-				Player unused = Player.loadPlayer(nation.email, service);
+				service.put(Player.loadPlayer(nation.email, service).withNewPassword(password).toEntity());
 			} catch (EntityNotFoundException e) {
 				// New player.
-				service.put(new Player(nation.email, nation.password).toEntity());
+				service.put(new Player(nation.email, password).toEntity());
 			}
 			txn.commit();
 		} catch (NoSuchAlgorithmException | EntityNotFoundException | IOException ee) {

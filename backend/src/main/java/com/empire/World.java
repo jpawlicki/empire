@@ -644,9 +644,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void reset() {
-			for (String k : kingdoms.keySet()) {
-				getNation(k).resetAccessToken();
-			}
 			notifications.clear();
 			rtc.clear();
 		}
