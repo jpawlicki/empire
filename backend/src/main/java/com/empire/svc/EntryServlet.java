@@ -402,7 +402,7 @@ public class EntryServlet extends HttpServlet {
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
-		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at http://pawlicki.kaelri.com/empire/map1.html?gid=" + r.gameId + ".");
+		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at https://pawlicki.kaelri.com/empire/map1.html?g=" + r.gameId + ".");
 		return true;
 	}
 

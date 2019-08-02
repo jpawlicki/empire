@@ -46,7 +46,6 @@
 						window.alert("HTTP " + req.status + " when trying to load game data.");
 					} else {
 						g_geo = JSON.parse(req.response);
-						// RETER	
 						let nation_opts = [];
 						for (let k of g_geo.kingdoms) {
 							nation_opts.push(k.name);
@@ -60,7 +59,16 @@
 						let oe = document.createElement("option");
 						oe.appendChild(document.createTextNode("(Observer)"));
 						document.getElementById("kingdom_input").appendChild(oe);
-						if (g_latest_date != 0) start(g_latest_date);
+						if (g_latest_date != 0) {
+							start(g_latest_date);
+						} else {
+							let login = localStorage.getItem("g_" + gameId + "_login");
+							if (login != null) {
+								document.getElementById("kingdom_input").value = JSON.parse(login).nation;
+								document.getElementById("password_input").value = JSON.parse(login).password;
+								enterPassword(false);
+							}
+						}
 					}
 				};
 				req.send();
@@ -233,11 +241,11 @@
 				}
 			}
 
-			function enterPassword() {
+			function enterPassword(noisyFailure) {
 				password = encodeURIComponent(document.getElementById("password_input").value);
 				whoami = document.getElementById("kingdom_input").value;
 				startRequest(-1, function() {}, function() {
-					window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
+					if (noisyFailure) window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
 					document.getElementById("passwordBox").style.display = "flex";
 					document.getElementById("password_submit").disabled = false;
 				});
@@ -616,7 +624,7 @@
     </style>
   </head>
   <body>
-		<form id="passwordBox" action="javascript:enterPassword();">
+		<form id="passwordBox" action="javascript:enterPassword(true);">
 			<label>Nation:
 				<select id="kingdom_input" name="username" autocomplete="username">
 				</select>

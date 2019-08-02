@@ -1,0 +1,76 @@
+<html>
+	<head>
+		<title>Empire</title>
+		<style>
+			body {
+				display: grid;
+				margin: 0;
+			}
+			#login label, #login button {
+				display: block;
+			}
+			#logged_in {
+				display: none;
+			}
+			@media (orientation: landscape) {
+				body {
+					grid-template-rows: 5% 1fr;
+					grid-template-columns: 25% 50% 25%;
+				}
+				#banner {
+					grid-column: 1/4;
+					grid-row: 1;
+				}
+				#login {
+					grid-column: 2;
+					grid-row: 2;
+				}
+				#logged_in {
+					grid-column: 2;
+					grid-row: 2;
+				}
+			}
+			@media (orientation: portrait) {
+				body {
+					grid-template-rows: 5% min-content min-content min-content;
+					grid-template-columns: 100%;
+				}
+				#login, #logged_in {
+					grid-row: 2;
+				}
+				#menu {
+					grid-row 3;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<div id="banner">Empire Banner</div>
+		<ul id="menu">
+			<li>Forum</li>
+			<li>Report Bug</li>
+			<li>Privacy Policy</li>
+		</ul>
+		<div id="login">
+			<label>Email Address: <input type="email" name="email"></input></label>
+			<label>Password: <input type="password" name="password"></input></label>
+			<button>Login / Create Account</button>
+			<button>Reset Password</button>
+		</div>
+		<div id="logged_in">
+			<div id="active_games">Active games</div>
+			<div id="join_game">
+				Join game
+				Desired Turn Cadence
+				Desired Map Size
+			</div>
+			<div id="change_password">Change Password</div> 
+			<div id="delete_account">Change Password</div> 
+		</div>
+		<div id="stats">
+			<div id="active_games"># Active Games</div>
+			<div id="">Top Scores This Quarter</div>
+			<div id="">Score Percentile Breakdown (Flame Chart?)</div>
+		</div>
+	</body>
+</html>
