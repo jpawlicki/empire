@@ -1,62 +1,112 @@
 package com.empire;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import com.google.gson.annotations.SerializedName;
 import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
 
-final class Character {
+public class Character extends RulesObject {
+	enum Tag {
+		@SerializedName("Cardinal") CARDINAL,
+		@SerializedName("Ruler") RULER,
+		@SerializedName("Tiecel") TIECEL
+	}
+
+	static class Experience {
+		double general;
+		double admiral;
+		double spy;
+		double governor;
+	}
+
 	String name = "";
 	String kingdom = "";
-	String captor = "";
 	String honorific = "";
 	int location = -1;
 	boolean hidden = false;
 	List<Preparation> preparation = new ArrayList<>();
-	private List<String> tags = new ArrayList<>();
-	Map<String, Double> experience = new HashMap<>();
-	List<String> values = new ArrayList<>();
+	private List<Tag> tags = new ArrayList<>();
+	private Experience experience = new Experience();
 	int leadingArmy = -1;
 	String orderhint = "";
 
-	public int calcLevel(String dimension) {
-		double xp = experience.get(dimension);
-		if (xp >= 24) return 5;
-		else if (xp >= 15) return 4;
-		else if (xp >= 8) return 3;
-		else if (xp >= 3) return 2;
-		else return 1;
+	public String getName() {
+		return name;
 	}
 
-	public double calcPlotPower(World w, boolean boosted, int inspires) {
-		double power = 1;
-		if (boosted) power += 0.5;
-		power += calcLevel("spy") * 0.3;
-		if (Ideology.LYSKR == NationData.getStateReligion(kingdom, w)) power += .4;
-		if (Ideology.COMPANY == NationData.getStateReligion(kingdom, w)) power += .2;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) power += inspires * .05;
-		if (!"".equals(captor)) power -= 0.5;
-		return power;
+	public int getLocation() {
+		return location;
 	}
 
-	public void addExperience(String dimension, World w) {
-		if ("*".equals(dimension)) {
-			for (String d : new String[]{"general", "admiral", "spy", "governor"}) experience.put(d, experience.get(d) + (w.getNation(kingdom).hasTag("Heroic") ? .5 : .25));
-		} else {
-			experience.put(dimension, experience.get(dimension) + (w.getNation(kingdom).hasTag("Heroic") ? 2 : 1));
-		}
+	public void setLocation(int location) {
+		this.location = location;
 	}
 
-	public boolean hasTag(String tag) {
+	public Region getLocationRegion(World w) {
+		return w.regions.get(location);
+	}
+
+	private double calcLevel(double xp) {
+		return Math.sqrt(xp + 1);
+	}
+
+	public double calcLeadMod(Army.Type type) {
+		if (type == Army.Type.ARMY) return calcLevel(experience.general) * getRules().perLevelLeaderMod;
+		else return calcLevel(experience.admiral) * getRules().perLevelLeaderMod;
+	}
+
+	public double calcGovernRecruitMod() {
+		return calcLevel(experience.governor) * getRules().perLevelGovernRecruitMod + getRules().baseGovernRecruitMod;
+	}
+
+	public double calcGovernTaxMod() {
+		return calcLevel(experience.governor) * getRules().perLevelGovernTaxMod + getRules().baseGovernTaxMod;
+	}
+
+	public double calcSpyRingEstablishmentStrength() {
+		return calcLevel(experience.spy) * getRules().perLevelSpyRingEstablishmentStrength;
+	}
+
+	public void addExperienceAll() {
+		experience.general += getRules().allDimExpAdd;
+		experience.admiral += getRules().allDimExpAdd;
+		experience.spy += getRules().allDimExpAdd;
+		experience.governor += getRules().allDimExpAdd;
+	}
+
+	public void addExperienceGeneral() {
+		experience.general += getRules().oneDimExpAdd;
+	}
+
+	public void addExperienceAdmiral() {
+		experience.admiral += getRules().oneDimExpAdd;
+	}
+
+	public void addExperienceSpy() {
+		experience.spy += getRules().oneDimExpAdd;
+	}
+
+	public void addExperienceGovernor() {
+		experience.governor += getRules().oneDimExpAdd;
+	}
+
+	public boolean hasTag(Tag tag) {
 		return tags.contains(tag);
 	}
 
-	void addTag(String tag) {
+	void addTag(Tag tag) {
 		tags.add(tag);
 	}
 
-	void removeTag(String tag) {
+	void removeTag(Tag tag) {
 		tags.remove(tag);
+	}
+
+	private Character(Rules rules) {
+		super(rules);
+	}
+
+	static Character newCharacter(Rules rules) {
+		return new Character(rules);
 	}
 }
 

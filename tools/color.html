@@ -256,107 +256,140 @@ function deltaM(labA, labB){
 }
 
 function color(n) {
-	var resolution = 20;
-	colors = [];
-	for (var i = 0; i <= 255; i+= 255 / resolution) {
-		for (var j = 0; j <= 255; j+= 255 / resolution) {
-			for (var k = 0; k <= 255; k+= 255 / resolution) {
-				colors.push(rgb2lab([i, j, k]));
+	for (let colorFuncName in fBlind) {
+		let colorFunc = fBlind[colorFuncName];
+		let h1 = document.createElement("h1");
+		h1.innerHTML = colorFuncName;
+		document.querySelector("body").appendChild(h1);
+		let progress = document.createElement("div");
+		document.querySelector("body").appendChild(progress);
+		let output = document.createElement("div");
+		output.setAttribute("class", "o");
+		document.querySelector("body").appendChild(output);
+		var resolution = 14;
+		let colors = [];
+		for (var i = 0; i <= 255; i+= 255 / resolution) {
+			for (var j = 0; j <= 255; j+= 255 / resolution) {
+				for (var k = 0; k <= 255; k+= 255 / resolution) {
+					colors.push([i, j, k]);
+				}
 			}
 		}
-	}
-	var distub = 0;
-	var distlb = 10000000;
-	for (var a = 0; a < colors.length; a++) {
-		for (var b = a + 1; b < colors.length; b++) {
-			var d = ciede2000(colors[a], colors[b]);
-			if (d > distub) distub = d;
-			if (d < distlb) distlb = d;
+		var distub = 0;
+		var distlb = 10000000;
+		for (var a = 0; a < colors.length; a++) {
+			for (var b = a + 1; b < colors.length; b++) {
+				var d = ciede2000(rgb2lab(colorFunc(colors[a])), rgb2lab(colorFunc(colors[b])));
+				if (d > distub) distub = d;
+				if (d < distlb) distlb = d;
+			}
 		}
+		binarySearch(distub, distlb, n, colors, output, progress, [], colorFunc);
 	}
-	binarySearch(distub, distlb, n);
 }
 
-let selected = [];
-function binarySearch(distub, distlb, n) {
+function binarySearch(distub, distlb, n, colors, output, progress, colorselected, colorFunc) {
 	if (distub - distlb > 0.001) {
 		var dist = distub * 0.5 + distlb * 0.5;
-		document.getElementById("progress").innerHTML = "Working @ " + dist;
+		progress.innerHTML = "Working @ " + dist;
 		console.log("@" + dist);
 		var s = [];
 		// Force black and dark grey.
-		s.push(rgb2lab([0,0,0]));
-		s.push(rgb2lab([15,15,15]));
+		s.push(colorFunc([0,0,0]));
+		s.push(colorFunc([15,15,15]));
 		for (var i = 0; i < n; i++) {
 			s.push(undefined);
 		}
-		//var selected = selectN(s, colors, n, 0, dist);
-		selected = selectN(s, colors, n, 0, dist);
-		if (selected == undefined) {
-			distub = dist - 1;
+		let newcolors = selectN(s, colors, colorFunc, n, 0, dist);
+		if (newcolors == undefined) {
+			distub = dist;
 		} else {
 			distlb = dist;
-			setOut(selected);
+			setOut(newcolors, output);
 		}
-		window.setTimeout(binarySearch, 500, distub, distlb, n);
+		window.setTimeout(binarySearch, 500, distub, distlb, n, colors, output, progress, newcolors, colorFunc);
 	} else {
-		document.getElementById("progress").innerHTML = "Terminated with distance between " + distlb + ", " + distub;
-		console.log(JSON.stringify(selected));
-		window.setTimeout(hillClimb, 500, selected);
+		progress.innerHTML = "Terminated with distance between " + distlb + ", " + distub;
+		console.log(JSON.stringify(colorselected));
+		window.setTimeout(hillClimb, 500, output, progress, colorselected, colorFunc);
 	}
 }
 
-function hillClimb(selected) {
+function hillClimb(output, progress, colorselected, colorFunc) {
 	var change = false;
-	for (var i = 2; i < selected.length; i++) { // skip 0/1: black
+	for (var i = 2; i < colorselected.length; i++) { // skip 0/1: black
 		var cd = 9999999;
-		var c = selected[i];
-		for (var j = 0; j < selected.length; j++) {
+		var c = colorselected[i];
+		for (var j = 0; j < colorselected.length; j++) {
 			if (i == j) continue;
-			var d = ciede2000(selected[i], selected[j]);
+			var d = ciede2000(rgb2lab(colorFunc(colorselected[i])), rgb2lab(colorFunc(colorselected[j])));
 			if (d < cd) cd = d;
 		}
 		for (var j = -1; j < 2; j += 2) {
 			for (var k = 0; k < 3; k++) {
-				var consider = lab2rgb(selected[i]);
+				var consider = [colorselected[i][0], colorselected[i][1], colorselected[i][2]];
 				if (consider[k] + j > 255 || consider[k] + j < 0) continue;
 				consider[k] += j;
-				consider = rgb2lab(consider);
+				consider = colorFunc(consider);
 				var md = 9999999;
-				for (var k = 0; k < selected.length; k++) {
+				for (var k = 0; k < colorselected.length; k++) {
 					if (k == i) continue;
-					var d = ciede2000(consider, selected[k]);
+					var d = ciede2000(rgb2lab(colorFunc(consider)), rgb2lab(colorFunc(colorselected[k])));
 					if (d < md) md = d;
 				}
 				if (md > cd) {
 					cd = md;
 					c = consider;
-					document.getElementById("progress").innerHTML = "Element " + i + " changed: " + toHex(lab2rgb(selected[i])) + " to " + toHex(lab2rgb(c));
+					progress.innerHTML = "Element " + i + " changed: " + toHex(colorselected[i]) + " to " + toHex(c);
 					change = true;
 				}
 			}
 		}
-		selected[i] = c;
+		colorselected[i] = c;
 	}
 	if (change) {
-		setOut(selected);
-		window.setTimeout(hillClimb, 10, selected);
+		setOut(colorselected, output);
+		window.setTimeout(hillClimb, 10, output, progress, colorselected, colorFunc);
 	} else {
-		document.getElementById("progress").innerHTML = "Terminated hill climbing.";
+		progress.innerHTML = "Terminated hill climbing.";
+		sortColors(colorselected, output);
 	}
 }
 
-function setOut(selected) {
-	var e = document.getElementById("o");
+function sortColors(colorselected, output) {
+	// Skip the first two. Order the rest by dissimilarity to the ones before.
+	let f = [];
+	f.push(colorselected[0]);
+	f.push(colorselected[1]);
+	while (f.length < colorselected.length) {
+		let max = 0;
+		let maxv = undefined;
+		for (let c of colorselected) {
+			let min = 999999999;
+			for (let cc of f) {
+				let d = ciede2000(rgb2lab(colorFunc(c)), rgb2lab(colorFunc(cc)));
+				if (d < min) min = d;
+			}
+			if (min > max) {
+				max = min;
+				maxv = c;
+			}
+		}
+		f.push(maxv);
+	}
+	setOut(f, output);
+}
+
+function setOut(colorselected, e) {
 	e.innerHTML = "";
-	if (selected == undefined) {
+	if (colorselected == undefined) {
 		e.innerHTML = "Impossible";
 	} else {
-		for (var i = 0; i < selected.length; i++) {
+		for (var i = 0; i < colorselected.length; i++) {
 			var d = document.createElement("div");
-			d.style.backgroundColor = toHex(lab2rgb(selected[i]));
-			d.style.color = toHex(mostOpposite(selected[i]));
-			d.innerHTML = toHex(lab2rgb(selected[i]));
+			d.style.backgroundColor = toHex(colorselected[i]);
+			d.style.color = toHex(mostOpposite(colorselected[i]));
+			d.innerHTML = toHex(colorselected[i]);
 			e.appendChild(d);
 		}
 	}
@@ -371,14 +404,14 @@ function toHex(g) {
 			+ pad(Math.floor(g[2]).toString(16));
 }
 
-function selectN(selected, remaining, n, remainingIndex, threshold) {
-	if (n == 0) return selected;
+function selectN(colorselected, remaining, colorFunc, n, remainingIndex, threshold) {
+	if (n == 0) return colorselected;
 	var r = [];
 	for (var i = remainingIndex; i < remaining.length; i++) {
 		var include = true;
-		for (var j = 0; j < selected.length; j++) {
-			if (selected[j] == undefined) break;
-			if (ciede2000(selected[j], remaining[i]) < threshold) {
+		for (var j = 0; j < colorselected.length; j++) {
+			if (colorselected[j] == undefined) break;
+			if (ciede2000(rgb2lab(colorFunc(colorselected[j])), rgb2lab(colorFunc(remaining[i]))) < threshold) {
 				include = false;
 				break;
 			}
@@ -386,42 +419,33 @@ function selectN(selected, remaining, n, remainingIndex, threshold) {
 		if (include) r.push(i);
 	}
 	for (var i = 0; i < r.length; i++) {
-		selected[selected.length - n] = remaining[r[i]];
-		var val = selectN(selected, remaining, n - 1, r[i] + 1, threshold);
+		colorselected[colorselected.length - n] = remaining[r[i]];
+		var val = selectN(colorselected, remaining, colorFunc, n - 1, r[i] + 1, threshold);
 		if (val != undefined) return val;
 	}
 	return undefined;
 }
 
-function mostOpposite(lab) {
+function mostOpposite(rgb) {
 	var diff = 0;
 	var mdiff = undefined;
-	for (var i = 0; i <= 255; i+=5) {
-		for (var j = 0; j <= 255; j+=5) {
-			for (var k = 0; k <= 255; k+=5) {
-				var d = ciede2000(lab, rgb2lab([i, j, k]));
-				if (d > diff) {
-					diff = d;
-					mdiff = [i, j, k];
-				}
-			}
-		}
+	if (ciede2000(rgb2lab([0, 0, 0]), rgb2lab(rgb)) > ciede2000(rgb2lab([255, 255, 255]), rgb2lab(rgb))) {
+		return [0, 0, 0];
+	} else {
+		return [255, 255, 255];
 	}
-	return mdiff;
 }
 </script>
 <style>
-	#o {
+	.o {
 		display: grid;
 		grid-template-columns: repeat(6, 1fr);
-		grid-template-rows: repeat(6, 1fr);
+		grid-auto-rows: 5em;
 		width: 100%;
-		height: 100%;
 	}
 </style>
 </head>
 <body>
-<input type="number" id="n" onchange="color(parseInt(this.value))"></input><span id="progress"></span>
-<div id="o"></div>
+<input type="number" id="n" onchange="color(parseInt(this.value))"></input>
 </body>
 </html>

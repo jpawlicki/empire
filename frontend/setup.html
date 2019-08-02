@@ -3,7 +3,6 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>Empire Setup</title>
 		<script src="gamelib.js"></script>
-		<script src="geo.js"></script>
 		<script src="borders.js"></script>
 		<script src="geolib.js"></script>
 		<script src="report-link.js"></script>
@@ -20,9 +19,11 @@
 		<script src="orders-pane.js"></script>
 		<script src="zip-div.js"></script>
 		<script src="names.js"></script>
-		<script src="gamesetup.js"></script>
+		<script src="server.js"></script>
+		<script src="defaultnations.js"></script>
 		<script>
 			var gameId = 0;
+			let g_geo = undefined;
 			function regionClick() {
 			}
 			var taken = {};
@@ -34,46 +35,73 @@
 				if (e == -1) e = t.length;
 				gameId = parseInt(t.substring(s + 2, e));
 
+				let req = new XMLHttpRequest();
+				req.open("get", g_server + "/entry/setup?gid=" + gameId, true);
+				req.onerror = function (e) { window.alert("Error - check network connectivity: " + JSON.stringify(e)); };
+				req.onload = function (ev) {
+					if (req.status != 200) {
+						window.alert(req.status + " error - check g= parameter in URL.");
+						return;
+					}
+					let resp = JSON.parse(req.response);
+					g_geo = resp.geography;
+					start(resp);
+					for (let k of resp.taken_nations) {
+						document.querySelector("img[name=" + k.toLowerCase() + "]").className = "taken";
+						for (let r of document.querySelectorAll("path." + k.toLowerCase())) {
+							r.setAttribute("class", r.getAttribute("class") + " taken");
+						}
+						taken[k.toLowerCase()] = true;
+					}
+				};
+				req.send();
+			}
+
+			function start(numPlayers) {
 				// Styleize
 				let style = "";
-				for (let k of g_gamestate.kingdoms) {
+				for (let k of g_geo.kingdoms) {
 					style += "#svg.v_"  + k.name.toLowerCase() + " path." + k.name.toLowerCase() + "{ fill: #aaa; stroke: transparent; }\n";
 				}
 				document.getElementById("computed_styles").innerHTML = style;
 
 				// Geoize
 				geoize(false);
+				let cores = {};
+				for (let k of g_geo.kingdoms) cores[k.name] = [];
 				{
 					let kingdoms = [];
-					for (let r of g_regions) {
+					for (let r of g_geo.regions) {
 						if (r.core != -1 && r.core != undefined) {
-							g_gamestate.kingdoms[r.core].core_regions.push(r.id);
+							cores[g_geo.kingdoms[r.core].name].push(r.id);
 						}
 					}
 				}
 				var images = {};
-				for (let k of g_gamestate.kingdoms) {
+				let count = 0;
+				for (let k of g_geo.kingdoms) {
+					let p = document.getElementById(count >= g_geo.kingdoms.length / 2 ? "icons2" : "icons1");
+					let img = document.createElement("img");
+					img.setAttribute("name", k.name.toLowerCase());
+					img.setAttribute("src", "images/heraldry/" + k.name.toLowerCase() + ".png");
+					p.appendChild(img);
 					images[k.name] = new Image();
 					images[k.name].src = "images/" + k.name.toLowerCase() + "_hd.jpg";
-					for (let i of k.core_regions) {
+					for (let i of cores[k.name]) {
 						document.getElementById("region_" + i).setAttribute("class", k.name.toLowerCase());
 					}
+					count++;
 				}
-
-				for (let k of g_gamestate.kingdoms) {
-					let req = new XMLHttpRequest();
-					req.open("get", "https://empire-189013.appspot.com/entry/setup?k=" + k.name + "&gid=" + gameId, true);
-					//req.open("get",             "http://localhost:8080/entry/setup?k=" + k.name + "&gid=" + gameId, true);
-					req.onerror = function (e) {};
-					req.onload = function (ev) {
-						if (req.status == 404) return;
-						document.querySelector("img[name=" + k.name.toLowerCase() + "]").className = "taken";
-						for (let r of document.querySelectorAll("path." + k.name.toLowerCase())) {
-							r.setAttribute("class", r.getAttribute("class") + " taken");
-						}
-						taken[k.name.toLowerCase()] = true;
-					};
-					req.send();
+				for (let i of document.getElementsByTagName("img")) {
+					i.addEventListener("mouseover", function() {
+						document.getElementById("svg").setAttribute("class", "v_" + i.getAttribute("name"));
+					});
+					i.addEventListener("mouseout", function() {
+						document.getElementById("svg").setAttribute("class", "");
+					});
+					i.addEventListener("click", function() {
+						selectNation(i.getAttribute("name"));
+					});
 				}
 			};
 		</script>
@@ -88,9 +116,10 @@
 				margin: 0;
 			}
 			#body {
-				display: flex;
-				justify-content: space-around;
-				align-items: center;
+				display: grid;
+				grid-template-rows: 100%;
+				grid-template-columns: 20% 60% 20%;
+				height: 100%;
 			}
 			#body > div {
 				max-width: 100%;
@@ -113,14 +142,17 @@
 				fill: #222;
 			}
 			#body > .icons {
-				columns: 2;
-				width: 20%;
-				overflow: visible;
+				display: flex;
+				flex-direction: column;
+				justify-content: space-between;
+				align-items: center;
+				align-content: space-around;
+				flex-wrap: wrap;
 			}
 			.icons img {
 				display: block;
-				max-height: 16%;
-				max-width: 100%;
+				max-height: 14%;
+				max-width: 50%;
 				filter: grayscale(100%) invert(75%) drop-shadow(0 0 5px #000) drop-shadow(0 0 4px #000) drop-shadow(0 0 3px #000);
 				cursor: pointer;
 				transition: filter 0.5s, opacity 0.5s;
@@ -128,11 +160,7 @@
 				position: relative;
 			}
 			.icons img:hover {
-				display: block;
-				max-height: 16%;
-				max-width: 100%;
 				filter: grayscale(100%) invert(100%) drop-shadow(0 0 5px #000) drop-shadow(0 0 4px #000) drop-shadow(0 0 3px #000);
-				cursor: pointer;
 			}
 			.icons img.taken {
 				filter: grayscale(100%) drop-shadow(0 0 5px #888);
@@ -164,10 +192,7 @@
 				box-sizing: border-box;
 				box-shadow: 0 0 10px #fff;
 			}
-			#nationDiv.aefoss {
-				color: #fff;
-			}
-			#nationDiv h1 {
+			#nationDiv > div > h1 {
 				text-transform: capitalize;
 				font-family: sans-serif;
 				text-align: center;
@@ -192,7 +217,7 @@
 			input[type=text], input[type=password] {
 				width: 20em;
 			}
-			#nationDiv > h1 {
+			#confirmation {
 				display: none;
 				position: absolute;
 				top: 40%;
@@ -200,6 +225,8 @@
 				margin: auto;
 				z-index: 1;
 				text-shadow: 1px 1px 3px #fff, -1px 1px 3px #fff, 1px -1px 3px #fff, -1px -1px 3px #fff;
+				font-family: sans-serif;
+				font-size: 120%;
 			}
 			#nationDiv > div.selectionDone {
 				pointer-events: none;
@@ -209,16 +236,7 @@
   </head>
   <body>
 		<div id="body">
-			<div class="icons">
-				<img class="" name="aefoss" src="images/heraldry/aefoss.png"/>
-				<img class="" name="fiskrbaer" src="images/heraldry/fiskrbaer.png"/>
-				<img class="" name="hosshofn" src="images/heraldry/hosshofn.png"/>
-				<img class="" name="tavia" src="images/heraldry/tavia.png"/>
-				<img class="" name="isla" src="images/heraldry/isla.png"/>
-				<img class="" name="doomstoll" src="images/heraldry/doomstoll.png"/>
-				<img class="" name="tribes" src="images/heraldry/tribes.png"/>
-				<img class="" name="holmslatr" src="images/heraldry/holmslatr.png"/>
-				<img class="" name="ejymsyn" src="images/heraldry/ejymsyn.png"/>
+			<div id="icons1" class="icons">
 			</div>
 			<div id="map">
 				<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" id="svg" version="1.1">
@@ -235,16 +253,7 @@
 					</g>
 				</svg>
 			</div>
-			<div class="icons">
-				<img class="" name="dumm" src="images/heraldry/dumm.png"/>
-				<img class="" name="fulyn" src="images/heraldry/fulyn.png"/>
-				<img class="" name="mabe" src="images/heraldry/mabe.png"/>
-				<img class="" name="miycc" src="images/heraldry/miycc.png"/>
-				<img class="" name="muoem" src="images/heraldry/muoem.png"/>
-				<img class="" name="siylmae" src="images/heraldry/siylmae.png"/>
-				<img class="" name="slail" src="images/heraldry/slail.png"/>
-				<img class="" name="telmymsyn" src="images/heraldry/telmymsyn.png"/>
-				<img class="" name="zemsim" src="images/heraldry/zemsim.png"/>
+			<div id="icons2" class="icons">
 			</div>
 		</div>
 		<div id="nationDiv">
@@ -257,29 +266,33 @@
 						<select name="title" id="title">
 							<option>Chieftain</option>
 							<option>Chieftess</option>
+							<option>Emir</option>
+							<option>Emira</option>
 							<option>Jarl</option>
+							<option>Khan</option>
 							<option>King</option>
 							<option>Lady</option>
 							<option>Lord</option>
 							<option>Prime Minister</option>
+							<option>Prince</option>
+							<option>Princess</option>
 							<option>Queen</option>
+							<option>Sultan</option>
+							<option>Sultana</option>
 							<option>Warlady</option>
 							<option>Warlord</option>
 						</select>
-						<input type="text" name="ruler_name" id="ruler_name" placeholder="Press button to generate." disabled></label><button id="newname_male">Masculine Name</button><button id="newname_female">Feminine Name</button><button id="newname_unisex">Ungendered Name</button>
+						<input type="text" name="ruler_name" id="ruler_name" placeholder="Press button to generate." disabled></label><button id="newname_male" type="button">Masculine Name</button><button id="newname_female" type="button">Feminine Name</button><button id="newname_unisex" type="button">Ungendered Name</button>
 						<div><tooltip-element tooltip="Your selections here determine how you are scored at the end of the game. You can select any number, and you will receive points for doing well in that dimension, but will lose points for doing poorly. You are also free to ignore the score and role-play your character as you wish - in this case these choices will inform other rulers of your reputation.">You care deeply about:</tooltip-element>
-							<label><input type="checkbox" name="food"/>Feeding your people. (Recommended)</label>
-							<label><input type="checkbox" name="prosperity"/>The prosperity of your people. (Recommended)</label>
-							<label><input type="checkbox" name="happiness"/>The happiness of your general population.</label>
-							<label><input type="checkbox" name="supremacy"/>The supremacy and independence of your nation.</label>
-							<label><input type="checkbox" name="conquest"/>Conquering other lands.</label>
+							<label><input type="checkbox" name="prosperity"/>Feeding your people. (Recommended)</label>
+							<label><input type="checkbox" name="happiness"/>The happiness of your people.</label>
+							<label><input type="checkbox" name="territory"/>Expanding your nation's borders.</label>
 							<label><input type="checkbox" name="glory"/>Fighting in glorious combat.</label>
-							<label><input type="checkbox" name="religion"/>Spreading your religion (vs other religions).</label>
-							<label><input type="checkbox" name="ideology"/>Spreading your interpretation of your religion (among followers of your religion).</label>
-							<label><input type="checkbox" name="security"/>Building large armies and navies (used or not).</label>
+							<label><input type="checkbox" name="religion"/>Converting heathens to your religion.</label>
+							<label><input type="checkbox" name="ideology"/>Converting heathens and heretics to your religion.</label>
+							<label><input type="checkbox" name="security"/>Keeping enemies away from your people.</label>
 							<label><input type="checkbox" name="riches"/>Amassing wealth.</label>
 							<label><input type="checkbox" name="culture"/>The happiness of all people of your culture.</label>
-							<label><input type="checkbox" name="unity"/>Preventing war betwen nations of your culture.</label>
 						</div>
 					</div>
 					<h2>People</h2>
@@ -302,175 +315,10 @@
 					<div id="warning"></div>
 				</form>
 			</div>
-			<h1>Selection Confirmed - You will be e-mailed when all players are ready.</h1>
+			<section id="confirmation"><h1>You rule <span id="nationnameconfirm"></span></h1>Your selection has been confirmed and you will be e-mailed when all other players are ready.</section>
 		</div>
 		<script>
 			let selected = "";
-			let nations = {
-				"aefoss": {
-					"culture": "eolsung",
-					"description": "Nestled between the high peaks of Grandmother and Grandfather Mountain, Aefoss is a high land of bitter winter winds and summer snow, but its people are hearty and strong. Yet on the frozen peaks, dark voices sometimes whisper.",
-					"traits": ["Defensive", "Disciplined"],
-					"score": ["food", "prosperity", "culture", "unity"],
-					"religion": "Alyrja",
-					"title": "Jarl",
-					"bonus": "food",
-				},
-				"doomstoll": {
-					"culture": "eolsung",
-					"description": "At times bowed but never broken, Doomstoll's people have prospered under the greatest of leaders, and suffered under the worst of tyrants. Located centrally between all Eolsung nations and sharing many borders, Doomstoll is the center of Eolsung culture.",
-					"traits": ["Patriotic", "Disciplined"],
-					"score": ["food", "prosperity", "culture", "glory"],
-					"religion": "Rjinku",
-					"title": "Queen",
-					"bonus": "navies",
-				},
-				"dumm": {
-					"culture": "anpilayn",
-					"description": "The history of the people of Dumm is one of loss and oppression. Their Kings of the past held honor above reason and sailed away to answer the calls of their allies, leaving their own people with little defenses. When Dumm's allies turned on her and divided the kingdom up between themselves and the lord of Holmslatr, the inhabitants of Dumm settled in for a long and slow resistance. The fires of rebellion now burn hotly in Dumm, and its people stand ready to reassert their right to self-rule.",
-					"traits": ["Rebellious", "Patriotic"],
-					"score": ["food", "prosperity", "security"],
-					"religion": "Sword of Truth",
-					"title": "Lord",
-					"bonus": "armies",
-				},
-				"ejymsyn": {
-					"culture": "tavian",
-					"description": "Ejymsyn is a cultural crossroads. Though ethnically Tavian, its people largely accept and worship Iruhan, the Anpilayn God. Past generations of Ejymsyn have integrated members of all cultures, but as the famine worsens, Ejymsyn's ruler must face a difficult choice of which nations they should side with.",
-					"traits": ["Mercantile", "Disciplined"],
-					"score": ["food", "prosperity", "friendship"],
-					"religion": "Tapestry of People",
-					"title": "King",
-					"bonus": "food",
-					"legalIdeologiesOverride": ["Iruhan (Chalice of Compassion)", "Iruhan (Sword of Truth)", "Iruhan (Tapestry of People)", "Iruhan (Vessel of Faith)"],
-				},
-				"fiskrbaer": {
-					"culture": "eolsung",
-					"description": "Steeped in magical traditions, Fiskrbaer has historically been an aloof power, interefering in worldy affairs only as suits it and its mysterious agenda. However, as the famine worsens, Fiskrbaer cannot afford to ignore the world much longer.",
-					"traits": ["Mystical", "Industrial"],
-					"score": ["food", "prosperity", "happiness"],
-					"religion": "Lyskr",
-					"title": "Chieftess",
-					"bonus": "food",
-				},
-				"fulyn": {
-					"culture": "anpilayn",
-					"description": "Many nations have risen over the course of history, but Fulyn was the first. Its venerable forests have inspired poet and prophet alike, and it was here that Iruhan lived most of his life and gave most of his teachings. In all walks of life, the people of Fulyn try to uphold his teachings by bettering themselves and the world.",
-					"traits": ["Evangelical", "Holy"],
-					"score": ["food", "prosperity", "religion"],
-					"religion": "Chalice of Compassion",
-					"title": "King",
-					"bonus": "food",
-				},
-				"holmslatr": {
-					"culture": "eolsung",
-					"description": "Many nations know of war - Holmslatr knows only of victory. Historically ruled by aggressive and successful jarls, Holmslatr has made its name fearful even in the farthest reaches of the world. But the fortunes of nations can turn on a whim of fate - as the famine worsens, will her proud and unfailing people finally know the sting of defeat?",
-					"traits": ["Heroic", "War-like"],
-					"score": ["food", "prosperity", "glory", "conquest"],
-					"religion": "Rjinku",
-					"title": "Jarl",
-					"bonus": "navies",
-				},
-				"hosshofn": {
-					"culture": "eolsung",
-					"description": "Ancient darkness lives in the deep places under Hosshofn, and sometimes creeps forth to the surface world in defiance of the sun. The people of this land live in fear and in symbiosis with that alien power, blending their worship of the Eolsung gods with their knowledge that there are forces older and perhaps more powerful than their dieties.",
-					"traits": ["Bloodthirsty", "Mercantile"],
-					"score": ["food", "prosperity", "glory"],
-					"religion": "Rjinku",
-					"title": "Jarl",
-					"bonus": "navies",
-				},
-				"isla": {
-					"culture": "tyrgaetan",
-					"description": "The youngest nation of the world, Isla is a large landmass that was forcibly split from the continent by the horrific consequences of overuse of magic. Its storm-wracked shores and sheltered interior have protected it from aggression in the generation since its sundering, but its people have not been complacent or idle, and now stand ready to rejoin the world and force their will upon it.",
-					"traits": ["Seafaring", "War-like"],
-					"score": ["food", "prosperity", "conquest", "supremacy"],
-					"religion": "Syrjen",
-					"title": "Chieftain",
-					"bonus": "navies",
-				},
-				"mabe": {
-					"culture": "hansa",
-					"description": "The sailors of Mabe are matchless in their tenacity and appetite for supremacy. A nation of ports, Mabe is discontiguous, holding multiple overseas colonies - and perhaps looking to establish more.",
-					"traits": ["Imperialistic", "War-like"],
-					"score": ["food", "prosperity", "security", "conquest"],
-					"religion": "Sword of Truth",
-					"title": "King",
-					"bonus": "armies",
-				},
-				"miycc": {
-					"culture": "hansa",
-					"description": "Miycc has been the source of most technological improvements to sea vessels, and the ingenuity of her shipwrights is matched only by the skill of her sailors. The constant storms of the western seas bother her people little as they pursue wealth and prosperity.",
-					"traits": ["Coast-Dwelling", "Seafaring"],
-					"score": ["food", "prosperity", "riches", "happiness"],
-					"religion": "Vessel of Faith",
-					"title": "King",
-					"bonus": "navies",
-				},
-				"muoem": {
-					"culture": "anpilayn",
-					"description": "No nation has been as badly scarred by the horrors of war as Muoem. Invaded generations ago by their Eolsung neighbors, the soldiers of Muoem and her allies rallied in time to save their sovereignty, but returned to desolate lands drained of population and resources. Muoem is weak - can it find strength anew?",
-					"traits": ["Ruined", "Stoic"],
-					"score": ["food", "prosperity", "culture"],
-					"religion": "Tapestry of People",
-					"title": "King",
-					"bonus": "gold",
-				},
-				"siylmae": {
-					"culture": "anpilayn",
-					"description": "The clever and honorable people of Siylmae are known the world over for their beautiful cities and cathedrals, for their rich adornments and unwavering belief in the goodness of Iruhan. Yet the famine has power to shake even the strongest of faiths, and Siylmae has not been spared. How will her people - and their leader - react?",
-					"traits": ["Industrial", "Evangelical"],
-					"score": ["food", "prosperity", "ideology"],
-					"religion": "Vessel of Faith",
-					"title": "King",
-					"bonus": "armies",
-				},
-				"slail": {
-					"culture": "anpilayn",
-					"description": "The warm sunlight and timbered mountains of Slail may lull the visitor into relaxed bliss, but her people are anything but lazy. Industrious and shrewd, the inhabitants of Slail seek ever growing greatness, and have the natural resources to achieve it.",
-					"traits": ["Industrial", "Ship-Building"],
-					"score": ["food", "prosperity", "happiness"],
-					"religion": "Vessel of Faith",
-					"title": "King",
-					"bonus": "gold",
-				},
-				"tavia": {
-					"culture": "tavian",
-					"description": "Long considered barbaric and godless outsiders by the rest of the civilized world, the many city-states of the Tavian deserts have at last been united under Tavia's current leader. Is this powerful figure now contented? Or will they set their sights on the rest of the world?",
-					"traits": ["War-like", "Mystical"],
-					"score": ["food", "prosperity", "culture", "conquest"],
-					"religion": "Flame of Kith",
-					"title": "Warlady",
-					"bonus": "armies",
-				},
-				"telmymsyn": {
-					"culture": "anpilayn",
-					"description": "The holiest of holy nations, Telmymsyn's borders encompass Sancta Civitate, the place of the death and resurrection of Iruhan, and the seat of the powerful and hierarchical Church of Iruhan. The influence of the Church can be felt everywhere in Telmymsyn, and the special access Telmymsyn's leader has to the ears of the Church's elite can be felt the world over.",
-					"traits": ["Holy", "Defensive"],
-					"score": ["food", "prosperity", "culture", "religion"],
-					"religion": "Sword of Truth",
-					"title": "King",
-					"bonus": "navies",
-				},
-				"tribes": {
-					"culture": "tyrgaetan",
-					"description": "The numerous nomadic tribes that live among the fierce and inhospitible lands of the Atjanfjall are the northern-most dwelling peoples in the world. United for common security against their hostile and aggresive Eolsung neighbors, the Tribes need a clever and strong leader to fend off both hungry enemies and hunger itself.",
-					"traits": ["Nomadic", "Mystical"],
-					"score": ["food", "prosperity"],
-					"religion": "Alyrja",
-					"title": "Chieftain",
-					"bonus": "armies",
-				},
-				"zemsim": {
-					"culture": "anpilayn",
-					"description": "Deep in the south, Zemsim is a land of wild jungles, ancient mystics, and dangerous subterfuge. Topographically dominated by Sion, the holy mountain upon which Iruhan ascended into Godhood, Zemsim’s many rivers make it a prosperous place. The majority of its inhabitants were converted to the worship of Iruhan long ago, but in some places, deep in the jungle, the old ways still live, and the drums of doom beat...",
-					"traits": ["Bloodthirsty", "Mystical"],
-					"score": ["food", "prosperity", "security"],
-					"religion": "Vessel of Faith",
-					"title": "Chieftess",
-					"bonus": "navies",
-				},
-			};
 			let legalIdeologies = {
 				"anpilayn": ["Iruhan (Chalice of Compassion)", "Iruhan (Sword of Truth)", "Iruhan (Tapestry of People)", "Iruhan (Vessel of Faith)"],
 				"eolsung": ["Northern (Alyrja)", "Northern (Lyskr)", "Northern (Rjinku)", "Northern (Syrjen)"],
@@ -492,32 +340,29 @@
 				"Iruhan (Vessel of Faith)": "Your people broadly believe that God (Iruhan) has a personal relationship with them. They are generally happier and reject the authority of the Church of Iruhan, making you largely immune to the effects of a negative relationship with the Church. They become happier whenever a region is converted to this ideology.",
 				"Northern (Alyrja)": "Your people broadly believe in constant vigilence. They destroy all pirates in your territory and give you reports on all hidden units within or adjacent to your regions.",
 				"Northern (Lyskr)": "Your people broadly believe in the power of knowledge and secrets. Your plotting and intrigue will be far more effective.",
-				"Northern (Rjinku)": "Your people broadly believe in the glory of war. Your nation generates significantly more soldiers, especially on turns that you engage in battle.",
-				"Northern (Syrjen)": "Your people broadly believe in economic cooperation. Your nation produces far more tax income both on its own and from prosperous neighbors, but cannot have less popular unrest than any of your neighbors.",
+				"Northern (Rjinku)": "Your people broadly believe in the glory of war. Your nation generates significantly more soldiers.",
+				"Northern (Syrjen)": "Your people broadly believe in economic cooperation. Your nation produces more economic income.",
 				"Tavian (Flame of Kith)": "Your people broadly believe that the needs of the many outweigh the needs of the few. Your people will freely construct fortifications and gradually abduct and enslave the population of your neighbors.",
 				"Tavian (River of Kuun)": "Your people broadly believe that the duty of the fortunate is to provide for the unfortunate. Any feasts you throw will trigger economic activity and other nations will generate more income for sharing borders with you.",
 			};
 			let traitConsequences = {
-				"Bloodthirsty": "Bringing captives from other kingdoms into your territory and executing them will earn you gold.",
-				"Coast-Dwelling": "Your coastal populations produce more tax and recruits.",
-				"Defensive": "Your people are twice as effective at constructing fortifications.",
-				"Disciplined": "Your armies are more effective, and any pirates that enter your regions lose 25% of their strength.",
+				"Defensive": "You start with fortifications in each of your regions, and your people are twice as effective at constructing new fortifications.",
+				"Disciplined": "Your armies are more effective, and your regions are easier to patrol.",
 				"Evangelical": "Your people will fund the spreading of your state religion.",
-				"Heroic": "Your characters learn new skills twice as quickly.",
+				"Heroic": "You control extra heroic characters.",
 				"Holy": "While your state ideology matches the dominant Iruhan ideology, the Church of Iruhan will donate about twice as much gold to you.",
 				"Imperialistic": "Nations that pay you tribute receive benefits, and you receive extra benefits from each nation paying you tribute.",
 				"Industrial": "All construction in your nation is inexpensive.",
 				"Mercantile": "Your nation starts with more gold and produces more tax.",
 				"Mystical": "Construction of temples are discounted and reduce popular unrest when built.",
-				"Nomadic": "The movement of refugees into regions you control causes very little unrest.",
 				"Patriotic": "Your nation starts with more soldiers and produces more recruits.",
 				"Rebellious": "All but one of the regions of your regions start controlled by your neighbors. You start with extra gold and armies. Your navies and armies within your rightful borders cost less to maintain.",
 				"Republican": "Your nation is a republic, not a kingdom. Popular unrest decreases in every one of your regions over time, but you cannot use feudal nobles.",
-				"Ruined": "You start with decreased population, but relocating population into your rightful regions does not cause any unrest and is not objectionable to the Church of Iruhan.",
 				"Seafaring": "You start with extra warships and gain more gold from sea regions than other nations do.",
 				"Ship-Building": "Whenever you construct a new shipyard, it immediately produces an extra small fleet of warships.",
 				"Stoic": "High unrest never decreases the size of the harvest in your regions, and your regions are more difficult for enemies to conquer.",
 				"War-like": "You start with extra soldiers and your rightful regions produce more taxation and recruits per region you've conquered that rightfully belongs to another nation.",
+				"Welcoming": "Your regions are twice as attractive to immigrants.",
 			};
 			for (let trait in traitConsequences) {
 				for (let i of [1, 2]) {
@@ -599,17 +444,6 @@
 				document.getElementById("ruler_name").value = generateName(nations[selected].culture, "mf");
 				document.getElementById("form").dispatchEvent(new Event("input"));
 			});
-			for (let i of document.getElementsByTagName("img")) {
-				i.addEventListener("mouseover", function() {
-					document.getElementById("svg").setAttribute("class", "v_" + i.getAttribute("name"));
-				});
-				i.addEventListener("mouseout", function() {
-					document.getElementById("svg").setAttribute("class", "");
-				});
-				i.addEventListener("click", function() {
-					selectNation(i.getAttribute("name"));
-				});
-			}
 			let submit = document.getElementById("submit");
 			submit.addEventListener("click", function() {
 				taken[selected] = true;
@@ -618,8 +452,7 @@
 				for (let s of document.querySelectorAll("form input, form button, form select")) s.disabled = true;
 				submit.innerHTML = "Checking with server...";
 				let req = new XMLHttpRequest();
-				req.open("post", "https://empire-189013.appspot.com/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
-				//req.open("post",             "http://localhost:8080/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
+				req.open("post", g_server + "/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
 				req.onerror = function (e) {
 					submit.innerHTML = "A different player has already claimed this nation";
 				};
@@ -627,8 +460,9 @@
 					if (req.status == 400) {
 						submit.innerHTML = "A different player has already claimed this nation";
 					} else if (req.status == 204) {
+						document.querySelector("#nationnameconfirm").innerHTML = capitalize(selected);
 						document.querySelector("#nationDiv > div").className = "selectionDone";
-						document.querySelector("#nationDiv > h1").style.display = "block";
+						document.querySelector("#confirmation").style.display = "block";
 						for (let e of document.querySelectorAll("img")) e.style.display = "none";
 					} else {
 						window.alert("HTTP " + req.status + ". Contact Josh (gilgarn@gmail.com)");

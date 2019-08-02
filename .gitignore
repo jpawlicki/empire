@@ -1,3 +1,7 @@
+.*
+*.iml
 *.class
+backend/target/
 backend/build/
+backend/out/
 backend/.gradle/

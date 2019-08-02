@@ -1,0 +1,111 @@
+<html>
+	<head>
+		<script src="../frontend/defaultnations.js"></script>
+		<script src="../frontend/region-report.js"></script> <!-- For capitalize(). TODO: refactor that. -->
+		<script src="../frontend/server.js"></script>
+		<script>
+			let commitCount = 0;
+
+			function finalize() {
+				commitCount--;
+				if (commitCount > 0) return;
+
+				let gameId = parseInt(document.getElementById("gameId").value);
+				let req = new XMLHttpRequest();
+				req.open("post", g_server + "/entry/startworld?gid=" + gameId, true);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					window.alert(req.status);
+				};
+				let ns = [];
+				for (let n in nations) ns.push(capitalize(n));
+				req.send(JSON.stringify({
+					"gm_password": "gm",
+					"obs_password": "obs",
+					"kingdoms": ns
+				}));
+			}
+
+			function postForm() {
+				let gameId = parseInt(document.getElementById("gameId").value);
+				let numPlayers = parseInt(document.getElementById("numPlayers").value);
+				{
+					let req = new XMLHttpRequest();
+					req.open("post", g_server + "/entry/startlobby?gid=" + gameId, true);
+					req.onerror = function (e) {
+						window.alert("Error setting up lobby: " + req.status);
+					};
+					req.onload = function (ev) {
+						window.setTimeout(getGeo, 1500, gameId);
+					};
+					req.send(JSON.stringify({
+						"players": numPlayers,
+						"schedule": {
+							"days": ["MONDAY", "WEDNESDAY", "FRIDAY"],
+							"times": [180],
+							"locale": "America/Los_Angeles"
+						}
+					}));
+				}
+				return false;
+			}
+
+			function getGeo(gameId) {
+				let req = new XMLHttpRequest();
+				req.open("get", g_server + "/entry/setup?gid=" + gameId, true);
+				req.onerror = function (e) {
+					window.alert("Error setting up lobby: " + req.status);
+				};
+				req.onload = function (ev) {
+					let nameList = [];
+					for (let n of JSON.parse(req.response).geography.kingdoms) nameList.push(n.name);
+					postNationCreations(gameId, nameList);
+				};
+				req.send(JSON.stringify({
+					"players": numPlayers
+				}));
+			}
+
+			function postNationCreations(gameId, nationNameList) {
+				for (let k of nationNameList) {
+					if (commitCount >= numPlayers) continue;
+					commitCount++;
+					k = k.toLowerCase();
+					let ns = {
+						"ruler_name":  "Rulerfolk " + capitalize(k),
+						"title":  nations[k].title,
+						"trait1": nations[k].traits[0],
+						"trait2": nations[k].traits[1],
+						"dominant_ideology": nations[k].religion,
+						"bonus": nations[k].bonus,
+						"email": "example@example.com",
+						"password": "player"
+					};
+					for (let s of nations[k].score) ns[s] = "checked";
+					let req = new XMLHttpRequest();
+					req.open("post", g_server + "/entry/setup?gid=" + gameId + "&k=" + capitalize(k), true);
+					req.onerror = function (e) {
+						window.alert("Error setting up a kingdom: " + req.status);
+					};
+					req.onload = function (ev) {
+						finalize();
+					};
+					// To avoid contention vs a local backend, we wait for the data store to initialize as a consequence of the startLobby, and spread these out a little.
+					window.setTimeout((r, x)=>r.send(JSON.stringify(x)), commitCount * 100, req, ns);
+				}
+			}
+		</script>
+	</head>
+	<body>
+		Starts a new game with basic / default nations. The GM password is "gm" and observer password is "obs".
+		Each nation's password is "player".
+		To avoid local datastore contention, the initializations are spread over a few seconds. Wait for a 204 popup.
+		<form onsubmit="return postForm();">
+			<label>Game ID: <input id="gameId" type="number" value="0"/></label>
+			<label>Players: <input id="numPlayers" type="number" value="26"/></label>
+			<button>Start!</button>
+		</form>
+	</body>
+</html>

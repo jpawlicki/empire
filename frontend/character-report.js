@@ -11,7 +11,6 @@ class CharacterReport extends HTMLElement {
 			<div id="name">${c.name}</div>
 			<div id="kingdom">${c.tags.length == 0 ? "" : c.tags.join(" and ") + " of "}<report-link href="kingdom/${c.kingdom}">${c.kingdom}</report-link></div>
 			<div id="location">In ${c.location == -1 ? "Hiding" : "<report-link href=\"region/" + g_data.regions[c.location].name + "\">" + g_data.regions[c.location].name + "</report-link>"}</div>
-			<div id="status">${c.captor == "" ? "" : "Captive of <report-link href=\"kingdom/" + c.captor + "\">" + c.captor + "</report-link>"}</div>
 			<div id="content">
 				<h1>Skills</h1>
 				<div>
@@ -20,9 +19,6 @@ class CharacterReport extends HTMLElement {
 					<tooltip-element tooltip="Governors can increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
 					<tooltip-element tooltip="Spies can increase the power of your plots and plot defense. They improve their skill while hiding or captured.">Spy:</tooltip-element><div id="skill_spy"></div>
 				</div>
-				<h1 id="values_header">Values</h1>
-				<ul id="values">
-				</ul>
 			</div>
 		`;
 		// CSS
@@ -96,48 +92,10 @@ class CharacterReport extends HTMLElement {
 		shadow.appendChild(content);
 		// Add skills.
 		for (let skill of ["admiral", "general", "governor", "spy"]) {
-			let l = c.calcLevel(skill);
-			let s = "";
-			for (let i = 0; i < l; i++) {
-				s += "★";
-			}
-			let x = c.experience[skill];
-			let rem = x >= 24 ? -1 : x >= 15 ? 24 - x : x >= 8 ? 15 - x : x >= 3 ? 8 - x : 3 - x;
-			if (rem == -1) rem = "Max level.";
-			else rem = rem + " experience to next level.";
 			let t = document.createElement("tooltip-element");
-			t.innerHTML = s;
-			t.setAttribute("tooltip", getEffect(l, skill) + " " + rem);
+			t.innerHTML = Math.floor(c.calcLevel(skill) * 10) / 10;
+			t.setAttribute("tooltip", getEffect(c.calcLevel(skill), skill));
 			shadow.getElementById("skill_" + skill).appendChild(t);
-		}
-		// If values, show them; else hide them.
-		let valueTooltips = {
-			"food": "Feeding their people.",
-			"prosperity": "The prosperity of their people.",
-			"happiness": "The happiness of their general population.",
-			"supremacy": "The supremacy and independence of their nation.",
-			"conquest": "Conquering other lands.",
-			"glory": "Fighting in glorious combat.",
-			"religion": "Spreading their overall religion (vs other religions).",
-			"ideology": "Spreading their interpretation of their religion (among followers of their overall religion).",
-			"security": "Building large armies and navies (used or not).",
-			"riches": "Amassing wealth.",
-			"friendship": "Forming numerous alliances.",
-			"culture": "The happiness of all people of their culture.",
-			"unity": "Preventing war betwen nations of their culture.",
-			"worldpeace": "World peace.",
-		};
-		if (c.values.length > 0) {
-			for (let v of c.values) {
-				let li = document.createElement("li");
-				let tv = document.createElement("tooltip-element");
-				tv.innerHTML = capitalize(v);
-				tv.setAttribute("tooltip", valueTooltips[v]);
-				li.appendChild(tv);
-				shadow.getElementById("values").appendChild(li);
-			}
-		} else {
-			shadow.getElementById("values_header").style.display = "none";
 		}
 	}
 }
@@ -145,12 +103,12 @@ customElements.define("character-report", CharacterReport);
 
 let getEffect = function(level, skill) {
 	if (skill == "general") {
-		return "Armies led are +" + level * 20 + "% as effective.";
+		return "Armies led are +" + Math.round(level * 20) + "% as effective.";
 	} else if (skill == "admiral") {
-		return "Navies led are +" + level * 20 + "% as effective.";
+		return "Navies led are +" + Math.round(level * 20) + "% as effective.";
 	} else if (skill == "governor") {
-		return "The Govern action produces +" + level * 50 + "% more taxation and recruitment.";
+		return "The Govern action produces +" + Math.round(level * 50) + "% more taxation and recruitment.";
 	} else if (skill == "spy") {
-		return "+" + level * 30 + "% plot strength.";
+		return "+" + Math.round(level * 30) + "% plot strength.";
 	}
 }

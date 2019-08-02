@@ -17,36 +17,57 @@
 			}
 			#map text {
 				pointer-events: none;
+				text-anchor: middle;
 			}
 		</style>
 		<script src="rhill-voronoi-core.js"></script>
 		<script>
 			let width = 1000;
 			let height = 1000;
-			let colors = [
-				"#728cff", // Aefoss
-				"#fe9933", // Doomstoll
-				"#f259f2", // Dumm 
-				"#7f00f2", // Ejymsyn
-				"#d80066", // Fiskrbaer
-				"#8c7f72", // Fulyn
-				"#fe9999", // Holmslatr
-				"#003f00", // Hosshofn
-				"#99e5ff", // Hrip
-				"#007f7f", // Isla
-				"#005999", // Mabe
-				"#f2e5ff", // Mestrhofn
-				"#33cca5", // Miycc
-				"#590026", // Muoem
-				"#f2f2d8", // Siylmae
-				"#000059", // Slail
-				"#593300", // Tavia
-				"#d83300", // Telmymsyn
-				"#7fff0c", // Tribes
-				"#b2a50c", // Turujmi
-				"#268c0c" // Zemsim
+			// The last nations in this list will be dropped for reduced player-count maps.
+			let nations = [
+				{"color": "#fefe00", "name": "Upiceil", "culture": "anpilayn", "default_region_names": ["Scribe's Hollow","Widefield","Sevencourt","Summersage","Sancta Civitate","Greatriver"]},
+				{"color": "#fe7299", "name": "Doomstoll", "culture": "eolsung", "default_region_names": ["Silverguard","Ravenhall","Freehold","Runestone","Justice Point","Silverspire"]},
+				{"color": "#20afe5", "name": "Tavia", "culture": "tavian", "default_region_names": ["Endless Beauty","Ebon Sands","Myriad Oases","Many Roads","Hundred Spires","Countless Histories"]},
+				{"color": "#007e00", "name": "Rettrsvelt", "culture": "tyrgaetan", "default_region_names": ["Crumble","Grind","Dread","Rust","Wear","Bend","Rot","Scour","Breach"]},
+				{"color": "#0300ef", "name": "Mabe", "culture": "hansa", "default_region_names": ["Highcliff","Sailkeep","Clothridge","Ashpeak Vale","Silverdell","Marbletop"]},
+				{"color": "#53f2cc", "name": "Pernepulse", "culture": "anpilayn", "default_region_names": ["Whitesand","Tumblebeach","Rocksand","Greenwood", "Sacred Way", "Sunlake"]},
+				{"color": "#fe5a00", "name": "Hosshofn", "culture": "eolsung", "default_region_names": ["Bloodwater", "Graveyard", "Stillriver", "Silentwood", "Thornfear", "Bonesteel"]},
+				{"color": "#a20066", "name": "Balyucesu", "culture": "anpilayn", "default_region_names": ["Widow's Pyre", "Sailor's Grave", "Thievesend", "Soldier's Rest", "Hunter's Folly", "Kingspride"]},
+				{"color": "#5a3f00", "name": "Aefoss", "culture": "eolsung", "default_region_names": ["Timberhold","Darkmountain","Whitewater","Foreverfall","Grandfather Mountain","Grandmother Mountain"]},
+				{"color": "#ffdcff", "name": "Ejymsyn", "culture": "tavian", "default_region_names": ["Cascadia","Five Gates","Field of Fallen Heroes","Greymount","Nightsands","Stacked Stones"]},
+				{"color": "#978c00", "name": "Isla", "culture": "tyrgaetan", "default_region_names": ["Snowhelm","Hope's Landing","Icehaven","Iceshore Pass","Winterwood Crest","Winterwood Vale"]},
+				{"color": "#54cc02", "name": "Kyaradis", "culture": "hansa", "default_region_names": ["Aleharbor","Port Crown","Golden Docks","Wayfield Delta","Coinwell","Bleakridge"]},
+				{"color": "#4f0000", "name": "Zemsim", "culture": "anpilayn", "default_region_names": ["Moonshadow Forest","Moonsand","Mount Sion","Nightwood","The Coast of Stars","Orchid's Perch"]},
+				{"color": "#005866", "name": "Jaraslatr", "culture": "eolsung", "default_region_names": ["Saltreach","Razorwind Hold","Kindlewood","Firehall","Blackford","Irongate"]},
+				{"color": "#feffec", "name": "Slail", "culture": "anpilayn", "default_region_names": ["Clearwater","Falcon's Rest","Fangriver","Crystal Bay","Wolfden","Deerwood"]},
+				{"color": "#00998c", "name": "Fiskrbaer", "culture": "eolsung", "default_region_names": ["The Skull","Startree","Magdalena's Well","Ghostwood","Windstar","Bloodswamp"]},
+				{"color": "#4f4c66", "name": "Celyn", "culture": "anpilayn", "default_region_names": ["Goldwood","Driftwood","Woody Neck","Shorewood","Riverwood","Rosewood"]},
+				{"color": "#95594c", "name": "Nysiunarri", "culture": "anpilayn", "default_region_names": ["Keep Northguard","Mountainshadow","Vigilant Shore","Fort Steadfast","The Midlands","Blackrock Peak"]},
+				{"color": "#003300", "name": "Landhylli", "culture": "eolsung", "default_region_names": ["Beacon", "New Hope", "Northhaven", "Tyrshelter", "Providence", "Innsbrooke"]},
+				{"color": "#998cbf", "name": "Yrslekye", "culture": "anpilayn", "default_region_names": ["Waverisen", "Shorebreaker", "Dolphin Point", "Sunsparkle", "Saltbreeze", "Greatdock"]},
+				{"color": "#fea600", "name": "Gangrjata", "culture": "eolsung", "default_region_names": ["Mistmountain", "The Frostway", "Shepherd's Crook", "Starsummit", "Windmusic", "Whitecap"]},
+				{"color": "#000044", "name": "Walymyn", "culture": "anpilayn", "default_region_names": ["Fort Hammerbreak", "Castle Silversword", "Castle Burntwheel", "Castle Ironglove", "Castle Greaves", "Castle Argonstaff"]},
+				{"color": "#bfa599", "name": "Orkatopt", "culture": "eolsung", "default_region_names": ["Raider's Retreat", "Longship Dock", "Tyrsaxe", "Haftwood", "Dragonshead", "Greyisle"]},
+				{"color": "#086dd8", "name": "Quencalia", "culture": "tavian", "default_region_names": ["Hundred Homes", "Hearthfires", "Six Statues", "Crescent Road", "Layered Majesty", "Pilgrim's Hollow"]},
+				{"color": "#ed00ff", "name": "Varthavaettr", "culture": "tyrgaetan", "default_region_names": ["Caldera", "Shieldrim", "Lava's Run", "Smoking Soil", "Burnwood", "The Devastation"]},
+				{"color": "#727266", "name": "Xilyn", "culture": "anpilayn", "default_region_names": ["Ironwater Mines", "Dogsmoor", "Littletree", "Hangman's Bluff", "Gravewater", "Steelwind Keep"]} 
 			];
-			let players = colors.length;
+			let seas = [
+				"The Frozen Sea",
+				"The North Sea",
+				"The Infinite Waters",
+				"The Crossing",
+				"Neckwater",
+				"The Gulf",
+				"The Holy Waters",
+				"Stormwater",
+				"The Sunrise Sea",
+				"The Eolshav",
+				"Tyrslake",
+				"Firewater",
+				"Sunwater"
+			];
 			let data = {};
 			function paint() {
 				let svg = document.getElementById("svg");
@@ -56,13 +77,11 @@
 					line.setAttribute("id", "r_" + r.id);
 					line.setAttribute("d", shapeToPath(getRegionShape(r.id)));
 					line.setAttribute("fill-rule", "evenodd");
-					line.setAttribute("fill", r.type == "water" ? "#aaf" : r.core != -1 ? colors[r.core] : "#aaa");
+					line.setAttribute("fill", r.type == "water" ? "#aaf" : r.core != -1 ? nations[r.core].color : "#aaa");
 					line.addEventListener("click", () => regionClick(r.id));
 					document.getElementById("svg").appendChild(line);
 					let text = "";
-					if (!r.hasOwnProperty("name") || r.name == "") text += "?";
-					if (r.climate == "seasonal") text += "S";
-					if (r.climate == "treacherous") text += "T";
+					if (data.hasOwnProperty("holycity") && data.holycity == r.id) text += "Holy";
 					if (text != "") {
 						let t = document.createElementNS("http://www.w3.org/2000/svg", "text");
 						t.appendChild(document.createTextNode(text));
@@ -84,13 +103,14 @@
 			let lastClick = -1;
 			function regionClick(regionId) {
 				let r = data.regions[regionId];
+				console.log(r.name);
 				let mode = document.querySelector("input[name=\"mode\"]:checked").value;
 				if (mode == "sea") {
 					r.type = r.type == "land" ? "water" : "land";
 					r.core = -1;
-				} else if (mode == "core") {
+				} else if (mode.startsWith("core")) {
 					if (r.type != "water") {
-						r.core = (r.core + 2) % (players + 1) - 1;
+						r.core = parseInt(mode.substring(5, mode.length));
 					}
 				} else if (mode == "border") {
 					if (lastClick != -1) {
@@ -109,13 +129,11 @@
 						}
 						data.borders = data.borders.filter(b => b.a != b.b);
 					}
-				} else if (mode == "climate") {
-					if (r.climate == "green") r.climate = "seasonal";
-					else if (r.climate == "seasonal") r.climate = "treacherous";
-					else r.climate = "green";
-				} else if (mode == "metadata") {
-					r.name = window.prompt("Name?", r.hasOwnProperty("name") ? r.name : "");
-
+				} else if (mode == "holycity") {
+					if (data.hasOwnProperty("holycity") && data.holycity == regionId) delete data.holycity;
+					else data.holycity = regionId;
+				} else if (mode == "clearname") {
+					r.name = "";
 				}
 				if (lastClick != -1) lastClick = -1;
 				else lastClick = regionId;
@@ -265,8 +283,14 @@
 				data = {
 					regions: [],
 					borders: [],
+					kingdoms: [],
 				};
-				let siteCount = parseInt(window.prompt("Sites?"));
+				data.players = parseInt(window.prompt("Number of players? (2 to 26)"));
+				for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
+				let siteCount = Math.floor((data.players * 6 + 3) * 1.9 + 6);
+				// TODO: Consider shrinking the map coordinate space itself for smaller games.
+				// width = 1000.0 * Math.sqrt(data.players / 26);
+				// height = 1000.0 * Math.sqrt(data.players / 26);
 				function newVoronoi() {
 					let sites = [];
 					function randAndPush() {
@@ -277,20 +301,21 @@
 					}
 					function hexAndJostle() {
 						let n = Math.floor(Math.pow(siteCount, .5));
-						let xs = width / n + 1;
-						let ys = height / n + 1;
-						for (let i = 0; i < n; i++) {
-							for (let j = 0; j < siteCount / n; j++) {
+						let nv = Math.floor(siteCount / n);
+						let xs = width / n;
+						let ys = height / nv;
+						for (let i = 0; i < nv; i++) {
+							for (let j = 0; j < n; j++) {
 								let x = (j + .5) * xs;
 								let y = (i + .5) * ys + j % 2 * .5 * ys;
-								x += (Math.random() - .5) * xs / 2;
-								y += (Math.random() - 1) * ys / 2;
+								x += (Math.random() - .5) * xs / 1.5;
+								y += (Math.random() - .5) * ys / 1.5;
 								sites.push({x: x, y: y});
 							}
 						}
 					}
 					hexAndJostle();
-					let boundingBox = {xl: -10, xr: 1010, yt: -10, yb: 1010};
+					let boundingBox = {xl: -10, xr: width + 10, yt: -10, yb: height + 10};
 					let voronoi = new Voronoi();
 					let result = voronoi.compute(sites, boundingBox);
 					for (let i = 0; i < result.cells.length; i++) {
@@ -298,7 +323,7 @@
 						let r = {
 						  id: i,
 							type: "land",
-							climate: "green",
+							name: "",
 							core: -1
 						}
 						data.regions.push(r);
@@ -313,6 +338,7 @@
 							});
 						}
 					}
+					makeCoreControls();
 				}
 				function pushSites(sites) {
 					function toroidVector(j, k) {
@@ -353,7 +379,10 @@
 								b.p2 = undefined;
 							}
 						}
+						delete data.nations;
+						for (let r of data.regions) delete r.climate;
 						paint();
+						makeCoreControls();
 					});
 					r.readAsText(e.target.files[0]);
 				});
@@ -385,6 +414,9 @@
 						p.y = Math.round(p.y * 100) / 100;
 					}
 				}
+				// Record nation metadata.
+				data.kingdoms = [];
+				for (let i = 0; i < data.players; i++) data.kingdoms.push({"name": nations[i].name, "culture": nations[i].culture});
 				paint();
 				window.open(URL.createObjectURL(new Blob([JSON.stringify(data)], {type: "application/octet-stream"})));
 			}
@@ -459,6 +491,59 @@
 				}
 				paint();
 			}
+			function nameRegions() {
+				let cursor = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+				cursor.setAttribute("r", 4);
+				svg.appendChild(cursor);
+				document.getElementById("svg").appendChild(cursor);
+				let regionList = [];
+				for (let i = -1; i < data.players; i++) {
+					for (let s of data.regions) if (s.core == i) regionList.push(s);
+				}
+				function commitName(name, i) {
+					console.log("Naming " + regionList[i].id + " " + name);
+					regionList[i].name = name;
+					document.getElementById("names").innerHTML = "";
+					nameNextRegion(i + 1);
+				}
+				function nameNextRegion(i) {
+					if (i >= regionList.length) {
+						svg.removeChild(cursor);
+					} else if (regionList[i].hasOwnProperty("name") && regionList[i].name != "") {
+						nameNextRegion(i + 1);
+					} else {
+						let tp = getRandomPointInRegion(regionList[i].id);
+						cursor.setAttribute("cx", tp.x);
+						cursor.setAttribute("cy", tp.y);
+						let core = regionList[i].core;
+						let usednames = [];
+						for (let r of data.regions) usednames.push(r.name);
+						let nameset = (core == -1 ? seas : nations[core].default_region_names).filter((v, j, arr) => !usednames.includes(v));
+						if (nameset.length == 0) window.alert("No eligable names for region " + regionList[i].id + " - did you place too many cores?");
+						let namediv = document.getElementById("names");
+						for (let n of nameset) {
+							let b = document.createElement("button");
+							b.appendChild(document.createTextNode(n));
+							b.addEventListener("click", ((name)=>((x)=>commitName(x, i))(n)));
+							namediv.appendChild(b);
+						}
+					}
+				}
+				nameNextRegion(0);
+			}
+			function makeCoreControls() {
+				let core = document.getElementById("cores");
+				for (let i = 0; i < data.players; i++) {
+					let label = document.createElement("label");
+					let radio = document.createElement("input");
+					radio.setAttribute("type", "radio");
+					radio.setAttribute("name", "mode");
+					radio.setAttribute("value", "core_" + i);
+					label.appendChild(radio);
+					label.appendChild(document.createTextNode(nations[i].name));
+					core.appendChild(label);
+				}
+			}
 		</script>
 	</head>
 	<body>
@@ -468,13 +553,17 @@
 			<button onclick="loadData()">Load Data</button>
 			<button onclick="saveData()">Save Data</button>
 			<button onclick="finalizeBorders()">Finalize Borders</button>
-			<label><input type="radio" name="mode" value="sea">Set Types (Land / Sea)</label>
-			<label><input type="radio" name="mode" value="merge">Merge Cells</label>
-			<label><input type="radio" name="mode" value="border">Set Border Size (1/2/3)</label>
-			<label><input type="radio" name="mode" value="climate">Set Climate (Green / Seasonal / Treacherous)</label>
-			<label><input type="radio" name="mode" value="core">Set Core Region (1/2/3/4/5/6/7/8...)</label>
-			<label><input type="radio" name="mode" value="metadata">Set Region Metadata (Name, Image)</label>
-			<label style="display:none"><input type="radio" name="mode" value="none" checked></label>
+			<button onclick="nameRegions()">Name Regions</button>
+			<label><input type="radio" name="mode" value="sea"/>Set Types (Land / Sea)</label>
+			<label><input type="radio" name="mode" value="merge"/>Merge Cells</label>
+			<label><input type="radio" name="mode" value="border"/>Set Border Size (1/2/3)</label>
+			<label><input type="radio" name="mode" value="holycity"/>Locate Sancta Civitate</label>
+			<label><input type="radio" name="mode" value="clearname"/>Clear Region Name</label>
+			<label style="display:none"><input type="radio" name="mode" value="none" checked/></label>
+		</div>
+		<div id="cores">
+		</div>
+		<div id="names">
 		</div>
 	</body>
 </html>
