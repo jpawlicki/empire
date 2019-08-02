@@ -45,7 +45,7 @@ class OrdersPane extends HTMLElement {
 					<div id="plot_rings"></div>
 					<h1>Cult</h1>
 					<label><input type="checkbox" name="plot_cult" ${kingdom.loyal_to_cult ? "checked=\"true\" disabled=\"true\"" : ""}/>Swear loyalty to the Cult</label>
-					<expandable-snippet text="In exchange for loyalty, the Cult will give us ${undeadCount} undead soldiers. The Cult will gain access to any regions we control, and you should continue to expand their influence by annexing additional territory."></expandable-snippet>
+					<expandable-snippet text="In exchange for loyalty, the Cult will give us ${Math.round(undeadCount)} undead soldiers. The Cult will gain access to any regions we control, and you should continue to expand their influence by annexing additional territory."></expandable-snippet>
 					<hr/>
 					<h1>Gothi Votes</h1>
 					<label id="gothi_alyrja"><input type="checkbox" name="gothi_alyrja"/>Vote to summon the <tooltip-element tooltip="The warwinds stops sea trade, destroys 25% of any army or navy at sea, and blows vessels in sea regions to random adjacent regions. It will start to destroy crops worldwide after 2 weeks of activity.">Warwinds</tooltip-element></label>
@@ -81,6 +81,7 @@ class OrdersPane extends HTMLElement {
 				<div id="content_economy">
 					<h1>Economic Controls</h1>
 					<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
+					<label>Shipbuilding: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="1" value="5"/></label>
 					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="75" max="125" step="25" value="100"/></label>
 					<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
 					<div id="economy_consequences">
@@ -357,7 +358,7 @@ class OrdersPane extends HTMLElement {
 			if (contains(unit.tags, "Cardinal") && g_data.regions[unit.location].name == "Sancta Civitate") opts.push("Inspire the Faithful");
 			if (r.kingdom == unit.kingdom) {
 				opts.push("Govern " + r.name);
-				if (r.noble.name == undefined) {
+				if (r.noble.name == undefined && !g_data.kingdoms[unit.kingdom].tags.includes("Republic")) {
 					opts.push("Instate Noble");
 				}
 			}
@@ -742,6 +743,7 @@ class OrdersPane extends HTMLElement {
 
 		// ECONOMY
 		let eTax = shadow.getElementById("economy_tax");
+		let eShip = shadow.getElementById("economy_ship");
 		let eRation = shadow.getElementById("economy_ration");
 		let eBonus = shadow.getElementById("economy_recruit_bonus");
 		let economyConsequences = shadow.getElementById("economy_consequences");
@@ -763,14 +765,18 @@ class OrdersPane extends HTMLElement {
 			let newTaxation = kingdom.calcTaxation(taxRate).v;
 			let soldiers = 0;
 			let consumptionRate = parseInt(eRation.value) - 100;
+			let shipyardCount = 0;
+			for (let region of g_data.regions) if (region.kingdom == kingdom.name) for (let c of region.constructions) if (c.type == "shipyard") shipyardCount++;
 			for (let army of g_data.armies) if (army.kingdom == kingdom.name && !contains(army.tags, "Higher Power")) soldiers += army.size;
 			if (taxRate != 0) economyConsequences.innerHTML += "<p>" + ((taxRate > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income (~ " + (newTaxation > baseTaxation ? "+" : "") + Math.round(newTaxation - baseTaxation) + " gold)</p>";
+			economyConsequences.innerHTML += "<p>" + (shipyardCount * parseInt(eShip.value)) + " new warships and +" + (shipyardCount * (5 - parseInt(eShip.value))) + " gold.</p>";
 			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
 			if (recruitRate != 0) economyConsequences.innerHTML += "<p>" + ((recruitRate > 0 ? "+" : "") + Math.round(recruitRate * 100)) + "% Recruitment (~ " + (newRecruits > baseRecruits ? "+" : "") + Math.round(newRecruits - baseRecruits) + " recruits)</p>";
 			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (newRecruits + soldiers) / 100) + " gold total)</p>";
 			if (consumptionRate != 0) economyConsequences.innerHTML += "<p>Regions consume " + (consumptionRate > 0 ? "+" : "") + consumptionRate + "% food.</p>";
 		}
 		eTax.addEventListener("input", computeEconomyConsequences);	
+		eShip.addEventListener("input", computeEconomyConsequences);	
 		eRation.addEventListener("input", computeEconomyConsequences);	
 		eBonus.addEventListener("input", computeEconomyConsequences);
 		computeEconomyConsequences();
@@ -859,6 +865,7 @@ class OrdersPane extends HTMLElement {
 					shadow.querySelector("[name=action_army_" + c.id + "]").value = c.orderhint;
 				}
 				if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
+				if (g_data.kingdoms[whoami].shipratehint != undefined) shadow.querySelector("[name=economy_ship]").value = g_data.kingdoms[whoami].shipratehint;
 				if (g_data.kingdoms[whoami].signingbonushint != undefined) shadow.querySelector("[name=economy_recruit_bonus]").value = g_data.kingdoms[whoami].signingbonushint;
 				if (g_data.kingdoms[whoami].rationhint != undefined) shadow.querySelector("[name=economy_ration]").value = g_data.kingdoms[whoami].rationhint;
 				shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));
@@ -1082,6 +1089,10 @@ class OrdersPane extends HTMLElement {
 			tr.appendChild(td);
 			td = document.createElement("td");
 			td.appendChild(o.select("action_div_" + id, o.getArmyOptions(entity)));
+			let warn = document.createElement("div");
+			warn.setAttribute("id", "warning_div_" + id);
+			warn.setAttribute("class", "warning");
+			td.appendChild(warn);
 			tr.appendChild(td);
 			child.parentNode.insertBefore(tr, child.nextSibling);
 			for (let c of g_data.characters) if (c.location == entity.location) {
@@ -1233,7 +1244,9 @@ class OrdersPane extends HTMLElement {
 	addPlot(shadow) {
 		let id = this.plotCount;
 		this.plotCount++;
-		if (this.plotCount > 20) window.alert("Come on. Do you really need this many plots?"); // It would be nice to have a mechanism to prevent a player from plot-spamming the UIs of other players. In lieu of that for now, shame them.
+		if (this.plotCount >= 5) {
+			shadow.getElementById("plot_newplot").style.display = "none";
+		}
 		let d = document.createElement("div");
 		let targetProviderNone = () => [];
 		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
@@ -1294,44 +1307,66 @@ class OrdersPane extends HTMLElement {
 	}
 
 	checkWarnings(shadow) {
+		let warmies = [];
 		for (let a of g_data.armies) {
 			let o = shadow.querySelector("select[name=action_army_" + a.id + "]");
 			if (o == undefined) continue;
+			warmies.push({"army": a, "o": o.value, "w": shadow.getElementById("warning_army_" + a.id)});
+		}
+		for (let i = 0; i < this.divisions; i++) {
+			let o = shadow.querySelector("select[name=action_div_" + i + "]");
+			if (o == undefined) conitinue;
+			let source = g_data.armies[parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value)];
+			let fakeArmy = {
+				"type": source.type,
+				"size": parseInt(shadow.querySelector("[name=div_size_" + i + "]").value),
+				"kingdom": source.kingdom,
+				"location": source.location,
+				"preparation": [],
+				"tags": source.tags,
+				"orderhint": "",
+				"gold": 0
+			};
+			warmies.push({"army": new Army(fakeArmy), "o": o.value, "w": shadow.getElementById("warning_div_" + i)});
+		}
+		for (let entry of warmies) {
+			let a = entry.army;
+			let o = entry.o;
 			let warn = "";
-			if (o.value.startsWith("Travel to ")) {
+			if (o.startsWith("Travel to ")) {
 				let dest = undefined;
-				for (let r of g_data.regions) if (r.name == o.value.replace("Travel to ", "")) dest = r;
+				for (let r of g_data.regions) if (r.name == o.replace("Travel to ", "")) dest = r;
 				if (a.type == "navy" && dest.type == "land" && dest.kingdom != a.kingdom && (dest.kingdom == "Unruled" || g_data.kingdoms[dest.kingdom].relationships[a.kingdom].battle != "DEFEND") && g_data.tivar.deluge == 0) {
 					warn += " (navies do not contribute to land battles except during the Deluge, and are vulnerable to capture)";
 				}
-			} else if (o.value.startsWith("Merge into army")) {
+			} else if (o.startsWith("Merge into army")) {
 				let ot = undefined;
-				for (let aa of g_data.armies) if (aa.id == parseInt(o.value.replace("Merge into army ", ""))) ot = aa;
+				for (let aa of g_data.armies) if (aa.id == parseInt(o.replace("Merge into army ", ""))) ot = aa;
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
-			} else if (o.value.startsWith("Patrol")) {
+			} else if (o.startsWith("Patrol")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn += " (army may be too small to patrol)";
 				}
 				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
 					warn += " (armies can only patrol friendly regions)";
 				}
-			} else if (o.value.startsWith("Oust")) {
+			} else if (o.startsWith("Oust")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn = " (army may be too small to oust)";
 				}
-			} else if (o.value.startsWith("Conquer")) {
+			} else if (o.startsWith("Conquer")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
 					warn = " (army may be too small to conquer)";
 				}
 				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
 					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
-			} else if (o.value.startsWith("Raze")) {
+			} else if (o.startsWith("Raze")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 2) {
 					warn = " (army may be too small to raze)";
 				}
 			}
-			shadow.getElementById("warning_army_" + a.id).innerHTML = warn;
+			entry.w.innerHTML = warn;
 		}
 	}
 

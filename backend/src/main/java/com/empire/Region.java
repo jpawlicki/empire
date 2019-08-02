@@ -70,13 +70,14 @@ class Region extends RulesObject {
 		return culture.getArmyTags();
 	}
 
-	public double calcImmigrationWeight() {
+	public double calcImmigrationWeight(World w) {
 		double mod = 1;
 		if (religion == Ideology.FLAME_OF_KITH) mod += getRules().flameOfKithImmigrationWeightMod;
+		if (w.getNation(kingdom).hasTag(NationData.Tag.WELCOMING)) mod += 1;
 		return (1 - unrestPopular) * mod;
 	}
 
-	public double calcRecruitment(World w, Character governor, double signingBonus, boolean rulerBattled, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, Character governor, double signingBonus, double nationalCasualties, double rationing, Army largestInRegion) {
 		double base = population * getRules().recruitmentPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - getRules().unrestRecruitmentEffectThresh);
@@ -103,11 +104,10 @@ class Region extends RulesObject {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += getRules().tapestryRecruitmentMod;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= getRules().riverOfKuunRationingThresh) {
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= getRules().riverOfKuunRationingThresh && food > 0) {
 			mods += getRules().riverOfKuunRecruitmentMod;
 		}
 
-		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w) && rulerBattled) mods += getRules().rjinkuBattledRecruitmentMod;
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryRecruitmentMod * numUniqueIdeologies(kingdom, w);
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) {
 			mods += getRules().perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
@@ -115,7 +115,10 @@ class Region extends RulesObject {
 
 		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += getRules().armyPillagersRecruitmentMod;
 
-		return Math.max(0, base * mods);
+		double flatBonus = 0;
+		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w)) flatBonus += nationalCasualties * getRules().rjinkuCasualtyRecovery / w.regions.stream().filter(r -> kingdom.equals(r.getKingdom())).count();
+
+		return Math.max(0, base * mods) + flatBonus;
 	}
 
 	// TODO: this belongs alongside the game constants, should determine a way to parameterize these function-type rules
@@ -128,7 +131,7 @@ class Region extends RulesObject {
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestTaxEffectThresh) base *= 1.0 - (unrest - getRules().unrestTaxEffectThresh);
 
-		double mods = taxRate;
+		double mods = 1;
 
 		if (governor != null) mods += governor.calcGovernTaxMod();
 		if (hasNoble()) mods += noble.calcTaxMod();
@@ -152,16 +155,20 @@ class Region extends RulesObject {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += getRules().tapestryTaxMod;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == getRules().riverOfKuunRationingThresh) {
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == getRules().riverOfKuunRationingThresh && food > 0) {
 			mods += getRules().riverOfKuunTaxMod;
 		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
 			mods += getRules().chaliceOfCompassionTaxMod;
 		}
 
+		if (Ideology.RIVER_OF_KUUN == NationData.getStateReligion(kingdom, w)) {
+			mods += getRules().riverOfKuunPerNeighborTaxMod * getNeighbors(w).stream().filter(r -> r.isLand()).map(r -> r.getKingdom()).filter(k -> !kingdom.equals(k)).distinct().count();
+		}
+
 		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
 		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += getRules().perIdeologyTapestryTaxModGlobal * numUniqueIdeologies(kingdom, w);
 
-		return Math.max(0, base * mods);
+		return Math.max(0, base * mods * taxRate);
 	}
 
 	public double calcConsumption(World w, double foodMod) {
@@ -171,13 +178,14 @@ class Region extends RulesObject {
 		return Math.max(0, base * mods);
 	}
 
-	public double calcPirateThreat(World w) {
+	public double calcPirateThreat(World w, boolean wasPatrolled) {
 		if (isSea()) return 0;
 		if (religion == Ideology.ALYRJA) return 0;
 
 		double unrest = calcUnrest(w);
 		double mods = 1;
 		if (hasNoble()) mods += getRules().noblePirateThreatMod;
+		if (wasPatrolled) mods += getRules().patrolledPirateThreatMod;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / getRules().pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
 	}

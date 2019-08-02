@@ -15,7 +15,7 @@ enum Culture {
 	@SerializedName("hansa")
 	HANSA(Religion.IRUHAN, r -> r.setupNobleFractionHansa, Army.Tag.SEAFARING, Army.Tag.IMPRESSMENT),
 	@SerializedName("tavian")
-	TAVIAN(Religion.TAVIAN, r -> r.setupNobleFractionTavian, Army.Tag.RIDERS, Army.Tag.CRAFTS_SOLDIERS),
+	TAVIAN(Religion.TAVIAN, r -> r.setupNobleFractionTavian, Army.Tag.SCHEMING, Army.Tag.CRAFTS_SOLDIERS),
 	@SerializedName("tyrgaetan")
 	TYRGAETAN(Religion.NORTHERN, r -> r.setupNobleFractionTyrgaetan, Army.Tag.WEATHERED, Army.Tag.PATHFINDERS);
 

@@ -44,8 +44,6 @@ public class Rules {
 	double scoreReligionPerConverted;
 	double scoreIdeologyPerConverted;
 	double scorePerConqueredTerritory;
-	double numShipsBuiltPerShipyard;
-	double shipBuildingTraitWeeksProduction;
 	double gloryCasualtyRewardThreshold;
 	double gloryCasualtyPunishmentThreshold;
 
@@ -66,6 +64,8 @@ public class Rules {
 	double iruhanMod;
 	double lastStandMod;
 	double perInspireMod;
+
+	double patrolledPirateThreatMod;
 
 	// Nobles
 	double noblePirateThreatMod;
@@ -90,7 +90,7 @@ public class Rules {
 
 	//Religion
 	double rjinkuRecruitmentMod;
-	double rjinkuBattledRecruitmentMod;
+	double rjinkuCasualtyRecovery;
 	double syrjenTaxMod;
 	double swordOfTruthRecruitmentMod;
 	double chaliceOfCompassionTaxMod;
@@ -98,10 +98,12 @@ public class Rules {
 	double tapestryRecruitmentMod;
 	double tapestryTaxMod;
 	double vesselOfFaithSetRelUnrestMod;
+	double lyskrSabotageMod;
 	double perIdeologyTapestryRecruitmentMod;
 	double perIdeologyTapestryRecruitmentModGlobal;
 	double perIdeologyTapestryTaxMod;
 	double perIdeologyTapestryTaxModGlobal;
+	double riverOfKuunPerNeighborTaxMod;
 	double riverOfKuunRationingThresh;
 	double riverOfKuunTaxMod;
 	double riverOfKuunRecruitmentMod;
@@ -120,10 +122,12 @@ public class Rules {
 	double plotEarlyTriggerChance;
 	double plotStrengthGrowth;
 	double spyRingDamageFactor;
+	double spyRingEstablishCost;
 	double spyRingGrowthFactor;
 	double spyRingMaxStrength;
 	double setupSpyRingStrength;
 	double sabotagingRingFactor;
+	int plotInstigationLimit;
 
 	// Characters
 	double oneDimExpAdd;
@@ -185,6 +189,12 @@ public class Rules {
 	double baseCostFortifications;
 	double baseCostShipyard;
 	double baseCostTemple;
+
+	double shipBuildingTraitWeeksProduction;
+	double numShipsBuiltPerShipyard;
+	double shipSellProfit;
+
+	double setupShipyardsPerNation;
 
 	// Church
 	double antiapostasyOpinion;

@@ -55,6 +55,10 @@ class Noble extends RulesObject {
 		return mod;
 	}
 
+	double calcPosthumousSpyRingStrength() {
+		return experience;
+	}
+
 	void addExperience() {
 		experience++;
 	}

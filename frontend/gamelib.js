@@ -222,7 +222,8 @@ class Region {
 	calcTaxation(extraMod=0) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"}];
+			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"},
+			{"v": extraMod + 1, "unit": "%", "why": "Hypothetical Tax Rate"}];
 		let unrest = this.calcUnrest().v;
 		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
 		let base = new Calc("*", baseAmount);
@@ -233,7 +234,7 @@ class Region {
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && getNation(r.kingdom).calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
-		if (this.religion == "Northern (Syrjen)") mods.push({"v": 1.25, "unit": "%", "why": "Worships Syrjen"});
+		if (this.religion == "Northern (Syrjen)") mods.push({"v": 0.75, "unit": "%", "why": "Worships Syrjen"});
 		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});
 		if (this.religion == "Iruhan (Tapestry of People)") {
 			let getTapestryBonus = false;
@@ -246,9 +247,16 @@ class Region {
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
 		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : getNation(this.kingdom).calcNumUniqueIdeologies();
+		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Tavian (River of Kuun)") {
+			let kingdoms = {};
+			for (let r of this.getNeighbors()) if (r.type == "land") kingdoms[r.kingdom] = true;
+			kingdoms[this.kingdom] = false;
+			let kCount = 0;
+			for (let k in kingdoms) if (kingdoms[k]) kCount++;
+			if (kCount > 0) mods.push({"v": kCount * .2, "unit": "%", "why": "River of Kuun state ideology with " + kCount + " neighboring kingdoms."});
+		}
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
-		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
 		return Calc.moddedNum(base, mods);
 	}
 
@@ -314,7 +322,7 @@ class Region {
 		if (forts == 0) {
 			return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}]);
 		}
-		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 5, "unit": "%", "why": "Maximum Fortification"}]);
+		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 3.5, "unit": "%", "why": "Maximum Fortification"}]);
 	}
 
 	calcMinConquestSize() {
@@ -504,6 +512,7 @@ class Kingdom {
 		this.loyal_to_cult = dataEntry.loyal_to_cult;
 		this.court = dataEntry.court;
 		this.taxratehint = dataEntry.taxratehint;
+		this.shipratehint = dataEntry.taxratehint;
 		this.signingbonushint = dataEntry.signingbonushint;
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
@@ -771,7 +780,7 @@ class Plot {
 			let nations = [];
 			for (let k in g_data.kingdoms) nations.push(k);
 			nations.sort((a, b) => g_data.kingdoms[b].goodwill - g_data.kingdoms[a].goodwill);
-			let index = nations.findIndex(this.target_id);
+			let index = nations.findIndex(a => a == this.target_id);
 			return nations[index == nations.size - 1 ? index - 1 : index + 1];
 		}
 		return undefined;
@@ -792,7 +801,7 @@ class Plot {
 		else if (this.type == "DENOUNCE") desc = "Denounce the deeds of";
 		else if (this.type == "INTERCEPT_COMMUNICATIONS") desc = "Intercept communications of";
 		else if (this.type == "SURVEY_NATION") desc = "Survey";
-		return desc + " " + this.target_id + " (" + this.getDefender() + ")";
+		return desc + " " + this.target_id + " (vs " + this.getDefender() + ")";
 		return undefined;
 	}
 }
