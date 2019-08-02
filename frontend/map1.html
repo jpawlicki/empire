@@ -237,7 +237,7 @@
 				password = encodeURIComponent(document.getElementById("password_input").value);
 				whoami = document.getElementById("kingdom_input").value;
 				startRequest(-1, function() {}, function() {
-					window.alert("HTTP " + req.status + " when trying to load game data. Perhaps the password is incorrect.");
+					window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
 					document.getElementById("passwordBox").style.display = "flex";
 					document.getElementById("password_submit").disabled = false;
 				});
@@ -411,55 +411,56 @@
 				for (let i = 0; i < regionContents.length; i++) {
 					let bp = [];
 					for (let j of regionContents[i]) {
+						let p = {};
 						outer: for (let t = 0; t < 20; t++) {
-							let p = g_data.regions[i].getRandomPointInRegion(.25);
+							p = g_data.regions[i].getRandomPointInRegion(.33, regionContents[i].length == 1);
 							for (let bbp of bp) {
-								if (t < 19 && length(minus(p, bbp)) < 15) continue outer;
-							}
-							j.obj.mapPoint = p;
-							bp.push(p);
-							if (j.t == "character") {
-								let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
-								pe.setAttribute("x", p.x - 6);
-								pe.setAttribute("y", p.y - 6);
-								pe.setAttribute("width", 12);
-								pe.setAttribute("height", 12);
-								pe.setAttribute("class", j.obj.kingdom);
-								pe.setAttribute("href", "#character");
-								pe.addEventListener('click', function() { changeReport("character/" + j.obj.name); });
-								document.getElementById("regionContents").appendChild(pe);
-							}	else {
-								let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
-								pe.setAttribute("x", p.x - 6);
-								pe.setAttribute("y", p.y - 6);
-								pe.setAttribute("width", 12);
-								pe.setAttribute("height", 12);
-								pe.setAttribute("class", j.obj.kingdom);
-								pe.setAttribute("href", j.obj.type == "army" ? "#army_" + j.obj.tags[0].toLowerCase().replace(/ .*/g, "") : "#navy");
-								let power = j.obj.calcStrength().v;
-								for (let pp = Math.floor(power / 5 - 1); pp >= 0; pp--) {
-									let r = parseInt(pp / 10) * 2.75 + 7.75;
-									let c2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
-									c2.setAttribute("x1", p.x + r * Math.sin(pp / 5 * Math.PI));
-									c2.setAttribute("y1", p.y - r * Math.cos(pp / 5 * Math.PI));
-									c2.setAttribute("x2", p.x);
-									c2.setAttribute("y2", p.y);
-									c2.setAttribute("stroke", "inherit");
-									c2.setAttribute("stroke-width", "2");
-									c2.setAttribute("class", j.obj.kingdom);
-									document.getElementById("regionContents").appendChild(c2);
-									let c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-									c.setAttribute("cx", p.x + r * Math.sin(pp / 5 * Math.PI));
-									c.setAttribute("cy", p.y - r * Math.cos(pp / 5 * Math.PI));
-									c.setAttribute("r", 1);
-									c.setAttribute("fill", "inherit");
-									c.setAttribute("class", j.obj.kingdom);
-									document.getElementById("regionContents").appendChild(c);
-								}
-								pe.addEventListener('click', function() { changeReport("army/" + j.obj.id); });
-								document.getElementById("regionContents").appendChild(pe);
+								if (length(minus(p, bbp)) < 15) continue outer;
 							}
 							break;
+						}
+						j.obj.mapPoint = p;
+						bp.push(p);
+						if (j.t == "character") {
+							let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
+							pe.setAttribute("x", p.x - 6);
+							pe.setAttribute("y", p.y - 6);
+							pe.setAttribute("width", 12);
+							pe.setAttribute("height", 12);
+							pe.setAttribute("class", j.obj.kingdom);
+							pe.setAttribute("href", "#character");
+							pe.addEventListener('click', function() { changeReport("character/" + j.obj.name); });
+							document.getElementById("regionContents").appendChild(pe);
+						}	else {
+							let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
+							pe.setAttribute("x", p.x - 6);
+							pe.setAttribute("y", p.y - 6);
+							pe.setAttribute("width", 12);
+							pe.setAttribute("height", 12);
+							pe.setAttribute("class", j.obj.kingdom);
+							pe.setAttribute("href", j.obj.type == "army" ? "#army_" + j.obj.tags[0].toLowerCase().replace(/ .*/g, "") : "#navy");
+							let power = j.obj.calcStrength().v;
+							for (let pp = Math.floor(power / 5 - 1); pp >= 0; pp--) {
+								let r = parseInt(pp / 10) * 2.75 + 7.75;
+								let c2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+								c2.setAttribute("x1", p.x + r * Math.sin(pp / 5 * Math.PI));
+								c2.setAttribute("y1", p.y - r * Math.cos(pp / 5 * Math.PI));
+								c2.setAttribute("x2", p.x);
+								c2.setAttribute("y2", p.y);
+								c2.setAttribute("stroke", "inherit");
+								c2.setAttribute("stroke-width", "2");
+								c2.setAttribute("class", j.obj.kingdom);
+								document.getElementById("regionContents").appendChild(c2);
+								let c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+								c.setAttribute("cx", p.x + r * Math.sin(pp / 5 * Math.PI));
+								c.setAttribute("cy", p.y - r * Math.cos(pp / 5 * Math.PI));
+								c.setAttribute("r", 1);
+								c.setAttribute("fill", "inherit");
+								c.setAttribute("class", j.obj.kingdom);
+								document.getElementById("regionContents").appendChild(c);
+							}
+							pe.addEventListener('click', function() { changeReport("army/" + j.obj.id); });
+							document.getElementById("regionContents").appendChild(pe);
 						}
 					}
 				}
@@ -647,7 +648,7 @@
 			</div>
 		</div>
 		<div id="map">
-			<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" id="svg" version="1.1">
+			<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 1020 1020" id="svg" version="1.1">
 				<!-- Patterns -->
 				<symbol id="character" viewBox="0 0 24 24">
 					<path fill="inherit" stroke="inherit" stroke-width="inherit" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>

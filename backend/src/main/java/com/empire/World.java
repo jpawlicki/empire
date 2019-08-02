@@ -644,9 +644,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void reset() {
-			for (String k : kingdoms.keySet()) {
-				getNation(k).resetAccessToken();
-			}
 			notifications.clear();
 			rtc.clear();
 		}
@@ -1400,7 +1397,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					getNation(c.kingdom).gold -= cost;
 					incomeSources.get(c.kingdom).spentSpyEstablishments += cost;
 					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
-					c.orderhint = "";
+					c.orderhint = "Hide in " + region.name;
 					c.addExperienceSpy();
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;

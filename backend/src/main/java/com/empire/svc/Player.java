@@ -20,6 +20,10 @@ public final class Player {
 		this.passHash = passHash;
 	}
 
+	public Player withNewPassword(String newPassHash) {
+		return new Player(email, newPassHash);
+	}
+
 	public Entity toEntity() {
 		Entity e = new Entity(TYPE, email);
 		e.setProperty("passHash", passHash);

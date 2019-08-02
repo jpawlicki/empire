@@ -132,17 +132,7 @@ public class NationData {
 	String shipratehint = "5";
 	String rationhint = "100";
 	String signingbonushint = "0";
-	String password;
 	String email;
-	String accessToken;
-
-	public String getPassword() {
-		return password;
-	}
-
-	public void setPassword(String password) {
-		this.password = password;
-	}
 
 	public String getEmail() {
 		return email;
@@ -150,10 +140,6 @@ public class NationData {
 
 	public void setEmail(String email) {
 		this.email = email;
-	}
-
-	void resetAccessToken() {
-		accessToken = Long.toString(new SecureRandom().nextLong(), java.lang.Character.MAX_RADIX);
 	}
 
 	Relationship getRelationship(String who) {
@@ -216,9 +202,7 @@ public class NationData {
 	}
 
 	void filterForView(boolean filterScore) {
-		password = "";
 		email = "";
-		accessToken = "";
 		if (filterScore) {
 			score = new HashMap<>();
 			shadowScore = new HashMap<>();

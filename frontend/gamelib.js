@@ -412,8 +412,7 @@ class Region {
 		return new Calc("/", [this.calcPirateWeight(), {"v": globalWeight, "unit": " shares", "why": "Total Global Shares"}]);
 	}
 
-
-	getRandomPointInRegion(centrality = 0) {
+	getRandomPointInRegion(centrality = 0, centerIfPossible=false) {
 		function winding(point, polygon) {
 			function isLeft(v1, v2, t) {
 				return (v2.x - v1.x) * (t.y - v1.y) - (t.x - v1.x) * (v2.y - v1.y);
@@ -476,22 +475,24 @@ class Region {
 		rect[1] = rect[1] + centrality * rect[3] / 2;
 		rect[2] *= (1 - centrality);
 		rect[3] *= (1 - centrality);
-		let points = [];
-		outer: for (let i = 0; i < 100; i++) {
-			let rp = {x: rect[0] + Math.random() * rect[2], y: rect[1] + Math.random() * rect[3]};
+		for (let i = 0; i < 100; i++) { // 100 trials to find a suitable point.
+			let rp;
+			if (centerIfPossible && i == 0) {
+				rp = {x: rect[0] + rect[2] / 2, y: rect[1] + rect[3] / 2};
+			} else {
+				rp = {x: rect[0] + Math.random() * rect[2], y: rect[1] + Math.random() * rect[3]};
+			}
 			if (winding(rp, this.path) == 1) {
-				points.push(rp);
-				if (points.length > 6) break;
+				// Check quincrux inclusion, too.
+				if (winding(minus(rp, {x: -5, y: -5}), this.path) != 1) continue;
+				if (winding(minus(rp, {x:  5, y: -5}), this.path) != 1) continue;
+				if (winding(minus(rp, {x: -5, y:  5}), this.path) != 1) continue;
+				if (winding(minus(rp, {x:  5, y:  5}), this.path) != 1) continue;
+				return rp;
 			}
 		}
-		if (points.length == 0) return {x: 0,  y: 0};
-		let mean = {x: 0,  y: 0};
-		for (let p of points) {
-			mean.x += p.x / points.length;
-			mean.y += p.y / points.length;
-		}
-		if (winding(mean, this.path) == 1) return mean;
-		else return points[0];
+		console.log("Failed to find a point in region " + this.id);
+		return {x: 0,  y: 0};
 	}
 }
 
@@ -512,7 +513,7 @@ class Kingdom {
 		this.loyal_to_cult = dataEntry.loyal_to_cult;
 		this.court = dataEntry.court;
 		this.taxratehint = dataEntry.taxratehint;
-		this.shipratehint = dataEntry.taxratehint;
+		this.shipratehint = dataEntry.shipratehint;
 		this.signingbonushint = dataEntry.signingbonushint;
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
