@@ -220,6 +220,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) totalSharesGold += 5;
 			if (setup.hasTag(NationData.Tag.SEAFARING)) totalSharesNavy += 0.15;
 			if (setup.hasTag(NationData.Tag.WARLIKE)) totalSharesArmy += 0.15;
+			if (setup.hasTag(NationData.Tag.WELCOMING)) totalSharesPopulation += 0.1;
 			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
 			else if ("armies".equals(setup.bonus)) totalSharesArmy += 0.5;
 			else if ("navies".equals(setup.bonus)) totalSharesNavy += 0.5;
@@ -255,6 +256,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			double sharesPopulation = 1;
 			if (setup.hasTag(NationData.Tag.MERCANTILE)) sharesGold += 0.5;
 			if (setup.hasTag(NationData.Tag.REBELLIOUS)) sharesGold += 5;
+			if (setup.hasTag(NationData.Tag.WELCOMING)) sharesPopulation += 0.1;
 			if ("food".equals(setup.bonus)) sharesFood += 0.5;
 			else if ("gold".equals(setup.bonus)) sharesGold += 0.5;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
@@ -2201,8 +2203,10 @@ public class World extends RulesObject implements GoodwillProvider {
 			List<Emigration> emigrations = new ArrayList<>();
 			for (Region r : regions) {
 				double eligibleToEmigrate = r.population * r.unrestPopular * getRules().emigrationFactor;
-				if (starvingRegions.contains(r)) eligibleToEmigrate *= (1 + getRules().emigrationStarvationMod);
-				eligibleToEmigrate = Math.min(eligibleToEmigrate, r.population - 1); // Emigrating the last person causes a divide by zero error.
+				double mod = 1;
+				if (getNation(r.getKingdom()).hasTag(NationData.Tag.STOIC)) mod -= 0.5;
+				if (starvingRegions.contains(r)) mod += getRules().emigrationStarvationMod;
+				eligibleToEmigrate = Math.min(eligibleToEmigrate * mod, r.population - 1); // Emigrating the last person causes a divide by zero error.
 				List<Region> destinations = new ArrayList<Region>();
 				for (Region n : r.getNeighbors(World.this)) {
 					if (n.isLand()) destinations.add(n);
