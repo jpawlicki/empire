@@ -27,7 +27,7 @@ public final class Schedule {
 			}
 		}
 		candidates.removeIf(c -> !c.isAfter(now));
-		return Collections.min(candidates).toInstant().toEpochMilli();
+		return Collections.min(candidates);
 	}
 
 	public long getNextTimeFirstTurn() {
