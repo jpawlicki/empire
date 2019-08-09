@@ -171,7 +171,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		w.gmPasswordHash = gmPasswordHash;
 		w.obsPasswordHash = obsPasswordHash;
 		w.turnSchedule = lobby.schedule;
-		w.nextTurn = w.turnSchedule.getNextTime();
+		w.nextTurn = w.turnSchedule.getNextTimeFirstTurn();
 		w.regions = new ArrayList<>();
 		w.pirate.threat = 4;
 		w.church.setDoctrine(Church.Doctrine.ANTIAPOSTASY);
@@ -2488,7 +2488,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					notifyAllPlayers(k + " Salts the Earth", "In a final act of defiance, " + ruler.name + " orders their agents to destroy their lands, making them unfit for inhabitation. In a week of violence and terror, the people rise up and overthrow their rulers, but not before much of " + k + " is ruined beyond recognition.");
 				}
 				if ("last_stand".equals(final_action)) {
-					for (Army a : armies) if (k.equals(a.kingdom)) a.kingdom = "Pirate";
 					notifyAllPlayers(k + " Makes a Final Stand", "In a final act of defiance, " + ruler.name + " impassions their soldiers and unfetters them from the chain of command. They fight heroically, but as the week closes, " + ruler.name + " is rumored to be dead and " + k + " ceases to exist as a nation.");
 				}
 				if ("exodus".equals(final_action)) {
@@ -2593,7 +2592,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						email += "\n " + m.signed.replace("Signed, ", "");
 					}
 				}
-				email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game and give your nation to a player on the wait list, reply \"RETIRE\" to this e-mail.\nIf you wish for the GM or AI to make move on your behalf this turn, reply \"AUTO\" to this e-mail.";
+				email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\nIf you wish to retire from the game, please log in and set a final action.";
 				emails.put(getNation(kingdom).email, email);
 			}
 			return emails;

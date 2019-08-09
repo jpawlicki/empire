@@ -232,6 +232,12 @@ class RegionReport extends HTMLElement {
 			d.innerHTML = "Spy Ring (" + ring.nation + ", Strength " + Math.round(ring.strength) + ", " + (ring.hidden ? "Hidden)" : "Exposed)");
 			ctn.appendChild(d);
 		}
+		if (g_data.regions[g_geo.holycity] == r) {
+			let holy = document.createElement("tooltip-element");
+			holy.setAttribute("tooltip", "This region contains the Holy City of the Church of Iruhan. Plots to affect Church opinion take place here, and Cardinals may meet here to bolster all Iruhan-worshiping nations.");
+			holy.appendChild(document.createTextNode("Holy City"));
+			shadow.getElementById("cct").appendChild(holy);
+		}
 	}
 }
 customElements.define("region-report", RegionReport);
