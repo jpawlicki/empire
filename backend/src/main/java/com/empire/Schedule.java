@@ -15,7 +15,10 @@ public final class Schedule {
 	String locale;
 
 	public long getNextTime() {
-		ZonedDateTime now = Instant.now().atZone(ZoneId.of(locale));
+		return getNextTimeAfter(Instant.now().atZone(ZoneId.of(locale))).toInstant().toEpochMilli();
+	}
+
+	private ZonedDateTime getNextTimeAfter(ZonedDateTime now) {
 		ArrayList<ZonedDateTime> candidates = new ArrayList<>();
 		for (DayOfWeek d : days) {
 			for (Integer time : times) {
@@ -25,5 +28,13 @@ public final class Schedule {
 		}
 		candidates.removeIf(c -> !c.isAfter(now));
 		return Collections.min(candidates).toInstant().toEpochMilli();
+	}
+
+	public long getNextTimeFirstTurn() {
+		return
+				getNextTimeAfter(
+						getNextTimeAfter(
+								Instant.now().atZone(ZoneId.of(locale))))
+				.toInstant().toEpochMilli();
 	}
 }
