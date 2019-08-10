@@ -56,7 +56,7 @@ class KingdomReport extends HTMLElement {
 				<div id="characters"></div>
 				<h1>Regions</h1>
 				<div id="regions"></div>
-				<h1>Historical Regions</h1>
+				<h1 id="heading_historical">Unowned Historical Regions</h1>
 				<div id="historical"></div>
 				<h1 id="heading_score">Score</h1>
 				<div id="score"></div>
@@ -139,6 +139,9 @@ class KingdomReport extends HTMLElement {
 				font-size: 75%;
 				line-height: 0.9;
 			}
+			.historical {
+				font-weight: bold;
+			}
 			h1 {
 				margin-top: 0.7em;
 				margin-bottom: 0;
@@ -172,16 +175,6 @@ class KingdomReport extends HTMLElement {
 			d.innerHTML = c.name;
 			cDiv.appendChild(d);
 			if (c.tags.length > 0) cDiv.appendChild(document.createTextNode(" (" + c.tags.join(", ") + ")"));
-			cDiv.appendChild(document.createTextNode(" (in "));
-			if (c.location == -1) {
-				cDiv.appendChild(document.createTextNode("hiding"));
-			} else {
-				let dd = document.createElement("report-link");
-				dd.innerHTML = g_data.regions[c.location].name;
-				dd.setAttribute("href", "region/" + g_data.regions[c.location].name);
-				cDiv.appendChild(dd);
-			}
-			cDiv.appendChild(document.createTextNode(")"));
 			charDiv.appendChild(cDiv);
 		}
 
@@ -246,12 +239,13 @@ class KingdomReport extends HTMLElement {
 		table.appendChild(tbody);
 		let setRegions = function () {
 			let rvalues = [];
-			for (let r of regions) rvalues.push({"r": r.name, "v": opts[sel.value](r)});
+			for (let r of regions) rvalues.push({"r": r.name, "v": opts[sel.value](r), "id": r.id});
 			rvalues.sort((a, b)=>(b.v - a.v));
 			tbody.innerHTML = "";
 			for (let r of rvalues) {
 				let row = document.createElement("tr");
 				let tda = document.createElement("td");
+				if (kingdom.core_regions.includes(r.id)) tda.setAttribute("class", "historical");
 				let rlink = document.createElement("report-link");
 				rlink.innerHTML = r.r;
 				rlink.setAttribute("href", "region/" + r.r);
@@ -285,22 +279,30 @@ class KingdomReport extends HTMLElement {
 				notes.appendChild(lt);
 			}
 		}
-		for (let ri of kingdom.core_regions) {
-			let r = g_data.regions[ri];
-			let d = document.createElement("div");
-			let rl = document.createElement("report-link");
-			rl.setAttribute("href", "region/" + r.name);
-			rl.innerHTML = r.name;
-			d.appendChild(rl);
-			if (r.kingdom != kingdom.name) {
-				rl = document.createElement("report-link");
-				rl.setAttribute("href", "kingdom/" + r.kingdom);
-				rl.innerHTML = r.kingdom;
-				d.appendChild(document.createTextNode(" (Controlled by "));
+		{
+			let unownedHistorical = false;
+			for (let ri of kingdom.core_regions) {
+				let r = g_data.regions[ri];
+				if (r.kingdom == kname) continue;
+				unownedHistorical = true;
+				let d = document.createElement("div");
+				let rl = document.createElement("report-link");
+				rl.setAttribute("href", "region/" + r.name);
+				rl.innerHTML = r.name;
 				d.appendChild(rl);
-				d.appendChild(document.createTextNode(")"));
+				if (r.kingdom != kingdom.name) {
+					rl = document.createElement("report-link");
+					rl.setAttribute("href", "kingdom/" + r.kingdom);
+					rl.innerHTML = r.kingdom;
+					d.appendChild(document.createTextNode(" (Controlled by "));
+					d.appendChild(rl);
+					d.appendChild(document.createTextNode(")"));
+				}
+				shadow.getElementById("historical").appendChild(d);
 			}
-			shadow.getElementById("historical").appendChild(d);
+			if (!unownedHistorical) {
+				shadow.getElementById("heading_historical").style.display = "none";
+			}
 		}
 		if ("(Observer)" == whoami) {
 			let score = shadow.getElementById("score");
