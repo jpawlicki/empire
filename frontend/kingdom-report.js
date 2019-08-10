@@ -50,10 +50,6 @@ class KingdomReport extends HTMLElement {
 				${kingdom.gold != -1 ? "<h1>Treasury: " + (Math.round(10 * kingdom.gold) / 10) + " gold</h1>" : ""}
 				<h1 id="heading_notifications">Notifications</h1>
 				<div id="notifications"></div>
-				<h1>Friends</h1>
-				<div id="friendly"></div>
-				<h1>Enemies</h1>
-				<div id="enemy"></div>
 				<h1>Characters</h1>
 				<div id="characters"></div>
 				<h1>Regions</h1>
@@ -165,27 +161,6 @@ class KingdomReport extends HTMLElement {
 		div.innerHTML = html;
 		shadow.appendChild(div);
 
-		let rels = {"friendly": [], "enemy": [], "neutral": []}; 
-		for (let k in g_data.kingdoms) {
-			if (g_data.kingdoms.hasOwnProperty(k) && k != kingdom.name) {
-				rels[kingdom.calcRelationship(g_data.kingdoms[k])].push(k);
-			}
-		}
-		for (let r in rels) {
-			if (r == "neutral") continue;
-			if (!rels.hasOwnProperty(r)) continue;
-			let d = shadow.getElementById(r);
-			rels[r].sort();
-			let comma = false;
-			for (let k of rels[r]) {
-				if (comma) d.appendChild(document.createTextNode(", "));
-				let de = document.createElement("report-link");
-				de.setAttribute("href", "kingdom/" + k);
-				de.innerHTML = k;
-				d.appendChild(de);
-				comma = true;
-			}
-		}
 		let charDiv = shadow.getElementById("characters");
 		let characters = [];
 		for (let c of g_data.characters) {
