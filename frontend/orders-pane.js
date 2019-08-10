@@ -122,7 +122,6 @@ class OrdersPane extends HTMLElement {
 					<div id="final_action_details"></div>
 				</div>
 			</form>
-			<div id="clock">Week ${g_data.date}</div>
 		`;
 		// CSS
 		let style = document.createElement("style");
@@ -302,11 +301,6 @@ class OrdersPane extends HTMLElement {
 				font-family: sans-serif;
 				font-size: 80%;
 				color: #830;
-			}
-			#clock {
-				width: 100%;
-				text-align: center;
-				font-size: 115%;
 			}
 			#nations_cede label {
 				display: block;
