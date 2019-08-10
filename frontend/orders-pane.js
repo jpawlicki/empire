@@ -122,7 +122,7 @@ class OrdersPane extends HTMLElement {
 					<div id="final_action_details"></div>
 				</div>
 			</form>
-			<div id="clock">Week ${g_data.date} (${(g_data.date % 52 < 13 || g_data.date % 52 >= 39) ? "Winter" : "Summer"})</div>
+			<div id="clock">Week ${g_data.date}</div>
 		`;
 		// CSS
 		let style = document.createElement("style");
