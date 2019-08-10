@@ -33,17 +33,6 @@ class KingdomReport extends HTMLElement {
 			"Tavian (River of Kuun)": "As a consequence of their widespread adoption of the River of Kuun, the people of " + kingdom.name + " trade more freely with neighboring regions that are ruled by a different nation, increasing taxation in those regions.",
 			"Company": "This nation does not rule any territory, and focuses on efficiency, making their plots more effective and lowering the cost of their armies and navies.",
 		}[stateReligion];
-		let gothiVotes = kingdom.calcGothiVotes();
-		let gothiVotesText = [];
-		let spell = {
-			"Alyrja": "<tooltip-element tooltip=\"Once summoned, the Warwind makes every sea region treacherous and pushes all occupants of each sea region to a random adjacent region each week. Like all gothi spells, the Warwind destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Warwind</tooltip-element>",
-			"Rjinku": "<tooltip-element tooltip=\"Once summoned, the Quake has a one-third chance to destroy each construction each week. Like all gothi spells, it destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Quake</tooltip-element>",
-			"Lyskr": "<tooltip-element tooltip=\"Once summoned, the Veil hides all navies, armies, and characters from other rulers, but does not otherwise obstruct their activities or prevent battles. Like all gothi spells, it destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Veil</tooltip-element>",
-			"Syrjen": "<tooltip-element tooltip=\"Once summoned, the Deluge makes every land region treacherous and allows navies to move between land regions, participate in battles in land regions, and prevents them from being captured. Like all gothi spells, it destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Deluge</tooltip-element>",
-		};
-		for (let r in gothiVotes) if (gothiVotes.hasOwnProperty(r) && gothiVotes[r].v > 0) {
-			gothiVotesText.push("<div>Controls " + gothiVotes[r].v + " (" + Math.round(gothiVotes[r].v / gothiVotes[r].total * 100) + "%) of " + r + "'s gothi" + (kingdom.gothi[r] ? " and votes to summon the " + spell[r] + "!" : "." ) + "</div>");
-		}
 		let html = `
 			<div id="abspos">
 				<div>${kingdom.name}</div>
@@ -53,7 +42,10 @@ class KingdomReport extends HTMLElement {
 					<div>${num(kingdom.calcTaxation())}</div><div>tax</div>
 					<div>${num(kingdom.calcFoodWeeks(), 1)}</div><div>weeks food</div>
 					<div>${num(kingdom.calcRecruitment())}</div><div>recruits</div>
-					<div><tooltip-element tooltip="${stateReligionTooltip}">${stateReligion}</tooltip></div>
+					<div>
+						<tooltip-element tooltip="${stateReligionTooltip}">${stateReligion}</tooltip>
+						${kingdom.loyal_to_cult ? " - <tooltip-element tooltip=\"This nation has cut a deal with the dangerous Cult of the Witness, acquiring command of undead armies in exchange for furthering the unknown and mysterious agenda of the Cult. If nations that have declared loyalty to the Cult conquer sufficient territory or if the undead occupy a sufficient number of regions over the course of the game, the Cult will trigger an event of apocalyptic proportions!\">Cultist</tooltip-element>" : ""}
+					</div>
 				</div>
 				${kingdom.gold != -1 ? "<h1>Treasury: " + (Math.round(10 * kingdom.gold) / 10) + " gold</h1>" : ""}
 				<h1 id="heading_notifications">Notifications</h1>
@@ -66,13 +58,6 @@ class KingdomReport extends HTMLElement {
 				<div id="characters"></div>
 				<h1>Regions</h1>
 				<div id="regions"></div>
-				<h1>Factional Standing</h1>
-				<div>
-					<div><tooltip-element tooltip="Pirate threat is the probability that pirates will appear in a region controlled by this nation during the resolution of the current turn. It is decreased by lowered unrest, by paying off the pirates to avoid the nation (or paying them to prefer another nation), by followers of the Northern (Alyrja) ideology, and by the use of nobles."><report-link href="pirates/home">Pirate</report-link> Threat:</tooltip-element> ${num(kingdom.calcPirateThreat(), 0, 100)}%</div>
-					<div><tooltip-element tooltip="Church opinion is improved by constructing temples to Iruhan (except for temples of the heretical Vessel of Faith ideology) or by fighting against excommunicated rulers. It is worsened by building heretical or heathen temples, by maintaining a non-Iruhan state religion, by moving food to cause starvation, executing characters, or slaying innocents. When standing drops below -75, a ruler is excommunicated. The Church will donate a substantial share of its income to nations with positive standing, weighted according to standing."><report-link href="church/home">Church Opinion:</report-link></tooltip-element> ${Math.round(kingdom.goodwill)}${kingdom.goodwill <= -75 ? " (Excommunicated!)" : ""}</div>
-					<div>${kingdom.loyal_to_cult ? "<tooltip-element tooltip=\"This nation has cut a deal with the dangerous Cult of the Witness, acquiring additional food and command of undead armies in exchange for furthering the unknown and mysterious agenda of the Cult. If nations that have declared loyalty to the Cult conquer sufficient territory or if the undead occupy a sufficient number of regions over the course of the game, the Cult will trigger an event of apocalyptic proportions!\">Loyal to Cult!</tooltip-element>" : ""}</div>
-					${gothiVotesText.join("\n")}
-				</div>
 				<h1>Past Correspondence</h1>
 				<div id="letters"></div>
 				<h1>Historical Regions</h1>
