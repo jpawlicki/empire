@@ -33,17 +33,6 @@ class KingdomReport extends HTMLElement {
 			"Tavian (River of Kuun)": "As a consequence of their widespread adoption of the River of Kuun, the people of " + kingdom.name + " trade more freely with neighboring regions that are ruled by a different nation, increasing taxation in those regions.",
 			"Company": "This nation does not rule any territory, and focuses on efficiency, making their plots more effective and lowering the cost of their armies and navies.",
 		}[stateReligion];
-		let gothiVotes = kingdom.calcGothiVotes();
-		let gothiVotesText = [];
-		let spell = {
-			"Alyrja": "<tooltip-element tooltip=\"Once summoned, the Warwind makes every sea region treacherous and pushes all occupants of each sea region to a random adjacent region each week. Like all gothi spells, the Warwind destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Warwind</tooltip-element>",
-			"Rjinku": "<tooltip-element tooltip=\"Once summoned, the Quake has a one-third chance to destroy each construction each week. Like all gothi spells, it destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Quake</tooltip-element>",
-			"Lyskr": "<tooltip-element tooltip=\"Once summoned, the Veil hides all navies, armies, and characters from other rulers, but does not otherwise obstruct their activities or prevent battles. Like all gothi spells, it destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Veil</tooltip-element>",
-			"Syrjen": "<tooltip-element tooltip=\"Once summoned, the Deluge makes every land region treacherous and allows navies to move between land regions, participate in battles in land regions, and prevents them from being captured. Like all gothi spells, it destroys 3% of crops worldwide each week, requires either 2/3rds of all gothi or five gothi total (whichever is more) to activate, and has a 50% chance of continuing each week after the gothi cease summoning it.\">Deluge</tooltip-element>",
-		};
-		for (let r in gothiVotes) if (gothiVotes.hasOwnProperty(r) && gothiVotes[r].v > 0) {
-			gothiVotesText.push("<div>Controls " + gothiVotes[r].v + " (" + Math.round(gothiVotes[r].v / gothiVotes[r].total * 100) + "%) of " + r + "'s gothi" + (kingdom.gothi[r] ? " and votes to summon the " + spell[r] + "!" : "." ) + "</div>");
-		}
 		let html = `
 			<div id="abspos">
 				<div>${kingdom.name}</div>
@@ -53,32 +42,22 @@ class KingdomReport extends HTMLElement {
 					<div>${num(kingdom.calcTaxation())}</div><div>tax</div>
 					<div>${num(kingdom.calcFoodWeeks(), 1)}</div><div>weeks food</div>
 					<div>${num(kingdom.calcRecruitment())}</div><div>recruits</div>
-					<div><tooltip-element tooltip="${stateReligionTooltip}">${stateReligion}</tooltip></div>
+					<div>
+						<tooltip-element tooltip="${stateReligionTooltip}">${stateReligion}</tooltip>
+						${kingdom.loyal_to_cult ? " - <tooltip-element tooltip=\"This nation has cut a deal with the dangerous Cult of the Witness, acquiring command of undead armies in exchange for furthering the unknown and mysterious agenda of the Cult. If nations that have declared loyalty to the Cult conquer sufficient territory or if the undead occupy a sufficient number of regions over the course of the game, the Cult will trigger an event of apocalyptic proportions!\">Cultist</tooltip-element>" : ""}
+					</div>
 				</div>
 				${kingdom.gold != -1 ? "<h1>Treasury: " + (Math.round(10 * kingdom.gold) / 10) + " gold</h1>" : ""}
 				<h1 id="heading_notifications">Notifications</h1>
 				<div id="notifications"></div>
-				<h1>Friends</h1>
-				<div id="friendly"></div>
-				<h1>Enemies</h1>
-				<div id="enemy"></div>
+				<h1>Past Correspondence</h1>
+				<div id="letters"></div>
 				<h1>Characters</h1>
 				<div id="characters"></div>
 				<h1>Regions</h1>
 				<div id="regions"></div>
-				<h1>Factional Standing</h1>
-				<div>
-					<div><tooltip-element tooltip="Pirate threat is the probability that pirates will appear in a region controlled by this nation during the resolution of the current turn. It is decreased by lowered unrest, by paying off the pirates to avoid the nation (or paying them to prefer another nation), by followers of the Northern (Alyrja) ideology, and by the use of nobles."><report-link href="pirates/home">Pirate</report-link> Threat:</tooltip-element> ${num(kingdom.calcPirateThreat(), 0, 100)}%</div>
-					<div><tooltip-element tooltip="Church opinion is improved by constructing temples to Iruhan (except for temples of the heretical Vessel of Faith ideology) or by fighting against excommunicated rulers. It is worsened by building heretical or heathen temples, by maintaining a non-Iruhan state religion, by moving food to cause starvation, executing characters, or slaying innocents. When standing drops below -75, a ruler is excommunicated. The Church will donate a substantial share of its income to nations with positive standing, weighted according to standing."><report-link href="church/home">Church Opinion:</report-link></tooltip-element> ${Math.round(kingdom.goodwill)}${kingdom.goodwill <= -75 ? " (Excommunicated!)" : ""}</div>
-					<div>${kingdom.loyal_to_cult ? "<tooltip-element tooltip=\"This nation has cut a deal with the dangerous Cult of the Witness, acquiring additional food and command of undead armies in exchange for furthering the unknown and mysterious agenda of the Cult. If nations that have declared loyalty to the Cult conquer sufficient territory or if the undead occupy a sufficient number of regions over the course of the game, the Cult will trigger an event of apocalyptic proportions!\">Loyal to Cult!</tooltip-element>" : ""}</div>
-					${gothiVotesText.join("\n")}
-				</div>
-				<h1>Past Correspondence</h1>
-				<div id="letters"></div>
-				<h1>Historical Regions</h1>
+				<h1 id="heading_historical">Unowned Historical Regions</h1>
 				<div id="historical"></div>
-				<h1>Court</h1>
-				<div id="court"></div>
 				<h1 id="heading_score">Score</h1>
 				<div id="score"></div>
 			</div>
@@ -160,6 +139,9 @@ class KingdomReport extends HTMLElement {
 				font-size: 75%;
 				line-height: 0.9;
 			}
+			.historical {
+				font-weight: bold;
+			}
 			h1 {
 				margin-top: 0.7em;
 				margin-bottom: 0;
@@ -180,27 +162,6 @@ class KingdomReport extends HTMLElement {
 		div.innerHTML = html;
 		shadow.appendChild(div);
 
-		let rels = {"friendly": [], "enemy": [], "neutral": []}; 
-		for (let k in g_data.kingdoms) {
-			if (g_data.kingdoms.hasOwnProperty(k) && k != kingdom.name) {
-				rels[kingdom.calcRelationship(g_data.kingdoms[k])].push(k);
-			}
-		}
-		for (let r in rels) {
-			if (r == "neutral") continue;
-			if (!rels.hasOwnProperty(r)) continue;
-			let d = shadow.getElementById(r);
-			rels[r].sort();
-			let comma = false;
-			for (let k of rels[r]) {
-				if (comma) d.appendChild(document.createTextNode(", "));
-				let de = document.createElement("report-link");
-				de.setAttribute("href", "kingdom/" + k);
-				de.innerHTML = k;
-				d.appendChild(de);
-				comma = true;
-			}
-		}
 		let charDiv = shadow.getElementById("characters");
 		let characters = [];
 		for (let c of g_data.characters) {
@@ -214,16 +175,6 @@ class KingdomReport extends HTMLElement {
 			d.innerHTML = c.name;
 			cDiv.appendChild(d);
 			if (c.tags.length > 0) cDiv.appendChild(document.createTextNode(" (" + c.tags.join(", ") + ")"));
-			cDiv.appendChild(document.createTextNode(" (in "));
-			if (c.location == -1) {
-				cDiv.appendChild(document.createTextNode("hiding"));
-			} else {
-				let dd = document.createElement("report-link");
-				dd.innerHTML = g_data.regions[c.location].name;
-				dd.setAttribute("href", "region/" + g_data.regions[c.location].name);
-				cDiv.appendChild(dd);
-			}
-			cDiv.appendChild(document.createTextNode(")"));
 			charDiv.appendChild(cDiv);
 		}
 
@@ -288,12 +239,13 @@ class KingdomReport extends HTMLElement {
 		table.appendChild(tbody);
 		let setRegions = function () {
 			let rvalues = [];
-			for (let r of regions) rvalues.push({"r": r.name, "v": opts[sel.value](r)});
+			for (let r of regions) rvalues.push({"r": r.name, "v": opts[sel.value](r), "id": r.id});
 			rvalues.sort((a, b)=>(b.v - a.v));
 			tbody.innerHTML = "";
 			for (let r of rvalues) {
 				let row = document.createElement("tr");
 				let tda = document.createElement("td");
+				if (kingdom.core_regions.includes(r.id)) tda.setAttribute("class", "historical");
 				let rlink = document.createElement("report-link");
 				rlink.innerHTML = r.r;
 				rlink.setAttribute("href", "region/" + r.r);
@@ -309,29 +261,7 @@ class KingdomReport extends HTMLElement {
 		setRegions();
 		shadow.getElementById("regions").appendChild(table);
 
-		// Add notifications and court.
-		let traitTooltips = {
-			"Inspiring": "+50% recruitment",
-			"Frugal": "+50% taxation",
-			"Soothing": "-2 percentage points of popular unrest each turn",
-			"Meticulous": "+15% harvest yield",
-			"Loyal": "ruler's armies are 125% as strong in this region",
-			"Policing": "pirates will not appear in this region",
-			"Generous": "-20 percentage points of popular unrest on the turn of a harvest",
-			"Pious": "the population of this region counts triple in determining national or global dominant ideologies",
-			"Rationing": "regional food consumption decreased by 20%",
-			"Patronizing": "construction in this region is 50% discounted",
-			"Untrusting": "-35% recruitment",
-			"Hoarding": "-35% taxation",
-			"Wasteful": "regional food consumption increased by 20%",
-			"Snubbed": "+2 noble unrest / turn",
-			"Shady Connections": "pirates are 300% as likely to appear in this region",
-			"Workaholic": "+1 popular unrest / turn",
-			"Cultist": "the Cult scores this region as if its ruler were loyal to the Cult",
-			"Tyrannical": "-50% recruitment in this region",
-			"Desperate": "Fortifications in this region are only half as effective",
-			"Broke": "Construction in this region costs 200% as much",
-		};
+		// Add notifications.
 		let notes = shadow.getElementById("notifications");
 		let nList = [];
 		for (let n of g_data.notifications) if (n.who == kingdom.name) nList.push(n);
@@ -349,28 +279,30 @@ class KingdomReport extends HTMLElement {
 				notes.appendChild(lt);
 			}
 		}
-		let court = shadow.getElementById("court");
-		for (let c of kingdom.court) {
-			let cd = document.createElement("div");
-			cd.innerHTML = c.name + " (" + c.tags.map(a=>("<tooltip-element tooltip=\"" + traitTooltips[a] + "\">" + a + "</tooltip-element>")).join(", ") + ")"; 
-			court.appendChild(cd);
-		}
-		for (let ri of kingdom.core_regions) {
-			let r = g_data.regions[ri];
-			let d = document.createElement("div");
-			let rl = document.createElement("report-link");
-			rl.setAttribute("href", "region/" + r.name);
-			rl.innerHTML = r.name;
-			d.appendChild(rl);
-			if (r.kingdom != kingdom.name) {
-				rl = document.createElement("report-link");
-				rl.setAttribute("href", "kingdom/" + r.kingdom);
-				rl.innerHTML = r.kingdom;
-				d.appendChild(document.createTextNode(" (Controlled by "));
+		{
+			let unownedHistorical = false;
+			for (let ri of kingdom.core_regions) {
+				let r = g_data.regions[ri];
+				if (r.kingdom == kname) continue;
+				unownedHistorical = true;
+				let d = document.createElement("div");
+				let rl = document.createElement("report-link");
+				rl.setAttribute("href", "region/" + r.name);
+				rl.innerHTML = r.name;
 				d.appendChild(rl);
-				d.appendChild(document.createTextNode(")"));
+				if (r.kingdom != kingdom.name) {
+					rl = document.createElement("report-link");
+					rl.setAttribute("href", "kingdom/" + r.kingdom);
+					rl.innerHTML = r.kingdom;
+					d.appendChild(document.createTextNode(" (Controlled by "));
+					d.appendChild(rl);
+					d.appendChild(document.createTextNode(")"));
+				}
+				shadow.getElementById("historical").appendChild(d);
 			}
-			shadow.getElementById("historical").appendChild(d);
+			if (!unownedHistorical) {
+				shadow.getElementById("heading_historical").style.display = "none";
+			}
 		}
 		if ("(Observer)" == whoami) {
 			let score = shadow.getElementById("score");

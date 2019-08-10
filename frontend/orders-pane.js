@@ -122,7 +122,6 @@ class OrdersPane extends HTMLElement {
 					<div id="final_action_details"></div>
 				</div>
 			</form>
-			<div id="clock">Week ${g_data.date} (${(g_data.date % 52 < 13 || g_data.date % 52 >= 39) ? "Winter" : "Summer"})</div>
 		`;
 		// CSS
 		let style = document.createElement("style");
@@ -302,11 +301,6 @@ class OrdersPane extends HTMLElement {
 				font-family: sans-serif;
 				font-size: 80%;
 				color: #830;
-			}
-			#clock {
-				width: 100%;
-				text-align: center;
-				font-size: 115%;
 			}
 			#nations_cede label {
 				display: block;
@@ -832,8 +826,8 @@ class OrdersPane extends HTMLElement {
 			let final_act_desc = {
 				"continue_ruling": "",
 				"salt_the_earth": "You lay waste to your own lands, decreasing their value to your enemies. All regions you control become treacherous, lose half their food, and become unruled. All your armies and navies become pirates. Your heroes are removed from the game. Your people overthrow you and you are removed from the game.",
-				"abdicate": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your core regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
-				"exodus": "You gather those loyal to you and flee across the great sea to lands unknown. Your heroes are removed from the map and your regions become unruled. A fraction of population from your core regions goes with you, depending on your naval strength relative to your enemies. You depart from this region of the world, removing you from the game.",
+				"abdicate": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your historical regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
+				"exodus": "You gather those loyal to you and flee across the great sea to lands unknown. Your heroes are removed from the map and your regions become unruled. A fraction of population from your historical regions goes with you, depending on your naval strength relative to your enemies. You depart from this region of the world, removing you from the game.",
 				"last_stand": "You inspire your troops to make a heroic final stand. Your armies and navies fight with +400% efficacy this turn, and then become pirates. Your regions become unruled and your heroes are removed from the game. You are either killed in battle or slip away to live out a quiet life far from politics, removing you from the game.",
 			};
 			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];

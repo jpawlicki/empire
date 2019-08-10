@@ -92,15 +92,22 @@ class ScoreReport extends HTMLElement {
 		div.innerHTML = html;
 		shadow.appendChild(div);
 		let totalScore = 0;
-		for (let profile of Object.keys(g_scoreProfiles).sort()) {
-			if (!g_scoreProfiles[profile].selectable && !g_data.kingdoms[whoami].score.hasOwnProperty(profile) && !g_data.kingdoms[whoami].profiles.includes(profile)) continue;
+		let profiles = g_data.kingdoms[whoami].profiles;
+		for (let profile of Object.keys(g_scoreProfiles).sort((a, b) => {
+			if (profiles.includes(a) && !profiles.includes(b)) return -1;
+			if (profiles.includes(b) && !profiles.includes(a)) return 1;
+			if (a < b) return -1;
+			if (a > b) return 1;
+			return 0;
+		})) {
+			if (!g_scoreProfiles[profile].selectable && !g_data.kingdoms[whoami].score.hasOwnProperty(profile) && !profiles.includes(profile)) continue;
 			let p = document.createElement("div");
 			p.appendChild(document.createTextNode(titleCase(profile)));
 			if (g_data.kingdoms[whoami].score.hasOwnProperty(profile)) {
 				p.appendChild(document.createTextNode(": " + Math.round(g_data.kingdoms[whoami].score[profile] * 10) / 10));
 				totalScore += g_data.kingdoms[whoami].score[profile];
 			}
-			if (!g_data.kingdoms[whoami].profiles.includes(profile)) {
+			if (!profiles.includes(profile)) {
 				p.setAttribute("class", "inactive");
 				p.appendChild(document.createTextNode(" (inactive)"));
 			}
