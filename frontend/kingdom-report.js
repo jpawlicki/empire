@@ -58,6 +58,8 @@ class KingdomReport extends HTMLElement {
 				${kingdom.gold != -1 ? "<h1>Treasury: " + (Math.round(10 * kingdom.gold) / 10) + " gold</h1>" : ""}
 				<h1 id="heading_notifications">Notifications</h1>
 				<div id="notifications"></div>
+				<h1>Past Correspondence</h1>
+				<div id="letters"></div>
 				<h1>Friends</h1>
 				<div id="friendly"></div>
 				<h1>Enemies</h1>
@@ -73,12 +75,8 @@ class KingdomReport extends HTMLElement {
 					<div>${kingdom.loyal_to_cult ? "<tooltip-element tooltip=\"This nation has cut a deal with the dangerous Cult of the Witness, acquiring additional food and command of undead armies in exchange for furthering the unknown and mysterious agenda of the Cult. If nations that have declared loyalty to the Cult conquer sufficient territory or if the undead occupy a sufficient number of regions over the course of the game, the Cult will trigger an event of apocalyptic proportions!\">Loyal to Cult!</tooltip-element>" : ""}</div>
 					${gothiVotesText.join("\n")}
 				</div>
-				<h1>Past Correspondence</h1>
-				<div id="letters"></div>
 				<h1>Historical Regions</h1>
 				<div id="historical"></div>
-				<h1>Court</h1>
-				<div id="court"></div>
 				<h1 id="heading_score">Score</h1>
 				<div id="score"></div>
 			</div>
@@ -309,29 +307,7 @@ class KingdomReport extends HTMLElement {
 		setRegions();
 		shadow.getElementById("regions").appendChild(table);
 
-		// Add notifications and court.
-		let traitTooltips = {
-			"Inspiring": "+50% recruitment",
-			"Frugal": "+50% taxation",
-			"Soothing": "-2 percentage points of popular unrest each turn",
-			"Meticulous": "+15% harvest yield",
-			"Loyal": "ruler's armies are 125% as strong in this region",
-			"Policing": "pirates will not appear in this region",
-			"Generous": "-20 percentage points of popular unrest on the turn of a harvest",
-			"Pious": "the population of this region counts triple in determining national or global dominant ideologies",
-			"Rationing": "regional food consumption decreased by 20%",
-			"Patronizing": "construction in this region is 50% discounted",
-			"Untrusting": "-35% recruitment",
-			"Hoarding": "-35% taxation",
-			"Wasteful": "regional food consumption increased by 20%",
-			"Snubbed": "+2 noble unrest / turn",
-			"Shady Connections": "pirates are 300% as likely to appear in this region",
-			"Workaholic": "+1 popular unrest / turn",
-			"Cultist": "the Cult scores this region as if its ruler were loyal to the Cult",
-			"Tyrannical": "-50% recruitment in this region",
-			"Desperate": "Fortifications in this region are only half as effective",
-			"Broke": "Construction in this region costs 200% as much",
-		};
+		// Add notifications.
 		let notes = shadow.getElementById("notifications");
 		let nList = [];
 		for (let n of g_data.notifications) if (n.who == kingdom.name) nList.push(n);
@@ -348,12 +324,6 @@ class KingdomReport extends HTMLElement {
 				lt.appendChild(snippet);
 				notes.appendChild(lt);
 			}
-		}
-		let court = shadow.getElementById("court");
-		for (let c of kingdom.court) {
-			let cd = document.createElement("div");
-			cd.innerHTML = c.name + " (" + c.tags.map(a=>("<tooltip-element tooltip=\"" + traitTooltips[a] + "\">" + a + "</tooltip-element>")).join(", ") + ")"; 
-			court.appendChild(cd);
 		}
 		for (let ri of kingdom.core_regions) {
 			let r = g_data.regions[ri];
