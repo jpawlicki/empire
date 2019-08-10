@@ -17,7 +17,7 @@ class CharacterReport extends HTMLElement {
 					<tooltip-element tooltip="Admirals make navies they lead more effective. They improve their skill by leading navies.">Admiral:</tooltip-element><div id="skill_admiral"></div>
 					<tooltip-element tooltip="Generals make armies they lead more effective. They improve their skill by leading armies.">General:</tooltip-element><div id="skill_general"></div>
 					<tooltip-element tooltip="Governors can increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
-					<tooltip-element tooltip="Spies can increase the power of your plots and plot defense. They improve their skill while hiding or captured.">Spy:</tooltip-element><div id="skill_spy"></div>
+					<tooltip-element tooltip="Spies establish can establish spy rings of greater power. They improve their skill while hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
 				</div>
 			</div>
 		`;
@@ -109,6 +109,6 @@ let getEffect = function(level, skill) {
 	} else if (skill == "governor") {
 		return "The Govern action produces +" + Math.round(level * 50) + "% more taxation and recruitment.";
 	} else if (skill == "spy") {
-		return "+" + Math.round(level * 30) + "% plot strength.";
+		return "+" + Math.round(level * 10) + " newly established spy ring strength.";
 	}
 }
