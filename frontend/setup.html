@@ -464,7 +464,11 @@
 						document.querySelector("#nationDiv > div").className = "selectionDone";
 						document.querySelector("#confirmation").style.display = "block";
 						for (let e of document.querySelectorAll("img")) e.style.display = "none";
-						localStorage.setItem("g_" + gameId + "_login", JSON.stringify({"nation": capitalize(selected), "password": document.getElementById("password").value}));
+						try {
+							localStorage.setItem("g_" + gameId + "_login", JSON.stringify({"nation": capitalize(selected), "password": document.getElementById("password").value}));
+						} catch (err) {
+							console.log(err);
+						}
 					} else {
 						window.alert("HTTP " + req.status + ". Contact Josh (gilgarn@gmail.com)");
 					}
