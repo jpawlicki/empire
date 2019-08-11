@@ -322,6 +322,69 @@ public class World extends RulesObject implements GoodwillProvider {
 				w.regions.get(ownedRegions.get(i)).noble = Noble.newNoble(culture, 0, w.getRules());
 			}
 		}
+		// Place shipyards.
+		for (String kingdom : nationSetup.keySet()) {
+			ArrayList<Region> regions = new ArrayList<>();
+			for (Region r : w.regions) if (kingdom.equals(r.getKingdom()) && r.isCoastal(w)) regions.add(r);
+			if (!regions.isEmpty()) {
+				for (int i = 0; i < w.getRules().setupShipyardsPerNation; i++) {
+					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(w.getRules().baseCostShipyard));
+				}
+			}
+		}
+		// Place spy rings.
+		for (String kingdom : nationSetup.keySet()) {
+			List<Integer> candidates = new ArrayList<>();
+			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) candidates.add(i);
+			w.spyRings.add(SpyRing.newSpyRing(w.getRules(), kingdom, w.getRules().setupSpyRingStrength, candidates.get((int)(Math.random() * candidates.size()))));
+		}
+		// Add characters, incl Cardinals
+		for (String kingdom : nationSetup.keySet()) {
+			Nation setup = nationSetup.get(kingdom);
+			ArrayList<Integer> regions = new ArrayList<>();
+			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
+			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());
+			ArrayList<Character> characters = new ArrayList<>();
+			int numCharacters = 4;
+			boolean cardinal = false;
+			if (setup.dominantIdeology.religion == Religion.IRUHAN && setup.dominantIdeology != Ideology.VESSEL_OF_FAITH) {
+				numCharacters++;
+				cardinal = true;
+			}
+			if (setup.hasTag(NationData.Tag.HEROIC)) numCharacters += 2;
+			if (setup.hasTag(NationData.Tag.REPUBLICAN)) numCharacters += 1;
+			for (int i = 0; i < numCharacters; i++) {
+				Character c = Character.newCharacter(w.getRules());
+				c.name = WorldConstantData.getRandomName(w.geography.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				if (i == 0) {
+					c.name = setup.rulerName;
+					c.honorific = setup.title;
+				}
+				c.kingdom = kingdom;
+				if (i == 0) c.addTag(Character.Tag.RULER);
+				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
+				if (i == 2) {
+					c.addExperienceGeneral();
+					c.addExperienceGeneral();
+					c.addExperienceGeneral();
+				} else if (i == 3) {
+					c.addExperienceAdmiral();
+					c.addExperienceAdmiral();
+					c.addExperienceAdmiral();
+				} else if (i == 0) {
+					c.addExperienceGovernor();
+					c.addExperienceGovernor();
+					c.addExperienceGovernor();
+				} else if (i == 1) {
+					c.addExperienceSpy();
+					c.addExperienceSpy();
+					c.addExperienceSpy();
+				}
+				c.location = regions.get((int)(Math.random() * regions.size()));
+				c.orderhint = "Stay in " + w.regions.get(c.location).name;
+				w.characters.add(c);
+			}
+		}
 		// Allocate unowned regions between non-rebellious nations.
 		int numUnownedRegions = 0;
 		for (Region r : w.regions) {
@@ -428,74 +491,11 @@ public class World extends RulesObject implements GoodwillProvider {
 				r.religion = nationSetup.get(r.getKingdom()).dominantIdeology;
 			}
 		}
-		// Place shipyards.
-		for (String kingdom : nationSetup.keySet()) {
-			ArrayList<Region> regions = new ArrayList<>();
-			for (Region r : w.regions) if (kingdom.equals(r.getKingdom()) && r.isCoastal(w)) regions.add(r);
-			if (!regions.isEmpty()) {
-				for (int i = 0; i < w.getRules().setupShipyardsPerNation; i++) {
-					regions.get((int)(Math.random() * regions.size())).constructions.add(Construction.makeShipyard(w.getRules().baseCostShipyard));
-				}
-			}
-		}
 		// Place defensive fortifications.
 		for (Region r : w.regions) {
 			if (nationSetup.containsKey(r.getKingdom()) && nationSetup.get(r.getKingdom()).hasTag(NationData.Tag.DEFENSIVE)) {
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
-			}
-		}
-		// Place spy rings.
-		for (String kingdom : nationSetup.keySet()) {
-			List<Integer> candidates = new ArrayList<>();
-			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) candidates.add(i);
-			w.spyRings.add(SpyRing.newSpyRing(w.getRules(), kingdom, w.getRules().setupSpyRingStrength, candidates.get((int)(Math.random() * candidates.size()))));
-		}
-		// Add characters, incl Cardinals
-		for (String kingdom : nationSetup.keySet()) {
-			Nation setup = nationSetup.get(kingdom);
-			ArrayList<Integer> regions = new ArrayList<>();
-			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
-			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());
-			ArrayList<Character> characters = new ArrayList<>();
-			int numCharacters = 4;
-			boolean cardinal = false;
-			if (setup.dominantIdeology.religion == Religion.IRUHAN && setup.dominantIdeology != Ideology.VESSEL_OF_FAITH) {
-				numCharacters++;
-				cardinal = true;
-			}
-			if (setup.hasTag(NationData.Tag.HEROIC)) numCharacters += 2;
-			if (setup.hasTag(NationData.Tag.REPUBLICAN)) numCharacters += 1;
-			for (int i = 0; i < numCharacters; i++) {
-				Character c = Character.newCharacter(w.getRules());
-				c.name = WorldConstantData.getRandomName(w.geography.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
-				if (i == 0) {
-					c.name = setup.rulerName;
-					c.honorific = setup.title;
-				}
-				c.kingdom = kingdom;
-				if (i == 0) c.addTag(Character.Tag.RULER);
-				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
-				if (i == 2) {
-					c.addExperienceGeneral();
-					c.addExperienceGeneral();
-					c.addExperienceGeneral();
-				} else if (i == 3) {
-					c.addExperienceAdmiral();
-					c.addExperienceAdmiral();
-					c.addExperienceAdmiral();
-				} else if (i == 0) {
-					c.addExperienceGovernor();
-					c.addExperienceGovernor();
-					c.addExperienceGovernor();
-				} else if (i == 1) {
-					c.addExperienceSpy();
-					c.addExperienceSpy();
-					c.addExperienceSpy();
-				}
-				c.location = regions.get((int)(Math.random() * regions.size()));
-				c.orderhint = "Stay in " + w.regions.get(c.location).name;
-				w.characters.add(c);
 			}
 		}
 		return w;
