@@ -204,7 +204,7 @@ public class PlotTest {
 	@Test
 	public void plotTypePraiseOnSuccess() {
 		World w = mock(World.class);
-		NationData n = new NationData();
+		Nation n = new Nation();
 		n.goodwill = 0;
 		when(w.getNation("Nation")).thenReturn(n);
 		Plot.PlotType.PRAISE.onSuccess("Nation", w, null);
@@ -219,7 +219,7 @@ public class PlotTest {
 	@Test
 	public void plotTypeDenounceOnSuccess() {
 		World w = mock(World.class);
-		NationData n = new NationData();
+		Nation n = new Nation();
 		n.goodwill = 100;
 		when(w.getNation("Nation")).thenReturn(n);
 		Plot.PlotType.DENOUNCE.onSuccess("Nation", w, null);
@@ -279,7 +279,7 @@ public class PlotTest {
 		World w = mock(World.class);
 		w.armies = new ArrayList<>();
 		w.notifications = new ArrayList<>();
-		NationData n = mock(NationData.class);
+		Nation n = mock(Nation.class);
 		when(w.getNation("Nation")).thenReturn(n);
 		Plot.PlotType.SURVEY_NATION.onSuccess("Nation", w, Arrays.asList("Other Nation 2"));
 		assertEquals(1, w.notifications.size());

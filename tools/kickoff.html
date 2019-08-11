@@ -43,6 +43,19 @@
 				}));
 				return false;
 			}
+
+			function postFormMigrate() {
+				let req = new XMLHttpRequest();
+				req.open("post", g_server + "/entry/migrate", true);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					window.alert(req.status);
+				};
+				req.send();
+				return false;
+			}
 		</script>
 	</head>
 	<body>
@@ -68,6 +81,10 @@
 			<label>Observer Password: <input id="obsPassword" type="password"/></label>
 			<label>Game ID: <input id="gameId" type="number"/></label>
 			<button>Start</button>
+		</form>
+		<h1>Trigger Server-Side Migration</h1>
+		<form onsubmit="return postFormMigrate();">
+			<button>Trigger Migrate (DANGEROUS)</button>
 		</form>
 		<h1>Advance Game</h1>
 		<div id="advances"></div>

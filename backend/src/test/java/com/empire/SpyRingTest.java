@@ -16,7 +16,7 @@ public class SpyRingTest {
 	public void addContributionTo_SupportFriendly() {
 		SpyRing r = SpyRing.newSpyRing(Utils.rules, "nation", 50, 0);
 		World w = mock(World.class);
-		NationData n = mock(NationData.class);
+		Nation n = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
@@ -33,7 +33,7 @@ public class SpyRingTest {
 	public void addContributionTo_SabotageFriendly() {
 		SpyRing r = SpyRing.newSpyRing(Utils.rules, "nation", 50, 0);
 		World w = mock(World.class);
-		NationData n = mock(NationData.class);
+		Nation n = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
@@ -50,8 +50,8 @@ public class SpyRingTest {
 	public void addContributionTo_SupportUnfriendly() {
 		SpyRing r = SpyRing.newSpyRing(Utils.rules, "nation", 50, 0);
 		World w = mock(World.class);
-		NationData nation = mock(NationData.class);
-		NationData defender = mock(NationData.class);
+		Nation nation = mock(Nation.class);
+		Nation defender = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("defender");
 		w.regions = Arrays.asList(r0);
@@ -73,7 +73,7 @@ public class SpyRingTest {
 	public void damage() {
 		SpyRing r = SpyRing.newSpyRing(Utils.rules, "nation", 50, 0);
 		World w = mock(World.class);
-		NationData n = mock(NationData.class);
+		Nation n = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
@@ -97,7 +97,7 @@ public class SpyRingTest {
 	public void grow() {
 		SpyRing r = SpyRing.newSpyRing(Utils.rules, "nation", 50, 0);
 		World w = mock(World.class);
-		NationData n = mock(NationData.class);
+		Nation n = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
