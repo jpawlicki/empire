@@ -1309,7 +1309,7 @@ class OrdersPane extends HTMLElement {
 		}
 		for (let i = 0; i < this.divisions; i++) {
 			let o = shadow.querySelector("select[name=action_div_" + i + "]");
-			if (o == undefined) conitinue;
+			if (o == undefined) continue;
 			let source = g_data.armies[parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value)];
 			let fakeArmy = {
 				"type": source.type,
