@@ -25,7 +25,7 @@ public class Lobby {
 	int numPlayers;
 	int ruleSet;
 	Schedule schedule;
-	Map<String, Nation> nations = new HashMap<>();
+	Map<String, NationSetup> nations = new HashMap<>();
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
@@ -44,7 +44,7 @@ public class Lobby {
 		return fromJson(loadJson(gameId, service));
 	}
 
-	public boolean update(String nation, Nation setup) {
+	public boolean update(String nation, NationSetup setup) {
 		return nations.putIfAbsent(nation, setup) == null;
 	}
 
@@ -74,7 +74,7 @@ public class Lobby {
 		return ruleSet;
 	}
 
-	public Map<String, Nation> getNations() {
+	public Map<String, NationSetup> getNations() {
 		return nations;
 	}
 

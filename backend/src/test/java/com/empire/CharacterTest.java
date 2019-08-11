@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 public class CharacterTest {
 	private Character c;
 	private static World w;
-	private static NationData n1;
+	private static Nation n1;
 	private static Region r1;
 	private static final double DELTA = 1E-5;
 
@@ -31,7 +31,7 @@ public class CharacterTest {
 	private World mockWorld() throws IOException {
 		World world = mock(World.class);
 
-		n1 = mock(NationData.class);
+		n1 = mock(Nation.class);
 		when(world.getNation(k1)).thenReturn(n1);
 
 		r1 = Mocks.region(k1, Region.Type.LAND, 1.0, Ideology.SWORD_OF_TRUTH);

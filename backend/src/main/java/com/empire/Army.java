@@ -50,15 +50,15 @@ class Army extends RulesObject {
 
 		if (hasTag(Tag.STEEL)) mods += getRules().steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += getRules().seafaringMod;
-		if (isArmy() && !getRules().pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += getRules().disciplinedArmyStrengthMod;
-		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
+		if (isArmy() && !getRules().pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Nation.Tag.DISCIPLINED)) mods += getRules().disciplinedArmyStrengthMod;
+		if (isArmy() && r.isLand() && Nation.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
-			Ideology sr = NationData.getStateReligion(kingdom, w);
+			Ideology sr = Nation.getStateReligion(kingdom, w);
 			if (Ideology.SWORD_OF_TRUTH == sr) mods += getRules().swordOfTruthMod;
 			else if (sr.religion == Religion.IRUHAN) mods += getRules().iruhanMod;
 		}
 		if (lastStand) mods += getRules().lastStandMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * getRules().perInspireMod;
+		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * getRules().perInspireMod;
 		if (leader != getRules().noLeader) {
 			mods += leader.calcLeadMod(type);
 		}
@@ -157,7 +157,7 @@ class Army extends RulesObject {
 		}
 		if (target.equals(region.getKingdom())) return;
 		String nobleFate = "";
-		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(NationData.Tag.REPUBLICAN))) {
+		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(Nation.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
 			if (!w.spyRings.stream().anyMatch(r -> r.getLocation() == location && r.getNation() == region.getKingdom())) w.spyRings.add(SpyRing.newSpyRing(getRules(), region.getKingdom(), region.noble.calcPosthumousSpyRingStrength(), location));
 			region.noble = null;

@@ -16,7 +16,7 @@ import static org.mockito.Mockito.when;
 public class RegionTest {
 	private static Region r;
 	private static World w;
-	private static NationData n1;
+	private static Nation n1;
 	private static final double DELTA = 1E-5;
 
 	private static final String k1 = "k1";
@@ -56,7 +56,7 @@ public class RegionTest {
 		p.bribes.put(k1, 0.0);
 		world.pirate = p;
 
-		n1 = mock(NationData.class);
+		n1 = mock(Nation.class);
 		when(world.getNation(k1)).thenReturn(n1);
 
 		return world;
@@ -160,7 +160,7 @@ public class RegionTest {
 
 	@Test
 	public void calcMinConquestStrengthStoic(){
-		when(n1.hasTag(NationData.Tag.STOIC)).thenReturn(true);
+		when(n1.hasTag(Nation.Tag.STOIC)).thenReturn(true);
 		assertEquals(5.25 * 2.5, r.calcMinConquestStrength(w), DELTA);
 	}
 
@@ -179,7 +179,7 @@ public class RegionTest {
 	@Test
 	public void calcMinPatrolStrengthDisciplined(){
 		r.unrestPopular = 0.4;
-		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
+		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(1.8, r.calcMinPatrolStrength(w), DELTA);
 	}
 

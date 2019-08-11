@@ -2,7 +2,7 @@ package com.empire.svc;
 
 import com.empire.Geography;
 import com.empire.Lobby;
-import com.empire.Nation;
+import com.empire.NationSetup;
 import com.empire.Orders;
 import com.empire.Rules;
 import com.empire.Schedule;
@@ -376,7 +376,7 @@ public class EntryServlet extends HttpServlet {
 		try {
 			// Collect setups.
 			Lobby lobby = Lobby.load(r.gameId, service);
-			for (Nation nation : lobby.getNations().values()) addresses.add(nation.email);
+			for (NationSetup nation : lobby.getNations().values()) addresses.add(nation.email);
 			World w = World.startNew(passHash, obsPassHash, lobby);
 			service.put(w.toEntity(r.gameId));
 			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
@@ -553,7 +553,7 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			World w = World.load(4, getWorldDate(4, service), service);
+			World w = World.load(9, getWorldDate(9, service), service);
 			for (com.empire.Character c : w.getCharacters()) {
 				if (c.getName().equals("Beste")) c.setLocation(153);
 				if (c.getName().equals("Çağri")) c.setLocation(167);
@@ -561,7 +561,7 @@ public class EntryServlet extends HttpServlet {
 				if (c.getName().equals("Yavuz")) c.setLocation(153);
 				if (c.getName().equals("Güvenç")) c.setLocation(159);
 			}
-			service.put(w.toEntity(4));
+			service.put(w.toEntity(9));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found!", e);
@@ -587,7 +587,7 @@ public class EntryServlet extends HttpServlet {
 				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + r.kingdom);
 				return false;
 			}
-			Nation nation = Nation.fromJson(r.body);
+			NationSetup nation = NationSetup.fromJson(r.body);
 			if (!lobby.update(r.kingdom, nation)) {
 				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + r.kingdom);
 				return false;

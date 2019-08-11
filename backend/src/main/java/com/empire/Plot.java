@@ -239,7 +239,7 @@ class Plot extends RulesObject {
 			if (!defender.isPresent()) return;
 			for (Army a : w.armies) if (a.location == target.get().location && a.kingdom.equals(defender.get())) {
 				double mod = 1;
-				if (NationData.getStateReligion(a.kingdom, w) == Ideology.ALYRJA) mod += 1;
+				if (Nation.getStateReligion(a.kingdom, w) == Ideology.ALYRJA) mod += 1;
 				outcome.addFailureChance(armyStrengthProvider.apply(a) * mod);
 			}
 		}
