@@ -49,8 +49,6 @@ public class World extends RulesObject implements GoodwillProvider {
 	List<SpyRing> spyRings = new ArrayList<>();
 	Pirate pirate = new Pirate();
 	Tivar tivar = new Tivar();
-	String gmPasswordHash;
-	String obsPasswordHash;
 	List<Notification> notifications = new ArrayList<>();
 	List<Message> rtc = new ArrayList<>();
 	List<Integer> cultRegions = new ArrayList<>();
@@ -78,14 +76,6 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	public List<Character> getCharacters() {
 		return characters;
-	}
-
-	public String getGmPasswordHash() {
-		return gmPasswordHash;
-	}
-
-	public String getObsPasswordHash() {
-		return obsPasswordHash;
 	}
 
 	public long getNextTurn() {
@@ -161,15 +151,13 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	private static class RuleSet { int ruleSet; };
 
-	public static World startNew(String gmPasswordHash, String obsPasswordHash, Lobby lobby) throws IOException {
+	public static World startNew(Lobby lobby) throws IOException {
 		Map<String, NationSetup> nationSetup = lobby.nations;
 		World w = newWorld(Rules.loadRules(lobby.ruleSet));
 		w.ruleSet = lobby.ruleSet;
 		w.numPlayers = lobby.numPlayers;
 		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
 		w.date = 1;
-		w.gmPasswordHash = gmPasswordHash;
-		w.obsPasswordHash = obsPasswordHash;
 		w.turnSchedule = lobby.schedule;
 		w.nextTurn = w.turnSchedule.getNextTimeFirstTurn();
 		w.regions = new ArrayList<>();
@@ -2202,12 +2190,13 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 			List<Emigration> emigrations = new ArrayList<>();
 			for (Region r : regions) {
+				if (r.isSea()) continue;
 				double eligibleToEmigrate = r.population * r.unrestPopular * getRules().emigrationFactor;
 				double mod = 1;
 				if (getNation(r.getKingdom()).hasTag(Nation.Tag.STOIC)) mod -= 0.5;
 				if (starvingRegions.contains(r)) mod += getRules().emigrationStarvationMod;
 				eligibleToEmigrate = Math.min(eligibleToEmigrate * mod, r.population - 1); // Emigrating the last person causes a divide by zero error.
-				List<Region> destinations = new ArrayList<Region>();
+				Set<Region> destinations = new HashSet<Region>();
 				for (Region n : r.getNeighbors(World.this)) {
 					if (n.isLand()) destinations.add(n);
 					else for (Region nn : n.getNeighbors(World.this)) {
@@ -2216,7 +2205,10 @@ public class World extends RulesObject implements GoodwillProvider {
 				}
 				destinations.removeIf(d -> d.unrestPopular >= r.unrestPopular);
 				destinations.removeIf(d -> starvingRegions.contains(d));
-				destinations.removeIf(d -> !d.getKingdom().equals(r.getKingdom()) && (patrolledRegions.contains(r) || getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.REFUSE));
+				destinations.removeIf(d ->
+						!d.getKingdom().equals(r.getKingdom())
+						&& (patrolledRegions.contains(r)
+								|| getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.REFUSE));
 				if (destinations.isEmpty() || eligibleToEmigrate < 1) continue;
 				double totalWeight = 0;
 				for (Region d : destinations) totalWeight += d.calcImmigrationWeight(World.this);
@@ -2745,8 +2737,6 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	// Filter the data to a specific kingdom's point of view.
 	public void filter(String kingdom) {
-		gmPasswordHash = "";
-		obsPasswordHash = "";
 		for (String k : kingdoms.keySet()) {
 			getNation(k).filterForView(!kingdom.equals(k) && !"(Observer)".equals(kingdom));
 		}

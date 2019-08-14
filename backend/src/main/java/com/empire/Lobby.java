@@ -14,7 +14,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.time.DayOfWeek;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
@@ -26,6 +26,8 @@ public class Lobby {
 	int ruleSet;
 	Schedule schedule;
 	Map<String, NationSetup> nations = new HashMap<>();
+	int minPlayers;
+	long startAt;
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
@@ -48,6 +50,10 @@ public class Lobby {
 		return nations.putIfAbsent(nation, setup) == null;
 	}
 
+	public boolean canStart(Instant now) {
+		return nations.size() >= minPlayers && (nations.size() == numPlayers || now.toEpochMilli() >= startAt);
+	}
+
 	public void save(long gameId, DatastoreService service) {
 		Entity lobby = new Entity(TYPE, "_" + gameId);
 		lobby.setProperty("json", new Text(getGson().toJson(this)));
@@ -56,14 +62,16 @@ public class Lobby {
 
 	private Lobby() {} // For GSON.
 
-	private Lobby(int ruleSet, int numPlayers, Schedule schedule) {
+	private Lobby(int ruleSet, int numPlayers, Schedule schedule, int minPlayers, long startAt) {
 		this.ruleSet = ruleSet;
 		this.numPlayers = numPlayers;
 		this.schedule = schedule;
+		this.minPlayers = minPlayers;
+		this.startAt = startAt;
 	}
 
-	public static Lobby newLobby(int ruleSet, int numPlayers, Schedule schedule) {
-		return new Lobby(ruleSet, numPlayers, schedule);
+	public static Lobby newLobby(int ruleSet, int numPlayers, Schedule schedule, int minPlayers, long startAt) {
+		return new Lobby(ruleSet, numPlayers, schedule, minPlayers, startAt);
 	}
 
 	public int getNumPlayers() {
