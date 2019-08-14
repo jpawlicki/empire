@@ -2202,16 +2202,17 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 			List<Emigration> emigrations = new ArrayList<>();
 			for (Region r : regions) {
+				if (r.isSea()) continue;
 				double eligibleToEmigrate = r.population * r.unrestPopular * getRules().emigrationFactor;
 				double mod = 1;
 				if (getNation(r.getKingdom()).hasTag(Nation.Tag.STOIC)) mod -= 0.5;
 				if (starvingRegions.contains(r)) mod += getRules().emigrationStarvationMod;
 				eligibleToEmigrate = Math.min(eligibleToEmigrate * mod, r.population - 1); // Emigrating the last person causes a divide by zero error.
-				List<Region> destinations = new ArrayList<Region>();
+				Set<Region> destinations = new HashSet<Region>();
 				for (Region n : r.getNeighbors(World.this)) {
 					if (n.isLand()) destinations.add(n);
 					else for (Region nn : n.getNeighbors(World.this)) {
-						if (nn != r && n.isLand()) destinations.add(nn);
+						if (nn != r && nn.isLand()) destinations.add(nn);
 					}
 				}
 				destinations.removeIf(d -> d.unrestPopular >= r.unrestPopular);
