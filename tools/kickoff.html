@@ -19,27 +19,9 @@
 						"times": Array.from(document.getElementById("times").selectedOptions).map(e => parseInt(e.value)),
 						"days": Array.from(document.getElementById("daysOfWeek").selectedOptions).map(e => e.value),
 						"locale": "America/Los_Angeles"
-					}
-				}));
-				return false;
-			}
-
-			function postFormStartWorld() {
-				let pw = document.getElementById("gmPassword").value;
-				let pw2 = document.getElementById("obsPassword").value;
-				let gameId = parseInt(document.getElementById("gameId").value);
-				
-				let req = new XMLHttpRequest();
-				req.open("post", g_server + "/entry/startworld?gid=" + gameId, true);
-				req.onerror = function (e) {
-					window.alert(req.status);
-				};
-				req.onload = function (ev) {
-					window.alert(req.status);
-				};
-				req.send(JSON.stringify({
-					"gm_password": pw,
-					"obs_password": pw2
+					},
+					"min_players": parseInt(document.getElementById("numPlayersMin").value),
+					"start_at_millis": new Date(document.getElementById("startDate")).getTime(),
 				}));
 				return false;
 			}
@@ -63,6 +45,7 @@
 		<form onsubmit="return postFormStartLobby();">
 			<label>Game ID: <input id="gameIdLobby" type="number" value="0"/></label>
 			<label>Number of Players: <input id="numPlayers" type="number" value="26"/></label>
+			<label>Minimum Number of Players: <input id="numPlayersMin" type="number" value="26"/></label>
 			<label>Days Of Week: <select id="daysOfWeek" multiple>
 				<option>MONDAY</option>
 				<option>TUESDAY</option>
@@ -73,14 +56,8 @@
 				<option>SUNDAY</option>
 			</select></label>
 			<label>Time(s) (America/Los_Angeles): <select id="times" multiple></select></label>
+			<label>Start At (Local Time): <input id="startAt" type="datetime-local" value=""/></label>
 			<button>Create Lobby</button>
-		</form>
-		<h1>Start Game</h1>
-		<form onsubmit="return postFormStartWorld();">
-			<label>GM Password: <input id="gmPassword" type="password"/></label>
-			<label>Observer Password: <input id="obsPassword" type="password"/></label>
-			<label>Game ID: <input id="gameId" type="number"/></label>
-			<button>Start</button>
 		</form>
 		<h1>Trigger Server-Side Migration</h1>
 		<form onsubmit="return postFormMigrate();">

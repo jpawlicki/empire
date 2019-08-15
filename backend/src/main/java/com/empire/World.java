@@ -152,13 +152,13 @@ public class World extends RulesObject implements GoodwillProvider {
 	private static class RuleSet { int ruleSet; };
 
 	public static World startNew(Lobby lobby) throws IOException {
-		Map<String, NationSetup> nationSetup = lobby.nations;
-		World w = newWorld(Rules.loadRules(lobby.ruleSet));
-		w.ruleSet = lobby.ruleSet;
-		w.numPlayers = lobby.numPlayers;
+		Map<String, NationSetup> nationSetup = lobby.getNations();
+		World w = newWorld(Rules.loadRules(lobby.getRuleSet()));
+		w.ruleSet = lobby.getRuleSet();
+		w.numPlayers = lobby.getNumPlayers();
 		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
 		w.date = 1;
-		w.turnSchedule = lobby.schedule;
+		w.turnSchedule = lobby.getSchedule();
 		w.nextTurn = w.turnSchedule.getNextTimeFirstTurn();
 		w.regions = new ArrayList<>();
 		w.pirate.threat = 4;
@@ -2205,10 +2205,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				}
 				destinations.removeIf(d -> d.unrestPopular >= r.unrestPopular);
 				destinations.removeIf(d -> starvingRegions.contains(d));
-				destinations.removeIf(d ->
-						!d.getKingdom().equals(r.getKingdom())
-						&& (patrolledRegions.contains(r)
-								|| getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.REFUSE));
+				destinations.removeIf(d -> !d.getKingdom().equals(r.getKingdom()) && (patrolledRegions.contains(r) || getNation(d.getKingdom()).getRelationship(r.getKingdom()).refugees == Relationship.Refugees.REFUSE));
 				if (destinations.isEmpty() || eligibleToEmigrate < 1) continue;
 				double totalWeight = 0;
 				for (Region d : destinations) totalWeight += d.calcImmigrationWeight(World.this);
