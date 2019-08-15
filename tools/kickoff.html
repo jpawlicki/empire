@@ -21,7 +21,7 @@
 						"locale": "America/Los_Angeles"
 					},
 					"min_players": parseInt(document.getElementById("numPlayersMin").value),
-					"start_at_millis": new Date(document.getElementById("startDate")).getTime(),
+					"start_at_millis": new Date(document.getElementById("startAt").value).getTime(),
 				}));
 				return false;
 			}
@@ -39,6 +39,14 @@
 				return false;
 			}
 		</script>
+		<style>
+			body {
+				font-family: sans-serif;
+			}
+			label {
+				display: block;
+			}
+		</style>
 	</head>
 	<body>
 		<h1>Start Lobby</h1>

@@ -81,7 +81,7 @@ TODO: Will eventually need a changePassword/change-email.
 public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
-	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("dfec33349f0ee2e0bc2085d761553bddf1753698ddad94491664f14ea58ea072");
+	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("DFEC33349F0EE2E0BC2085D761553BDDF1753698DDAD94491664F14EA58EA072");
 
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -354,6 +354,7 @@ public class EntryServlet extends HttpServlet {
 					mail(addresses, "👑 Empire: Game Failed to Start", "A lobby of Empire that you were in didn't get enough players by the deadline and has expired.");
 					lobby.delete(service);
 				}
+				txn.commit();
 			} finally {
 				if (txn.isActive()) txn.rollback();
 			}
