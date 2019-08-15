@@ -2200,7 +2200,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				for (Region n : r.getNeighbors(World.this)) {
 					if (n.isLand()) destinations.add(n);
 					else for (Region nn : n.getNeighbors(World.this)) {
-						if (nn != r && n.isLand()) destinations.add(nn);
+						if (nn != r && nn.isLand()) destinations.add(nn);
 					}
 				}
 				destinations.removeIf(d -> d.unrestPopular >= r.unrestPopular);

@@ -83,7 +83,7 @@ class InternationalReport extends HTMLElement {
 					if (g_data.kingdoms[a].relationships[b].tribute > 0) return "TRIBUTE";
 					return g_data.kingdoms[a].relationships[b].battle;
 				},
-				"weights": {"ATTACK": -1, "DEFEND": 2},
+				"weights": {"ATTACK": -3, "DEFEND": 2},
 			},
 			"refugees": {
 				"legend": {
