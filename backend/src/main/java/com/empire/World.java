@@ -1394,13 +1394,16 @@ public class World extends RulesObject implements GoodwillProvider {
 					c.addExperienceGovernor();
 				} else if (action.startsWith("Establish Spy Ring")) {
 					if (!region.isLand() || spyRings.stream().filter(r -> r.getNation().equals(c.kingdom) && r.getLocation() == c.location).count() != 0) continue;
+					c.addExperienceSpy();
 					double cost = getRules().spyRingEstablishCost;
-					if (getNation(c.kingdom).gold < cost) continue;
+					if (getNation(c.kingdom).gold < cost) {
+						notifications.add(new Notification(c.kingdom, "Spy Ring Establishment Failed", c.name + " needed " + Math.ceiling(cost) + " gold to establish a spy ring in " + regions.get(c.location).name + ", but only " + Math.floor(getNation(c.kingdom).gold) + " was available."));
+						continue;
+					}
 					getNation(c.kingdom).gold -= cost;
 					incomeSources.get(c.kingdom).spentSpyEstablishments += cost;
 					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
 					c.orderhint = "Hide in " + region.name;
-					c.addExperienceSpy();
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
 					if (!governors.containsKey(region) || governors.get(region).calcGovernTaxMod() < c.calcGovernTaxMod()) governors.put(region, c);
@@ -1651,7 +1654,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (Region r : regions) if (r.isLand()) {
 				double unrestMod = 0;
 				double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
-				if (ration < 0.9) unrestMod += .15;
+				if (ration < 0.9 && r.religion != Ideology.ALYRJA) unrestMod += .15;
 				if (ration > 1.1) unrestMod -= .1;
 				if (getNation(r.getKingdom()).hasTag(Nation.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
