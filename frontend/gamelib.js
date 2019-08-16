@@ -494,6 +494,39 @@ class Region {
 		console.log("Failed to find a point in region " + this.id);
 		return {x: 0,  y: 0};
 	}
+
+	calcCostToBuildTemple(builderNation, ideology) {
+		let base = {"v": 30, "unit": "gold", "why": "Base cost"};
+		let mods = [];
+		let nation = getNation(builderNation);
+		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
+		if (nation.tags.includes("Mystical")) mods.push({"v": -.5, "unit": "%", "why": "Mystical Nation"});
+		if (nation.tags.includes("Evangelical") && nation.calcStateReligion() != this.religion) mods.push({"v": -1, "unit": "%", "why": "Evangelical Nation"});
+		if (ideology.startsWith("Iruhan ") && !this.religion.startsWith("Iruhan ") && World.calcGlobalIdeology() == "Iruhan (Vessel of Faith)") mods.push({"v": -1, "unit": "%", "why": "Vessel of Faith global ideology"});
+		if (this.religion == "Iruhan (Tapestry of People)") {
+			let templeBonus = true;
+			for (let r of this.getNeighbors()) if (r.isLand() && (r.religion != this.religion || r.culture != this.culture)) templeBonus = false;
+			if (templeBonus) mods.push({"v": -1, "unit": "%", "why": "Tapestry of People temple bonus"});
+		}
+		return Calc.moddedNum(base, mods);
+	}
+
+	calcCostToBuildShipyard(builderNation) {
+		let base = {"v": 80, "unit": "gold", "why": "Base cost"};
+		let mods = [];
+		let nation = getNation(builderNation);
+		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
+		return Calc.moddedNum(base, mods);
+	}
+
+	calcCostToBuildFortifications(builderNation) {
+		let base = {"v": 20, "unit": "gold", "why": "Base cost"};
+		let mods = [];
+		let nation = getNation(builderNation);
+		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
+		if (this.religion == "Tavian (Flame of Kith)") mods -= 1;
+		return Calc.moddedNum(base, mods);
+	}
 }
 
 
@@ -805,6 +838,14 @@ class Plot {
 		return desc + " " + this.target_id + " (vs " + this.getDefender() + ")";
 		return undefined;
 	}
+}
+
+function religionFromIdeology(ideo) {
+	ideo = ideo.replace(/[()]/g, "");
+	if (ideo == "Vessel of Faith" || ideo == "Chalice of Compassion" || ideo == "Sword of Truth" || ideo == "Tapestry of People") return "Iruhan (" + ideo + ")";
+	if (ideo == "Alyrja" || ideo == "Rjinku" || ideo == "Lyskr" || ideo == "Syrjen") return "Northern (" + ideo + ")";
+	if (ideo == "Flame of Kith" || ideo == "River of Kuun") return "Tavian (" + ideo + ")";
+	return ideo;
 }
 
 // ============ CHURCH CONSTANTS ============
