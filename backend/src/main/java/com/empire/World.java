@@ -1397,7 +1397,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					c.addExperienceSpy();
 					double cost = getRules().spyRingEstablishCost;
 					if (getNation(c.kingdom).gold < cost) {
-						notifications.add(new Notification(c.kingdom, "Spy Ring Establishment Failed", c.name + " needed " + Math.ceiling(cost) + " gold to establish a spy ring in " + regions.get(c.location).name + ", but only " + Math.floor(getNation(c.kingdom).gold) + " was available."));
+						notifications.add(new Notification(c.kingdom, "Spy Ring Establishment Failed", c.name + " needed " + Math.ceil(cost) + " gold to establish a spy ring in " + regions.get(c.location).name + ", but only " + Math.floor(getNation(c.kingdom).gold) + " was available."));
 						continue;
 					}
 					getNation(c.kingdom).gold -= cost;
