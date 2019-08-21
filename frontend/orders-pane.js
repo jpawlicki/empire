@@ -778,9 +778,11 @@ class OrdersPane extends HTMLElement {
 		shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow));
 		shadow.getElementById("economy_newbribe").addEventListener("click", ()=>op.addBribe(shadow));
 		let lastTime = 0;
-		form.addEventListener("input", function() {
-			op.checkWarnings(shadow);
-			op.plannedMotions(shadow);
+		form.addEventListener("input", function(e) {
+			if (e.srcElement.type != "textarea") {
+				op.checkWarnings(shadow);
+				op.plannedMotions(shadow);
+			}
 			lastTime = Date.now();
 			setTimeout(function() {
 				if (lastTime < Date.now() - 1000) {
