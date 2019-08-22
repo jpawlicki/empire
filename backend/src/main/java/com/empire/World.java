@@ -49,8 +49,6 @@ public class World extends RulesObject implements GoodwillProvider {
 	List<SpyRing> spyRings = new ArrayList<>();
 	Pirate pirate = new Pirate();
 	Tivar tivar = new Tivar();
-	String gmPasswordHash;
-	String obsPasswordHash;
 	List<Notification> notifications = new ArrayList<>();
 	List<Message> rtc = new ArrayList<>();
 	List<Integer> cultRegions = new ArrayList<>();
@@ -78,14 +76,6 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	public List<Character> getCharacters() {
 		return characters;
-	}
-
-	public String getGmPasswordHash() {
-		return gmPasswordHash;
-	}
-
-	public String getObsPasswordHash() {
-		return obsPasswordHash;
 	}
 
 	public long getNextTurn() {
@@ -161,16 +151,14 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	private static class RuleSet { int ruleSet; };
 
-	public static World startNew(String gmPasswordHash, String obsPasswordHash, Lobby lobby) throws IOException {
-		Map<String, NationSetup> nationSetup = lobby.nations;
-		World w = newWorld(Rules.loadRules(lobby.ruleSet));
-		w.ruleSet = lobby.ruleSet;
-		w.numPlayers = lobby.numPlayers;
+	public static World startNew(Lobby lobby) throws IOException {
+		Map<String, NationSetup> nationSetup = lobby.getNations();
+		World w = newWorld(Rules.loadRules(lobby.getRuleSet()));
+		w.ruleSet = lobby.getRuleSet();
+		w.numPlayers = lobby.getNumPlayers();
 		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
 		w.date = 1;
-		w.gmPasswordHash = gmPasswordHash;
-		w.obsPasswordHash = obsPasswordHash;
-		w.turnSchedule = lobby.schedule;
+		w.turnSchedule = lobby.getSchedule();
 		w.nextTurn = w.turnSchedule.getNextTimeFirstTurn();
 		w.regions = new ArrayList<>();
 		w.pirate.threat = 4;
@@ -2749,8 +2737,6 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	// Filter the data to a specific kingdom's point of view.
 	public void filter(String kingdom) {
-		gmPasswordHash = "";
-		obsPasswordHash = "";
 		for (String k : kingdoms.keySet()) {
 			getNation(k).filterForView(!kingdom.equals(k) && !"(Observer)".equals(kingdom));
 		}

@@ -62,6 +62,8 @@ GET /entry/world?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and return the visible world view JSON.
 GET /entry/advanceworldpoll
 	Advance all games one turn, if they need it.
+GET /entry/lobbypoll
+  Checks all lobbies for whether they can be launched.
 
 POST /entry/orders?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and post the given order data.
@@ -69,8 +71,6 @@ POST /entry/setup?gid=1234&k=Aefoss&t=0&password=foobar
 	Set customization info for the kingdom, if unset.
 POST /entry/advanceworld?gid=1234
 	Check cadence and possibly advance world to next step, mail players.
-POST /entry/startworld?gid=1234
-	Start a new game.
 POST /entry/startlobby?gid=1234
 	Start a new lobby.
 
@@ -81,9 +81,10 @@ TODO: Will eventually need a changePassword/change-email.
 public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
 	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
+	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("DFEC33349F0EE2E0BC2085D761553BDDF1753698DDAD94491664F14EA58EA072");
 
-		@Override
-		public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+	@Override
+	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
 		String json = "";
@@ -99,6 +100,8 @@ public class EntryServlet extends HttpServlet {
 			json = getGeography(r);
 		} else if (req.getRequestURI().equals("/entry/advanceworldpoll")) {
 			json = getAdvancePoll(r.skipMail);
+		} else if (req.getRequestURI().equals("/entry/lobbypoll")) {
+			json = getLobbyPoll();
 		} else if (req.getRequestURI().equals("/entry/activity")) {
 			json = getActivity(r);
 		} else {
@@ -130,10 +133,6 @@ public class EntryServlet extends HttpServlet {
 			}
 		} else if (req.getRequestURI().equals("/entry/advanceworld")) {
 			if (!postAdvanceWorld(r)) {
-				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/startworld")) {
-			if (!postStartWorld(r)) {
 				err = "Failure.";
 			}
 		} else if (req.getRequestURI().equals("/entry/startlobby")) {
@@ -174,6 +173,10 @@ public class EntryServlet extends HttpServlet {
 		super.doOptions(req, resp);
 	}
 
+	private static Gson getGson() {
+		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+	}
+
 	private String getOrders(Request r, HttpServletResponse resp) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		if (!checkPassword(r, service).passesRead()) return null;
@@ -200,7 +203,7 @@ public class EntryServlet extends HttpServlet {
 	}
 	private String getSetup(Request r) {
 		try {
-			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(new GetSetupResponse(Lobby.load(r.gameId, DatastoreServiceFactory.getDatastoreService())));
+			return getGson().toJson(new GetSetupResponse(Lobby.load(r.gameId, DatastoreServiceFactory.getDatastoreService())));
 		} catch (EntityNotFoundException | IOException e) {
 			log.log(Level.WARNING, "Failed to fetch setup information for game " + r.gameId, e);
 			return null;
@@ -264,7 +267,7 @@ public class EntryServlet extends HttpServlet {
 				}
 				result.add(turn);
 			}
-			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(result);
+			return getGson().toJson(result);
 		} catch (EntityNotFoundException e) {
 			log.log(Level.WARNING, "No such world.", e);
 			return null;
@@ -277,7 +280,7 @@ public class EntryServlet extends HttpServlet {
 	private static class ActiveGames {
 		public ArrayList<Long> activeGameIds;
 		static ActiveGames fromGson(String s) {
-			return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().fromJson(s, ActiveGames.class);
+			return getGson().fromJson(s, ActiveGames.class);
 		}
 	}
 
@@ -314,7 +317,7 @@ public class EntryServlet extends HttpServlet {
 							ActiveGames newActiveGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
 							newActiveGames.activeGameIds.remove(gameId);
 							Entity activeGames = new Entity("ACTIVEGAMES", "_");
-							activeGames.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(newActiveGames));
+							activeGames.setProperty("active_games", getGson().toJson(newActiveGames));
 							service.put(activeGames);
 						} else {
 							QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
@@ -337,8 +340,30 @@ public class EntryServlet extends HttpServlet {
 		return "";
 	}
 
-	// TODO: remove, or check that the request bears the GM password - this is insecure as-is (anyone can advance).
+	private String getLobbyPoll() {
+		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
+		Lobby.loadAll(service).forEach(lobby -> {
+			Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+			try {
+				Lobby.StartResult start = lobby.canStart(Instant.now());
+				if (start == Lobby.StartResult.START) {
+					startWorld(lobby, service);
+				} else if (start == Lobby.StartResult.ABANDON) {
+					HashSet<String> addresses = new HashSet<String>();
+					for (NationSetup nation : lobby.getNations().values()) addresses.add(nation.email);
+					mail(addresses, "👑 Empire: Game Failed to Start", "A lobby of Empire that you were in didn't get enough players by the deadline and has expired.");
+					lobby.delete(service);
+				}
+				txn.commit();
+			} finally {
+				if (txn.isActive()) txn.rollback();
+			}
+		});
+		return "";
+	}
+
 	private boolean postAdvanceWorld(Request r) {
+		if (!passesGmPassword(hashPassword(r.password))) return false;
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		HashSet<String> kingdoms = new HashSet<>();
@@ -359,27 +384,14 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-	private boolean postStartWorld(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		StartWorld s = StartWorld.fromJson(r.body);
-		String passHash;
-		String obsPassHash;
-		try {
-			passHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.gmPassword).getBytes(StandardCharsets.UTF_8)));
-			obsPassHash = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + s.obsPassword).getBytes(StandardCharsets.UTF_8)));
-		} catch (NoSuchAlgorithmException e) {
-			log.log(Level.SEVERE, "Hash error", e);
-			return false;
-		}
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
+	private boolean startWorld(Lobby lobby, DatastoreService service) {
 		HashSet<String> addresses = new HashSet<String>();
+		long gameId = lobby.getGameId();
 		try {
-			// Collect setups.
-			Lobby lobby = Lobby.load(r.gameId, service);
 			for (NationSetup nation : lobby.getNations().values()) addresses.add(nation.email);
-			World w = World.startNew(passHash, obsPassHash, lobby);
-			service.put(w.toEntity(r.gameId));
-			Entity g = new Entity("CURRENTDATE", "game_" + r.gameId);
+			World w = World.startNew(lobby);
+			service.put(w.toEntity(gameId));
+			Entity g = new Entity("CURRENTDATE", "game_" + gameId);
 			g.setProperty("date", 1);
 			service.put(g);
 			ActiveGames activeGames;
@@ -390,24 +402,24 @@ public class EntryServlet extends HttpServlet {
 				activeGames = new ActiveGames();
 				activeGames.activeGameIds = new ArrayList<>();
 			}
-			activeGames.activeGameIds.add(r.gameId);
+			activeGames.activeGameIds.add(gameId);
 			Entity games = new Entity("ACTIVEGAMES", "_");
-			games.setProperty("active_games", new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().toJson(activeGames));
+			games.setProperty("active_games", getGson().toJson(activeGames));
+			lobby.delete(service);
 			service.put(games);
-			txn.commit();
 			QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
-		} catch (IOException | EntityNotFoundException e) {
-			log.log(Level.SEVERE, "Failed to start game " + r.gameId, e);
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to start game " + gameId, e);
 			return false;
-		} finally {
-			if (txn.isActive()) txn.rollback();
 		}
-		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at https://pawlicki.kaelri.com/empire/map1.html?g=" + r.gameId + ".");
+		mail(addresses, "👑 Empire: Game Begins", "A game of Empire that you are playing in has started! You can make your orders for the first turn at https://pawlicki.kaelri.com/empire/map1.html?g=" + gameId + ".");
 		return true;
 	}
 
 	private static class StartLobbyBody {
 		int players;
+		int minPlayers;
+		long startAtMillis;
 		Schedule schedule;
 	}
 
@@ -416,13 +428,15 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			// If it exists, don't create another one.
+			// TODO: find a new game ID automatically.
 			try {
 				Lobby exists = Lobby.load(r.gameId, service);
 				return false;
 			} catch (EntityNotFoundException expected) {}
-			StartLobbyBody startLobby = new Gson().fromJson(r.body, StartLobbyBody.class);
-			Lobby.newLobby(Rules.LATEST, startLobby.players, startLobby.schedule).save(r.gameId, service);
+			StartLobbyBody startLobby = getGson().fromJson(r.body, StartLobbyBody.class);
+			Lobby.newLobby(r.gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis).save(service);
 			txn.commit();
+			QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/lobbypoll").etaMillis(startLobby.startAtMillis).method(TaskOptions.Method.GET));
 		} finally {
 			if (txn.isActive()) txn.rollback();
 		}
@@ -431,7 +445,6 @@ public class EntryServlet extends HttpServlet {
 
 	private enum CheckPasswordResult {
 		PASS_GM(true, true),
-		PASS_OBS(true, false),
 		PASS_PLAYER(true, true),
 		FAIL(false, false),
 		NO_ENTITY(false, false);
@@ -451,25 +464,30 @@ public class EntryServlet extends HttpServlet {
 			return passesWrite;
 		}
 	}
+
+	private byte[] hashPassword(String password) {
+		try {
+			return MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + password).getBytes(StandardCharsets.UTF_8));
+		} catch (NoSuchAlgorithmException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private boolean passesGmPassword(byte[] passwordHash) {
+		return Arrays.equals(GM_PASSWORD_HASH, passwordHash);
+	}
+
 	private CheckPasswordResult checkPassword(Request r, DatastoreService service) {
 		try {
 			if (r.password == null) return CheckPasswordResult.FAIL;
-			MessageDigest digest = MessageDigest.getInstance("SHA-256");
-			byte[] attemptHash = digest.digest((PASSWORD_SALT + r.password).getBytes(StandardCharsets.UTF_8));
-			int date = getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
-			byte[] gmPassHash = BaseEncoding.base16().decode(w.getGmPasswordHash());
-			byte[] obsPassHash = BaseEncoding.base16().decode(w.getObsPasswordHash());
+			byte[] attemptHash = hashPassword(r.password);
+			if (passesGmPassword(attemptHash)) return CheckPasswordResult.PASS_GM;
+			World w = World.load(r.gameId, getWorldDate(r.gameId, service), service);
 			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).getEmail(), service).passHash))) return CheckPasswordResult.PASS_PLAYER;
-			if (Arrays.equals(attemptHash, gmPassHash)) return CheckPasswordResult.PASS_GM;
-			if (Arrays.equals(attemptHash, obsPassHash)) return CheckPasswordResult.PASS_OBS;
 			return CheckPasswordResult.FAIL;
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
 			return CheckPasswordResult.NO_ENTITY;
-		} catch (NoSuchAlgorithmException e) {
-			log.log(Level.SEVERE, "CheckPassword Failure", e);
-			return CheckPasswordResult.FAIL;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return CheckPasswordResult.FAIL;
@@ -529,7 +547,7 @@ public class EntryServlet extends HttpServlet {
 			if (!checkPassword(r, service).passesWrite()) return false;
 			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
-			ChangePlayerRequestBody body = new GsonBuilder().create().fromJson(r.body, ChangePlayerRequestBody.class);
+			ChangePlayerRequestBody body = getGson().fromJson(r.body, ChangePlayerRequestBody.class);
 			Player p = Player.loadPlayer(body.email, service);
 			w.getNation(r.kingdom).setEmail(body.email);
 			service.put(w.toEntity(r.gameId));
@@ -550,6 +568,7 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove
 	private boolean migrate(Request rr) {
+		if (!passesGmPassword(hashPassword(rr.password))) return false;
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
@@ -577,6 +596,10 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
+	// TODO - don't save the password in the Lobby.
+	// Don't update the password if the player exists - instead we require a standard login.
+	// We should respond with a particular error in this case, though, so that the UI can offer
+	// password reset.
 	private boolean postSetup(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
@@ -592,13 +615,16 @@ public class EntryServlet extends HttpServlet {
 				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + r.kingdom);
 				return false;
 			}
-			lobby.save(r.gameId, service);
+			lobby.save(service);
 			String password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
 			try {
 				service.put(Player.loadPlayer(nation.email, service).withNewPassword(password).toEntity());
 			} catch (EntityNotFoundException e) {
 				// New player.
 				service.put(new Player(nation.email, password).toEntity());
+			}
+			if (lobby.canStart(Instant.now()) == Lobby.StartResult.START) {
+				startWorld(lobby, service);
 			}
 			txn.commit();
 		} catch (NoSuchAlgorithmException | EntityNotFoundException | IOException ee) {

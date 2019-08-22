@@ -8,24 +8,6 @@
 
 			function finalize() {
 				commitCount--;
-				if (commitCount > 0) return;
-
-				let gameId = parseInt(document.getElementById("gameId").value);
-				let req = new XMLHttpRequest();
-				req.open("post", g_server + "/entry/startworld?gid=" + gameId, true);
-				req.onerror = function (e) {
-					window.alert(req.status);
-				};
-				req.onload = function (ev) {
-					window.alert(req.status);
-				};
-				let ns = [];
-				for (let n in nations) ns.push(capitalize(n));
-				req.send(JSON.stringify({
-					"gm_password": "gm",
-					"obs_password": "obs",
-					"kingdoms": ns
-				}));
 			}
 
 			function postForm() {
@@ -46,7 +28,9 @@
 							"days": ["MONDAY", "WEDNESDAY", "FRIDAY"],
 							"times": [180],
 							"locale": "America/Los_Angeles"
-						}
+						},
+						"min_players": numPlayers,
+						"start_at_millis": Date.now() + 60000,
 					}));
 				}
 				return false;
