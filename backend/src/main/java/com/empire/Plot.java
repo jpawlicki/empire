@@ -456,8 +456,14 @@ class Plot extends RulesObject {
 		}
 	}
 
-	/** Returns true if the plot has been executed. */
+	/** Returns true if the plot ought to be removed. */
 	public boolean check(World w, boolean triggered, Function<Army, Double> armyStrengthProvider) {
+		// If unsupported, eliminate the plot.
+		if (w.spyRings.stream().filter(s -> s.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING).count() == 0) {
+			for (String conspirator : conspirators) w.notifications.add(new Notification(conspirator, "Plot Abandoned",  "A plot to " + type.getDetails(targetId, w) + " was abandoned - all conspirators withdrew support form the plot."));
+			for (SpyRing s : w.spyRings) if (s.getInvolvementIn(plotId).isPresent()) s.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
+			return true;
+		}
 		if (triggered || Math.random() < getRules().plotEarlyTriggerChance) {
 			execute(w, armyStrengthProvider);
 			for (SpyRing s : w.spyRings) if (s.getInvolvementIn(plotId).isPresent()) s.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
