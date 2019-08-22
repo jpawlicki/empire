@@ -408,7 +408,13 @@ class OrdersPane extends HTMLElement {
 				whor.setAttribute("href", "character/" + unit.name);
 				whor.innerHTML = unit.name;
 				who.appendChild(whor);
-				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_nobles"));
+				let od = document.createElement("div");
+				od.appendChild(this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)));
+				let wd = document.createElement("div");
+				wd.setAttribute("id", "warning_character_" + unit.name.replace(/[ ']/g, "_"));
+				wd.setAttribute("class", "warning");
+				od.appendChild(wd);
+				addRow(unitTable, who, undefined, od, shadow.getElementById("table_nobles"));
 			}
 		}
 		let navyCount = 0;
@@ -465,7 +471,13 @@ class OrdersPane extends HTMLElement {
 				who.appendChild(document.createTextNode(r.noble.name));
 				addCell(who);
 				addCell(document.createElement("div"));
-				addCell(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
+				let od = document.createElement("div");
+				od.appendChild(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
+				let wd = document.createElement("div");
+				wd.setAttribute("id", "warning_noble_" + r.id);
+				wd.setAttribute("class", "warning");
+				od.appendChild(wd);
+				addCell(od);
 				unitTable.insertBefore(tr, shadow.getElementById("table_armies"));
 				nobleCount++;
 			}
@@ -1312,7 +1324,9 @@ class OrdersPane extends HTMLElement {
 		for (let i = 0; i < this.divisions; i++) {
 			let o = shadow.querySelector("select[name=action_div_" + i + "]");
 			if (o == undefined) continue;
-			let source = g_data.armies[parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value)];
+			let source = undefined;
+			let parentId = parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value);
+			for (let a of g_data.armies) if (a.id == parentId) source = a;
 			let fakeArmy = {
 				"type": source.type,
 				"size": parseInt(shadow.querySelector("[name=div_size_" + i + "]").value),
@@ -1364,6 +1378,47 @@ class OrdersPane extends HTMLElement {
 			}
 			entry.w.innerHTML = warn;
 		}
+		{ // Warn about construction cost overruns.
+			let projectedConstructionCost = 0;
+			let capables = [];
+			for (let c of g_data.characters) {
+				if (c.kingdom == whoami) {
+					let cname = c.name.replace(/[ ']/g, "_");
+					capables.push({
+							"act": shadow.querySelector("select[name=action_" + cname + "]").value,
+							"loc": c.location,
+							"warn": shadow.getElementById("warning_character_" + cname)});
+				}
+			}
+			for (let q of shadow.querySelectorAll("select")) {
+				if (!q.name.startsWith("action_noble_")) continue;
+				capables.push({
+					"act": q.value,
+					"loc": parseInt(q.name.replace("action_noble_", "")),
+					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
+			}
+			for (let c of capables) c.warn.innerHTML = "";
+			let fwarns = [];
+			for (let c of capables) {
+				if (!c.act.startsWith("Build ") && c.act != "Establish Spy Ring") continue;
+				fwarns.push(c.warn);
+				if (c.act == "Establish Spy Ring") {
+					projectedConstructionCost += 50;
+				} else {
+					if (c.act.includes("Shipyard")) {
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami).v;
+					} else if (c.act.includes("Fortifications")) {
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami).v;
+					} else if (c.act.includes("Temple")) {
+						let type = religionFromIdeology(c.act.replace("Build Temple ", ""));
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, type).v;
+					}
+				}
+			}
+			if (projectedConstructionCost > getNation(whoami).gold) {
+				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold)";
+			}
+		}
 	}
 
 	plannedMotions(shadow) {
@@ -1391,6 +1446,10 @@ class OrdersPane extends HTMLElement {
 					let dest = undefined;
 					for (let i = 0; i < g_data.regions.length; i++) if (g_data.regions[i].name == o.value.replace("Travel to ", "").replace("Hide in ", "")) dest = i;
 					if (dest != undefined && dest != a.location) amotions[a.name] = dest;
+				} else if (o.value.startsWith("Lead ")) {
+					let dest = undefined;
+					for (let i = 0; i < g_data.armies.length; i++) if (g_data.armies[i].id == parseInt(o.value.replace("Lead ", "").replace("army ", "").replace("navy ",""))) dest = g_data.armies[i];
+					amotions[a.name] = dest;
 				} else {
 					amotions[a.name] = undefined;
 				}

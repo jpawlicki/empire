@@ -30,11 +30,10 @@
 			g_geo = undefined;
 			g_latest_date = 0;
 			let whoami = getArg("k");
-			let password = getArg("p");
+			let password = "";
 			let gameId = parseInt(getArg("g"));
 			if (isNaN(gameId)) gameId = parseInt(getArg("gid")); // A bug in the server sent out mails with gid=X, so just accept either for now.
 			let currentTurn = parseInt(getArg("t"));
-			if (password != undefined) history.replaceState({}, "", window.location.href.replace(/p=[^&]*/, "p=_"));
 
 			// Fetch geography data right away.
 			{
@@ -56,9 +55,6 @@
 							oe.appendChild(document.createTextNode(o));
 							document.getElementById("kingdom_input").appendChild(oe);
 						}
-						let oe = document.createElement("option");
-						oe.appendChild(document.createTextNode("(Observer)"));
-						document.getElementById("kingdom_input").appendChild(oe);
 						if (g_latest_date != 0) {
 							start(g_latest_date);
 						} else {
@@ -239,8 +235,6 @@
 			window.onload = function() {
 				if (gameId == undefined) {
 					window.alert("The link you got to this page should have included a ?g=NUMBER parameter.");
-				} else if (password != undefined) {
-					startRequest();
 				} else {
 					document.getElementById("passwordBox").style.display = "flex";
 				}
@@ -249,7 +243,7 @@
 			function enterPassword(noisyFailure) {
 				password = encodeURIComponent(document.getElementById("password_input").value);
 				whoami = document.getElementById("kingdom_input").value;
-				startRequest(-1, function() {}, function() {
+				startRequest(-1, function() { changeReport("kingdom/" + whoami); }, function() {
 					if (noisyFailure) window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
 					document.getElementById("passwordBox").style.display = "flex";
 					document.getElementById("password_submit").disabled = false;
@@ -508,20 +502,12 @@
 				document.getElementById("internationalkey").addEventListener("click", function() { changeReport("international/home");});
 				document.getElementById("scorekey").addEventListener("click", function() { changeReport("score/home");});
 				document.getElementById("timelinekey").addEventListener("click", function() { changeReport("timeline/home");});
-				if (whoami != "(Observer)") {
-					if (!g_data.gameover) {
-						let orders = document.createElement("orders-pane");
-						orders.setAttribute("kingdom", whoami);
-						document.getElementById("orders").innerHTML = "";
-						document.getElementById("orders").appendChild(orders);
-					} else {
-						document.querySelector("body").style.gridTemplateColumns = "20% 80%";
-					}
-					if (g_data.date == g_turndata.length - 1) changeReport("kingdom/" + whoami);
+				if (!g_data.gameover) {
+					let orders = document.createElement("orders-pane");
+					orders.setAttribute("kingdom", whoami);
+					document.getElementById("orders").innerHTML = "";
+					document.getElementById("orders").appendChild(orders);
 				} else {
-					let k = "";
-					for (let i in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(i)) k = i;
-					changeReport("kingdom/" + k);
 					document.querySelector("body").style.gridTemplateColumns = "20% 80%";
 				}
 			}
