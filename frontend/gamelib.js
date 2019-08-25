@@ -524,7 +524,7 @@ class Region {
 		let mods = [];
 		let nation = getNation(builderNation);
 		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
-		if (this.religion == "Tavian (Flame of Kith)") mods -= 1;
+		if (this.religion == "Tavian (Flame of Kith)") mods.push({"v": -1, "unit": "%", "why": "Flame of Kith"});
 		return Calc.moddedNum(base, mods);
 	}
 }
