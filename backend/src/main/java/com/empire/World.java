@@ -2154,7 +2154,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					r.unrestPopular = Math.min(1, r.unrestPopular + starving / r.population * 3);
 					starvation.put(r, starving);
 					addPopulation(r, -starving);
-					if (kingdoms.containsKey(r.getKingdom()) && !getNation(r.getKingdom()).coreRegions.contains(i)) score(r.getKingdom(), Nation.ScoreProfile.PROSPERITY, -1 / 25000.0 * starving);
 					for (String k : tributes.getOrDefault(r.getKingdom(), new ArrayList<String>())) score(k, Nation.ScoreProfile.PROSPERITY, -1 / 12000.0 * starving);
 					for (String k : kingdoms.keySet()) if (getNation(k).coreRegions.contains(i)) score(k, Nation.ScoreProfile.PROSPERITY, -1 / 6000.0 * starving);
 				}

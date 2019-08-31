@@ -680,6 +680,7 @@ class Character {
 		this.orderhint = dataEntry.orderhint;
 		this.values = dataEntry.values;
 		this.leadingArmy = dataEntry.leading_army;
+		this.hidden = dataEntry.hidden;
 	}
 
 	calcLevel(dimension) {

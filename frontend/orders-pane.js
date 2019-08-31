@@ -649,7 +649,7 @@ class OrdersPane extends HTMLElement {
 		function sanitize(s) {
 			return s.replace(/</g, "&lt").replace(/>/g, "&gt");
 		}
-		if (colocatedRulers.length > 0) {
+		if (colocatedRulers.length > 0 && !kingdom.getRuler().hidden) {
 			let rtc = shadow.getElementById("nations_rtc");
 			rtc.innerHTML = "";
 			let d = document.createElement("div");
