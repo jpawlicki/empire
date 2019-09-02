@@ -1192,6 +1192,8 @@ public class World extends RulesObject implements GoodwillProvider {
 				a.orderhint = order;
 				if (order != null && !order.startsWith("Travel")) actors.add(a);
 			}
+			Set<String> excommunicatedNations = new HashSet<>();
+			for (String nation : kingdoms.keySet()) if (getNation(nation).goodwill < 0) excommunicatedNations.add(nation);
 			HashSet<Region> conqueredRegions = new HashSet<>();
 			sortByStrength(actors, leaders, inspires, lastStands);
 			for (Army army : actors) {
@@ -1273,7 +1275,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					pirateThreatSources.put("Army Merges / Disbands", pirateThreatSources.getOrDefault("Army Merges / Disbands", 0.0) + threatIncrease);
 					armies.remove(army);
 				} else if (action.startsWith("Conquer")) {
-					army.conquer(World.this, action, conqueredRegions, tributes, leaders, inspires, lastStands);
+					army.conquer(World.this, action, conqueredRegions, tributes, leaders, inspires, lastStands, excommunicatedNations);
 				} else if (action.startsWith("Oust ")) {
 					if (!army.isArmy()) continue;
 					if (region.noble == null) continue;
@@ -1510,6 +1512,8 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void joinBattles() {
+			Set<String> excommunicatedNations = new HashSet<>();
+			for (String nation : kingdoms.keySet()) if (getNation(nation).goodwill < 0) excommunicatedNations.add(nation);
 			Map<String, Double> casualtiesCaused = new HashMap<>();
 			Map<String, Double> casualtiesSuffered = new HashMap<>();
 			for (int i = 0; i < regions.size(); i++) {
@@ -1544,7 +1548,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						double casualtyRateCaused = cf * Math.pow(b.calcStrength(World.this, leaders.get(b), inspires, lastStands.contains(b.kingdom)), combatFactor) / enemyStrength;
 						casualtiesCaused.put(b.kingdom, casualtiesCaused.getOrDefault(b.kingdom, 0.0) + a.size * casualtyRateCaused);
 						if (a.isArmy() && b.hasTag(Army.Tag.IMPRESSMENT)) hansaImpressment.put(b, hansaImpressment.getOrDefault(b, 0.0) + a.size * .15 * casualtyRateCaused);
-						if (church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && getNation(a.kingdom) != null && getNation(b.kingdom) != null && getNation(a.kingdom).goodwill < 0) getNation(b.kingdom).goodwill += getRules().defendersOfFaithCasualtyOpinion * a.size * casualtyRateCaused;
+						if (church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && getNation(a.kingdom) != null && getNation(b.kingdom) != null && excommunicatedNations.contains(a.kingdom)) getNation(b.kingdom).goodwill += getRules().defendersOfFaithCasualtyOpinion * a.size * casualtyRateCaused;
 						goldThefts.put(b, goldThefts.getOrDefault(b, 0.0) + a.gold * casualtyRateCaused);
 					}
 				}
