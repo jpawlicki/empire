@@ -1,0 +1,27 @@
+Overall portrait dimensions:
+A - maximum width of 384 pixels. Maximum height is 1080 pixels
+B - focal point is at 192 pixels from the left, 192 pixels from the top.
+
+Pipeline:
+1. Create files.js and an empty data.js.
+2. Take source images. Identify portrait regions, using portrait-finder.html. When done (or saving progress), save and overwrite data.js with the file.
+3. When done, execute run.sh to create PNG images from each of the portrait regions, downsampling if necessary.
+4. Then, run portrait-classifer.html to bucketize the images by quality. Save the data as taggingdata.js.
+5. Then, run portrait-tagger.html to tag the images according to the below:
+
+Style (One of the below)
+	- Portrait
+	- Historical / Allegorical
+
+Features (Yes/No for each)
+	- Facial Hair
+	- Crown
+	- Child
+	- Cardinal
+	- Moko (facial tattoos)
+	- Magic
+
+Quality:
+  - 3 (Best)
+	- 2 (Middle)
+	- 1 (Poor)
