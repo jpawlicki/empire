@@ -265,7 +265,7 @@ public class ArmyTest {
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
 
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>(), new HashSet<>());
 		assertTrue(conqueredRegions.contains(r));
 		verify(r).setKingdom(w, k2);
 	}
@@ -278,7 +278,7 @@ public class ArmyTest {
 		when(r.calcMinConquestStrength(w)).thenReturn(100.0);
 
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>(), new HashSet<>());
 		assertTrue(conqueredRegions.isEmpty());
 		verify(r, never()).setKingdom(w, k2);
 	}
@@ -295,7 +295,7 @@ public class ArmyTest {
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
 
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>(), new HashSet<>());
 		assertTrue(r.constructions.isEmpty());
 		assertTrue(conqueredRegions.contains(r));
 		verify(r).setKingdom(w, k2);

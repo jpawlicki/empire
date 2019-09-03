@@ -28,7 +28,7 @@
 
 			function postFormMigrate() {
 				let req = new XMLHttpRequest();
-				req.open("post", g_server + "/entry/migrate", true);
+				req.open("post", g_server + "/entry/migrate?password=" + document.getElementById("gm_password").value, true);
 				req.onerror = function (e) {
 					window.alert(req.status);
 				};
@@ -69,6 +69,7 @@
 		</form>
 		<h1>Trigger Server-Side Migration</h1>
 		<form onsubmit="return postFormMigrate();">
+			<label>GM Password: <input id="gm_password" type="password"></input></label>
 			<button>Trigger Migrate (DANGEROUS)</button>
 		</form>
 		<h1>Advance Game</h1>

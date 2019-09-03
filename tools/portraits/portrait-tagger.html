@@ -1,0 +1,127 @@
+<html>
+	<head>
+		<script src="taggingdata.js"></script>
+		<style>
+			body {
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
+				margin: 0;
+				padding: 0;
+				background: #000;
+				color: #fff;
+				font-size: 200%;
+				font-family: sans-serif;
+			}
+			div {
+				margin: 1em;
+			}
+			#instructions {
+				font-size: 75%;
+			}
+		</style>
+	</head>
+	<body>
+		<img id="image" width="384"></img>
+		<div id="status">
+			<div>ID: <span id="id"></span> / <span id="total"></span></div>
+			<div>Quality: <span id="quality"></span></div>
+			<div>Style: <span id="style"></span></div>
+			<div>Features: <ul id="features"></ul></div>
+		</div>
+		<div id="instructions">
+			Recategorize images by pressing a key:<br/>
+			Quality:<ul>
+				<li>1 (best quality)</li>
+				<li>2 (middle quality)</li>
+				<li>3 (poor quality)</li>
+				<li>4 (unusable)</li>
+			</ul>
+			Style:<ul>
+				<li>p (portrait)</li>
+				<li>h (historical / allegorical)</li>
+			</ul>
+			Features:<ul>
+				<li>f (facial hair)</li>
+				<li>k (crown)</li>
+				<li>c (child)</li>
+				<li>r (cardinal)</li>
+				<li>t (moko tattoos)</li>
+				<li>m (magic)</li>
+			</ul>
+			<br/>` (back)
+			<br/>n (next)
+			<br/>s (save)
+		</div>
+		<script>
+			let numPortraits = taggingdata.length;
+			let current = 0;
+			for (let t of taggingdata) {
+				if (!t.hasOwnProperty("style")) {
+					t.style = "";
+					t.features = [];
+				}
+			}
+			while (current < taggingdata.length && taggingdata[current].style != "") current++;
+			current--;
+			function loadImage(url, callback) {
+				var img = new Image();
+				img.onload = () => {
+					document.getElementById("image").setAttribute("src", url);
+					document.getElementById("image").setAttribute("height", parseInt(384 / img.width * img.height));
+				};
+				img.src = url;
+			}
+			function increment() {
+				current++;
+				if (taggingdata.length <= current) taggingdata[current] = {};
+				loadImage("portraits_out/" + current + ".png");
+			}
+			function updateStatus() {
+				document.getElementById("id").innerHTML = current + 1;
+				document.getElementById("total").innerHTML = taggingdata.length;
+				document.getElementById("quality").innerHTML = taggingdata[current].quality;
+				document.getElementById("style").innerHTML = taggingdata[current].style;
+				document.getElementById("features").innerHTML = "";
+				for (let i of taggingdata[current].features) {
+					let li = document.createElement("li");
+					li.appendChild(document.createTextNode(i));
+					document.getElementById("features").appendChild(li);
+				}
+			}
+			function undo() {
+				if (current == 0) return;
+				current--;
+				loadImage("portraits_out/" + current + ".png");
+			}
+			function saveFunc() {
+				window.open(URL.createObjectURL(new Blob(["let taggingdata = " + JSON.stringify(taggingdata) + ";"], {type: "application/octet-stream"})));
+			}
+			function toggleFeature(f) {
+				if (taggingdata[current].features.includes(f)) taggingdata[current].features = taggingdata[current].features.filter(s => s != f);
+				else taggingdata[current].features.push(f);
+				taggingdata[current].features.sort();
+			}
+			document.addEventListener("keydown", e => {
+				if (e.key == "`") undo();
+				else if (e.key == "1") taggingdata[current].quality = 1;
+				else if (e.key == "2") taggingdata[current].quality = 2;
+				else if (e.key == "3") taggingdata[current].quality = 3;
+				else if (e.key == "4") taggingdata[current].quality = 4;
+				else if (e.key == "p") taggingdata[current].style = "portrait";
+				else if (e.key == "h") taggingdata[current].style = "historical / allegorical";
+				else if (e.key == "f") toggleFeature("facial hair");
+				else if (e.key == "k") toggleFeature("crown");
+				else if (e.key == "c") toggleFeature("child");
+				else if (e.key == "r") toggleFeature("cardinal");
+				else if (e.key == "t") toggleFeature("moko tattoos");
+				else if (e.key == "m") toggleFeature("magic");
+				else if (e.key == "n") increment();
+				else if (e.key == "s") saveFunc();
+				updateStatus();
+			});
+			increment();
+			updateStatus();
+		</script>
+	</body>
+</html>

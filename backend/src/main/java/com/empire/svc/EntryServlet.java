@@ -665,13 +665,7 @@ public class EntryServlet extends HttpServlet {
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
 			World w = World.load(9, getWorldDate(9, service), service);
-			for (com.empire.Character c : w.getCharacters()) {
-				if (c.getName().equals("Beste")) c.setLocation(153);
-				if (c.getName().equals("Çağri")) c.setLocation(167);
-				if (c.getName().equals("Sinem")) c.setLocation(162);
-				if (c.getName().equals("Yavuz")) c.setLocation(153);
-				if (c.getName().equals("Güvenç")) c.setLocation(159);
-			}
+			//for (com.empire.Region r : w.regions) if ("Tavia".equals(r.getKingdom())) r.unrestPopular = 0;
 			service.put(w.toEntity(9));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
