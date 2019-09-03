@@ -1,0 +1,83 @@
+<html>
+	<head>
+		<script src="taggingdata.js"></script>
+		<style>
+			body {
+				display: flex;
+				flex-direction: row;
+				margin: 0;
+				padding: 0;
+			}
+			div {
+				margin: 1em;
+			}
+		</style>
+	</head>
+	<body>
+		<img id="image" width="384"></img>
+		<div>
+			Categorize images by pressing a key:
+			<br/>1 (best quality)
+			<br/>2 (middle quality)
+			<br/>3 (poor quality)
+			<br/>4 (unusable)
+			<br/>` (undo)
+			<br/>s (save)
+		</div>
+		<div id="status"></div>
+		<script>
+			let numPortraits = 2274;
+			let current = taggingdata.length - 1;
+			let qualitycount = [0, 0, 0, 0, 0];
+			for (let tag of taggingdata) {
+				qualitycount[tag.quality]++;
+			}
+			function loadImage(url, callback) {
+				var img = new Image();
+				img.onload = () => {
+					document.getElementById("image").setAttribute("src", url);
+					document.getElementById("image").setAttribute("height", parseInt(384 / img.width * img.height));
+				};
+				img.src = url;
+			}
+			function increment() {
+				current++;
+				if (taggingdata.length <= current) taggingdata[current] = {};
+				loadImage("portraits_out/" + current + ".png");
+				updateStatus();
+			}
+			function updateStatus() {
+				document.getElementById("status").innerHTML = `
+					${current + 1} / ${numPortraits}
+					<br/>Q1: ${qualitycount[1]}
+					<br/>Q2: ${qualitycount[2]}
+					<br/>Q3: ${qualitycount[3]}
+					<br/>Q4: ${qualitycount[4]}
+				`;
+			}
+			function undo() {
+				if (current == 0) return;
+				taggingdata.pop();
+				current--;
+				loadImage("portraits_out/" + current + ".png");
+			}
+			function categorize(level) {
+				taggingdata[current].quality = level;
+				qualitycount[level]++;
+				increment();
+			}
+			function saveFunc() {
+				window.open(URL.createObjectURL(new Blob(["let taggingdata = " + JSON.stringify(taggingdata) + ";"], {type: "application/octet-stream"})));
+			}
+			document.addEventListener("keydown", e => {
+				if (e.key == "`") undo();
+				else if (e.key == "1") categorize(1);
+				else if (e.key == "2") categorize(2);
+				else if (e.key == "3") categorize(3);
+				else if (e.key == "4") categorize(4);
+				else if (e.key == "s") saveFunc();
+			});
+			increment();
+		</script>
+	</body>
+</html>
