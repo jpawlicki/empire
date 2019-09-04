@@ -262,9 +262,17 @@ public class EntryServlet extends HttpServlet {
 	}
 	private String getIndex(Request r) throws PasswordException {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		CheckPasswordResult result = checkPassword(r, service);
-		if (!result.passesRead()) {
-			throw new PasswordException("Password does not pass read ACL.");
+		if (r.newAccount) {
+			try {
+				Player.loadPlayer(r.kingdom, service);
+				throw new PasswordException("Account exists.");
+			} catch (EntityNotFoundException expected) {}
+			service.put(new Player(r.kingdom, BaseEncoding.base16().encode(hashPassword(r.password))).toEntity());
+		} else {
+			CheckPasswordResult result = checkPassword(r, service);
+			if (!result.passesRead()) {
+				throw new PasswordException("Password does not pass read ACL.");
+			}
 		}
 		/* // TODO: Need a more scalable thing here than loading every game from the DB. Consider storing it in the Player field?
 		for (Long id : ActiveGames.load(service).activeGameIds) {

@@ -16,8 +16,9 @@ final class Request {
 	final String kingdom;
 	final String body;
 	final boolean skipMail;
+	final boolean newAccount;
 
-	private Request(int turn, int version, long gameId, String password, String kingdom, String body, boolean skipMail) {
+	private Request(int turn, int version, long gameId, String password, String kingdom, String body, boolean skipMail, boolean newAccount) {
 		this.turn = turn;
 		this.version = version;
 		this.gameId = gameId;
@@ -25,6 +26,7 @@ final class Request {
 		this.kingdom = kingdom;
 		this.body = body;
 		this.skipMail = skipMail;
+		this.newAccount = newAccount;
 	}
 
 	public static Request from(HttpServletRequest req) throws IOException {
@@ -37,7 +39,8 @@ final class Request {
 			int turn = Integer.parseInt(extract("t", path, "0"));
 			long gameId = Long.parseLong(extract("gid", path, "-1"));
 			boolean skipMail = "t".equals(extract("skipmail", path, "f"));
-			return new Request(turn, version, gameId, password, kingdom, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail);
+			boolean newAccount = "t".equals(extract("newaccount", path, "f"));
+			return new Request(turn, version, gameId, password, kingdom, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail, newAccount);
 		} catch (NumberFormatException e) {
 			throw new IOException(e);
 		}
