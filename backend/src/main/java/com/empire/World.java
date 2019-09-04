@@ -1095,7 +1095,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					// If they are adjacent to a special region, move into it, regardless of other orders.
 					String originalOrder = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
 					for (Region r : regions.get(army.location).getNeighbors(World.this)) {
-						if (cultRegions.contains(regions.indexOf(r))) orders.get(army.kingdom).put("action_army_" + army.id, "Travel to " + r.name);
+						if (cultRegions.contains(regions.indexOf(r)) && !r.cultAccessed) orders.get(army.kingdom).put("action_army_" + army.id, "Travel to " + r.name);
 					}
 					if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifications.add(new Notification(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!"));
 				}
