@@ -21,5 +21,8 @@
   <resource-files>
     <include path="/**" />
   </resource-files>
+	<env-variables>
+    <env-var name="GAE_PROFILER_MODE" value="cpu,heap" />
+  </env-variables>
 </appengine-web-app>
   <!-- [END config] -->
