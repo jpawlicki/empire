@@ -11,8 +11,8 @@ public final class Player {
 
 	public final String email;
 	public final String passHash;
-	public final String alias;
-	public final String passwordOtp;
+	public String alias;
+	public String passwordOtp;
 	public boolean emailConfirmed;
 	public final List<Integer> activeGames = new ArrayList<>();
 	public final List<Integer> oldGames = new ArrayList<>();
