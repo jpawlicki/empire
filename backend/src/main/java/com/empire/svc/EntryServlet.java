@@ -151,10 +151,6 @@ public class EntryServlet extends HttpServlet {
 			if (!postRealTimeCommunication(r)) {
 				err = "Not allowed.";
 			}
-		} else if (req.getRequestURI().equals("/entry/changeplayer")) {
-			if (!postChangePlayer(r)) {
-				err = "Not allowed.";
-			}
 		} else {
 			err = "No such path.";
 		}
@@ -179,12 +175,12 @@ public class EntryServlet extends HttpServlet {
 
 	private String getOrders(Request r, HttpServletResponse resp) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		if (!checkPassword(r, service).passesRead()) return null;
 		try {
+			if (!checkPassword(r, service, World.load(r.gameId, r.turn, service)).passesRead()) return null;
 			Orders o = Orders.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
 			resp.setHeader("SJS-Version", "" + o.version);
 			return o.json;
-		} catch (EntityNotFoundException e) {
+		} catch (EntityNotFoundException | IOException e) {
 			return null;
 		}
 	}
@@ -216,13 +212,11 @@ public class EntryServlet extends HttpServlet {
 
 	private String getWorld(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		CheckPasswordResult result = checkPassword(r, service);
-		if (!result.passesRead()) {
-			return null;
-		}
 		try {
 			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			World w = World.load(r.gameId, date, service);
+			CheckPasswordResult result = checkPassword(r, service, w);
+			if (!result.passesRead()) return null;
 			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).getEmail(), service);
 			w.filter(r.kingdom);
 			return w.toString();
@@ -252,7 +246,7 @@ public class EntryServlet extends HttpServlet {
 
 	private String getActivity(Request r) {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		if (checkPassword(r, service) != CheckPasswordResult.PASS_GM) return null;
+		if (!passesGmPassword(hashPassword(r.password))) return null;
 		try {
 			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
 			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
@@ -477,20 +471,16 @@ public class EntryServlet extends HttpServlet {
 		return Arrays.equals(GM_PASSWORD_HASH, passwordHash);
 	}
 
-	private CheckPasswordResult checkPassword(Request r, DatastoreService service) {
+	private CheckPasswordResult checkPassword(Request r, DatastoreService service, World w) {
 		try {
 			if (r.password == null) return CheckPasswordResult.FAIL;
 			byte[] attemptHash = hashPassword(r.password);
 			if (passesGmPassword(attemptHash)) return CheckPasswordResult.PASS_GM;
-			World w = World.load(r.gameId, getWorldDate(r.gameId, service), service);
-			if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).getEmail(), service).passHash))) return CheckPasswordResult.PASS_PLAYER;
+			if (w != null && w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).getEmail(), service).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			return CheckPasswordResult.FAIL;
 		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "No world for " + r.gameId + ", " + r.kingdom);
+			log.log(Level.INFO, "No player for " + w.getNation(r.kingdom).getEmail() + " in " + r.gameId);
 			return CheckPasswordResult.NO_ENTITY;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
-			return CheckPasswordResult.FAIL;
 		}
 	}
 
@@ -498,12 +488,16 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			if (!checkPassword(r, service).passesWrite()) return false;
+			World w = World.load(r.gameId, r.turn, service);
+			if (!checkPassword(r, service, w).passesWrite()) return false;
 			if (r.turn != getWorldDate(r.gameId, service)) return false;
 			service.put(new Orders(r.gameId, r.kingdom, r.turn, r.version, r.body).toEntity());
 			txn.commit();
 		} catch (EntityNotFoundException e) {
-			log.log(Level.WARNING, "No current turn for " + r.gameId + ".");
+			log.log(Level.WARNING, "No current turn for " + r.gameId + ".", e);
+			return false;
+		} catch (IOException e) {
+			log.log(Level.WARNING, "Failed to initialize world for " + r.gameId + ".", e);
 			return false;
 		} finally {
 			if (txn.isActive()) {
@@ -517,39 +511,9 @@ public class EntryServlet extends HttpServlet {
 		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
 		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		try {
-			if (!checkPassword(r, service).passesWrite()) return false;
 			World w = World.load(r.gameId, r.turn, service);
+			if (!checkPassword(r, service, w).passesWrite()) return false;
 			w.addRtc(r.body, r.kingdom);
-			service.put(w.toEntity(r.gameId));
-			txn.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
-			return false;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
-			return false;
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
-		}
-		return true;
-	}
-
-	private static final class ChangePlayerRequestBody {
-		public String email;
-		public String password;
-	}
-	private boolean postChangePlayer(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			if (!checkPassword(r, service).passesWrite()) return false;
-			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
-			ChangePlayerRequestBody body = getGson().fromJson(r.body, ChangePlayerRequestBody.class);
-			Player p = Player.loadPlayer(body.email, service);
-			w.getNation(r.kingdom).setEmail(body.email);
 			service.put(w.toEntity(r.gameId));
 			txn.commit();
 		} catch (EntityNotFoundException e) {
