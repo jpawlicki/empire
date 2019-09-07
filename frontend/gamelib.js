@@ -794,6 +794,7 @@ class Plot {
 		let getTargetRegionRegion = () => g_data.regions.find(r => r.name == this.target_id);
 		let getTargetRegionChurch = () => g_data.regions[g_geo.holycity];
 		let getTargetRegionNation = () => {
+			if (g_data.kingdoms[this.target_id] == undefined) return undefined;
 			let character = g_data.kingdoms[this.target_id].getRuler();
 			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
 		}
