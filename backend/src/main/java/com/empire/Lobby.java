@@ -1,11 +1,5 @@
 package com.empire;
 
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Text;
-import com.google.appengine.api.datastore.Query;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -15,12 +9,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 public class Lobby {
-	public static final String TYPE = "Lobby";
-
 	private long gameId;
 	private int numPlayers;
 	private int ruleSet;
@@ -29,28 +19,20 @@ public class Lobby {
 	private int minPlayers;
 	private long startAt;
 
-	private static Gson getGson() {
-		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
+	public static Lobby fromJson(String json) {
+		return getGson().fromJson(json, Lobby.class);
 	}
 
-	private static Lobby fromEntity(Entity e) {
-		return getGson().fromJson(new String(((Text)e.getProperty("json")).getValue()), Lobby.class);
-	}
-
-	public static Stream<Lobby> loadAll(DatastoreService service) {
-		return StreamSupport.stream(service.prepare(new Query(Lobby.TYPE)).asIterable().spliterator(), false).map(e -> fromEntity(e));
-	}
-
-	public static Lobby load(long gameId, DatastoreService service) throws EntityNotFoundException {
-		return fromEntity(service.get(KeyFactory.createKey(TYPE, "_" + gameId)));
-	}
-
-	public void delete(DatastoreService service) {
-		service.delete(KeyFactory.createKey(TYPE, "_" + gameId));
+	public static Lobby newLobby(long gameId, int ruleSet, int numPlayers, Schedule schedule, int minPlayers, long startAt) {
+		return new Lobby(gameId, ruleSet, numPlayers, schedule, minPlayers, startAt);
 	}
 
 	public boolean update(String nation, NationSetup setup) {
 		return nations.putIfAbsent(nation, setup) == null;
+	}
+
+	private static Gson getGson() {
+		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 	}
 
 	public enum StartResult {
@@ -65,12 +47,6 @@ public class Lobby {
 		return StartResult.ABANDON;
 	}
 
-	public void save(DatastoreService service) {
-		Entity lobby = new Entity(TYPE, "_" + gameId);
-		lobby.setProperty("json", new Text(getGson().toJson(this)));
-		service.put(lobby);
-	}
-
 	private Lobby() {} // For GSON.
 
 	private Lobby(long gameId, int ruleSet, int numPlayers, Schedule schedule, int minPlayers, long startAt) {
@@ -80,10 +56,6 @@ public class Lobby {
 		this.schedule = schedule;
 		this.minPlayers = minPlayers;
 		this.startAt = startAt;
-	}
-
-	public static Lobby newLobby(long gameId, int ruleSet, int numPlayers, Schedule schedule, int minPlayers, long startAt) {
-		return new Lobby(gameId, ruleSet, numPlayers, schedule, minPlayers, startAt);
 	}
 
 	public long getGameId() {

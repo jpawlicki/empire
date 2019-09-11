@@ -1,13 +1,6 @@
 package com.empire;
 
-import com.empire.util.Compressor;
 import com.empire.util.StringUtil;
-import com.google.appengine.api.datastore.Blob;
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
-import com.google.appengine.api.datastore.Text;
 import com.google.common.primitives.Ints;
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -129,20 +122,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				.create();
 	}
 
-	private static String loadJson(long gameId, int turn, DatastoreService service) throws EntityNotFoundException {
-		Entity e = service.get(KeyFactory.createKey(TYPE, gameId + "_" + turn));
-		if (e.hasProperty("json")) {
-			return new String(((Text)e.getProperty("json")).getValue());
-		} else {
-			return Compressor.decompress(((Blob)e.getProperty("json_gzip")).getBytes());
-		}
-	}
-
-	public static World load(long gameId, int turn, DatastoreService service) throws EntityNotFoundException, IOException {
-		return fromJson(loadJson(gameId, turn, service));
-	}
-
-	private static World fromJson(String json) throws IOException {
+	public static World fromJson(String json) throws IOException {
 		RuleSet set = new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create().fromJson(json, RuleSet.class);
 		World w = getGson(Rules.loadRules(set.ruleSet)).fromJson(json, World.class);
 		w.geography = Geography.loadGeography(w.ruleSet, w.numPlayers);
@@ -504,12 +484,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		// TODO - test legality of message.
 		m.from = from;
 		rtc.add(m);
-	}
-
-	public Entity toEntity(long gameId) {
-		Entity e = new Entity(TYPE, gameId + "_" + date);
-		e.setProperty("json_gzip", new Blob(Compressor.compress(toString())));
-		return e;
 	}
 
 	@Override

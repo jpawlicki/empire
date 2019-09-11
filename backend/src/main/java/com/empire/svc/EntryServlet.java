@@ -7,8 +7,6 @@ import com.empire.Orders;
 import com.empire.Rules;
 import com.empire.Schedule;
 import com.empire.World;
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -25,8 +23,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -80,7 +76,6 @@ TODO: Will eventually need a changePassword/change-email.
 @WebServlet(name = "EntryServlet", value = "/entry/*")
 public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
-	private static final String PASSWORD_SALT = "~ Empire_Password Salt ~123`";
 	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("DFEC33349F0EE2E0BC2085D761553BDDF1753698DDAD94491664F14EA58EA072");
 
 	@Override
@@ -102,8 +97,6 @@ public class EntryServlet extends HttpServlet {
 			json = getAdvancePoll(r.skipMail);
 		} else if (req.getRequestURI().equals("/entry/lobbypoll")) {
 			json = getLobbyPoll();
-		} else if (req.getRequestURI().equals("/entry/activity")) {
-			json = getActivity(r);
 		} else {
 			resp.sendError(404, "No such path.");
 			return;
@@ -174,10 +167,9 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getOrders(Request r, HttpServletResponse resp) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		try {
-			if (!checkPassword(r, service, World.load(r.gameId, r.turn, service)).passesRead()) return null;
-			Orders o = Orders.loadOrder(r.gameId, r.kingdom, r.turn, DatastoreServiceFactory.getDatastoreService());
+		try (DataSource dataSource = DataSource.transactional()) {
+			if (!checkPassword(r, dataSource, dataSource.loadWorld(r.gameId, r.turn)).passesRead()) return null;
+			Orders o = dataSource.loadOrder(r.gameId, r.kingdom, r.turn);
 			resp.setHeader("SJS-Version", "" + o.version);
 			return o.json;
 		} catch (EntityNotFoundException | IOException e) {
@@ -198,26 +190,20 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 	private String getSetup(Request r) {
-		try {
-			return getGson().toJson(new GetSetupResponse(Lobby.load(r.gameId, DatastoreServiceFactory.getDatastoreService())));
+		try (DataSource dataSource = DataSource.nontransactional()) {
+			return getGson().toJson(new GetSetupResponse(dataSource.loadLobby(r.gameId)));
 		} catch (EntityNotFoundException | IOException e) {
 			log.log(Level.WARNING, "Failed to fetch setup information for game " + r.gameId, e);
 			return null;
 		}
 	}
 
-	private int getWorldDate(long gameId, DatastoreService service) throws EntityNotFoundException {
-		return (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
-	}
-
 	private String getWorld(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		try {
-			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
-			CheckPasswordResult result = checkPassword(r, service, w);
+		try (DataSource dataSource = DataSource.nontransactional()) {
+			int date = r.hasTurn() ? r.turn : dataSource.loadCurrentDate(r.gameId);
+			World w = dataSource.loadWorld(r.gameId, date);
+			CheckPasswordResult result = checkPassword(r, dataSource, w);
 			if (!result.passesRead()) return null;
-			if (result == CheckPasswordResult.PASS_PLAYER && r.turn == 0) LoginCache.getSingleton().recordLogin(r.gameId, date, w.getNation(r.kingdom).getEmail(), service);
 			w.filter(r.kingdom);
 			return w.toString();
 		} catch (EntityNotFoundException e) {
@@ -230,10 +216,9 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private String getGeography(Request r) {
-		try {
-			DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
-			World w = World.load(r.gameId, date, service);
+		try (DataSource dataSource = DataSource.nontransactional()) {
+			int date = r.hasTurn() ? r.turn : dataSource.loadCurrentDate(r.gameId);
+			World w = dataSource.loadWorld(r.gameId, date);
 			return Geography.loadGeography(w.getRuleSet(), w.getNumPlayers()).toString();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No such world.");
@@ -244,163 +229,111 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private String getActivity(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		if (!passesGmPassword(hashPassword(r.password))) return null;
-		try {
-			int date = r.hasTurn() ? r.turn : getWorldDate(r.gameId, service);
-			HashMap<String, ArrayList<String>> nationEmails = new HashMap<>();
-			World w = World.load(r.gameId, date, service);
-			List<String> emails = w.getNationNames().stream().map(s -> w.getNation(s).getEmail()).collect(Collectors.toList());
-			List<List<Boolean>> actives = LoginCache.getSingleton().fetchLoginHistory(r.gameId, date, emails, service);
-			List<Map<String, Boolean>> result = new ArrayList<>();
-			for (List<Boolean> turnActives : actives) {
-				HashMap<String, Boolean> turn = new HashMap<>();
-				for (int i = 0; i < emails.size(); i++) {
-					turn.put(emails.get(i), turnActives.get(i));
-				}
-				result.add(turn);
-			}
-			return getGson().toJson(result);
-		} catch (EntityNotFoundException e) {
-			log.log(Level.WARNING, "No such world.", e);
-			return null;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
-			return null;
-		}
-	}
-
-	private static class ActiveGames {
-		public ArrayList<Long> activeGameIds;
-		static ActiveGames fromGson(String s) {
-			return getGson().fromJson(s, ActiveGames.class);
-		}
-	}
-
 	private String getAdvancePoll(boolean skipMail) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		try {
-			for (Long gameId : ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games")).activeGameIds) {
-				Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-				try {
-					int date = (int)((Long)(service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date"))).longValue();
-					World	w = World.load(gameId, date, service);
-					if (w.getNextTurn() < Instant.now().toEpochMilli()) {
-						HashSet<String> kingdoms = new HashSet<>();
-						HashMap<String, Map<String, String>> orders = new HashMap<>();
-						for (String kingdom : w.getNationNames()) {
-							kingdoms.add(kingdom);
-							try {
-								orders.put(kingdom, Orders.loadOrder(gameId, kingdom, w.getDate(), service).getOrders());
-							} catch (EntityNotFoundException e) {
-								// Can't load the relevant orders - tool will make default orders.
-							}
-						}
-						Map<String, String> emails = w.advance(orders);
-						service.put(w.toEntity(gameId));
-						Entity nudate = new Entity("CURRENTDATE", "game_" + gameId);
-						nudate.setProperty("date", (long)w.getDate());
-						service.put(nudate);
-						if (!skipMail && Instant.ofEpochMilli(w.getNextTurn()).isAfter(Instant.now().plus(5, ChronoUnit.HOURS))) {
-							for (String mail : emails.keySet()) {
-								mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
-							}
-						}
-						if (w.isGameover()) {
-							ActiveGames newActiveGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
-							newActiveGames.activeGameIds.remove(gameId);
-							Entity activeGames = new Entity("ACTIVEGAMES", "_");
-							activeGames.setProperty("active_games", getGson().toJson(newActiveGames));
-							service.put(activeGames);
-						} else {
-							QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
-						}
-					}
-					txn.commit();
-				} catch (EntityNotFoundException e) {
-					log.log(Level.SEVERE, "World issue.", e);
-				} finally {
-					if (txn.isActive()) txn.rollback();
-				}
-			}
+		List<Long> activeGames;
+		try (DataSource dataSource = DataSource.nontransactional()) {
+			activeGames = dataSource.loadActiveGames().activeGameIds;
 		} catch (EntityNotFoundException e) {
 			log.log(Level.SEVERE, "Poller failed.", e);
 			return null;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
-			return null;
+		}
+		for (Long gameId : activeGames) {
+			try (DataSource dataSource = DataSource.transactional()) {
+				int date = dataSource.loadCurrentDate(gameId);
+				World	w = dataSource.loadWorld(gameId, date);
+				if (w.getNextTurn() < Instant.now().toEpochMilli()) {
+					HashSet<String> kingdoms = new HashSet<>();
+					HashMap<String, Map<String, String>> orders = new HashMap<>();
+					for (String kingdom : w.getNationNames()) {
+						kingdoms.add(kingdom);
+						try {
+							orders.put(kingdom, dataSource.loadOrder(gameId, kingdom, w.getDate()).getOrders());
+						} catch (EntityNotFoundException e) {
+							// Can't load the relevant orders - tool will make default orders.
+						}
+					}
+					Map<String, String> emails = w.advance(orders);
+					dataSource.save(w, gameId);
+					dataSource.saveCurrentDate(w.getDate(), gameId);
+					if (!skipMail && Instant.ofEpochMilli(w.getNextTurn()).isAfter(Instant.now().plus(5, ChronoUnit.HOURS))) {
+						for (String mail : emails.keySet()) {
+							mail(mail, "👑 Empire: Turn Advances", emails.get(mail).replace("%GAMEID%", "" + gameId));
+						}
+					}
+					if (w.isGameover()) {
+						ActiveGames newActiveGames = dataSource.loadActiveGames();
+						newActiveGames.activeGameIds.remove(gameId);
+						dataSource.save(newActiveGames);
+					} else {
+						QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
+					}
+				}
+				dataSource.commit();
+			} catch (EntityNotFoundException e) {
+				log.log(Level.SEVERE, "World issue.", e);
+			} catch (IOException e) {
+				log.log(Level.SEVERE, "Failed to read rule data.", e);
+				return null;
+			}
 		}
 		return "";
 	}
 
 	private String getLobbyPoll() {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Lobby.loadAll(service).forEach(lobby -> {
-			Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-			try {
+		try (DataSource dataSource = DataSource.transactional()) {
+			dataSource.loadAllLobbies().forEach(lobby -> {
 				Lobby.StartResult start = lobby.canStart(Instant.now());
 				if (start == Lobby.StartResult.START) {
-					startWorld(lobby, service);
+					startWorld(lobby, dataSource);
 				} else if (start == Lobby.StartResult.ABANDON) {
 					HashSet<String> addresses = new HashSet<String>();
 					for (NationSetup nation : lobby.getNations().values()) addresses.add(nation.email);
 					mail(addresses, "👑 Empire: Game Failed to Start", "A lobby of Empire that you were in didn't get enough players by the deadline and has expired.");
-					lobby.delete(service);
+					dataSource.delete(lobby);
 				}
-				txn.commit();
-			} finally {
-				if (txn.isActive()) txn.rollback();
-			}
-		});
+			});
+			dataSource.commit();
+		}
 		return "";
 	}
 
 	private boolean postAdvanceWorld(Request r) {
-		if (!passesGmPassword(hashPassword(r.password))) return false;
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		HashSet<String> kingdoms = new HashSet<>();
-		try {
-			World	w = World.load(r.gameId, r.turn, service);
+		if (!passesGmPassword(Hasher.hashPassword(r.password))) return false;
+		try (DataSource dataSource = DataSource.transactional()) {
+			HashSet<String> kingdoms = new HashSet<>();
+			World	w = dataSource.loadWorld(r.gameId, r.turn);
 			w.setNextTurn(0);
-			service.put(w.toEntity(r.gameId));
-			txn.commit();
+			dataSource.save(w, r.gameId);
+			dataSource.commit();
 		} catch (EntityNotFoundException e) {
 			return false;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;
-		} finally {
-			if (txn.isActive()) txn.rollback();
 		}
 		getAdvancePoll(r.skipMail);
 		return true;
 	}
 
-	private boolean startWorld(Lobby lobby, DatastoreService service) {
+	private boolean startWorld(Lobby lobby, DataSource dataSource) {
 		HashSet<String> addresses = new HashSet<String>();
 		long gameId = lobby.getGameId();
 		try {
 			for (NationSetup nation : lobby.getNations().values()) addresses.add(nation.email);
 			World w = World.startNew(lobby);
-			service.put(w.toEntity(gameId));
-			Entity g = new Entity("CURRENTDATE", "game_" + gameId);
-			g.setProperty("date", 1);
-			service.put(g);
+			dataSource.save(w, gameId);
+			dataSource.saveCurrentDate(1, gameId);
 			ActiveGames activeGames;
 			try {
-				activeGames = ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
+				activeGames = dataSource.loadActiveGames();
 			} catch (EntityNotFoundException e) {
 				// No active game registry - create it.
 				activeGames = new ActiveGames();
 				activeGames.activeGameIds = new ArrayList<>();
 			}
 			activeGames.activeGameIds.add(gameId);
-			Entity games = new Entity("ACTIVEGAMES", "_");
-			games.setProperty("active_games", getGson().toJson(activeGames));
-			lobby.delete(service);
-			service.put(games);
+			dataSource.save(activeGames);
+			dataSource.delete(lobby);
 			QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/advanceworldpoll").etaMillis(w.getNextTurn()).method(TaskOptions.Method.GET));
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to start game " + gameId, e);
@@ -418,21 +351,21 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private boolean postStartLobby(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
+		try (DataSource dataSource = DataSource.transactional()) {
 			// If it exists, don't create another one.
 			// TODO: find a new game ID automatically.
 			try {
-				Lobby exists = Lobby.load(r.gameId, service);
+				Lobby exists = dataSource.loadLobby(r.gameId);
 				return false;
-			} catch (EntityNotFoundException expected) {}
+			} catch (EntityNotFoundException expected) {
+			} catch (IOException expected) {
+				log.log(Level.SEVERE, "postStartLobby failure " + r.gameId, e);
+				return false;
+			}
 			StartLobbyBody startLobby = getGson().fromJson(r.body, StartLobbyBody.class);
-			Lobby.newLobby(r.gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis).save(service);
-			txn.commit();
+			dataSource.save(Lobby.newLobby(r.gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis));
+			dataSource.commit();
 			QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/lobbypoll").etaMillis(startLobby.startAtMillis).method(TaskOptions.Method.GET));
-		} finally {
-			if (txn.isActive()) txn.rollback();
 		}
 		return true;
 	}
@@ -459,110 +392,85 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private byte[] hashPassword(String password) {
-		try {
-			return MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + password).getBytes(StandardCharsets.UTF_8));
-		} catch (NoSuchAlgorithmException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	private boolean passesGmPassword(byte[] passwordHash) {
 		return Arrays.equals(GM_PASSWORD_HASH, passwordHash);
 	}
 
-	private CheckPasswordResult checkPassword(Request r, DatastoreService service, World w) {
+	private CheckPasswordResult checkPassword(Request r, DataSource dataSource, World w) {
 		try {
 			if (r.password == null) return CheckPasswordResult.FAIL;
-			byte[] attemptHash = hashPassword(r.password);
+			byte[] attemptHash = Hasher.hashPassword(r.password);
 			if (passesGmPassword(attemptHash)) return CheckPasswordResult.PASS_GM;
-			if (w != null && w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(Player.loadPlayer(w.getNation(r.kingdom).getEmail(), service).passHash))) return CheckPasswordResult.PASS_PLAYER;
+			if (w != null && w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(dataSource.loadPlayer(w.getNation(r.kingdom).getEmail()).passHash))) return CheckPasswordResult.PASS_PLAYER;
 			return CheckPasswordResult.FAIL;
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No player for " + w.getNation(r.kingdom).getEmail() + " in " + r.gameId);
+			return CheckPasswordResult.NO_ENTITY;
+		} catch (IOException expected) {
+			log.log(Level.SEVERE, "IOException finding player " + w.getNation(r.kingdom).getEmail(), e);
 			return CheckPasswordResult.NO_ENTITY;
 		}
 	}
 
 	private boolean postOrders(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			World w = World.load(r.gameId, r.turn, service);
-			if (!checkPassword(r, service, w).passesWrite()) return false;
-			if (r.turn != getWorldDate(r.gameId, service)) return false;
-			service.put(new Orders(r.gameId, r.kingdom, r.turn, r.version, r.body).toEntity());
-			txn.commit();
+		try (DataSource dataSource = DataSource.transactional()) {
+			World w = dataSource.loadWorld(r.gameId, r.turn);
+			if (!checkPassword(r, dataSource, w).passesWrite()) return false;
+			if (r.turn != dataSource.loadCurrentDate(r.gameId)) return false;
+			dataSource.save(new Orders(r.gameId, r.kingdom, r.turn, r.version, r.body));
+			dataSource.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.WARNING, "No current turn for " + r.gameId + ".", e);
 			return false;
 		} catch (IOException e) {
 			log.log(Level.WARNING, "Failed to initialize world for " + r.gameId + ".", e);
 			return false;
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
 		}
 		return true;
 	}
 
 	private boolean postRealTimeCommunication(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			World w = World.load(r.gameId, r.turn, service);
-			if (!checkPassword(r, service, w).passesWrite()) return false;
+		try (DataSource dataSource = DataSource.transactional()) {
+			World w = dataSource.loadWorld(r.gameId, r.turn);
+			if (!checkPassword(r, dataSource, w).passesWrite()) return false;
 			w.addRtc(r.body, r.kingdom);
-			service.put(w.toEntity(r.gameId));
-			txn.commit();
+			dataSource.save(w, r.gameId);
+			dataSource.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
 			return false;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
 		}
 		return true;
 	}
 
 	// TODO: remove
 	private boolean migrate(Request rr) {
-		if (!passesGmPassword(hashPassword(rr.password))) return false;
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			World w = World.load(9, getWorldDate(9, service), service);
+		final long gameId = 9;
+		if (!passesGmPassword(Hasher.hashPassword(rr.password))) return false;
+		try (DataSource dataSource = DataSource.transactional()) {
+			World w = dataSource.loadWorld(gameId, dataSource.loadCurrentDate(gameId));
 			//for (com.empire.Region r : w.regions) if ("Tavia".equals(r.getKingdom())) r.unrestPopular = 0;
-			service.put(w.toEntity(9));
-			txn.commit();
+			dataSource.save(w, gameId);
+			dataSource.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "Not found!", e);
 			return false;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;
-		} finally {
-			if (txn.isActive()) {
-				txn.rollback();
-			}
 		}
 		return true;
 	}
 
-	// TODO - don't save the password in the Lobby.
 	// Don't update the password if the player exists - instead we require a standard login.
 	// We should respond with a particular error in this case, though, so that the UI can offer
 	// password reset.
 	private boolean postSetup(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
-		try {
-			Lobby lobby = Lobby.load(r.gameId, service);
+		try (DataSource dataSource = DataSource.transactional()) {
+			Lobby lobby = dataSource.loadLobby(r.gameId);
 			Geography geo = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
 			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(r.kingdom))) {
 				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + r.kingdom);
@@ -573,23 +481,22 @@ public class EntryServlet extends HttpServlet {
 				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + r.kingdom);
 				return false;
 			}
-			lobby.save(service);
-			String password = BaseEncoding.base16().encode(MessageDigest.getInstance("SHA-256").digest((PASSWORD_SALT + nation.password).getBytes(StandardCharsets.UTF_8)));
+			dataSource.save(lobby);
+			String password = BaseEncoding.base16().encode(Hasher.hashPassword(nation.password));
 			try {
-				service.put(Player.loadPlayer(nation.email, service).withNewPassword(password).toEntity());
+				// TODO: remove this vulnerability.
+				dataSource.save(dataSource.loadPlayer(nation.email).withNewPassword(password));
 			} catch (EntityNotFoundException e) {
 				// New player.
-				service.put(new Player(nation.email, password).toEntity());
+				dataSource.save(new Player(nation.email, password));
 			}
 			if (lobby.canStart(Instant.now()) == Lobby.StartResult.START) {
-				startWorld(lobby, service);
+				startWorld(lobby, dataSource);
 			}
-			txn.commit();
-		} catch (NoSuchAlgorithmException | EntityNotFoundException | IOException ee) {
+			dataSource.commit();
+		} catch (EntityNotFoundException | IOException ee) {
 			log.log(Level.SEVERE, "postSetup Failure for " + r.gameId + ", " + r.kingdom, ee);
 			return false;
-		} finally {
-			if (txn.isActive()) txn.rollback();
 		}
 		return true;
 	}
