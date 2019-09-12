@@ -423,7 +423,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					Army army = Army.newArmy(w.getRules());
 					army.type = Army.Type.ARMY;
 					army.size = armies / numRegions;
-					army.tags = r.getArmyTags();
+					army.tags.addAll(r.getArmyTags());
 					army.location = w.regions.indexOf(r);
 					army.id = w.getNewArmyId();
 					army.kingdom = kingdom;
@@ -695,6 +695,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				if (totalTribute < 1) totalTribute = 1;
 				for (String kk : kingdoms.keySet()) {
 					if (k.equals(kk)) continue;
+					if (kingdoms.get(kk).tookFinalAction()) continue;
 					Relationship r = getNation(k).getRelationship(kk);
 					Relationship old = new Relationship(r);
 					r.battle = Relationship.War.valueOf(kOrders.getOrDefault("rel_" + kk + "_attack", "NEUTRAL"));
@@ -2074,7 +2075,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						Army army = Army.newArmy(getRules());
 						army.type = Army.Type.ARMY;
 						army.size = recruits;
-						army.tags = tags;
+						army.tags.addAll(tags);
 						army.location = i;
 						army.id = getNewArmyId();
 						army.kingdom = k;
