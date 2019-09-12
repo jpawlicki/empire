@@ -26,6 +26,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 class DataSource implements AutoCloseable {
+	// This is buggy because world is mutated in most cases to make it viewer-specific.
 	static final Cache<String, World> worldCache = CacheBuilder.newBuilder().maximumSize(20).build();
 	static final Cache<String, Orders> ordersCache = CacheBuilder.newBuilder().maximumSize(20).build();
 	static final Cache<String, Lobby> lobbyCache = CacheBuilder.newBuilder().maximumSize(20).build();
@@ -155,7 +156,7 @@ class DataSource implements AutoCloseable {
 	private <T, E extends Exception> T loadEntity(Key key, CheckedFunction<String, T, E> factory, Cache<String, T> cache) throws E, IOException, EntityNotFoundException {
 		Entity e = service.get(key);
 		String eTag = null;
-		if (e.hasProperty("eTag")) eTag = new String(((Text)e.getProperty("eTag")).getValue());
+		if (e.hasProperty("eTag")) eTag = (String)e.getProperty("eTag");
 		if (eTag == null) return factory.apply(getJson(e));
 		try {
 			return cache.get(eTag, () -> factory.apply(getJson(e)));

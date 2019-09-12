@@ -357,10 +357,10 @@ public class EntryServlet extends HttpServlet {
 			try {
 				Lobby exists = dataSource.loadLobby(r.gameId);
 				return false;
-			} catch (EntityNotFoundException expected) {
-			} catch (IOException expected) {
+			} catch (IOException e) {
 				log.log(Level.SEVERE, "postStartLobby failure " + r.gameId, e);
 				return false;
+			} catch (EntityNotFoundException expected) {
 			}
 			StartLobbyBody startLobby = getGson().fromJson(r.body, StartLobbyBody.class);
 			dataSource.save(Lobby.newLobby(r.gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis));
@@ -406,7 +406,7 @@ public class EntryServlet extends HttpServlet {
 		} catch (EntityNotFoundException e) {
 			log.log(Level.INFO, "No player for " + w.getNation(r.kingdom).getEmail() + " in " + r.gameId);
 			return CheckPasswordResult.NO_ENTITY;
-		} catch (IOException expected) {
+		} catch (IOException e) {
 			log.log(Level.SEVERE, "IOException finding player " + w.getNation(r.kingdom).getEmail(), e);
 			return CheckPasswordResult.NO_ENTITY;
 		}

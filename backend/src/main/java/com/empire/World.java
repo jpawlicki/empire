@@ -389,11 +389,23 @@ public class World extends RulesObject implements GoodwillProvider {
 					break;
 				}
 			} else {
-				// If there are no borders, give the first unowned land region to a random non-rebellious kingdom.
+				// If there are no borders, give the first unowned land region to a random non-rebellious kingdom that shares a sea.
 				for (Region r : w.regions) {
 					if (r.isSea()) continue;
 					if (r.getKingdom() != null) continue;
-					while (r.getKingdom() == null || rebelliousNations.contains(r.getKingdom())) r.setKingdomNoScore(new ArrayList<String>(w.getNationNames()).get((int)(Math.random() * w.kingdoms.size())));
+					Set<String> eligibleNations = new HashSet<>();
+					r.getNeighbors(w).stream().filter(rr -> rr.isSea()).forEach(sea -> sea.getNeighbors(w).stream().map(rr -> rr.getKingdom()).filter(k -> k != null).forEach(k -> eligibleNations.add(k)));
+					eligibleNations.removeIf(k -> rebelliousNations.contains(k));
+					if (eligibleNations.isEmpty()) {
+						eligibleNations.addAll(w.kingdoms.keySet());
+						eligibleNations.removeIf(k -> rebelliousNations.contains(k));
+					}
+					if (eligibleNations.isEmpty()) {
+						numUnownedRegions = 0; // All nations are rebellious. Bail out.
+					} else {
+						List<String> choice = new ArrayList<>(eligibleNations);
+						r.setKingdomNoScore(choice.get((int)(Math.random() * choice.size())));
+					}
 					break;
 				}
 			}
@@ -1593,6 +1605,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						if (max != null && Nation.isEnemy(a.kingdom, max.kingdom, World.this)) {
 							notifications.add(new Notification(a.kingdom, "Fleet Captured", "Our fleet of " + Math.round(a.size) + " warships in " + region.name + " was seized by " + max.kingdom + "."));
 							a.kingdom = max.kingdom;
+							if (leaders.containsKey(a)) leaders.get(a).leadingArmy = -1;
 							if (max.kingdom.equals("Pirate")) {
 								pirate.threat += a.size;
 								pirateThreatSources.put("Naval Captures", pirateThreatSources.getOrDefault("Naval Captures", 0.0) + a.size);
@@ -2474,7 +2487,12 @@ public class World extends RulesObject implements GoodwillProvider {
 					armies.removeAll(removals);
 					notifyAllPlayers(k + " Departs", ruler.name + " has gathered those loyal to them, including " + Math.round(navalStrength / enemyNavalStrength * 100) + "% of the population of their core regions and set sail for distant lands across the sea, perhaps never to be heard from again.");
 				}
-				if ("abdication".equals(final_action)) {
+				if ("abdicate".equals(final_action)) {
+					for (Region r : regions) if (k.equals(r.getKingdom())) {
+						r.unrestPopular = 0.1;
+						if (r.hasNoble()) r.noble.unrest = 0.1;
+					}
+					armies.removeIf(a -> k.equals(a.kingdom) && !a.hasTag(Army.Tag.HIGHER_POWER));
 					notifyAllPlayers(k + " Dissolves", "After deep reflection, " + ruler.name + " has elected to place the affairs of their nation in order and then dissolve its central authority. Its people celebrate the history of their union and look hopefully forward to the future and their right to self-rule.");
 				}
 				List<Character> removals = new ArrayList<>();
