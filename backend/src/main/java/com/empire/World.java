@@ -609,6 +609,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			miscScoreProfiles();
 			appointHeirs();
 			takeFinalActions();
+			removeInvalidPlots();
 			notifyPirateThreats();
 			notifyInspires();
 			advanceDate();
@@ -2513,6 +2514,10 @@ public class World extends RulesObject implements GoodwillProvider {
 				for (Region r : regions) if (k.equals(r.getKingdom())) r.setKingdom(World.this, "Unruled");
 				getNation(k).takeFinalAction();
 			}
+		}
+
+		void removeInvalidPlots() {
+			plots.removeIf(p -> !p.isValid(World.this));
 		}
 
 		void notifyPirateThreats() {

@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 class DataSource implements AutoCloseable {
-	// This is buggy because world is mutated in most cases to make it viewer-specific.
 	static final Cache<String, World> worldCache = CacheBuilder.newBuilder().maximumSize(20).build();
 	static final Cache<String, Orders> ordersCache = CacheBuilder.newBuilder().maximumSize(20).build();
 	static final Cache<String, Lobby> lobbyCache = CacheBuilder.newBuilder().maximumSize(20).build();
@@ -64,7 +63,7 @@ class DataSource implements AutoCloseable {
 				loadEntity(
 						KeyFactory.createKey(TYPE_WORLD, gameId + "_" + turn),
 						World::fromJson,
-						worldCache);
+						null /* worldCache */); // worldCache is buggy because getWorld() mutates the returned object to filter it to a particular player's view.
 	}
 
 	Orders loadOrder(long gameId, String kingdom, int turn) throws EntityNotFoundException, IOException {
@@ -157,7 +156,7 @@ class DataSource implements AutoCloseable {
 		Entity e = service.get(key);
 		String eTag = null;
 		if (e.hasProperty("eTag")) eTag = (String)e.getProperty("eTag");
-		if (eTag == null) return factory.apply(getJson(e));
+		if (eTag == null || cache == null) return factory.apply(getJson(e));
 		try {
 			return cache.get(eTag, () -> factory.apply(getJson(e)));
 		} catch (ExecutionException ex) {

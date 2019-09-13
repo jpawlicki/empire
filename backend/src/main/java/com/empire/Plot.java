@@ -485,6 +485,10 @@ class Plot extends RulesObject {
 		powerHintRandomizerTotal = 0;
 	}
 
+	public boolean isValid(World w) {
+		return type.getTargetRegion(targetId, w).isPresent() && type.getDefender(targetId, w).isPresent();
+	}
+
 	private Plot(Rules rules) {
 		super(rules);
 		powerHintRandomizer = Math.random() * .2 + .9;

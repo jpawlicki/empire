@@ -809,7 +809,11 @@ class Plot {
 		let regionPlots = ["BURN_SHIPYARD", "SABOTAGE_FORTIFICATIONS", "SPOIL_FOOD", "SPOIL_CROPS", "INCITE_UNREST", "PIN_FOOD", "MURDER_NOBLE", "POISON_RELATIONS"];
 		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION"];
 		let goodwillPlots = ["PRAISE"];
-		if (characterPlots.includes(this.type)) return g_data.characters.find(c => c.name == this.target_id).kingdom;
+		if (characterPlots.includes(this.type)) {
+			let c = g_data.characters.find(c => c.name == this.target_id);
+			if (c == undefined) return undefined;
+			return c.kingdom;
+		}
 		if (regionPlots.includes(this.type)) return g_data.regions.find(c => c.name == this.target_id).kingdom;
 		if (nationPlots.includes(this.type)) return this.target_id;
 		if (goodwillPlots.includes(this.type)) {
