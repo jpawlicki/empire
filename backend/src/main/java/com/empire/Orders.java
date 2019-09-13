@@ -1,26 +1,14 @@
 package com.empire;
-import com.google.appengine.api.datastore.Text;
-import com.google.appengine.api.datastore.DatastoreService;
-import com.google.appengine.api.datastore.Entity;
-import com.google.appengine.api.datastore.EntityNotFoundException;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
 import java.util.HashMap;
 
 public final class Orders {
-	public static String TYPE = "Orders";
-
 	public final String kingdom;
 	public final int turn;
 	public final int version;
 	public final String json;
 	public final long gameId;
-
-	public static Orders loadOrder(long gameId, String kingdom, int turn, DatastoreService service) throws EntityNotFoundException {
-		Entity e = service.get(KeyFactory.createKey(KeyFactory.createKey(World.TYPE, gameId + "_" + turn), TYPE, gameId + "_" + turn + "_" + kingdom));
-		return new Orders(gameId, kingdom, turn, (int)((Long)e.getProperty("version")).longValue(), ((Text)e.getProperty("json")).getValue());
-	}
 
 	public Orders(long gameId, String kingdom, int turn, int version, String json) {
 		this.gameId = gameId;
@@ -36,13 +24,6 @@ public final class Orders {
 						.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
 						.create()
 				.fromJson(json, OrderGson.class).orders;
-	}
-
-	public Entity toEntity() {
-		Entity e = new Entity(TYPE, gameId + "_" + turn + "_" + kingdom, KeyFactory.createKey(World.TYPE, gameId + "_" + turn));
-		e.setProperty("json", new Text(json));
-		e.setProperty("version", version);
-		return e;
 	}
 
 	private static class OrderGson {
