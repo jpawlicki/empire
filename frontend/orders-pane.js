@@ -671,7 +671,12 @@ class OrdersPane extends HTMLElement {
 			let textarea = document.createElement("textarea");
 			rtc.appendChild(textarea);
 			let submit = document.createElement("button");
+			let backoffCount = 0;
+			let backoffMisses = 0;
+			let lastNumMessages = 0;
 			let checkForUpdate = function() {
+				backoffCount++;
+				if (backoffMisses > 7 && backoffCount % 10 != 0) return;
 				let req = new XMLHttpRequest();
 				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 				req.onerror = function (e) {
@@ -681,14 +686,22 @@ class OrdersPane extends HTMLElement {
 					if (req.status != 200) {
 						window.alert("Failed to communicate with the server: " + req.status);
 					} else {
-						d.innerHTML = "";
-						for (let msg of JSON.parse(req.response).rtc) {
-							let m = document.createElement("div");
-							msg.to.push(msg.from);
-							msg.to.sort();
-							m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
-							m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
-							d.appendChild(m);
+						let rtc = JSON.parse(req.response).rtc;
+						if (lastNumMessages != rtc.length) {
+							lastNumMessages = rtc.length;
+							backoffMisses = 0;
+							backoffCount = 0;
+							d.innerHTML = "";
+							for (let msg of JSON.parse(req.response).rtc) {
+								let m = document.createElement("div");
+								msg.to.push(msg.from);
+								msg.to.sort();
+								m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
+								m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
+								d.appendChild(m);
+							}
+						} else {
+							backoffMisses++;
 						}
 					}
 				};
@@ -943,8 +956,14 @@ class OrdersPane extends HTMLElement {
 						e[0].dispatchEvent(new CustomEvent("input"));
 					} else if (e.length > 1) {
 						for (let i = 0; i < e.length; i++) {
-							e[i].checked = e[i].value == resp[p];
-							e[i].dispatchEvent(new CustomEvent("change"));
+							if (e[i].type == "radio") {
+								e[i].checked = e[i].value == resp[p];
+								e[i].dispatchEvent(new CustomEvent("change"));
+							} else {
+								e[i].value = resp[p];
+								e[i].dispatchEvent(new CustomEvent("input"));
+								e[i].dispatchEvent(new CustomEvent("change"));
+							}
 						}
 					}
 				}

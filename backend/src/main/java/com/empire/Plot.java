@@ -477,10 +477,16 @@ class Plot extends RulesObject {
 
 	public void filter(World w, Function<Army, Double> armyStrengthProvider) {
 		OutcomeWeights outcome = getOutcomeWeights(w, armyStrengthProvider);
-		powerHint = outcome.pretendSuccess * powerHintRandomizer;
-		powerHintTotal = (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure) * powerHintRandomizerTotal;
+		if (outcome != null) {
+			powerHint = outcome.pretendSuccess * powerHintRandomizer;
+			powerHintTotal = (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure) * powerHintRandomizerTotal;
+		}
 		powerHintRandomizer = 0;
 		powerHintRandomizerTotal = 0;
+	}
+
+	public boolean isValid(World w) {
+		return type.getTargetRegion(targetId, w).isPresent() && type.getDefender(targetId, w).isPresent();
 	}
 
 	private Plot(Rules rules) {

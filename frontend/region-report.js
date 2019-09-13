@@ -69,8 +69,6 @@ class RegionReport extends HTMLElement {
 					<h1><tooltip-element tooltip="Recuit output of the region. Recuritment is primarily determined by population and unrest, though several religious ideologies also affect recruitment output.">Recruits:</tooltip-element> +${num(r.calcRecruitment())} recruits</h1>
 					<h1>Contents</h1>
 					<div id="objects"></div>
-					<h1>Intrigue Power</h1>
-					<div id="intrigue"></div>
 					<h1>Other</h1>
 					<div>
 						<tooltip-element tooltip="Pirate threat is the probability that pirates will appear in this region during the resolution of the current turn, assuming no further pirate bribes. It is decreased by lowered unrest, by paying off the pirates to avoid the nation (or paying them to prefer another nation), by followers of the Northern (Alyrja) ideology, and by the use of nobles.">Pirate Threat:</tooltip-element><div>${num(r.calcPirateThreat(), 1, 100)}%</div>
@@ -85,8 +83,6 @@ class RegionReport extends HTMLElement {
 				<div id="content">
 					<h1>Contents</h1>
 					<div id="objects"></div>
-					<h1>Intrigue Power</h1>
-					<div id="intrigue"></div>
 				</div>
 			`;
 		}

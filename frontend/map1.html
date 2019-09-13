@@ -2,6 +2,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>Empire</title>
+		<link rel="icon" href="favicon.png">
 		<script src="util.js"></script>
 		<script src="gamelib.js"></script>
 		<script src="borders.js"></script>
@@ -525,10 +526,12 @@
 			}
 
 			function zoom(amt) {
-				var svg = document.getElementById("svg");
-				var zoom = svg.style.zoom;
-				if (zoom == "") zoom = .75;
-				svg.style.zoom = parseFloat(zoom) * amt;
+				let svg = document.getElementById("svg");
+				let map = document.getElementById("map");
+				let viewRect = map.getBoundingClientRect();
+				if (svg.style.width != "") svg.style.width = parseFloat(svg.style.width) * amt;
+				else svg.style.width = 1750 * amt;
+				map.scroll({"top": (map.scrollTop + viewRect.height / 2) * amt - viewRect.height / 2, "left": (map.scrollLeft + viewRect.width / 2) * amt - viewRect.width / 2, "behavior": "auto"});
 			}
 		</script>
 		<link rel="stylesheet" type="text/css" href="map1.css"/>
@@ -601,8 +604,7 @@
 				fill: #fff;
 			}
       #svg {
-				width: 2000px;
-				zoom: 75%;
+				width: 1750px;
       }
 			#canals {
 				stroke-dasharray: 3 3;
