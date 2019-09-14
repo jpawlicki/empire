@@ -1,6 +1,6 @@
 <html>
 	<head>
-		<title>Broken Empire</title>
+		<title>Hungry Empire</title>
 		<link rel="shortcut icon" type="image/png" href="favicon.png"/>
 		<script src="server.js"></script>
 		<style>
@@ -36,9 +36,7 @@
 				flex-direction: row;
 				justify-content: space-between;
 			}
-			#banner {
-				text-align: center;
-				padding: 5px;
+			#menu h1 {
 				text-shadow: 0px 0px 4px #fff;
 				font-family: serif;
 			}
@@ -57,6 +55,8 @@
 				width: 100%;
 				box-sizing: border-box;
 				justify-content: space-around;
+				flex-wrap: wrap;
+				align-items: center;
 			}
 			a {
 				transition: color 0.3s;	
@@ -65,15 +65,23 @@
 			a:hover {
 				color: #a00;
 			}
+			#background {
+				background-color: #fff;
+				opacity: 0.8;
+				z-index: -1;
+			}
 			@media (orientation: landscape) {
 				body {
 					grid-template-rows: min-content 1fr;
 					grid-template-columns: 25% 50% 25%;
 				}
 				#background {
-					background-color: #eee;
 					grid-column: 1/4;
 					grid-row: 2/4;
+				}
+				#banner {
+					grid-row: 1;
+					grid-column: 1;
 				}
 				#menu {
 					grid-column: 1/4;
@@ -105,6 +113,10 @@
 					grid-template-rows: min-content min-content min-content min-content;
 					grid-template-columns: 100%;
 				}
+				#banner {
+					grid-row: 1;
+					grid-column: 1;
+				}
 				#menu {
 					grid-column: 1;
 					grid-row: 2;
@@ -122,7 +134,6 @@
 					grid-row: 5;
 				}
 				#background {
-					background-color: #eee;
 					grid-column: 1;
 					grid-row: 2/6;
 				}
@@ -134,23 +145,19 @@
 		</script>
 	</head>
 	<body>
-		<div id="banner">
-			<h1>Broken Empire</h1>
-			<h2>A Turn-Based Grand Strategy Game</h2>
-		</div>
 		<div id="background"></div>
 		<ul id="menu">
+			<li><h1>Hungry Empire</h1></li>
 			<li><a href="https://groups.google.com/forum/#!forum/empire-playtesters">Forum</a></li>
-			<li><a href="https://www.github.com/jpawlicki/empire/newissue">Report Bug / Feedback</a></li>
+			<li><a href="https://www.github.com/jpawlicki/empire/newissue">Report Bug</a></li>
 			<li><a href="contribute.html">Contribute</a></li>
-			<li><a href="privacy_policy.html">Privacy Policy</a></li>
+			<li><a href="privacy_policy.html">Privacy</a></li>
 			<li><a href="contact.html">Contact</a></li>
 		</ul>
 		<div id="welcome">
-			<h3>Welcome</h3>
-			<p>Broken Empire is a lightweight browser-based grand strategy game with asynchronous turn-based play. Each of the 26 players rules a nation and tries to achieve the goals they select. Game turns advance every few days, and players can set up their orders at any time between those advances.</p>
-			<p>Whether the game is cooperative or competitive is up to the players. Players are trying to beating national high scores from past games.</p>
-			<p>The game is free. We don't run ads or microtransactions, and instead are supported by <a href="contribute.html">donations</a>.</p>
+			<p>Hungry Empire is a lightweight browser-based grand strategy game with asynchronous turn-based play. Each of the 26 players rules a nation and tries to achieve the goals they select. Game turns advance every few days, and players can set up their orders at any time between those advances.</p>
+			<p>Whether the game is cooperative or competitive is up to the players. Players are trying to beat national high scores from past games.</p>
+			<p>We don't run ads or microtransactions, and instead are supported by <a href="contribute.html">donations</a>.</p>
 		</div>
 		<div id="login">
 			<h3>Log in to start or join a game lobby.</h3>
