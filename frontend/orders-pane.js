@@ -120,6 +120,7 @@ class OrdersPane extends HTMLElement {
 						<option value="salt_the_earth">Salt the Earth</option>
 					</select>
 					<div id="final_action_details"></div>
+					<h1><a href="https://docs.google.com/document/d/1QFb9ul4F1m_x0jxVUio7ry4wI9eCKO7vy08RFlR2N-g/edit?usp=sharing" target="_blank">Rules Document</a></h1>
 				</div>
 			</form>
 			<div id="clock">Week ${g_data.date} (${(g_data.date % 52 < 13 || g_data.date % 52 >= 39) ? "Winter" : "Summer"})</div>
@@ -1250,14 +1251,16 @@ class OrdersPane extends HTMLElement {
 		let d = document.createElement("div");
 		let targetProviderNone = () => [];
 		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
-		let targetProviderRegion = () => g_data.regions.map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+		let targetProviderRegion = () => g_data.regions.filter(r => r.type == "land").map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+		let targetProviderRegionShipyard = () => g_data.regions.filter(r => r.constructions.filter(c => c.type == "shipyard").length > 0).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+		let targetProviderRegionFortifications = () => g_data.regions.filter(r => r.constructions.filter(c => c.type == "fortifications").length > 0).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
 		let targetProviderRegionNoble = () => g_data.regions.filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
 		let targetProviderNation = () => Object.keys(g_data.kingdoms).map(k => { return {"name": k, "value": k}});
 		let plotTypes = [
 			{"name": "", "value": "", "targetType": targetProviderNone},
 			{"name": "Assassinate", "value": "ASSASSINATE", "targetType": targetProviderCharacter},
-			{"name": "Burn a shipyard in", "value": "BURN_SHIPYARD", "targetType": targetProviderRegion},
-			{"name": "Sabotage fortifications in", "value": "SABOTAGE_FORTIFICATIONS", "targetType": targetProviderRegion},
+			{"name": "Burn a shipyard in", "value": "BURN_SHIPYARD", "targetType": targetProviderRegionShipyard},
+			{"name": "Sabotage fortifications in", "value": "SABOTAGE_FORTIFICATIONS", "targetType": targetProviderRegionFortifications},
 			{"name": "Spoil food in", "value": "SPOIL_FOOD", "targetType": targetProviderRegion},
 			{"name": "Spoil crops in", "value": "SPOIL_CROPS", "targetType": targetProviderRegion},
 			{"name": "Incite popular unrest in", "value": "INCITE_UNREST", "targetType": targetProviderRegion},
