@@ -494,6 +494,39 @@ class Region {
 		console.log("Failed to find a point in region " + this.id);
 		return {x: 0,  y: 0};
 	}
+
+	calcCostToBuildTemple(builderNation, ideology) {
+		let base = {"v": 30, "unit": "gold", "why": "Base cost"};
+		let mods = [];
+		let nation = getNation(builderNation);
+		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
+		if (nation.tags.includes("Mystical")) mods.push({"v": -.5, "unit": "%", "why": "Mystical Nation"});
+		if (nation.tags.includes("Evangelical") && nation.calcStateReligion() != this.religion) mods.push({"v": -1, "unit": "%", "why": "Evangelical Nation"});
+		if (ideology.startsWith("Iruhan ") && !this.religion.startsWith("Iruhan ") && World.calcGlobalIdeology() == "Iruhan (Vessel of Faith)") mods.push({"v": -1, "unit": "%", "why": "Vessel of Faith global ideology"});
+		if (this.religion == "Iruhan (Tapestry of People)") {
+			let templeBonus = true;
+			for (let r of this.getNeighbors()) if (r.isLand() && (r.religion != this.religion || r.culture != this.culture)) templeBonus = false;
+			if (templeBonus) mods.push({"v": -1, "unit": "%", "why": "Tapestry of People temple bonus"});
+		}
+		return Calc.moddedNum(base, mods);
+	}
+
+	calcCostToBuildShipyard(builderNation) {
+		let base = {"v": 80, "unit": "gold", "why": "Base cost"};
+		let mods = [];
+		let nation = getNation(builderNation);
+		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
+		return Calc.moddedNum(base, mods);
+	}
+
+	calcCostToBuildFortifications(builderNation) {
+		let base = {"v": 20, "unit": "gold", "why": "Base cost"};
+		let mods = [];
+		let nation = getNation(builderNation);
+		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
+		if (this.religion == "Tavian (Flame of Kith)") mods.push({"v": -1, "unit": "%", "why": "Flame of Kith"});
+		return Calc.moddedNum(base, mods);
+	}
 }
 
 
@@ -647,6 +680,7 @@ class Character {
 		this.orderhint = dataEntry.orderhint;
 		this.values = dataEntry.values;
 		this.leadingArmy = dataEntry.leading_army;
+		this.hidden = dataEntry.hidden;
 	}
 
 	calcLevel(dimension) {
@@ -760,6 +794,7 @@ class Plot {
 		let getTargetRegionRegion = () => g_data.regions.find(r => r.name == this.target_id);
 		let getTargetRegionChurch = () => g_data.regions[g_geo.holycity];
 		let getTargetRegionNation = () => {
+			if (g_data.kingdoms[this.target_id] == undefined) return undefined;
 			let character = g_data.kingdoms[this.target_id].getRuler();
 			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
 		}
@@ -774,7 +809,11 @@ class Plot {
 		let regionPlots = ["BURN_SHIPYARD", "SABOTAGE_FORTIFICATIONS", "SPOIL_FOOD", "SPOIL_CROPS", "INCITE_UNREST", "PIN_FOOD", "MURDER_NOBLE", "POISON_RELATIONS"];
 		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION"];
 		let goodwillPlots = ["PRAISE"];
-		if (characterPlots.includes(this.type)) return g_data.characters.find(c => c.name == this.target_id).kingdom;
+		if (characterPlots.includes(this.type)) {
+			let c = g_data.characters.find(c => c.name == this.target_id);
+			if (c == undefined) return undefined;
+			return c.kingdom;
+		}
 		if (regionPlots.includes(this.type)) return g_data.regions.find(c => c.name == this.target_id).kingdom;
 		if (nationPlots.includes(this.type)) return this.target_id;
 		if (goodwillPlots.includes(this.type)) {
@@ -807,6 +846,14 @@ class Plot {
 	}
 }
 
+function religionFromIdeology(ideo) {
+	ideo = ideo.replace(/[()]/g, "");
+	if (ideo == "Vessel of Faith" || ideo == "Chalice of Compassion" || ideo == "Sword of Truth" || ideo == "Tapestry of People") return "Iruhan (" + ideo + ")";
+	if (ideo == "Alyrja" || ideo == "Rjinku" || ideo == "Lyskr" || ideo == "Syrjen") return "Northern (" + ideo + ")";
+	if (ideo == "Flame of Kith" || ideo == "River of Kuun") return "Tavian (" + ideo + ")";
+	return ideo;
+}
+
 // ============ CHURCH CONSTANTS ============
 let doctrineDescriptions = {
 	"ANTIAPOSTASY": ["-10 opinion each turn for nations loyal to the Cult."],
@@ -823,13 +870,13 @@ let doctrineDescriptions = {
 
 // ============ SCORE CONSTANTS ============
 let g_scoreProfiles = {
-	"PROSPERITY": {"selectable": true,  "description": ["+2 points per million civilians you feed with plentiful rations.", "+1 point per million civilians you feed with normal rations.", "-1 point per 6000 civilians that starve to death in your core regions.", "-1 point per 12000 civilians that starve in the core regions of a nation paying you tribute."]},
+	"PROSPERITY": {"selectable": true,  "description": ["+2 points per million civilians you feed with plentiful rations.", "+1 point per million civilians you feed with normal rations.", "-1 point per 6000 civilians that starve to death in your historical regions.", "-1 point per 12000 civilians that starve in the historical regions of a nation paying you tribute."]},
 	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
 	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 5000 gold.", "+1 point per turn you have more than 1000 gold.", "-1 point per turn you have less than 500 gold."]},
 	"TERRITORY":  {"selectable": true,  "description": ["+4 points whenever you gain rulership of a region.", "-4 points whenever you lose rulership of a region."]},
 	"GLORY":      {"selectable": true,  "description": ["+1 point per battle in which you inflict or suffer more than 2000 casualties.", "-1 point any turn you inflict or suffer less than 500 casualties total."]},
 	"RELIGION":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion.", "-2 points whenever a region is converted away from your state religion."]},
-	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy or neutral army is within two regions of your core regions.", "+1 point per turn no enemy army is adjacent to or occupying any of your core regions.", "-1 point if neither of the above apply."]},
+	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy or neutral army is within two regions of your historical regions.", "+1 point per turn no enemy army is adjacent to or occupying any of your historical regions.", "-1 point if neither of the above apply."]},
 	"CULTURE":    {"selectable": true,  "description": ["+2 points per turn the mean unrest of population of your culture is lower than the mean unrest of all other people.", "-2 points otherwise."]},
 	"IDEOLOGY":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion and ideology.", "-2 points whenever a region of your ideology is converted to another religion or ideology."]},
 	"CULTIST":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region that is not an objective region."]}

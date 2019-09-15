@@ -41,7 +41,7 @@ class SpyRing extends RulesObject {
 		Function<Node, Node> getPower = n -> {
 			Region r = n.location;
 			if (r.isSea()) return new Node(n.power * getRules().plotDecaySea, n.location);
-			double unrestFactor = NationData.isFriendly(nation, r.getKingdom(), w) ? 1 - r.calcUnrest(w) : r.calcUnrest(w);
+			double unrestFactor = Nation.isFriendly(nation, r.getKingdom(), w) ? 1 - r.calcUnrest(w) : r.calcUnrest(w);
 			return new Node(n.power * (getRules().plotDecayMin + unrestFactor * (getRules().plotDecayMax - getRules().plotDecayMin)), n.location);
 		};
 
@@ -101,7 +101,7 @@ class SpyRing extends RulesObject {
 			outcome.support(strength);
 		} else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SABOTAGING) {
 			double mod = 1;
-			if (NationData.getStateReligion(nation, w) == Ideology.LYSKR) mod += getRules().lyskrSabotageMod;
+			if (Nation.getStateReligion(nation, w) == Ideology.LYSKR) mod += getRules().lyskrSabotageMod;
 			outcome.sabotage(strength * mod);
 		}
 	}

@@ -3,5 +3,5 @@
  * Returns an object of player percentiles.
  */
 function getHistoricalScore(turn, kingdom, points) {
-	return {"nation": .98, "culture": .94, "global": .8};
+	return {"nation": 1, "culture": 1, "global": 1};
 }

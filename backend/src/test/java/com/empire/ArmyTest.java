@@ -19,7 +19,7 @@ import static org.mockito.Mockito.when;
 public class ArmyTest {
 	private static Army a;
 	private static World w;
-	private static NationData n1;
+	private static Nation n1;
 	private static final double DELTA = 1E-5;
 
 	private static final String k1 = "k1";
@@ -43,13 +43,13 @@ public class ArmyTest {
 		World w = mock(World.class);
 		w.notifications = new ArrayList<>();
 
-		n1 = mock(NationData.class);
+		n1 = mock(Nation.class);
 		Relationship rel1 = mock(Relationship.class);
 		rel1.battle = Relationship.War.ATTACK;
 		when(n1.getRelationship(k2)).thenReturn(rel1);
 		when(w.getNation(k1)).thenReturn(n1);
 
-		NationData n2 = mock(NationData.class);
+		Nation n2 = mock(Nation.class);
 		Relationship rel2 = mock(Relationship.class);
 		rel2.battle = Relationship.War.ATTACK;
 		when(n2.getRelationship(k1)).thenReturn(rel2);
@@ -95,20 +95,20 @@ public class ArmyTest {
 	@Test
 	public void calcStrengthDisciplinedNavy() {
 		a.type = Army.Type.NAVY;
-		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
+		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(100.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplinedPirate() {
 		a.kingdom = Utils.rules.pirateKingdom;
-		w.getNation(k1).addTag(NationData.Tag.DISCIPLINED);
+		w.getNation(k1).addTag(Nation.Tag.DISCIPLINED);
 		assertEquals(1.0, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
 	public void calcStrengthDisciplined() {
-		when(n1.hasTag(NationData.Tag.DISCIPLINED)).thenReturn(true);
+		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(1.1, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
@@ -265,7 +265,7 @@ public class ArmyTest {
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
 
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>(), new HashSet<>());
 		assertTrue(conqueredRegions.contains(r));
 		verify(r).setKingdom(w, k2);
 	}
@@ -278,7 +278,7 @@ public class ArmyTest {
 		when(r.calcMinConquestStrength(w)).thenReturn(100.0);
 
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>(), new HashSet<>());
 		assertTrue(conqueredRegions.isEmpty());
 		verify(r, never()).setKingdom(w, k2);
 	}
@@ -295,7 +295,7 @@ public class ArmyTest {
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
 
 		HashSet<Region> conqueredRegions = new HashSet<>();
-		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>());
+		a.conquer(w, "Conquer", conqueredRegions, new HashMap<>(), new HashMap<>(), 0, new HashSet<>(), new HashSet<>());
 		assertTrue(r.constructions.isEmpty());
 		assertTrue(conqueredRegions.contains(r));
 		verify(r).setKingdom(w, k2);

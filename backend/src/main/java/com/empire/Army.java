@@ -50,15 +50,15 @@ class Army extends RulesObject {
 
 		if (hasTag(Tag.STEEL)) mods += getRules().steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += getRules().seafaringMod;
-		if (isArmy() && !getRules().pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += getRules().disciplinedArmyStrengthMod;
-		if (isArmy() && r.isLand() && NationData.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
+		if (isArmy() && !getRules().pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Nation.Tag.DISCIPLINED)) mods += getRules().disciplinedArmyStrengthMod;
+		if (isArmy() && r.isLand() && Nation.isFriendly(r.getKingdom(), kingdom, w)) mods += r.calcFortificationMod();
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology()) {
-			Ideology sr = NationData.getStateReligion(kingdom, w);
+			Ideology sr = Nation.getStateReligion(kingdom, w);
 			if (Ideology.SWORD_OF_TRUTH == sr) mods += getRules().swordOfTruthMod;
 			else if (sr.religion == Religion.IRUHAN) mods += getRules().iruhanMod;
 		}
 		if (lastStand) mods += getRules().lastStandMod;
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * getRules().perInspireMod;
+		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * getRules().perInspireMod;
 		if (leader != getRules().noLeader) {
 			mods += leader.calcLeadMod(type);
 		}
@@ -125,7 +125,7 @@ class Army extends RulesObject {
 	 * Orders the army to conquer the region they inhabit.
 	 * Modifies conqueredRegions.
 	 */
-	public void conquer(World w, String order, Set<Region> conqueredRegions, Map<String, List<String>> tributes, Map<Army, Character> leaders, int inspires, Set<String> lastStands) {
+	public void conquer(World w, String order, Set<Region> conqueredRegions, Map<String, List<String>> tributes, Map<Army, Character> leaders, int inspires, Set<String> lastStands, Set<String> excommunicatedNations) {
 		if (!isArmy()) return;
 		String target = order.replace("Conquer for ", "");
 		if (target.equals("Conquer")) target = kingdom;
@@ -157,7 +157,7 @@ class Army extends RulesObject {
 		}
 		if (target.equals(region.getKingdom())) return;
 		String nobleFate = "";
-		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(NationData.Tag.REPUBLICAN))) {
+		if (region.noble != null && (region.noble.unrest < .5 || w.getNation(target).hasTag(Nation.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
 			if (!w.spyRings.stream().anyMatch(r -> r.getLocation() == location && r.getNation() == region.getKingdom())) w.spyRings.add(SpyRing.newSpyRing(getRules(), region.getKingdom(), region.noble.calcPosthumousSpyRingStrength(), location));
 			region.noble = null;
@@ -166,7 +166,7 @@ class Army extends RulesObject {
 			nobleFate = " " + region.noble.name + " swore fealty to their new rulers.";
 			region.noble.unrest = .15;
 		}
-		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && w.getNation(region.getKingdom()).goodwill <= 0) w.getNation(kingdom).goodwill += getRules().defendersOfFaithConquestOpinion;
+		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && excommunicatedNations.contains(region.getKingdom())) w.getNation(kingdom).goodwill += getRules().defendersOfFaithConquestOpinion;
 		region.constructions.removeIf(c -> c.type == Construction.Type.FORTIFICATIONS);
 		w.notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
 		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest = Math.min(1, r.noble.unrest + .06);

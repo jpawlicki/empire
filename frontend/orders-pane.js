@@ -123,7 +123,6 @@ class OrdersPane extends HTMLElement {
 					<h1><a href="https://docs.google.com/document/d/1QFb9ul4F1m_x0jxVUio7ry4wI9eCKO7vy08RFlR2N-g/edit?usp=sharing" target="_blank">Rules Document</a></h1>
 				</div>
 			</form>
-			<div id="clock">Week ${g_data.date} (${(g_data.date % 52 < 13 || g_data.date % 52 >= 39) ? "Winter" : "Summer"})</div>
 		`;
 		// CSS
 		let style = document.createElement("style");
@@ -304,11 +303,6 @@ class OrdersPane extends HTMLElement {
 				font-size: 80%;
 				color: #830;
 			}
-			#clock {
-				width: 100%;
-				text-align: center;
-				font-size: 115%;
-			}
 			#nations_cede label {
 				display: block;
 			}
@@ -415,7 +409,13 @@ class OrdersPane extends HTMLElement {
 				whor.setAttribute("href", "character/" + unit.name);
 				whor.innerHTML = unit.name;
 				who.appendChild(whor);
-				addRow(unitTable, who, undefined, this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)), shadow.getElementById("table_nobles"));
+				let od = document.createElement("div");
+				od.appendChild(this.select("action_" + unit.name.replace(/[ ']/g, "_"), getCharacterOptions(unit)));
+				let wd = document.createElement("div");
+				wd.setAttribute("id", "warning_character_" + unit.name.replace(/[ ']/g, "_"));
+				wd.setAttribute("class", "warning");
+				od.appendChild(wd);
+				addRow(unitTable, who, undefined, od, shadow.getElementById("table_nobles"));
 			}
 		}
 		let navyCount = 0;
@@ -472,7 +472,13 @@ class OrdersPane extends HTMLElement {
 				who.appendChild(document.createTextNode(r.noble.name));
 				addCell(who);
 				addCell(document.createElement("div"));
-				addCell(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
+				let od = document.createElement("div");
+				od.appendChild(this.select("action_noble_" + r.id, this.getNobleOptions(r)));
+				let wd = document.createElement("div");
+				wd.setAttribute("id", "warning_noble_" + r.id);
+				wd.setAttribute("class", "warning");
+				od.appendChild(wd);
+				addCell(od);
 				unitTable.insertBefore(tr, shadow.getElementById("table_armies"));
 				nobleCount++;
 			}
@@ -644,7 +650,7 @@ class OrdersPane extends HTMLElement {
 		function sanitize(s) {
 			return s.replace(/</g, "&lt").replace(/>/g, "&gt");
 		}
-		if (colocatedRulers.length > 0) {
+		if (colocatedRulers.length > 0 && !kingdom.getRuler().hidden) {
 			let rtc = shadow.getElementById("nations_rtc");
 			rtc.innerHTML = "";
 			let d = document.createElement("div");
@@ -666,7 +672,12 @@ class OrdersPane extends HTMLElement {
 			let textarea = document.createElement("textarea");
 			rtc.appendChild(textarea);
 			let submit = document.createElement("button");
+			let backoffCount = 0;
+			let backoffMisses = 0;
+			let lastNumMessages = 0;
 			let checkForUpdate = function() {
+				backoffCount++;
+				if (backoffMisses > 7 && backoffCount % 10 != 0) return;
 				let req = new XMLHttpRequest();
 				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 				req.onerror = function (e) {
@@ -676,14 +687,22 @@ class OrdersPane extends HTMLElement {
 					if (req.status != 200) {
 						window.alert("Failed to communicate with the server: " + req.status);
 					} else {
-						d.innerHTML = "";
-						for (let msg of JSON.parse(req.response).rtc) {
-							let m = document.createElement("div");
-							msg.to.push(msg.from);
-							msg.to.sort();
-							m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
-							m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
-							d.appendChild(m);
+						let rtc = JSON.parse(req.response).rtc;
+						if (lastNumMessages != rtc.length) {
+							lastNumMessages = rtc.length;
+							backoffMisses = 0;
+							backoffCount = 0;
+							d.innerHTML = "";
+							for (let msg of JSON.parse(req.response).rtc) {
+								let m = document.createElement("div");
+								msg.to.push(msg.from);
+								msg.to.sort();
+								m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
+								m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
+								d.appendChild(m);
+							}
+						} else {
+							backoffMisses++;
 						}
 					}
 				};
@@ -785,9 +804,11 @@ class OrdersPane extends HTMLElement {
 		shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow));
 		shadow.getElementById("economy_newbribe").addEventListener("click", ()=>op.addBribe(shadow));
 		let lastTime = 0;
-		form.addEventListener("input", function() {
-			op.checkWarnings(shadow);
-			op.plannedMotions(shadow);
+		form.addEventListener("input", function(e) {
+			if (e.srcElement.type != "textarea") {
+				op.checkWarnings(shadow);
+				op.plannedMotions(shadow);
+			}
 			lastTime = Date.now();
 			setTimeout(function() {
 				if (lastTime < Date.now() - 1000) {
@@ -833,8 +854,8 @@ class OrdersPane extends HTMLElement {
 			let final_act_desc = {
 				"continue_ruling": "",
 				"salt_the_earth": "You lay waste to your own lands, decreasing their value to your enemies. All regions you control become treacherous, lose half their food, and become unruled. All your armies and navies become pirates. Your heroes are removed from the game. Your people overthrow you and you are removed from the game.",
-				"abdicate": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your core regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
-				"exodus": "You gather those loyal to you and flee across the great sea to lands unknown. Your heroes are removed from the map and your regions become unruled. A fraction of population from your core regions goes with you, depending on your naval strength relative to your enemies. You depart from this region of the world, removing you from the game.",
+				"abdicate": "You set the affairs of your nation in order, increasing the value of your people. Your regions become unruled and your heroes are removed from the game. Popular and noble unrest in your historical regions reverts to 10%. Your armies and navies disband. You step down gracefully from your ruling position and are removed from the game.",
+				"exodus": "You gather those loyal to you and flee across the great sea to lands unknown. Your heroes are removed from the map and your regions become unruled. A fraction of population from your historical regions goes with you, depending on your naval strength relative to your enemies. You depart from this region of the world, removing you from the game.",
 				"last_stand": "You inspire your troops to make a heroic final stand. Your armies and navies fight with +400% efficacy this turn, and then become pirates. Your regions become unruled and your heroes are removed from the game. You are either killed in battle or slip away to live out a quiet life far from politics, removing you from the game.",
 			};
 			shadow.getElementById("final_action_details").innerHTML = final_act_desc[shadow.getElementById("final_action").value];
@@ -936,8 +957,14 @@ class OrdersPane extends HTMLElement {
 						e[0].dispatchEvent(new CustomEvent("input"));
 					} else if (e.length > 1) {
 						for (let i = 0; i < e.length; i++) {
-							e[i].checked = e[i].value == resp[p];
-							e[i].dispatchEvent(new CustomEvent("change"));
+							if (e[i].type == "radio") {
+								e[i].checked = e[i].value == resp[p];
+								e[i].dispatchEvent(new CustomEvent("change"));
+							} else {
+								e[i].value = resp[p];
+								e[i].dispatchEvent(new CustomEvent("input"));
+								e[i].dispatchEvent(new CustomEvent("change"));
+							}
 						}
 					}
 				}
@@ -1318,8 +1345,10 @@ class OrdersPane extends HTMLElement {
 		}
 		for (let i = 0; i < this.divisions; i++) {
 			let o = shadow.querySelector("select[name=action_div_" + i + "]");
-			if (o == undefined) conitinue;
-			let source = g_data.armies[parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value)];
+			if (o == undefined) continue;
+			let source = undefined;
+			let parentId = parseInt(shadow.querySelector("[name=div_parent_" + i + "]").value);
+			for (let a of g_data.armies) if (a.id == parentId) source = a;
 			let fakeArmy = {
 				"type": source.type,
 				"size": parseInt(shadow.querySelector("[name=div_size_" + i + "]").value),
@@ -1371,6 +1400,47 @@ class OrdersPane extends HTMLElement {
 			}
 			entry.w.innerHTML = warn;
 		}
+		{ // Warn about construction cost overruns.
+			let projectedConstructionCost = 0;
+			let capables = [];
+			for (let c of g_data.characters) {
+				if (c.kingdom == whoami) {
+					let cname = c.name.replace(/[ ']/g, "_");
+					capables.push({
+							"act": shadow.querySelector("select[name=action_" + cname + "]").value,
+							"loc": c.location,
+							"warn": shadow.getElementById("warning_character_" + cname)});
+				}
+			}
+			for (let q of shadow.querySelectorAll("select")) {
+				if (!q.name.startsWith("action_noble_")) continue;
+				capables.push({
+					"act": q.value,
+					"loc": parseInt(q.name.replace("action_noble_", "")),
+					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
+			}
+			for (let c of capables) c.warn.innerHTML = "";
+			let fwarns = [];
+			for (let c of capables) {
+				if (!c.act.startsWith("Build ") && c.act != "Establish Spy Ring") continue;
+				fwarns.push(c.warn);
+				if (c.act == "Establish Spy Ring") {
+					projectedConstructionCost += 50;
+				} else {
+					if (c.act.includes("Shipyard")) {
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami).v;
+					} else if (c.act.includes("Fortifications")) {
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami).v;
+					} else if (c.act.includes("Temple")) {
+						let type = religionFromIdeology(c.act.replace("Build Temple ", ""));
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, type).v;
+					}
+				}
+			}
+			if (projectedConstructionCost > getNation(whoami).gold) {
+				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold)";
+			}
+		}
 	}
 
 	plannedMotions(shadow) {
@@ -1398,6 +1468,10 @@ class OrdersPane extends HTMLElement {
 					let dest = undefined;
 					for (let i = 0; i < g_data.regions.length; i++) if (g_data.regions[i].name == o.value.replace("Travel to ", "").replace("Hide in ", "")) dest = i;
 					if (dest != undefined && dest != a.location) amotions[a.name] = dest;
+				} else if (o.value.startsWith("Lead ")) {
+					let dest = undefined;
+					for (let i = 0; i < g_data.armies.length; i++) if (g_data.armies[i].id == parseInt(o.value.replace("Lead ", "").replace("army ", "").replace("navy ",""))) dest = g_data.armies[i];
+					amotions[a.name] = dest;
 				} else {
 					amotions[a.name] = undefined;
 				}

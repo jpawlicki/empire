@@ -1,0 +1,191 @@
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<title>Empire Tutorial</title>
+		<link rel="icon" href="favicon.png">
+		<style>
+			html, body {
+				font-family: sans-serif;
+				margin: 0;
+				padding: 0;
+				background-color: #eee;
+			}
+			h1 {
+				text-align: center;
+				background: url("images/yrslekye_hd.jpg");
+				background-size: cover;
+				background-position: center;
+				height: 3em;
+				font-size: 300%;
+				color: #fff;
+				text-shadow: 0px 0px 8px #000;
+			}
+			p {
+				margin-left: 1em;
+				margin-right: 1em;
+				text-indent: 4em;
+			}
+			a {
+				color: #44f;
+				margin: 2em;
+			}
+			a:visited {
+				color: #44f;
+			}
+			#links {
+				text-align: center;
+			}
+		</style>
+		<script src="server.js"></script>
+		<script>
+			let gameId = parseInt(getArg("g"));
+			if (isNaN(gameId)) window.alert("The link that sent you here should have included a ?g= parameter.");
+			let g_data = localStorage.getItem("g_" + gameId + "_laststate");
+			if (g_data == undefined) window.alert("No game data could be loaded for game " + gameId + ". This tutorial will still work, but it will be dumber.");
+			g_data = JSON.parse(g_data);
+			let whoami = localStorage.getItem("g_" + gameId + "_whoami");
+		</script>
+	</head>
+	<body>
+		<section id="welcome">
+			<h1>Welcome</h1>
+			<p>Welcome to the game! The stage of history is set and your people eagerly await your decisions. This guide should help introduce you to basic concepts and equip you to make the best first turn possible.</p>
+			<p>The guide is split into sections. Use the "Next" and "Back" links to navigate.</p>
+		</section>
+		<section id="ui">
+			<h1>The UI (1/6)</h1>
+			<p>Your interaction with the game is done through a single web page, which is probably what gave you a link here. The UI is split into three sections. In the middle, you have the <b>world map</b>. On the left is <b>detailed information</b> on whatever you click on. (By default, it shows general information for your kingdom.) On the right are <b>your orders</b>.</p>
+			<p>Across the top of the <b>world map</b> are icons that change how it is colored. By default is shows a political map. The world is divided into regions, which produce gold, soldiers, and harvest crops into food. You will also see icons on the map indicating armies, navies, and characters. You can click on objects in the world map to open their detail view.</p>
+			<p>On the left is the <b>detailed information</b> panel. Across the top of it are icons that take you to specific reports on your kingdom (the home icon), the Church (the church icon), the Gothi (hurricane icon), the Pirates (pirate icon), a summary of current international relations (the globe icon), your current score (the chart icon), and the timeline (the hourglass icon). You can use the back button in your browser to go back to a previous report.</p>
+			<p>On the right are <b>your orders</b>. Every action you can take appears here. It is divided into five tabs:<ul>
+				<li>The <b>Units</b> tab allows you to give orders to your characters, armies, navies, and nobles.</li>
+				<li>The <b>Plots</b> tab allows you to conduct skullduggerous plots and give orders to your spy rings.</li>
+				<li>The <b>Nations</b> tab allows you to change your disposition with other nations and write letters or send money to them.</li>
+				<li>The <b>Economy</b> tab allows you to move food around your kingdom and tweak your national economy.</li>
+				<li>The <b>Game</b> tab allows you to bow out of the game gracefully if you decide to cease playing, and vote to end the game on turn 26.</li>
+			</ul></p>
+		</section>
+		<section id="food">
+			<h1>Early Strategy (2/6)</h1>
+			<p>Your first objective is to orient yourself in the world, and figure out where your regions are. By default, the detail panel shows information on your kingdom, including a list of regions. Mousing over these region links will make a crosshair appear on the map indicating where the region is. You may have to scroll or zoom out the map to bring it into view.</p>
+			<p>When setting up your kingdom, you picked the things you earn points for. Review the things that will gain or lose you points by clicking the score chart icon in the upper left. These are the goals you should work toward.</p>
+			<p>To accomplish them, you will need to balance maintaining a strong military (even if just for defense) along with your international relationships. Your neighbors are either your greatest threat or greatest potential allies.</p>
+			<p>The other thing you should keep an eye on is the level of food in your country. Click the barley icon above the map to get a sense of the global food situation. Green regions have a lot of food, while red regions have little. Click the crown icon above the map to go back to the political view.</p>
+			<div id="food_insufficient">
+				<p>You do not have enough food to make it to the next harvest without starvation. When you run out of food, your people will starve and unrest will rise. This will weaken your economy and consequently your military, making it harder to accomplish your goals. If possible, you should try to acquire more food. In the meantime, go to the Economy tab and reduce rations. Note that this will cause unrest. Reduce taxes to 50% to counteract that effect. You start the game with extra money and can afford to do this.</p>
+				<p>If any of your neighbors have food, go to the Nations tab and write them a letter proposing your military support in exchange for food. They will get the letter on the following turn and you may get a response on the turn after. Until you do, it might be wise to make plans to fight them for the food.</p>
+				<p>If none of your neighbors have a surplus either, you can write a letter to nations with food negotiating for food, but you should start preparing to take it by force. Order your navies to travel to the same region so that you can merge them into a powerful force. Similarly, start merging your armies along your coastline, and write letters to your neighbors asking about interest in joint invasions of other food-wealthy nations.</p>
+			</div>
+			<div id="food_sufficient">
+				<p>You have enough food to make it to the first harvest. Other players are worse off and will want your food.</p>
+				<p>If any of your neighbors are short on food, write them each a letter proposing an alliance in exchange for some of your surplus food. There is a chance they will invade you before they get your letter, so be prepared to negotiate, but beware those who would take advantage of you.</p>
+				<p>If you have neighbors that are food-secure, they are also in a similar defensive position to you and make natural allies. Write them a letter proposing a mutual defense agreement.</p>
+			</div>
+			<script>
+				(() => {
+					if (g_data == undefined) return;
+					let food = 0;
+					let pop = 0;
+					for (let r of g_data.regions) {
+						if (r.kingdom != whoami) continue;
+						pop += r.population;
+						food += r.food;
+					}
+					let foodSecure = food > pop * 12;
+					document.getElementById("food_insufficient").style.display = !foodSecure ? "block" : "none";
+					document.getElementById("food_sufficient").style.display = foodSecure ? "block" : "none";
+				})();
+			</script>
+		</section>
+		<section id="military">
+			<h1>Military Maneuvers (3/6)</h1>
+			<p>Since a single large army is stronger than multiple small armies, you should order your armies to travel to the same region so that you can merge them on the following turn.</p>
+			<p>Your navies start spread off your coastline. Like armies, navies are more powerful when concentrated. However, you also want the largest or second-largest navy in as many regions as possible, to help your people engage in economic activities there. It’s usually a good idea to group them up at the start of the game just in case - the missed income is not as valuable as the national security.</p>
+			<p>Order your navies to move into the same regions if possible, so that you can merge them on the following turn. Do the same for your armies.</p>
+		</section>
+		<section id="characters">
+			<h1>Heroes (4/6)</h1>
+			<p>You command several national heroes, including your ruler. Characters can fill a variety of roles, but you typically will want to use one as an admiral and one as a general.</p>
+			<p><span id="characters_best_general"></span> is your best general. Order them to Lead an Army. Leading the army will make it stronger, and train your general into a better general.</p>
+			<p><span id="characters_best_admiral"></span> is your best admiral. Order them to move toward a region with your navies. Leading the navy will make it stronger and train them into a better admiral.</p>
+			<p id="characters_has_cardinal"><span id="characters_cardinal"></span> is a Cardinal of the Church of Iruhan. They can go to the holy city and inspire all people of your religion, which will help you and every player of your culture. Usually it is a good idea to start moving your Cardinal to the holy city (Sancta Civitate, marked on the map with a cross) so that they can do this. However, you may instead decide to use them as an extra character.</p>
+			<p>A good use of your remaining characters is to Establish Spy Rings in regions you control. The more spy rings you have the better your defense against plots from other nations, and the greater your ability to enact plots against other nations.</p>
+			<p id="characters_not_republic">Another good use of your remaining characters is to Instate Nobles in regions you rule. Nobles gradually improve a region’s production, though they can become resentful of your rule. Their benefits usually outweigh their drawbacks.</p>
+			<p id="characters_noble">Your nobles can also take actions - the most important of these actions is construction. If you feel unsafe, constructing fortifications in regions is a good idea. Constructing an extra shipyard is also a good idea, but more expensive.</p>
+			<script>
+				(() => {
+					if (g_data == undefined) return;
+					let best_general = undefined;
+					let best_admiral = undefined;
+					let cardinal = undefined;
+					for (let c of g_data.characters) {
+						if (c.kingdom != whoami) continue;
+						if (best_general == undefined || c.experience.general > best_general.experience.general) best_general = c;
+						if (best_admiral == undefined || c.experience.admiral > best_admiral.experience.admiral) best_admiral = c;
+						if (c.tags.includes("Cardinal")) cardinal = c;
+					}
+					document.getElementById("characters_best_general").appendChild(document.createTextNode(best_general.name));
+					document.getElementById("characters_best_admiral").appendChild(document.createTextNode(best_admiral.name));
+					if (cardinal != undefined) {
+						document.getElementById("characters_cardinal").appendChild(document.createTextNode(cardinal.name));
+					}
+					document.getElementById("characters_has_cardinal").style.display = "none";
+					let hasNoble = false;
+					for (let r of g_data.regions) if (r.kingdom == whoami && r.noble != undefined && r.noble.name != undefined) hasNoble = true;
+					if (!hasNoble) document.getElementById("characters_noble").style.display = "none";
+					if (g_data.kingdoms[whoami].tags.includes("Republican")) document.getElementById("characters_not_republic").style.display = "none";
+				})();
+			</script>
+		</section>
+		<section id="plots">
+			<h1>Plots (5/6)</h1>
+			<p>High standing with the Church of Iruhan can get you extra income. In contrast, low standing incentivizes other players to attack you to improve their own standing. Above the detail pane, click the church icon to view the current standings. Also click the “Plot” tab in the orders pane.</p>
+			<p>On the first turn, it is a good idea to initiate a plot to Sing the Praises of your own nation. Invite nobody else to this plot. You can always abandon the plot later, but the risk early on is low and the reward is decent, even for northern nations. Long-term, you may want to consider establishing spy rings in and around the holy city to improve your ability to do this.</p>
+		</section>
+		<section id="letters">
+			<h1>Other Letters (6/6)</h1>
+			<p>Your first turn is almost all set. You may want to reach out early to other nations, sending them a letter introducing yourself. Though some players are cut-throat and this won’t help at all, others are looking to collaborate, and name recognition and friendliness will help you create relationships that you can try to leverage in the middle and late game.</p>
+		</section>
+		<section id="exit">
+			<h1>That's It!</h1>
+			<p>Look through your orders in each tab again to make sure everything makes sense and then wait for the turn to complete.</p>
+			<p>You can see the time remaining until the turn completes by clicking the hourglass icon above the detail pane.</p>
+			<p>Good luck! Long live the <span id="exit_title"></span>!<p>
+			<script>
+				(() => {
+					if (g_data == undefined) return;
+					for (let c of g_data.characters) {
+						if (c.kingdom != whoami) continue;
+						if (c.tags.includes("Ruler")) document.getElementById("exit_title").appendChild(document.createTextNode(c.honorific));
+					}
+				})();
+			</script>
+		</section>
+		<div id="links">
+			<a href="#" id="nav_back">Back</a>
+			<a href="#" id="nav_next">Next</a>
+		</div>
+		<script>
+			let sections = [
+				"welcome",
+				"ui",
+				"food",
+				"military",
+				"characters",
+				"plots",
+				"letters",
+				"exit"];
+			let pos = 0;
+			function nav(amount) {
+				document.getElementById(sections[pos]).style.display = "none";
+				pos = Math.min(sections.length -1, Math.max(0, amount + pos));
+				document.getElementById(sections[pos]).style.display = "block";
+			}
+			document.getElementById("nav_back").addEventListener("click", () => { nav(-1); });
+			document.getElementById("nav_next").addEventListener("click", () => { nav(1); });
+			for (let i = 1; i < sections.length; i++) {
+				document.getElementById(sections[i]).style.display = "none";
+			}
+		</script>
+	</body>
+</html>

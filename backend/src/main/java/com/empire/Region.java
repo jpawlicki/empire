@@ -73,7 +73,7 @@ class Region extends RulesObject {
 	public double calcImmigrationWeight(World w) {
 		double mod = 1;
 		if (religion == Ideology.FLAME_OF_KITH) mod += getRules().flameOfKithImmigrationWeightMod;
-		if (w.getNation(kingdom).hasTag(NationData.Tag.WELCOMING)) mod += 1;
+		if (w.getNation(kingdom).hasTag(Nation.Tag.WELCOMING)) mod += 1;
 		return (1 - unrestPopular) * mod;
 	}
 
@@ -88,9 +88,9 @@ class Region extends RulesObject {
 		if (governor != null) governor.calcGovernRecruitMod();
 		if (hasNoble()) mods += noble.calcRecruitMod();
 
-		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.PATRIOTIC)) mods += getRules().patrioticMod;
-		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		Nation wKingdom = w.getNation(kingdom);
+		if (wKingdom.hasTag(Nation.Tag.PATRIOTIC)) mods += getRules().patrioticMod;
+		if (wKingdom.hasTag(Nation.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * getRules().perConquestWarlikeRecruitmentMod;
@@ -108,15 +108,15 @@ class Region extends RulesObject {
 			mods += getRules().riverOfKuunRecruitmentMod;
 		}
 
-		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryRecruitmentMod * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN) {
+		if (Ideology.TAPESTRY_OF_PEOPLE == Nation.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryRecruitmentMod * numUniqueIdeologies(kingdom, w);
+		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN) {
 			mods += getRules().perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
 		}
 
-		if (largestInRegion != null && !NationData.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += getRules().armyPillagersRecruitmentMod;
+		if (largestInRegion != null && !Nation.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += getRules().armyPillagersRecruitmentMod;
 
 		double flatBonus = 0;
-		if (Ideology.RJINKU == NationData.getStateReligion(kingdom, w)) flatBonus += nationalCasualties * getRules().rjinkuCasualtyRecovery / w.regions.stream().filter(r -> kingdom.equals(r.getKingdom())).count();
+		if (Ideology.RJINKU == Nation.getStateReligion(kingdom, w)) flatBonus += nationalCasualties * getRules().rjinkuCasualtyRecovery / w.regions.stream().filter(r -> kingdom.equals(r.getKingdom())).count();
 
 		return Math.max(0, base * mods) + flatBonus;
 	}
@@ -136,9 +136,9 @@ class Region extends RulesObject {
 		if (governor != null) mods += governor.calcGovernTaxMod();
 		if (hasNoble()) mods += noble.calcTaxMod();
 
-		NationData wKingdom = w.getNation(kingdom);
-		if (wKingdom.hasTag(NationData.Tag.MERCANTILE)) mods += getRules().mercantileTaxMod;
-		if (wKingdom.hasTag(NationData.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
+		Nation wKingdom = w.getNation(kingdom);
+		if (wKingdom.hasTag(Nation.Tag.MERCANTILE)) mods += getRules().mercantileTaxMod;
+		if (wKingdom.hasTag(Nation.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * getRules().perConquestWarlikeTaxMod;
@@ -146,7 +146,7 @@ class Region extends RulesObject {
 
 		boolean neighborKuun = false;
 		for (Region r : getNeighbors(w)) {
-			if (r.kingdom != null && !r.kingdom.equals(kingdom) && Ideology.RIVER_OF_KUUN == NationData.getStateReligion(r.kingdom, w)) neighborKuun = true;
+			if (r.kingdom != null && !r.kingdom.equals(kingdom) && Ideology.RIVER_OF_KUUN == Nation.getStateReligion(r.kingdom, w)) neighborKuun = true;
 		}
 		if (neighborKuun) mods += getRules().riverOfKuunNeighborTaxMod;
 		if (religion == Ideology.SYRJEN) {
@@ -161,12 +161,12 @@ class Region extends RulesObject {
 			mods += getRules().chaliceOfCompassionTaxMod;
 		}
 
-		if (Ideology.RIVER_OF_KUUN == NationData.getStateReligion(kingdom, w)) {
+		if (Ideology.RIVER_OF_KUUN == Nation.getStateReligion(kingdom, w)) {
 			mods += getRules().riverOfKuunPerNeighborTaxMod * getNeighbors(w).stream().filter(r -> r.isLand()).map(r -> r.getKingdom()).filter(k -> !kingdom.equals(k)).distinct().count();
 		}
 
-		if (Ideology.TAPESTRY_OF_PEOPLE == NationData.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
-		if (NationData.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += getRules().perIdeologyTapestryTaxModGlobal * numUniqueIdeologies(kingdom, w);
+		if (Ideology.TAPESTRY_OF_PEOPLE == Nation.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
+		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += getRules().perIdeologyTapestryTaxModGlobal * numUniqueIdeologies(kingdom, w);
 
 		return Math.max(0, base * mods * taxRate);
 	}
@@ -174,7 +174,7 @@ class Region extends RulesObject {
 	public double calcConsumption(World w, double foodMod) {
 		double base = population;
 		double mods = foodMod;
-		if (NationData.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += getRules().chaliceOfCompassionFoodMod;
+		if (Nation.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += getRules().chaliceOfCompassionFoodMod;
 		return Math.max(0, base * mods);
 	}
 
@@ -207,17 +207,17 @@ class Region extends RulesObject {
 		}
 		if (Ideology.VESSEL_OF_FAITH == max && religion != max) {
 			for (String k : w.getNationNames()) {
-				if (Ideology.VESSEL_OF_FAITH != NationData.getStateReligion(k, w)) continue;
+				if (Ideology.VESSEL_OF_FAITH != Nation.getStateReligion(k, w)) continue;
 				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular + getRules().vesselOfFaithSetRelUnrestMod);
 			}
 		}
 		if (max != religion) {
 			for (String k : w.getNationNames()) {
-				Ideology si = NationData.getStateReligion(k, w);
-				if (max.religion == si.religion) w.score(k, NationData.ScoreProfile.RELIGION, getRules().scoreReligionPerConverted);
-				if (religion.religion == si.religion) w.score(k, NationData.ScoreProfile.RELIGION, -getRules().scoreReligionPerConverted);
-				if (max == si) w.score(k, NationData.ScoreProfile.IDEOLOGY, getRules().scoreIdeologyPerConverted);
-				if (religion == si) w.score(k, NationData.ScoreProfile.IDEOLOGY, -getRules().scoreIdeologyPerConverted);
+				Ideology si = Nation.getStateReligion(k, w);
+				if (max.religion == si.religion) w.score(k, Nation.ScoreProfile.RELIGION, getRules().scoreReligionPerConverted);
+				if (religion.religion == si.religion) w.score(k, Nation.ScoreProfile.RELIGION, -getRules().scoreReligionPerConverted);
+				if (max == si) w.score(k, Nation.ScoreProfile.IDEOLOGY, getRules().scoreIdeologyPerConverted);
+				if (religion == si) w.score(k, Nation.ScoreProfile.IDEOLOGY, -getRules().scoreIdeologyPerConverted);
 			}
 		}
 		religion = max;
@@ -232,8 +232,8 @@ class Region extends RulesObject {
 	}
 
 	public void setKingdom(World w, String kingdom) {
-		w.score(kingdom, NationData.ScoreProfile.TERRITORY, getRules().scorePerConqueredTerritory);
-		w.score(this.kingdom, NationData.ScoreProfile.TERRITORY, -getRules().scorePerConqueredTerritory);
+		w.score(kingdom, Nation.ScoreProfile.TERRITORY, getRules().scorePerConqueredTerritory);
+		w.score(this.kingdom, Nation.ScoreProfile.TERRITORY, -getRules().scorePerConqueredTerritory);
 		this.kingdom = kingdom;
 	}
 
@@ -281,7 +281,7 @@ class Region extends RulesObject {
 	public double calcMinConquestStrength(World w) {
 		double base = calcBaseConquestStrength(w);
 		double mods = 1;
-		if (w.getNation(kingdom).hasTag(NationData.Tag.STOIC)) mods += getRules().stoicConqStrengthMod;
+		if (w.getNation(kingdom).hasTag(Nation.Tag.STOIC)) mods += getRules().stoicConqStrengthMod;
 		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
 	}
@@ -294,7 +294,7 @@ class Region extends RulesObject {
 	// TODO: This is a game rule/equation
 	public double calcMinPatrolStrength(World w) {
 		double mods = 1;
-		if (w.getNation(kingdom).hasTag(NationData.Tag.DISCIPLINED)) mods += getRules().disciplinedPatrolStrengthMod;
+		if (w.getNation(kingdom).hasTag(Nation.Tag.DISCIPLINED)) mods += getRules().disciplinedPatrolStrengthMod;
 		mods += (2 * calcUnrest(w) - 0.7);
 		return 0.03 * Math.sqrt(population) * mods;
 	}
@@ -367,11 +367,11 @@ class Region extends RulesObject {
 		crops = 0;
 	}
 
-	void cultAccess(Collection<NationData> nations, boolean isCriticalCultRegion) {
+	void cultAccess(Collection<Nation> nations, boolean isCriticalCultRegion) {
 		if (cultAccessed || !isLand()) return;
 		cultAccessed = true;
-		for (NationData n : nations) n.score(NationData.ScoreProfile.CULTIST, getRules().scoreCultistRegionAccess);
-		if (isCriticalCultRegion) for (NationData n : nations) n.score(NationData.ScoreProfile.CULTIST, getRules().scoreCultistCriticalRegionAccess);
+		for (Nation n : nations) n.score(Nation.ScoreProfile.CULTIST, getRules().scoreCultistRegionAccess);
+		if (isCriticalCultRegion) for (Nation n : nations) n.score(Nation.ScoreProfile.CULTIST, getRules().scoreCultistCriticalRegionAccess);
 	}
 
 	boolean hasBeenCultAccessed() {

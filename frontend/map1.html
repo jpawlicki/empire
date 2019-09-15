@@ -2,6 +2,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<title>Empire</title>
+		<link rel="icon" href="favicon.png">
 		<script src="util.js"></script>
 		<script src="gamelib.js"></script>
 		<script src="borders.js"></script>
@@ -30,11 +31,10 @@
 			g_geo = undefined;
 			g_latest_date = 0;
 			let whoami = getArg("k");
-			let password = getArg("p");
+			let password = "";
 			let gameId = parseInt(getArg("g"));
 			if (isNaN(gameId)) gameId = parseInt(getArg("gid")); // A bug in the server sent out mails with gid=X, so just accept either for now.
 			let currentTurn = parseInt(getArg("t"));
-			if (password != undefined) history.replaceState({}, "", window.location.href.replace(/p=[^&]*/, "p=_"));
 
 			// Fetch geography data right away.
 			{
@@ -56,17 +56,18 @@
 							oe.appendChild(document.createTextNode(o));
 							document.getElementById("kingdom_input").appendChild(oe);
 						}
-						let oe = document.createElement("option");
-						oe.appendChild(document.createTextNode("(Observer)"));
-						document.getElementById("kingdom_input").appendChild(oe);
 						if (g_latest_date != 0) {
 							start(g_latest_date);
 						} else {
-							let login = localStorage.getItem("g_" + gameId + "_login");
-							if (login != null) {
-								document.getElementById("kingdom_input").value = JSON.parse(login).nation;
-								document.getElementById("password_input").value = JSON.parse(login).password;
-								enterPassword(false);
+							try {
+								let login = localStorage.getItem("g_" + gameId + "_login");
+								if (login != null) {
+									document.getElementById("kingdom_input").value = JSON.parse(login).nation;
+									document.getElementById("password_input").value = JSON.parse(login).password;
+									enterPassword(false);
+								}
+							} catch (err) {
+								console.log(err);
 							}
 						}
 					}
@@ -188,6 +189,7 @@
 			}
 
 			function changeReport(href, push=true) {
+				if (href == undefined) return;
 				let ele = href.split("/");
 				if (push) history.pushState(href, ele[1]);
 				if (ele[0] == "region") {
@@ -234,8 +236,6 @@
 			window.onload = function() {
 				if (gameId == undefined) {
 					window.alert("The link you got to this page should have included a ?g=NUMBER parameter.");
-				} else if (password != undefined) {
-					startRequest();
 				} else {
 					document.getElementById("passwordBox").style.display = "flex";
 				}
@@ -244,11 +244,15 @@
 			function enterPassword(noisyFailure) {
 				password = encodeURIComponent(document.getElementById("password_input").value);
 				whoami = document.getElementById("kingdom_input").value;
-				startRequest(-1, function() {}, function() {
+				startRequest(-1, function() { changeReport("kingdom/" + whoami); }, function() {
 					if (noisyFailure) window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
 					document.getElementById("passwordBox").style.display = "flex";
 					document.getElementById("password_submit").disabled = false;
 				});
+			}
+
+			function showTutorialPopup() {
+				document.getElementById("tutorialPopup").style.display = "block";
 			}
 
 			function startRequest(date = -1, callback = function(){}, errorCallback = function(){}) {
@@ -264,8 +268,18 @@
 						let d = JSON.parse(req.response);
 						g_turndata[d.date] = d;
 						if (g_latest_date < d.date) {
+							try {
+								if (d.date == 1 && localStorage.getItem("g_" + gameId + "_showedtutorial") == undefined) {
+									localStorage.setItem("g_" + gameId + "_showedtutorial", "true");
+									localStorage.setItem("g_" + gameId + "_laststate", JSON.stringify(d));
+									localStorage.setItem("g_" + gameId + "_whoami", whoami);
+									showTutorialPopup();
+								}
+							} catch (err) {
+								console.log(err);
+							}
 							g_latest_date = d.date;
-							startTurnReloadTimer(1000);
+							startTurnReloadTimer(2000);
 						}
 						start(d.date);
 						callback();
@@ -276,7 +290,7 @@
 
 			function startTurnReloadTimer(backoff) {
 				let msRemaining = Math.max(backoff, g_turndata[g_turndata.length - 1].next_turn - Date.now());
-				window.setTimeout(function() { startRequest(g_latest_date + 1, function() {}, c => startTurnReloadTimer(backoff * 2)); }, msRemaining);
+				window.setTimeout(function() { startRequest(g_latest_date + 1, function() {}, c => startTurnReloadTimer(backoff * 1.5)); }, msRemaining);
 			}
 
 			function start(date) {
@@ -410,6 +424,7 @@
 				for (let r of g_data.regions) {
 					regionContents.push([]);
 				}
+				regionContents[g_geo.holycity].push({"t": "holy", "obj": {}});
 				for (let c of g_data.characters) {
 					if (c.location != -1) regionContents[c.location].push({"t": "character", "obj": c});
 				}
@@ -439,7 +454,7 @@
 							pe.setAttribute("href", "#character");
 							pe.addEventListener('click', function() { changeReport("character/" + j.obj.name); });
 							document.getElementById("regionContents").appendChild(pe);
-						}	else {
+						}	else if (j.t == "army") {
 							let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
 							pe.setAttribute("x", p.x - 6);
 							pe.setAttribute("y", p.y - 6);
@@ -469,6 +484,15 @@
 							}
 							pe.addEventListener('click', function() { changeReport("army/" + j.obj.id); });
 							document.getElementById("regionContents").appendChild(pe);
+						} else if (j.t == "holy") {
+							let pe = document.createElementNS("http://www.w3.org/2000/svg", "use");
+							pe.setAttribute("x", p.x - 6);
+							pe.setAttribute("y", p.y - 6);
+							pe.setAttribute("width", 12);
+							pe.setAttribute("height", 12);
+							pe.setAttribute("href", "#holycity");
+							pe.addEventListener('click', function() { changeReport("church/home"); });
+							document.getElementById("regionContents").appendChild(pe);
 						}
 					}
 				}
@@ -479,20 +503,12 @@
 				document.getElementById("internationalkey").addEventListener("click", function() { changeReport("international/home");});
 				document.getElementById("scorekey").addEventListener("click", function() { changeReport("score/home");});
 				document.getElementById("timelinekey").addEventListener("click", function() { changeReport("timeline/home");});
-				if (whoami != "(Observer)") {
-					if (!g_data.gameover) {
-						let orders = document.createElement("orders-pane");
-						orders.setAttribute("kingdom", whoami);
-						document.getElementById("orders").innerHTML = "";
-						document.getElementById("orders").appendChild(orders);
-					} else {
-						document.querySelector("body").style.gridTemplateColumns = "20% 80%";
-					}
-					if (g_data.date == g_turndata.length - 1) changeReport("kingdom/" + whoami);
+				if (!g_data.gameover) {
+					let orders = document.createElement("orders-pane");
+					orders.setAttribute("kingdom", whoami);
+					document.getElementById("orders").innerHTML = "";
+					document.getElementById("orders").appendChild(orders);
 				} else {
-					let k = "";
-					for (let i in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(i)) k = i;
-					changeReport("kingdom/" + k);
 					document.querySelector("body").style.gridTemplateColumns = "20% 80%";
 				}
 			}
@@ -510,10 +526,12 @@
 			}
 
 			function zoom(amt) {
-				var svg = document.getElementById("svg");
-				var zoom = svg.style.zoom;
-				if (zoom == "") zoom = .75;
-				svg.style.zoom = parseFloat(zoom) * amt;
+				let svg = document.getElementById("svg");
+				let map = document.getElementById("map");
+				let viewRect = map.getBoundingClientRect();
+				if (svg.style.width != "") svg.style.width = parseFloat(svg.style.width) * amt;
+				else svg.style.width = 1750 * amt;
+				map.scroll({"top": (map.scrollTop + viewRect.height / 2) * amt - viewRect.height / 2, "left": (map.scrollLeft + viewRect.width / 2) * amt - viewRect.width / 2, "behavior": "auto"});
 			}
 		</script>
 		<link rel="stylesheet" type="text/css" href="map1.css"/>
@@ -563,6 +581,14 @@
 				grid-row-start: 1;
 				grid-column-start: 2;
 			}
+			#tutorialPopup {
+				display: none;
+				grid-row-start: 1;
+				grid-row-end: 3;
+				grid-column-start: 3;
+				z-index: 2;
+				background-color: #fff;
+			}
 			#views, #reports_links {
 				display: flex;
 				justify-content: space-around;
@@ -578,8 +604,7 @@
 				fill: #fff;
 			}
       #svg {
-				width: 2000px;
-				zoom: 75%;
+				width: 1750px;
       }
 			#canals {
 				stroke-dasharray: 3 3;
@@ -659,6 +684,7 @@
 			<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" viewBox="-10 -10 1020 1020" id="svg" version="1.1">
 				<!-- Patterns -->
 				<symbol id="character" viewBox="0 0 24 24">
+					<circle fill="inherit" stroke="inherit" stroke-width="inherit" cx="12" cy="12" r="11.5"/>
 					<path fill="inherit" stroke="inherit" stroke-width="inherit" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
 				</symbol>
 				<symbol id="army_seafaring" viewBox="-3 -3 30 30">
@@ -692,6 +718,10 @@
 				<symbol id="crosshair_symbol" viewBox="0 0 20 20">
 					<path fill="transparent" stroke="#fff" stroke-width="2" d="M0,10L20,10 M10,0L10,20" />
 					<path fill="transparent" stroke="#000" stroke-width="1" d="M0,10L20,10 M10,0L10,20" />
+				</symbol>
+				<symbol id="holycity" viewBox="1.5 0.35 20 20">
+					<circle fill="#ffffff" stroke="#000000" stroke-width="inherit" cx="11.75" cy="10.35" r="9.5"/>
+					<path fill="inherit" d="M17.8,8C17.26,5.89 15.61,4.24 13.5,3.7V2H10.5V3.7C8.39,4.24 6.74,5.89 6.2,8H4V11H6.2C6.74,13.11 8.39,14.76 10.5,15.3V22H13.5V15.3C15.61,14.76 17.26,13.11 17.8,11H19.97V8H17.8M12.04,9.53L14.5,11H15.76C15.35,12.03 14.53,12.84 13.5,13.26V12L12.06,9.56L12,9.5L11.94,9.56L10.5,12V13.26C9.47,12.84 8.66,12.03 8.24,11H9.5L11.96,9.53L12,9.5H11.96L9.5,8H8.24C8.65,6.97 9.47,6.16 10.5,5.74V7L11.94,9.44L12,9.5L12.06,9.44L13.5,7V5.74C14.53,6.16 15.35,6.97 15.76,8H14.5L12.04,9.5H12L12.04,9.53Z" />
 				</symbol>
 				<marker id="arrowHead" markerWidth="10" markerHeight="10" refX="0" refY="1.5" orient="auto" markerUnits="strokeWidth">
 					<path fill="#aaa" d="M0,0 L0,3 L6,1.5 z"/>
@@ -733,6 +763,16 @@
 			</svg>
 		</div>
 		<div id="orders">
+		</div>
+		<div id="tutorialPopup">
+			<p>Welcome! Would you like to open the getting started guide?</p>
+			<p><a id="tutorialPopup_yes" href="#" target="_blank">Yes</a></p>
+			<p><a id="tutorialPopup_no" href="#">No</a></p>
+			<script>
+				document.getElementById("tutorialPopup_yes").setAttribute("href", "https://pawlicki.kaelri.com/empire/tutorial.html?g=" + gameId);
+				document.getElementById("tutorialPopup_yes").addEventListener("click", () => { document.getElementById("tutorialPopup").style.display = "none"; });
+				document.getElementById("tutorialPopup_no").addEventListener("click", () => { document.getElementById("tutorialPopup").style.display = "none"; });
+			</script>
 		</div>
 	</body>
 </html>

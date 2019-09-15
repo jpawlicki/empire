@@ -1,0 +1,115 @@
+<html>
+	<head>
+		<script src="files.js"></script>
+		<script src="data.js"></script>
+	</head>
+	<body>
+		<canvas id="canvas" width="1900" height="900"></canvas>
+		<div>
+			<button id="next">next</button>
+			<button id="undo">undo</button>
+			<button id="save">save</button>
+			<span id="info"></span>
+		</div>
+		<script>
+			function loadImage(url, callback) {
+				let img = new Image();
+				img.onload = () => callback(img);
+				img.src = url;
+			}
+			let scale = undefined;
+			let current = Math.max(-1, data.length - 2);
+			let currentImg = undefined;
+			let nextImg = undefined;
+			let currentBox = undefined;
+			function increment() {
+				currentBox = undefined;
+				current++;
+				if (data.length <= current) data[current] = [];
+				currentImg = nextImg;
+				repaint();
+				if (current + 1 == files.length) {
+					document.getElementById("next").disabled = true;
+				} else {
+					loadImage(files[current + 1], (img) => nextImg = img);
+				}
+			}
+			function loadSpecific(id) {
+				currentBox = undefined;
+				current = id;
+				if (data.length <= current) data[current] = [];
+				loadImage(files[current], (img) => { currentImg = img; repaint(); });
+				loadImage(files[current + 1], (img) => nextImg = img);
+				if (current + 1 == files.length) {
+					document.getElementById("next").disabled = true;
+				} else {
+					document.getElementById("next").disabled = false;
+				}
+			}
+			function undo() {
+				if (data[current].length == 0) return;
+				data[current].pop();
+				repaint();
+			}
+			function repaint() {
+				let context = document.getElementById("canvas").getContext("2d");
+				context.fillStyle = "#444";
+				context.strokeStyle = "#f80";
+				context.fillRect(0, 0, 1900, 900);
+				scale = Math.min(1900 / currentImg.width, 900 / currentImg.height);
+				context.drawImage(currentImg, 0, 0, currentImg.width, currentImg.height, 0, 0, currentImg.width * scale, currentImg.height * scale);
+				for (let box of data[current]) {
+					context.strokeRect(box.x * scale, box.y * scale, box.w * scale, Math.min(box.w * 1080 / 384 * scale, 900 - box.y * scale));
+				}
+				if (currentBox != undefined) {
+					document.getElementById("info").innerHTML = "Width: " + Math.round(currentBox.w) + " @ " + scale;
+					if (currentBox.w < 384) context.strokeStyle = "#f00";
+					else context.strokeStyle = "#ff0";
+					context.strokeRect((currentBox.mx - currentBox.w / 2) * scale, (currentBox.my - currentBox.w / 2) * scale, currentBox.w * scale, currentBox.w * 1080 / 384 * scale);
+					context.strokeRect((currentBox.mx - currentBox.w / 6) * scale, (currentBox.my - currentBox.w / 6) * scale, currentBox.w / 3 * scale, currentBox.w / 3 * scale);
+					context.strokeRect((currentBox.mx - currentBox.w / 3) * scale, (currentBox.my - currentBox.w / 3) * scale, currentBox.w / 1.5 * scale, currentBox.w / 1.5 * scale);
+				} else {
+					document.getElementById("info").innerHTML = " @ " + scale;
+				}
+			}
+			function canvasClick(e) {
+				if (currentBox == undefined) {
+					currentBox = {};
+					currentBox.mx = e.offsetX / scale;
+					currentBox.my = e.offsetY / scale;
+				} else {
+					data[current].push({
+						x: Math.round(currentBox.mx - currentBox.w / 2),
+						y: Math.round(currentBox.my - currentBox.w / 2),
+						w: Math.round(currentBox.w)
+					});
+					currentBox = undefined;
+				}
+				repaint();
+			}
+			function move(e) {
+				if (currentBox == undefined) return;
+				let x = e.offsetX / scale;
+				let y = e.offsetY / scale;
+				if (y > currentBox.my || (currentBox.my - y < Math.abs(currentBox.mx - x))) {
+					currentBox.w = Math.abs(currentBox.mx - x) * 2;
+				} else {
+					currentBox.w = (currentBox.my - y) * 2;
+				}
+				if (currentBox.my - currentBox.w / 2 < 0) currentBox.w = currentBox.my * 2;
+				if (currentBox.mx - currentBox.w / 2 < 0) currentBox.w = currentBox.mx * 2;
+				if (currentBox.mx + currentBox.w / 2 > currentImg.width) currentBox.w = (currentImg.width - currentBox.mx) * 2;
+				repaint();
+			}
+			function saveFunc() {
+				window.open(URL.createObjectURL(new Blob(["let data = " + JSON.stringify(data) + ";"], {type: "application/octet-stream"})));
+			}
+			document.getElementById("next").addEventListener("click", increment);
+			document.getElementById("undo").addEventListener("click", undo);
+			document.getElementById("save").addEventListener("click", saveFunc);
+			document.getElementById("canvas").addEventListener("click", canvasClick);
+			document.getElementById("canvas").addEventListener("mousemove", move);
+			loadImage(files[current + 1], (img) => { nextImg = img; increment() });
+		</script>
+	</body>
+</html>

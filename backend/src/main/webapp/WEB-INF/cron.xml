@@ -3,6 +3,6 @@
 	<cron>
 		<url>/entry/advanceworldpoll</url>
 		<description>Check to see if any games need to advance.</description>
-		<schedule>every 60 minutes</schedule>
+		<schedule>every monday 9:00</schedule>
 	</cron>
 </cronentries>

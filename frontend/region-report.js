@@ -69,8 +69,6 @@ class RegionReport extends HTMLElement {
 					<h1><tooltip-element tooltip="Recuit output of the region. Recuritment is primarily determined by population and unrest, though several religious ideologies also affect recruitment output.">Recruits:</tooltip-element> +${num(r.calcRecruitment())} recruits</h1>
 					<h1>Contents</h1>
 					<div id="objects"></div>
-					<h1>Intrigue Power</h1>
-					<div id="intrigue"></div>
 					<h1>Other</h1>
 					<div>
 						<tooltip-element tooltip="Pirate threat is the probability that pirates will appear in this region during the resolution of the current turn, assuming no further pirate bribes. It is decreased by lowered unrest, by paying off the pirates to avoid the nation (or paying them to prefer another nation), by followers of the Northern (Alyrja) ideology, and by the use of nobles.">Pirate Threat:</tooltip-element><div>${num(r.calcPirateThreat(), 1, 100)}%</div>
@@ -85,8 +83,6 @@ class RegionReport extends HTMLElement {
 				<div id="content">
 					<h1>Contents</h1>
 					<div id="objects"></div>
-					<h1>Intrigue Power</h1>
-					<div id="intrigue"></div>
 				</div>
 			`;
 		}
@@ -232,6 +228,12 @@ class RegionReport extends HTMLElement {
 			d.innerHTML = "Spy Ring (" + ring.nation + ", Strength " + Math.round(ring.strength) + ", " + (ring.hidden ? "Hidden)" : "Exposed)");
 			ctn.appendChild(d);
 		}
+		if (g_data.regions[g_geo.holycity] == r) {
+			let holy = document.createElement("tooltip-element");
+			holy.setAttribute("tooltip", "This region contains the Holy City of the Church of Iruhan. Plots to affect Church opinion take place here, and Cardinals may meet here to bolster all Iruhan-worshiping nations.");
+			holy.appendChild(document.createTextNode("Holy City"));
+			shadow.getElementById("cct").appendChild(holy);
+		}
 	}
 }
 customElements.define("region-report", RegionReport);
@@ -299,9 +301,9 @@ let getNobleBlock = function(r) {
 		crisis = `<tooltip-element tooltip="All nobles experience crises every six weeks. If resolved positively within six weeks, a crisis decreases noble unrest by 25 percentage points. If unresolved within the deadline, the noble gains 25 percentage points of unrest.">Crisis:</tooltip-element><tooltip-element id="crisis" tooltip="${crisisDescription}">${capitalizeForce(r.noble.crisis.type)}</tooltip-element>`
 	}
 	let levelDetail = "Nobles gain an experience point each turn, and have a level equal to the square root of one plus their experience. This noble's level gives the region:";
-	levelDetail += "\n +${Math.round(r.calcNobleLevel() * 0.1 * 100)}% regional tax";
-	levelDetail += "\n +${Math.round(r.calcNobleLevel() * 0.1 * 100)}% regional recruitment";
-	levelDetail += "\n +${Math.round(r.calcNobleLevel() * 0.05 * 100)}% crops planted after each harvest";
+	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.1 * 100) + "% regional tax";
+	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.1 * 100) + "% regional recruitment";
+	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.05 * 100) + "% crops planted after each harvest";
 	return `
 		<h1>Noble: ${r.noble.name}</h1>
 		<div>Level: <tooltip-element tooltip="${levelDetail}">${Math.round(r.calcNobleLevel() * 100) / 100}</tooltip-element></div>

@@ -167,13 +167,13 @@ final class Crisis {
 		BORDER("%NOBLENAME%, the noble ruling %REGIONNAME%, has become deeply concerned with the neighboring enemy region, and requests that you deal with the situation one way or another.", "%NOBLENAME% has capitalized on the new security of the borders of %REGIONNAME%, citing this as an example of the glorious purpose of our armies to potential recruits.", "%NOBLENAME% has dealt with their fears by building up a large personal guard. Unfortunately, they take the best of %REGIONNAME% recruits, leaving the kingdom with only the bottom quality.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && NationData.isEnemy(r.getKingdom(), n.getKingdom(), w)) return false;
+				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && Nation.isEnemy(r.getKingdom(), n.getKingdom(), w)) return false;
 				return true;
 			}
 
 			@Override
 			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && NationData.isEnemy(r.getKingdom(), n.getKingdom(), w)) return true;
+				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && Nation.isEnemy(r.getKingdom(), n.getKingdom(), w)) return true;
 				return false;
 			}
 		},
