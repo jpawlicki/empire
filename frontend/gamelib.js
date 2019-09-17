@@ -175,7 +175,7 @@ class Region {
 		return Math.sqrt(this.noble.experience + 1);
 	}
 
-	calcRecruitment(extraMod=0) {
+	calcRecruitment(extraMod=0, governor=null, rationing=1, nobleMod=0) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}];
@@ -184,7 +184,11 @@ class Region {
 		let base = new Calc("*", baseAmount);
 
 		let mods = [];
+		if (governor != null) {
+			mods.push({"v": governor.calcLevel("governor") * 0.5 + 1, "unit": "%", "why": "Governor"});
+		}
 		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
+		if (this.nobleMod != 0) mods.push({"v": nobleMod, "unit": "%", "why": "Noble Action"});
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
 		if (this.religion == "Iruhan (Sword of Truth)") mods.push({"v": 1, "unit": "%", "why": "Sword of Truth ideology"});
@@ -192,6 +196,9 @@ class Region {
 			let getTapestryBonus = false;
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
+		}
+		if (this.religion == "Tavian (River of Kuun)" && rationing >= 1.25 && this.food > 0) {
+			mods.push({"v": .75, "unit": "%", "why": "Feasting River of Kuun"});
 		}
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
@@ -219,18 +226,22 @@ class Region {
 		return new Calc("max", unrests);
 	}
 
-	calcTaxation(extraMod=0) {
+	calcTaxation(taxRate=1, governor=null, rationing=1, nobleMod=0) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"},
-			{"v": extraMod + 1, "unit": "%", "why": "Hypothetical Tax Rate"}];
+			{"v": taxRate, "unit": "%", "why": "Hypothetical Tax Rate"}];
 		let unrest = this.calcUnrest().v;
 		if (unrest > .25) baseAmount.push({"v": 1.25 - unrest, "unit": "%", "why": "Unrest"});
 		let base = new Calc("*", baseAmount);
 
 		let mods = [];
+		if (governor != null) {
+			mods.push({"v": governor.calcLevel("governor") * 0.5 + 1, "unit": "%", "why": "Governor"});
+		}
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
 		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
+		if (this.nobleMod != 0) mods.push({"v": nobleMod, "unit": "%", "why": "Noble Action"});
 		let neighborKuun = false;
 		for (let r of this.getNeighbors()) if (r.kingdom != this.kingdom && r.kingdom != undefined && r.kingdom != "Unruled" && getNation(r.kingdom).calcStateReligion() == "Tavian (River of Kuun)") neighborKuun = true;
 		if (neighborKuun) mods.push({"v": 0.5, "unit": "%", "why": "neighbor has River of Kuun state ideology"});
@@ -240,6 +251,9 @@ class Region {
 			let getTapestryBonus = false;
 			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
+		}
+		if (this.religion == "Tavian (River of Kuun)" && rationing >= 1.25 && this.food > 0) {
+			mods.push({"v": .75, "unit": "%", "why": "Feasting River of Kuun"});
 		}
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
@@ -301,9 +315,12 @@ class Region {
 			this.calcConsumption()]);
 	}
 
-	calcConsumption() {
+	calcConsumption(rationing = 1) {
 		let mods = [];
 		if (this.kingdom != "Unruled" && getNation(this.kingdom).calcStateReligion() == "Iruhan (Chalice of Compassion)") mods.push({"v": -.15, "unit": "%", "why": "Chalice of Compassion state ideology"});
+		if (rationing != 1) {
+			mods.push({"v": rationing - 1, "unit": "%", "why": "Rations"});
+		}
 		return Calc.moddedNum(
 			new Calc("*", [{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 1, "unit": " measures / citizen", "why": "Base Consumption Rate"}]),
@@ -554,18 +571,18 @@ class Kingdom {
 		this.score_profiles_locked = dataEntry.score_profiles_locked;
 	}
 
-	calcRecruitment(extraMod=0) {
+	calcRecruitment() {
 		let parts = [];
 		for (let r of g_data.regions) {
-			if (r.kingdom == this.name) parts.push({"v": r.calcRecruitment(extraMod).v, "unit": " soldiers", "why": r.name});
+			if (r.kingdom == this.name) parts.push({"v": r.calcRecruitment().v, "unit": " soldiers", "why": r.name});
 		}
 		return new Calc("+", parts);
 	}
 
-	calcTaxation(extraMod=0) {
+	calcTaxation() {
 		let parts = [];
 		for (let r of g_data.regions) {
-			if (r.kingdom == this.name) parts.push({"v": r.calcTaxation(extraMod).v, "unit": " gold", "why": r.name});
+			if (r.kingdom == this.name) parts.push({"v": r.calcTaxation().v, "unit": " gold", "why": r.name});
 		}
 		return new Calc("+", parts);
 	}

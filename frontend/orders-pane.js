@@ -10,6 +10,7 @@ class OrdersPane extends HTMLElement {
 		this.currentlySubmitting = false;
 		this.submitQueued = false;
 		this.syncDisabled = true;
+		this.lastSync = "";
 	}
 	connectedCallback() {
 		let kingdom = g_data.kingdoms[this.getAttribute("kingdom")];
@@ -87,12 +88,15 @@ class OrdersPane extends HTMLElement {
 					<div id="economy_consequences">
 					</div>
 					<expandable-snippet text="Recruit signing bonuses will automatically scale down in the event we cannot pay the signing bonuses."></expandable-snippet>
+					<hr/>
 					<table>
 						<tr><th>From</th><th>To</th><th>Amount (Measures)</th><th>Cost (Gold)</th></tr>
 						<tbody id="economy_transfers">
 						</tbody>
 						<tr><td colspan="4" id="economy_newtransfer">Add a Food Transfer</td></tr>
 					</table>
+					<div id="food_consequences">
+					</div>
 					<expandable-snippet text="Food transfers are evaluated in order from top to bottom, after taxation income but before armies and civilians eat. If there are insufficient funds for a transfer, as much food as possible will be transferred with the funds available."></expandable-snippet>
 					<hr/>
 					<table>
@@ -767,40 +771,82 @@ class OrdersPane extends HTMLElement {
 		let eBonus = shadow.getElementById("economy_recruit_bonus");
 		let economyConsequences = shadow.getElementById("economy_consequences");
 		let computeEconomyConsequences = function () {
-			let taxRate = parseInt(eTax.value) / 100.0 - 1;
+			let taxRate = parseInt(eTax.value) / 100.0;
 			let recruitRate = 0;
 			if (parseInt(eBonus.value) == -1) recruitRate = -.5;
 			else if (parseInt(eBonus.value) == -2) recruitRate = -1;
 			else if (parseInt(eBonus.value) > 0) recruitRate = Math.log2(parseInt(eBonus.value)) * .5 + .5;
+			let rationing = parseInt(eRation.value) / 100.0;
 			let happiness = 0;
 			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
 			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
 			if (parseInt(eRation.value) == 75) happiness += 15;
 			else if (parseInt(eRation.value) == 125) happiness -= 10;
 			economyConsequences.innerHTML = "";
-			let baseRecruits = kingdom.calcRecruitment().v;
-			let baseTaxation = kingdom.calcTaxation().v;
-			let newRecruits = kingdom.calcRecruitment(recruitRate).v;
-			let newTaxation = kingdom.calcTaxation(taxRate).v;
+			let taxParts = [];
+			let recruitParts = [];
+			for (let rid = 0; rid < g_data.regions.length; rid++) {
+				let r = g_data.regions[rid];
+				if (r.kingdom == kingdom.name) {
+					let governor = null;
+					let nobleTaxMod = 0;
+					let nobleRecruitMod = 0;
+					for (let c of g_data.characters) if (c.kingdom == kingdom.name && c.location == rid && shadow.querySelector("[name=action_" + c.name.replace(/[ ']/g, "_") + "]").value == "Govern " + r.name && (governor == null || governor.calcLevel("governor") < c.calcLevel("governor"))) governor = c;
+					let nobleOrder = shadow.querySelector("[name=action_noble_" + rid + "]");
+					if (nobleOrder != undefined) {
+						if (nobleOrder.value == "Soothe Population") nobleTaxMod = -.25;
+						else if (nobleOrder.value == "Levy Tax") nobleTaxMod = .25;
+						else if (nobleOrder.value == "Conscript Recruits") nobleRecruitMod = .25;
+					}
+					taxParts.push(r.calcTaxation(taxRate, governor, rationing, nobleTaxMod));
+					recruitParts.push(r.calcRecruitment(recruitRate, governor, rationing, nobleRecruitMod));
+				}
+			}
+			let taxation = new Calc("+", taxParts).v;
+			let recruitment = new Calc("+", recruitParts).v;
 			let soldiers = 0;
 			let consumptionRate = parseInt(eRation.value) - 100;
 			let shipyardCount = 0;
 			for (let region of g_data.regions) if (region.kingdom == kingdom.name) for (let c of region.constructions) if (c.type == "shipyard") shipyardCount++;
 			for (let army of g_data.armies) if (army.kingdom == kingdom.name && !contains(army.tags, "Higher Power")) soldiers += army.size;
-			if (taxRate != 0) economyConsequences.innerHTML += "<p>" + ((taxRate > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income (~ " + (newTaxation > baseTaxation ? "+" : "") + Math.round(newTaxation - baseTaxation) + " gold)</p>";
+			economyConsequences.innerHTML += "<p>" + ((taxRate - 1 > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income</p>";
 			economyConsequences.innerHTML += "<p>" + (shipyardCount * parseInt(eShip.value)) + " new warships and +" + (shipyardCount * (5 - parseInt(eShip.value))) + " gold.</p>";
 			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
-			if (recruitRate != 0) economyConsequences.innerHTML += "<p>" + ((recruitRate > 0 ? "+" : "") + Math.round(recruitRate * 100)) + "% Recruitment (~ " + (newRecruits > baseRecruits ? "+" : "") + Math.round(newRecruits - baseRecruits) + " recruits)</p>";
-			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (newRecruits + soldiers) / 100) + " gold total)</p>";
+			if (recruitRate != 0) economyConsequences.innerHTML += "<p>" + ((recruitRate > 0 ? "+" : "") + Math.round(recruitRate * 100)) + "% Recruitment</p>";
+			if (recruitRate > 0) economyConsequences.innerHTML += "<p>Spend " + eBonus.value + " gold per 100 soldiers (~ " + Math.round(parseInt(eBonus.value) * (recruitment + soldiers) / 100) + " gold total)</p>";
 			if (consumptionRate != 0) economyConsequences.innerHTML += "<p>Regions consume " + (consumptionRate > 0 ? "+" : "") + consumptionRate + "% food.</p>";
+			economyConsequences.innerHTML += "<p>Expecting " + Math.round(taxation) + " tax income</p>";
+			economyConsequences.innerHTML += "<p>Expecting " + Math.round(recruitment) + " total recruitment</p>";
+		}
+		let foodConsequences = shadow.getElementById("food_consequences");
+		let obj = this;
+		let computeFoodConsequences = function () {
+			let rationing = parseInt(eRation.value) / 100.0;
+			foodConsequences.innerHTML = "";
+			let expectedFood = {};
+			for (let rid = 0; rid < g_data.regions.length; rid++) {
+				let r = g_data.regions[rid];
+				if (r.kingdom == kingdom.name) {
+					let food = r.food;
+					for (let ti = 0; ti < obj.economyRowCount; ti++) {
+						if (shadow.querySelector("[name=economy_from_" + ti + "]").value == r.name) food -= parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
+						if (shadow.querySelector("[name=economy_to_" + ti + "]").value.replace(/\(.*\) /, "") == r.name) food += parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
+					}
+					food -= r.calcConsumption(rationing).v;
+					if (food < 0) foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil(-food / 1000.0) + "k measures of food</p>"
+				}
+			}
 		}
 		eTax.addEventListener("input", computeEconomyConsequences);	
 		eShip.addEventListener("input", computeEconomyConsequences);	
-		eRation.addEventListener("input", computeEconomyConsequences);	
+		eRation.addEventListener("input", computeEconomyConsequences);
+		eRation.addEventListener("input", computeFoodConsequences);
 		eBonus.addEventListener("input", computeEconomyConsequences);
+		for (let s of shadow.querySelectorAll("#units select")) s.addEventListener("input", computeEconomyConsequences);
 		computeEconomyConsequences();
+		computeFoodConsequences();
 		let op = this;
-		shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow));
+		shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow, computeFoodConsequences));
 		shadow.getElementById("economy_newbribe").addEventListener("click", ()=>op.addBribe(shadow));
 		let lastTime = 0;
 		form.addEventListener("input", function(e) {
@@ -827,6 +873,11 @@ class OrdersPane extends HTMLElement {
 				}, 50); // Wait 50 ms and retry.
 			} else {
 				op.submitQueued = false;
+				let data = JSON.stringify({"orders": formToJSON(form.elements)});
+				if (data == op.lastSync) {
+					op.currentlySubmitting = false;
+					return;
+				}
 				op.currentlySubmitting = true;
 				req.open("post", g_server + "/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
 				req.onerror = function (e) {
@@ -839,7 +890,8 @@ class OrdersPane extends HTMLElement {
 						window.alert("Failed to communicate with the server: " + req.status);
 					}
 				};
-				req.send(JSON.stringify({"orders": formToJSON(form.elements)}));
+				req.send(data);
+				op.lastSync = data;
 			}
 		});
 		let gothiVotes = g_data.kingdoms[whoami].calcGothiVotes();
@@ -935,7 +987,7 @@ class OrdersPane extends HTMLElement {
 					op.getDivisionFunc(shadow, e, chi, dpid, shadow.getElementById("form"), false)();
 					if (op.divisions < dpid + 1) op.divisions = dpid + 1;
 				} else if (p.startsWith("economy_amount_")) {
-					op.addEconomyRowOrder(shadow);
+					op.addEconomyRowOrder(shadow, computeFoodConsequences);
 				} else if (p.startsWith("economy_bribe_amount_")) {
 					op.addBribe(shadow);
 				} else if (p.startsWith("letter_") && p.endsWith("_sig")) {
@@ -1182,7 +1234,7 @@ class OrdersPane extends HTMLElement {
 		tbody.appendChild(tr);
 	}
 
-	addEconomyRowOrder(shadow) {
+	addEconomyRowOrder(shadow, computeFoodConsequences) {
 		let regions = [];
 		let id = this.economyRowCount;
 		this.economyRowCount++;
@@ -1201,9 +1253,12 @@ class OrdersPane extends HTMLElement {
 			for (let r of region.getFoodTransferDestinations()) dests.push("(" + r.kingdom + ") " + r.name);
 			dests.sort();
 			td2.innerHTML = "";
-			td2.appendChild(o.select("economy_to_" + id, dests));
+			let d = o.select("economy_to_" + id, dests);
+			d.addEventListener("change", computeFoodConsequences);
+			td2.appendChild(d);
 		});
 		sel.dispatchEvent(new Event("change"));
+		sel.addEventListener("change", computeFoodConsequences);
 		td.appendChild(sel);
 		tr.appendChild(td);
 		tr.appendChild(td2);
@@ -1217,6 +1272,7 @@ class OrdersPane extends HTMLElement {
 		amount.addEventListener("input", function() {
 			td4.innerHTML = Math.round(amount.value / 50 * 10) / 10;
 		});
+		amount.addEventListener("change", computeFoodConsequences);
 		td.appendChild(amount);
 		td.appendChild(document.createTextNode("k"));
 		td4.innerHTML = "0";
