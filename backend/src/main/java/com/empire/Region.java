@@ -23,7 +23,7 @@ class Region extends RulesObject {
 	String name;
 	Type type;
 	Culture culture;
-	public double population;
+	double population;
 	Ideology religion;
 	double unrestPopular;
 	Noble noble;
