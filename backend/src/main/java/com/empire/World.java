@@ -2482,7 +2482,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						if (Nation.isFriendly(a.kingdom, k, World.this)) navalStrength += strength;
 						if (Nation.isEnemy(a.kingdom, k, World.this)) enemyNavalStrength += strength;
 					}
-					for (Integer rid : getNation(k).coreRegions) regions.get(rid).population *= 1 - navalStrength / enemyNavalStrength;
+					for (Integer rid : getNation(k).coreRegions) regions.get(rid).population = Math.max(1, regions.get(rid).population * (1 - navalStrength / enemyNavalStrength));
 					List<Army> removals = new ArrayList<>();
 					for (Army a : armies) if (k.equals(a.kingdom)) removals.add(a);
 					armies.removeAll(removals);
