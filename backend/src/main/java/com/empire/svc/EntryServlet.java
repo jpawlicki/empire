@@ -452,7 +452,7 @@ public class EntryServlet extends HttpServlet {
 		if (!passesGmPassword(Hasher.hashPassword(rr.password))) return false;
 		try (DataSource dataSource = DataSource.transactional()) {
 			World w = dataSource.loadWorld(gameId, dataSource.loadCurrentDate(gameId));
-			//for (com.empire.Region r : w.regions) if ("Tavia".equals(r.getKingdom())) r.unrestPopular = 0;
+			//for (com.empire.Region r : w.regions) if (r.population <= 0) r.population = 1;
 			dataSource.save(w, gameId);
 			dataSource.commit();
 		} catch (EntityNotFoundException e) {
