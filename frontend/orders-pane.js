@@ -1450,7 +1450,7 @@ class OrdersPane extends HTMLElement {
 					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
 			} else if (o.startsWith("Raze")) {
-				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 2) {
+				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v / 5) {
 					warn = " (army may be too small to raze)";
 				}
 			}
