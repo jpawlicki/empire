@@ -500,7 +500,18 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	@Override
 	public String toString() {
-		return getGson(getRules()).toJson(this);
+		try {
+			return getGson(getRules()).toJson(this);
+		} catch (IllegalArgumentException e) {
+			log.log(
+				Level.SEVERE,
+				new GsonBuilder()
+						.enableComplexMapKeySerialization()
+						.setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+						.serializeSpecialFloatingPointValues()
+						.create().toJson(this));
+			throw e;
+		}
 	}
 
 	/**
@@ -2593,7 +2604,7 @@ public class World extends RulesObject implements GoodwillProvider {
 	}
 
 	private void addPopulation(Region r, double amount) {
-		r.population += amount;
+		r.population = Math.max(1, r.population + amount);
 	}
 
 	private int getNewArmyId() {
