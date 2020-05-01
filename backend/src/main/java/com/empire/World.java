@@ -1423,7 +1423,10 @@ public class World extends RulesObject implements GoodwillProvider {
 				if ("Pirate".equals(a.kingdom) && Ideology.ALYRJA == regions.get(a.location).religion) remove.add(a);
 			}
 			for (Army a : remove) {
-				notifications.add(new Notification(regions.get(a.location).getKingdom(), "Pirates Destroyed", "The pirates that have wandered into " + regions.get(a.location).name + " have been thoroughly destroyed by the occupants of that region."));
+				String kingdom = regions.get(a.location).getKingdom();
+				notifications.add(new Notification(kingdom, "Pirates Destroyed", "The pirates that have wandered into " + regions.get(a.location).name + " have been thoroughly destroyed by the occupants of that region."));
+				getNation(kingdom).gold += a.gold;
+				incomeSources.get(kingdom).incomeArmyDelivery += a.gold;
 				armies.remove(a);
 			}
 		}
