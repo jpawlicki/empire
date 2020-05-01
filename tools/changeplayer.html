@@ -3,7 +3,7 @@
 		<script src="../frontend/server.js"></script>
 		<script>
 			function doChange(event) {
-				let pw = document.getElementById("gmPassword").value;
+				let pw = encodeURIComponent(document.getElementById("gmPassword").value);
 				let gameId = parseInt(document.getElementById("gameId").value);
 				let kingdom = document.getElementById("kingdom").value;
 				let nuemail = document.getElementById("email").value;
