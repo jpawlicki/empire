@@ -2330,7 +2330,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			regions.stream().filter(r -> cultists.contains(r.getKingdom())).forEach(r -> r.cultAccess(kingdoms.values(), cultRegions.contains(regions.indexOf(r))));
 			if (!cultTriggered && cultRegions.stream().filter(id -> regions.get(id).hasBeenCultAccessed()).count() >= cultRegions.size() * getRules().cultEventTriggerFraction) {
 				HashMap<String, Double> higherPowerCount = new HashMap<>();
-				armies.stream().filter(a -> a.hasTag(Army.Tag.HIGHER_POWER)).forEach(a -> higherPowerCount.put(a.kingdom, higherPowerCount.getOrDefault(a.kingdom, 0.0)));
+				armies.stream().filter(a -> a.hasTag(Army.Tag.HIGHER_POWER)).forEach(a -> higherPowerCount.put(a.kingdom, higherPowerCount.getOrDefault(a.kingdom, 0.0) + a.size));
 				Optional<String> overlord = getNationNames().stream().filter(n -> getNation(n).loyalToCult).max(Comparator.comparingDouble(a -> higherPowerCount.getOrDefault(a, 0.0)));
 				if (!overlord.isPresent()) return;
 				cultTriggered = true;
