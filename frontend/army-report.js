@@ -16,7 +16,7 @@ class ArmyReport extends HTMLElement {
 			"Unpredictable": "This army moves randomly into a neighboring land region.",
 			"Unruly": "If larger than 2000 soldiers, this army divides into two equal forces. This army (and any divisions) move randomly into a neighboring land region.",
 			"Higher Power": "This army does not require payment and does not inflict casualties on other armies with Higher Power.",
-			"Undead": "Any non-Undead soldiers who fall in battle with at least one Undead army rise from the dead and are distributed as soldiers evenly among participating Undead armies.",
+			"Undead": "50% of non-Undead soldiers who fall in battle with at least one Undead army rise from the dead and are distributed as soldiers evenly among participating Undead armies.",
 		};
 
 		let army = undefined;
