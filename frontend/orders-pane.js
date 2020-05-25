@@ -371,13 +371,6 @@ class OrdersPane extends HTMLElement {
 				for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
 				for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
 			}
-			if (r.type == "land") {
-				if (r.isCoastal()) opts.push("Build Shipyard");
-				opts.push("Build Fortifications");
-				for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
-				for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
-				for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
-			}
 			opts.push("Stay in " + r.name);
 			for (let a of g_data.armies) if (a.kingdom == unit.kingdom && a.location == unit.location) {
 				opts.push("Lead " + a.type + " " + a.id);

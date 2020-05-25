@@ -77,10 +77,10 @@
 		<script>
 			for (let i = 1; i < 30; i++) {
 				let f = document.createElement("form");
-				f.setAttribute("action", g_server + "/entry/advanceworld?gid=0&t=" + i);
+				f.setAttribute("action", g_server + "/entry/advanceworld?gid=10&t=" + i);
 				f.setAttribute("method", "POST");
 				let b = document.createElement("button");
-				b.appendChild(document.createTextNode("Advance game 0 turn " + i));
+				b.appendChild(document.createTextNode("Advance game 10 turn " + i));
 				f.appendChild(b);
 				document.getElementById("advances").appendChild(f);
 			}
