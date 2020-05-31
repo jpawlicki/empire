@@ -348,6 +348,22 @@ class Region extends RulesObject {
 		return closeRegions;
 	}
 
+	void eat(double targetRations, String coreRegionOf, World w) {
+		if (isSea()) return;
+		double actualEat = Math.min(food, targetRations * population);
+		food -= actualEat;
+		double actualRations = actualEat / population;
+		w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, actualEat * getRules().foodFedPointFactor);
+		if (actualRations > 1) w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
+		unrestPopular = Math.min(1, Math.max(0, unrestPopular + Math.min(0.35, 1.0 - actualRations)));
+		if (actualRations < 0.75) {
+			double dead = (0.75 - actualRations) * 0.1 * population;
+			population -= dead;
+			w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, -1 / 6000.0 * dead);
+			w.notifyPlayer(getKingdom(), "Starvation", dead + " have starved to death in " + name + ".");
+		}
+	}
+
 	void plant(boolean isHarvestTurn) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * getRules().chaliceOfCompassionPlantPerCitizen;
 		double mod = 1;

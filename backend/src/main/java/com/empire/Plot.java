@@ -188,7 +188,7 @@ class Plot extends RulesObject {
 					if (a.type == Army.Type.ARMY) soldiers += a.size;
 					else warships += a.size;
 				}
-				for (String conspirator : conspirators) world.notifications.add(new Notification(conspirator, "Report on " + targetId, "Treasury: " + world.getNation(targetId).gold + "\nSoldiers: " + soldiers + "\nWarships: " + warships));
+				for (String conspirator : conspirators) world.notifyPlayer(conspirator, "Report on " + targetId, "Treasury: " + world.getNation(targetId).gold + "\nSoldiers: " + soldiers + "\nWarships: " + warships);
 			},
 			PlotType::noOpOutcomeInfluencer);
 
@@ -460,7 +460,7 @@ class Plot extends RulesObject {
 	public boolean check(World w, boolean triggered, Function<Army, Double> armyStrengthProvider) {
 		// If unsupported, eliminate the plot.
 		if (w.spyRings.stream().filter(s -> s.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING).count() == 0) {
-			for (String conspirator : conspirators) w.notifications.add(new Notification(conspirator, "Plot Abandoned",  "A plot to " + type.getDetails(targetId, w) + " was abandoned - all conspirators withdrew support form the plot."));
+			for (String conspirator : conspirators) w.notifyPlayer(conspirator, "Plot Abandoned",  "A plot to " + type.getDetails(targetId, w) + " was abandoned - all conspirators withdrew support form the plot.");
 			for (SpyRing s : w.spyRings) if (s.getInvolvementIn(plotId).isPresent()) s.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
 			return true;
 		}

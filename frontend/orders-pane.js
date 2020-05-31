@@ -676,7 +676,8 @@ class OrdersPane extends HTMLElement {
 				backoffCount++;
 				if (backoffMisses > 7 && backoffCount % 10 != 0) return;
 				let req = new XMLHttpRequest();
-				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+				req.open("get", g_server + "/entry/world?&gid=" + gameId + "&t=" + g_data.date, true);
+				addAuth(req, whoami, password);
 				req.onerror = function (e) {
 					window.alert("Failed to communicate with the server.");
 				};
@@ -719,7 +720,8 @@ class OrdersPane extends HTMLElement {
 				}
 				if (data.to.length > 0 && data.text.length > 0) {
 					let req = new XMLHttpRequest();
-					req.open("post", g_server + "/entry/rtc?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+					req.open("post", g_server + "/entry/rtc?gid=" + gameId + "&t=" + g_data.date, true);
+					addAuth(req, whoami, password);
 					req.onerror = function (e) {
 						window.alert("Failed to communicate with the server.");
 					};
@@ -873,7 +875,8 @@ class OrdersPane extends HTMLElement {
 					return;
 				}
 				op.currentlySubmitting = true;
-				req.open("post", g_server + "/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+				req.open("post", g_server + "/entry/orders?gid=" + gameId + "&t=" + g_data.date, true);
+				addAuth(req, whoami, password);
 				req.onerror = function (e) {
 					op.currentlySubmitting = false;
 					window.alert("Failed to communicate with the server.");
@@ -913,8 +916,8 @@ class OrdersPane extends HTMLElement {
 
 		// Load Old Orders
 		let req = new XMLHttpRequest();
-		req.open("get", g_server + "/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
-		//req.open("get", "http://localhost:8080/entry/orders?k=" + whoami + "&gid=" + gameId + "&password=" + password + "&t=" + g_data.date, true);
+		req.open("get", g_server + "/entry/orders?gid=" + gameId + "&t=" + g_data.date, true);
+		addAuth(req, whoami, password);
 		req.onerror = function (e) {
 			console.log(e);
 			op.syncDisabled = false;

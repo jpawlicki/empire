@@ -82,6 +82,7 @@ public class EntryServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
+		resp.setHeader("Access-Control-Allow-Headers", "Authorization");
 		String json = "";
 		if (req.getRequestURI().equals("/entry/ping")) {
 			json = "{\"status\": \"success\"}";
@@ -118,6 +119,7 @@ public class EntryServlet extends HttpServlet {
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+		resp.setHeader("Access-Control-Allow-Headers", "Authorization");
 		Request r = Request.from(req);
 		String err = "";
 		if (req.getRequestURI().equals("/entry/orders")) {
@@ -158,7 +160,7 @@ public class EntryServlet extends HttpServlet {
 	public void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-		resp.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
+		resp.addHeader("Access-Control-Allow-Headers", "Authorization, X-PINGOTHER, Content-Type");
 		super.doOptions(req, resp);
 	}
 

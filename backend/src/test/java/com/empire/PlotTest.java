@@ -8,7 +8,10 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class PlotTest {
@@ -280,10 +283,8 @@ public class PlotTest {
 		w.armies = new ArrayList<>();
 		w.notifications = new ArrayList<>();
 		Nation n = mock(Nation.class);
-		when(w.getNation("Nation")).thenReturn(n);
+		when(w.getNation("Nation")).thenReturn(mock(Nation.class));
 		Plot.PlotType.SURVEY_NATION.onSuccess("Nation", w, Arrays.asList("Other Nation 2"));
-		assertEquals(1, w.notifications.size());
-		assertEquals("Other Nation 2", w.notifications.get(0).who);
-		assertEquals("Report on Nation", w.notifications.get(0).title);
+		verify(w).notifyPlayer(eq("Other Nation 2"), eq("Report on Nation"), anyString());
 	}
 }

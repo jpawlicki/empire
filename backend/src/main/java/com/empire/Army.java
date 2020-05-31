@@ -91,7 +91,7 @@ class Army extends RulesObject {
 		Region region = w.regions.get(location);
 		int razes = (int) (calcStrength(w, leader, inspires, lastStanding) * getRules().razesPerNormalizedStrength / region.calcMinConquestStrength(w));
 		if (razes == 0) {
-			w.notifications.add(new Notification(kingdom, "Razing Failed", "Army " + id + " is not powerful enough to raze constructions in " + region.name + "."));
+			w.notifyPlayer(kingdom, "Razing Failed", "Army " + id + " is not powerful enough to raze constructions in " + region.name + ".");
 			return 0;
 		}
 		String target = order.replace("Raze ", "");
@@ -105,7 +105,7 @@ class Army extends RulesObject {
 				}
 			}
 			if (bestRaze == null) {
-				if (targets == 0) w.notifications.add(new Notification(kingdom, "Razing Failed", "By the time army " + id + " was ready, there was no " + target + " left to raze in " + region.name + "."));
+				if (targets == 0) w.notifyPlayer(kingdom, "Razing Failed", "By the time army " + id + " was ready, there was no " + target + " left to raze in " + region.name + ".");
 				break;
 			}
 			targets++;
@@ -116,8 +116,8 @@ class Army extends RulesObject {
 			gold += bestRaze.originalCost * getRules().razeRefundFactor;
 		}
 		w.getNation(kingdom).gold += gold;
-		w.notifications.add(new Notification(kingdom, "Razing in " + region.name, "Our army looted and razed " + StringUtil.quantify(targets, target) + ", carrying off assets worth " + Math.round(gold) + " gold."));
-		if (!region.getKingdom().equals(kingdom)) w.notifications.add(new Notification(region.getKingdom(), "Razing in " + region.name, "An army of " + kingdom + " looted then razed " + StringUtil.quantify(targets, target) + "."));
+		w.notifyPlayer(kingdom, "Razing in " + region.name, "Our army looted and razed " + StringUtil.quantify(targets, target) + ", carrying off assets worth " + Math.round(gold) + " gold.");
+		if (!region.getKingdom().equals(kingdom)) w.notifyPlayer(region.getKingdom(), "Razing in " + region.name, "An army of " + kingdom + " looted then razed " + StringUtil.quantify(targets, target) + ".");
 		return gold;
 	}
 
@@ -140,19 +140,19 @@ class Army extends RulesObject {
 		for (Army a : w.armies) {
 			if (a.isArmy() && a.location == location && !a.kingdom.equals(kingdom) && a.calcStrength(w, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > strength) {
 				stopped = true;
-				w.notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not the strongest army in " + region.name + " and cannot conquer it."));
+				w.notifyPlayer(kingdom, "Conquest Failed", "Army " + id + " is not the strongest army in " + region.name + " and cannot conquer it.");
 				break;
 			}
 		}
 		if (stopped) return;
 		// Must be strong enough.
 		if (strength < region.calcMinConquestStrength(w)) {
-			w.notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not strong enough to conquer " + region.name + "."));
+			w.notifyPlayer(kingdom, "Conquest Failed", "Army " + id + " is not strong enough to conquer " + region.name + ".");
 			return;
 		}
 		// Must attack.
 		if (w.getNation(kingdom).getRelationship(region.getKingdom()).battle != Relationship.War.ATTACK) {
-			w.notifications.add(new Notification(kingdom, "Conquest Failed", "Army " + id + " is not able to conquer " + region.name + " without attacking " + region.getKingdom() + "."));
+			w.notifyPlayer(kingdom, "Conquest Failed", "Army " + id + " is not able to conquer " + region.name + " without attacking " + region.getKingdom() + ".");
 			return;
 		}
 		if (target.equals(region.getKingdom())) return;

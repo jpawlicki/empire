@@ -586,9 +586,9 @@ public class World extends RulesObject implements GoodwillProvider {
 			resolveIntrigue();
 			doctrineChanges();
 			orderOverrides();
-			nobleActions();
 			armyActionsNonTravel();
 			armyActionsTravel();
+			nobleActions();
 			characterActions();
 			destroyPiratesInAlyrjaRegions();
 			spawnCultists();
@@ -758,7 +758,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					}
 				}
 				if (totalGifts > getNation(k).gold) {
-					notifications.add(new Notification(k, "Gold Not Sent", "Our treasurers were ordered to transfer " + totalGifts + " gold but only " + getNation(k).gold + " was available. Fearing some mistake, they did not transfer any."));
+					notifyPlayer(k, "Gold Not Sent", "Our treasurers were ordered to transfer " + totalGifts + " gold but only " + getNation(k).gold + " was available. Fearing some mistake, they did not transfer any.");
 					continue;
 				}
 				for (String o : kOrders.keySet()) {
@@ -766,7 +766,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						double amount = Double.parseDouble(kOrders.get(o));
 						if (amount <= 0) continue;
 						String who = kOrders.get(o.replace("amount", "target"));
-						notifications.add(new Notification(who, "Gold From " + k, k + " has sent us " + amount + " gold."));
+						notifyPlayer(who, "Gold From " + k, k + " has sent us " + amount + " gold.");
 						getNation(k).gold -= amount;
 						incomeSources.getOrDefault(k, new Budget()).spentGift += amount;
 						credits.put(who, credits.getOrDefault(who, 0.0) + amount);
@@ -1096,7 +1096,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (Region r : regions.get(army.location).getNeighbors(World.this)) {
 						if (cultRegions.contains(regions.indexOf(r)) && !r.cultAccessed) orders.get(army.kingdom).put("action_army_" + army.id, "Travel to " + r.name);
 					}
-					if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifications.add(new Notification(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!"));
+					if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifyPlayer(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!");
 				}
 				if (abdications.contains(army.kingdom)) {
 					if (army.hasTag(Army.Tag.HIGHER_POWER)) {
@@ -1157,7 +1157,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					region.constructions.add(Construction.makeFortifications(0));
 				}
 			} else {
-				notifications.add(new Notification(kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + "."));
+				notifyPlayer(kingdom, "Construction Failed", "We did not have the " + Math.round(cost) + "gold necessary to construct as ordered in " + region.name + ".");
 			}
 		}
 
@@ -1202,7 +1202,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (!army.isArmy()) continue;
 					if (!Nation.isFriendly(army.kingdom, region.getKingdom(), World.this)) continue;
 					if (army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < region.calcMinPatrolStrength(World.this)) {
-						notifications.add(new Notification(army.kingdom, "Patrol Ineffective", "Army " + army.id + " is not strong enough to effectively patrol " + region.name + "."));
+						notifyPlayer(army.kingdom, "Patrol Ineffective", "Army " + army.id + " is not strong enough to effectively patrol " + region.name + ".");
 						continue;
 					}
 					patrolledRegions.add(region);
@@ -1214,7 +1214,7 @@ public class World extends RulesObject implements GoodwillProvider {
 								boolean guard = false;
 								for (Army a : armies) if (a.isArmy() && a.location == c.location && Nation.isFriendly(a.kingdom, c.kingdom, World.this)) guard = true;
 								if (!guard) {
-									notifications.add(new Notification(c.kingdom, c.name + " Discovered", c.name + " was discovered by a patrolling army."));
+									notifyPlayer(c.kingdom, c.name + " Discovered", c.name + " was discovered by a patrolling army.");
 								}
 							}
 						}
@@ -1229,7 +1229,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (Army a : armies) {
 						if (a.isArmy() && a.location == army.location && !a.kingdom.equals(army.kingdom) && a.calcStrength(World.this, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom))) {
 							stopped = true;
-							notifications.add(new Notification(army.kingdom, "Forced Relocation Failed", "Army " + army.id + " was prevented from forcibly relocating the population of " + region.name + " by other armies present in the region."));
+							notifyPlayer(army.kingdom, "Forced Relocation Failed", "Army " + army.id + " was prevented from forcibly relocating the population of " + region.name + " by other armies present in the region.");
 							break;
 						}
 					}
@@ -1238,7 +1238,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (Region r : region.getNeighbors(World.this)) if (r.name.equals(action.replace("Force civilians to ", ""))) target = r;
 					if (target == null) throw new RuntimeException("No neighbor of " + region.name + " satisfies " + action);
 					if (!target.getKingdom().equals(region.getKingdom()) && getNation(target.getKingdom()).getRelationship(region.getKingdom()).refugees == Relationship.Refugees.REFUSE) {
-						notifications.add(new Notification(army.kingdom, "Forced Relocation Failed", target.getKingdom() + ", the owner of " + target.name + ", refuses to accept refugees from " + region.getKingdom() + ", and turned them back at the border. The people were allowed to return to their homes."));
+						notifyPlayer(army.kingdom, "Forced Relocation Failed", target.getKingdom() + ", the owner of " + target.name + ", refuses to accept refugees from " + region.getKingdom() + ", and turned them back at the border. The people were allowed to return to their homes.");
 						continue;
 					}
 					// Relocate 10 civilians per soldier.
@@ -1246,19 +1246,19 @@ public class World extends RulesObject implements GoodwillProvider {
 					// Unrest in source increases (2 angry per moved).
 					// Church wrath increases.
 					double populationMoved = Math.min(region.population - 1, army.size * 10);
-					if (!target.getKingdom().equals(army.kingdom)) notifications.add(new Notification(target.getKingdom(), "Refugees from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + "."));
-					if (!region.getKingdom().equals(army.kingdom) && !region.getKingdom().equals(target.getKingdom())) notifications.add(new Notification(target.getKingdom(), "Forced Relocation from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + "."));
+					if (!target.getKingdom().equals(army.kingdom)) notifyPlayer(target.getKingdom(), "Refugees from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + ".");
+					if (!region.getKingdom().equals(army.kingdom) && !region.getKingdom().equals(target.getKingdom())) notifyPlayer(target.getKingdom(), "Forced Relocation from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + ".");
 					sendRefugees(region, target, populationMoved, false, false);
 				} else if (action.startsWith("Transfer ")) {
 					String target = action.substring("Transfer army to ".length(), action.length());
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
 					if (getNation(target).getRelationship(army.kingdom).fealty == Relationship.Fealty.ACCEPT) {
-						notifications.add(new Notification(target, "Soldiers From " + army.kingdom, army.kingdom + " has transferred " + army.size + " " + (army.isArmy() ? "soldiers" : "warships") + " in " + region.name + " to our control."));
+						notifyPlayer(target, "Soldiers From " + army.kingdom, army.kingdom + " has transferred " + army.size + " " + (army.isArmy() ? "soldiers" : "warships") + " in " + region.name + " to our control.");
 						army.kingdom = target;
 						army.orderhint = "";
 					} else {
-						notifications.add(new Notification(target, "Soldiers From " + army.kingdom, army.kingdom + " has attempted to transfer " + (int) Math.round(army.size) + " " + (army.isArmy() ? "soldiers" : "warships") + " in " + region.name + " to our control, but we refused to accept them."));
-						notifications.add(new Notification(army.kingdom, "Soldiers To " + target, target + " has refused to accept responsibility for our soldiers."));
+						notifyPlayer(target, "Soldiers From " + army.kingdom, army.kingdom + " has attempted to transfer " + (int) Math.round(army.size) + " " + (army.isArmy() ? "soldiers" : "warships") + " in " + region.name + " to our control, but we refused to accept them.");
+						notifyPlayer(army.kingdom, "Soldiers To " + target, target + " has refused to accept responsibility for our soldiers.");
 					}
 				} else if (action.startsWith("Disband")) {
 					if (army.hasTag(Army.Tag.HIGHER_POWER)) continue;
@@ -1280,11 +1280,11 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (region.noble == null) continue;
 					if (!region.getKingdom().equals(army.kingdom)) continue;
 					if (army.calcStrength(World.this, leaders.get(army), inspires, lastStands.contains(army.kingdom)) < region.calcMinPatrolStrength(World.this)) {
-						notifications.add(new Notification(army.kingdom, "Ousting Failed", "Army " + army.id + " is not strong enough to oust the nobility of " + region.name + "."));
+						notifyPlayer(army.kingdom, "Ousting Failed", "Army " + army.id + " is not strong enough to oust the nobility of " + region.name + ".");
 						continue;
 					}
 					for (Region r : regions) if (army.kingdom.equals(r.getKingdom()) && r.noble != null) r.noble.unrest = Math.min(1, r.noble.unrest + .2);
-					notifications.add(new Notification(army.kingdom, "Ousted Nobility of " + region.name, "Our army ousted the nobility of " + region.name + ". " + region.noble.name + " and their family " + (Math.random() < 0.5 ? " fought to the last member and were completely wiped out." : " accepted their defeat graciously, but were found dead the next morning.")));
+					notifyPlayer(army.kingdom, "Ousted Nobility of " + region.name, "Our army ousted the nobility of " + region.name + ". " + region.noble.name + " and their family " + (Math.random() < 0.5 ? " fought to the last member and were completely wiped out." : " accepted their defeat graciously, but were found dead the next morning."));
 					region.noble = null;
 					army.orderhint = "";
 				}
@@ -1372,7 +1372,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				} else if (action.startsWith("Build ")) {
 					c.addExperienceGovernor();
 					if (!c.kingdom.equals(region.getKingdom()) && getNation(region.getKingdom()).getRelationship(c.kingdom).construct == Relationship.Construct.FORBID) {
-						notifications.add(new Notification(c.kingdom, "Construction Failed", region.getKingdom() + " does not permit us to build in " + region.name + "."));
+						notifyPlayer(c.kingdom, "Construction Failed", region.getKingdom() + " does not permit us to build in " + region.name + ".");
 					} else {
 						buildAction(action, c.kingdom, region);
 					}
@@ -1386,7 +1386,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					c.addExperienceSpy();
 					double cost = getRules().spyRingEstablishCost;
 					if (getNation(c.kingdom).gold < cost) {
-						notifications.add(new Notification(c.kingdom, "Spy Ring Establishment Failed", c.name + " needed " + Math.ceil(cost) + " gold to establish a spy ring in " + regions.get(c.location).name + ", but only " + Math.floor(getNation(c.kingdom).gold) + " was available."));
+						notifyPlayer(c.kingdom, "Spy Ring Establishment Failed", c.name + " needed " + Math.ceil(cost) + " gold to establish a spy ring in " + regions.get(c.location).name + ", but only " + Math.floor(getNation(c.kingdom).gold) + " was available.");
 						continue;
 					}
 					getNation(c.kingdom).gold -= cost;
@@ -1408,7 +1408,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				} else if (action.startsWith("Transfer character to ")) {
 					String target = action.replace("Transfer character to ", "");
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
-					notifications.add(new Notification(target, "Hero from " + c.kingdom, c.name + ", formerly a hero of " + c.kingdom + " has sworn fealty and loyalty to us."));
+					notifyPlayer(target, "Hero from " + c.kingdom, c.name + ", formerly a hero of " + c.kingdom + " has sworn fealty and loyalty to us.");
 					c.kingdom = target;
 					c.orderhint = "";
 				}
@@ -1424,7 +1424,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 			for (Army a : remove) {
 				String kingdom = regions.get(a.location).getKingdom();
-				notifications.add(new Notification(kingdom, "Pirates Destroyed", "The pirates that have wandered into " + regions.get(a.location).name + " have been thoroughly destroyed by the occupants of that region."));
+				notifyPlayer(kingdom, "Pirates Destroyed", "The pirates that have wandered into " + regions.get(a.location).name + " have been thoroughly destroyed by the occupants of that region.");
 				getNation(kingdom).gold += a.gold;
 				incomeSources.get(kingdom).incomeArmyDelivery += a.gold;
 				armies.remove(a);
@@ -1599,7 +1599,7 @@ public class World extends RulesObject implements GoodwillProvider {
 							if (isHidden(a, k)) armySummary += "\n" + (a.isNavy() ? "A navy" : "An army") + " of an unknown nation suffered " + Math.round(casualties.get(a) * 100) + "% losses.";
 							else armySummary += "\n" + (a.isNavy() ? "A navy" : "An army") + " of " + a.kingdom + " suffered " + Math.round(casualties.get(a) * 100) + "% losses.";
 						}
-						notifications.add(new Notification(k, "Battle in " + region.name, "Over a week of fighting in " + region.name + ":" + armySummary + "\n" + battleDetails));
+						notifyPlayer(k, "Battle in " + region.name, "Over a week of fighting in " + region.name + ":" + armySummary + "\n" + battleDetails);
 					}
 				}
 			}
@@ -1618,7 +1618,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (Army a : armies) if (a.location == i && a.isNavy()) {
 						Army max = getMaxArmyInRegion(i, leaders, inspires, lastStands);
 						if (max != null && Nation.isEnemy(a.kingdom, max.kingdom, World.this)) {
-							notifications.add(new Notification(a.kingdom, "Fleet Captured", "Our fleet of " + Math.round(a.size) + " warships in " + region.name + " was seized by " + max.kingdom + "."));
+							notifyPlayer(a.kingdom, "Fleet Captured", "Our fleet of " + Math.round(a.size) + " warships in " + region.name + " was seized by " + max.kingdom + ".");
 							a.kingdom = max.kingdom;
 							if (leaders.containsKey(a)) leaders.get(a).leadingArmy = -1;
 							if (max.kingdom.equals("Pirate")) {
@@ -1650,7 +1650,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				double unrestMod = 0;
 				double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
 				if (ration < 0.9 && r.religion != Ideology.ALYRJA) unrestMod += .15;
-				if (ration > 1.1) unrestMod -= .1;
+				if (ration > 1) unrestMod -= .1;
 				if (getNation(r.getKingdom()).hasTag(Nation.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.religion == Ideology.VESSEL_OF_FAITH) unrestMod -= .06;
 				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag(Nation.Tag.IMPERIALISTIC)) {
@@ -1676,8 +1676,8 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (Construction c : n.constructions) {
 						if (c.type == Construction.Type.FORTIFICATIONS) {
 							n.constructions.remove(c);
-							notifications.add(new Notification(n.getKingdom(), "Sabotage in " + n.name, k + " saboteurs have destroyed a fortification in " + n.name + ", claiming it was the will of Iruhan."));
-							notifications.add(new Notification(k, "Friendly sabotage in " + n.name, "Civilian saboteurs loyal to us have destroyed a fortification in " + n.name + ", a region of " + n.getKingdom() + ", claiming it was the will of Iruhan."));
+							notifyPlayer(n.getKingdom(), "Sabotage in " + n.name, k + " saboteurs have destroyed a fortification in " + n.name + ", claiming it was the will of Iruhan.");
+							notifyPlayer(k, "Friendly sabotage in " + n.name, "Civilian saboteurs loyal to us have destroyed a fortification in " + n.name + ", a region of " + n.getKingdom() + ", claiming it was the will of Iruhan.");
 							break;
 						}
 					}
@@ -1952,13 +1952,13 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (from == null || to == null) throw new RuntimeException("Can't find region " + fromName + " or " + toName);
 					if (from == to) continue;
 					if (!k.equals(from.getKingdom())) {
-						notifications.add(new Notification(k, "Food Transfer from " + from.name + " Failed", "We lost control of the region before the food could be transferred from it!"));
+						notifyPlayer(k, "Food Transfer from " + from.name + " Failed", "We lost control of the region before the food could be transferred from it!");
 						continue;
 					}
 					double amount = Math.max(0, Math.min(from.food, Double.parseDouble(kOrders.get(o)) * 1000));
 					if (amount == 0) continue;
 					if (from.getFoodPinned() || to.getFoodPinned()) {
-						notifications.add(new Notification(k, "Food Transfer from " + from.name + " Failed", "Due to a nefarious plot, our orders to transfer food from " + from.name + " to " + to.name + " were lost!"));
+						notifyPlayer(k, "Food Transfer from " + from.name + " Failed", "Due to a nefarious plot, our orders to transfer food from " + from.name + " to " + to.name + " were lost!");
 						continue;
 					}
 					double cost = amount / 50000;
@@ -1967,7 +1967,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						cost = getNation(k).gold;
 					}
 					if (!from.canFoodTransferTo(World.this, to)) throw new RuntimeException("Can't transfer food from " + fromName + " to " + toName);
-					notifications.add(new Notification(to.getKingdom(), "Food Transfer to " + to.name, Math.round(amount / 1000) + "k measures of food were transferred from " + from.name + " to " + to.name));
+					notifyPlayer(to.getKingdom(), "Food Transfer to " + to.name, Math.round(amount / 1000) + "k measures of food were transferred from " + from.name + " to " + to.name);
 					getNation(k).gold -= cost;
 					incomeSources.getOrDefault(k, new Budget()).spentFoodTransfers += cost;
 					from.food -= amount;
@@ -2010,7 +2010,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						pirate.bribes.put(a.kingdom, pirate.bribes.getOrDefault(a.kingdom, 0.0) + threatIncrease / 100);
 						pirateThreatSources.put("Desertion from " + a.kingdom, pirateThreatSources.getOrDefault("Desertion from " + a.kingdom, 0.0) + threatIncrease);
 					}
-					notifications.add(new Notification(k, "Desertion", Math.round(desertion * 100) + "% of our troops deserted due to lack of pay."));
+					notifyPlayer(k, "Desertion", Math.round(desertion * 100) + "% of our troops deserted due to lack of pay.");
 				} else {
 					incomeSources.getOrDefault(k, new Budget()).spentSoldiers = owed;
 					getNation(k).gold -= owed;
@@ -2035,8 +2035,8 @@ public class World extends RulesObject implements GoodwillProvider {
 				String c = orders.getOrDefault(r.getKingdom(), new HashMap<String, String>()).getOrDefault("nations_cede_" + i, "(Nobody)");
 				if (kingdoms.containsKey(c)) {
 					if (getNation(c).getRelationship(r.getKingdom()).cede != Relationship.Cede.ACCEPT) {
-						notifications.add(new Notification(r.getKingdom(), "Cannot Cede " + r.name, c + " refused to accept rulership of " + r.name + "."));
-						notifications.add(new Notification(c, r.name + " Cede Refused", r.getKingdom() + " attempted to cede rulership of " + r.name + " to us, but we refused."));
+						notifyPlayer(r.getKingdom(), "Cannot Cede " + r.name, c + " refused to accept rulership of " + r.name + ".");
+						notifyPlayer(c, r.name + " Cede Refused", r.getKingdom() + " attempted to cede rulership of " + r.name + " to us, but we refused.");
 						continue;
 					}
 					notifyAllPlayers(r.name + " Ceded", r.name + ", formerly a region of " + r.getKingdom() + ", has been ceded to " + c + ".");
@@ -2137,41 +2137,16 @@ public class World extends RulesObject implements GoodwillProvider {
 				if (b.spentFoodTransfers > 0) notification += "\n" + Math.round(b.spentFoodTransfers) + " gold spent to transfer food.";
 				if (b.spentBribes > 0) notification += "\n" + Math.round(b.spentBribes) + " gold spent to bribe pirates.";
 				if (b.spentSpyEstablishments > 0) notification += "\n" + Math.round(b.spentSpyEstablishments) + " gold spent establishing new spy rings.";
-				notifications.add(new Notification(k, "Budget", notification));
+				notifyPlayer(k, "Budget", notification);
 			}
 		}
 
 		void eatFood() {
-			HashMap<Region, Double> starvation = new HashMap<>();
 			for (int i = 0; i < regions.size(); i++) {
 				Region r = regions.get(i);
-				if (r.isSea()) continue;
-				double hungry = r.calcConsumption(World.this, rationing.getOrDefault(r.getKingdom(), 1.0));
-				if (kingdoms.containsKey(r.getKingdom())) {
-					double fed = Math.min(hungry, r.food) / hungry * r.population;
-					double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
-					if (ration > 1) score(r.getKingdom(), Nation.ScoreProfile.PROSPERITY, fed * getRules().foodFedPlentifulPointFactor);
-					else if (ration == 1) score(r.getKingdom(), Nation.ScoreProfile.PROSPERITY, fed * getRules().foodFedPointFactor);
-				}
-				if (hungry <= r.food) {
-					r.food -= hungry;
-				} else {
-					double starving = Math.min(r.population - 1, (hungry - r.food) * .05);
-					r.food = 0;
-					r.unrestPopular = Math.min(1, r.unrestPopular + starving / r.population * 3);
-					starvation.put(r, starving);
-					addPopulation(r, -starving);
-					for (String k : tributes.getOrDefault(r.getKingdom(), new ArrayList<String>())) score(k, Nation.ScoreProfile.PROSPERITY, -1 / 12000.0 * starving);
-					for (String k : kingdoms.keySet()) if (getNation(k).coreRegions.contains(i)) score(k, Nation.ScoreProfile.PROSPERITY, -1 / 6000.0 * starving);
-				}
-			}
-			starvingRegions.addAll(starvation.keySet());
-			for (String k : kingdoms.keySet()) {
-				String notification = "";
-				for (Region r : starvation.keySet()) if (r.getKingdom().equals(k)) {
-					notification += Math.round(starvation.get(r)) + " have starved to death in " + r.name + ".\n";
-				}
-				if (!"".equals(notification)) notifications.add(new Notification(k, "Starvation", notification));
+				String coreRegionOf = "Unruled";
+				for (String k : kingdoms.keySet()) if (getNation(k).coreRegions.contains(i)) coreRegionOf = k;
+				r.eat(rationing.getOrDefault(r.getKingdom(), 1.0), coreRegionOf, World.this);
 			}
 		}
 
@@ -2246,7 +2221,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					note += "\n" + e.getKey().name + ": " + (localTotal > 0 ? "+" : "") + Math.round(localTotal) + " people." + explain;
 				}
 				if (absPopChange > 1000) {
-					notifications.add(new Notification(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:\n" + note));
+					notifyPlayer(k, "Emigration / Immigration", "The population of regions you rule has changed by " + Math.round(popChange / 1000) + "k due to voluntarily population migrations:\n" + note);
 				}
 			}
 
@@ -2309,7 +2284,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					for (Construction.Type t : wreckage.get(k).keySet()) {
 						notification += "\n" + StringUtil.quantify(wreckage.get(k).get(t), t.toString().toLowerCase());
 					}
-					notifications.add(new Notification(k, "Earthquakes", notification));
+					notifyPlayer(k, "Earthquakes", notification);
 				}
 			}
 			damageCrops(tivar.deluge);
@@ -2381,9 +2356,9 @@ public class World extends RulesObject implements GoodwillProvider {
 			// Riches
 			for (String k : kingdoms.keySet()) {
 				Nation n = getNation(k);
-				if (n.gold > 5000) n.score(Nation.ScoreProfile.RICHES, 2);
-				if (n.gold > 1000) n.score(Nation.ScoreProfile.RICHES, 1);
-				if (n.gold < 500) n.score(Nation.ScoreProfile.RICHES, -1);
+				if (n.gold > 2000) n.score(Nation.ScoreProfile.RICHES, 2);
+				if (n.gold > 500) n.score(Nation.ScoreProfile.RICHES, 1);
+				if (n.gold < 300) n.score(Nation.ScoreProfile.RICHES, -1);
 			}
 			// Security
 			for (String k : kingdoms.keySet()) {
@@ -2687,7 +2662,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			from.unrestPopular = Math.min(1, from.unrestPopular + amount * fromUnrestFactor / destinations.size() * 2 / (from.population - amount / destinations.size()));
 			addPopulation(target, amount / destinations.size());
 			addPopulation(from, -amount / destinations.size());
-			if (notify) notifications.add(new Notification(target.getKingdom(), "Refugees Arrive in " + target.name, "Refugees from " + from.name + " have arrived in " + target.name + "." + (targetUnrestFactor > 0 ? " They are distraught and upset, causing increased popular unrest." : "")));
+			if (notify) notifyPlayer(target.getKingdom(), "Refugees Arrive in " + target.name, "Refugees from " + from.name + " have arrived in " + target.name + "." + (targetUnrestFactor > 0 ? " They are distraught and upset, causing increased popular unrest." : ""));
 		}
 	}
 
@@ -2696,8 +2671,18 @@ public class World extends RulesObject implements GoodwillProvider {
 	}
 
 	void notifyAllPlayers(String title, String notification) {
-		for (String k : kingdoms.keySet()) {
-			notifications.add(new Notification(k, title, notification));
+		for (String k : kingdoms.keySet()) notifyPlayer(k, title, notification);
+	}
+
+	void notifyPlayer(String kingdom, String title, String notification) {
+		Nation recipient = getNation(kingdom);
+		if (recipient == null || recipient == Nation.PIRATE || recipient == Nation.UNRULED) return; 
+		Optional<Notification> mergeInto = notifications.stream().filter(i -> i.who.equals(kingdom) && i.title.equals(title)).findFirst();
+		if (mergeInto.isPresent()) {
+			notifications.remove(mergeInto.get());
+			notifications.add(new Notification(kingdom, title, mergeInto.get().text + "\n" + notification));
+		} else {
+			notifications.add(new Notification(kingdom, title, notification));
 		}
 	}
 
