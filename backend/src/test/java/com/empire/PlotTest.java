@@ -137,11 +137,11 @@ public class PlotTest {
 	public void plotTypeInciteUnrestOnSuccess() {
 		World w = mock(World.class);
 		Region r0 = mock(Region.class);
-		r0.unrestPopular = 0;
 		r0.name = "Foo";
 		w.regions = Arrays.asList(r0);
+		r0.unrestPopular = new Percentage(0);
 		Plot.PlotType.INCITE_UNREST.onSuccess("Foo", w, null);
-		assertEquals(.4, r0.unrestPopular, EPSILON);
+		assertEquals(.4, r0.unrestPopular.get(), EPSILON);
 	}
 
 	@Test
@@ -162,7 +162,7 @@ public class PlotTest {
 		r0.culture = Culture.ANPILAYN;
 		r0.noble = Noble.newNoble(Utils.rules);
 		r0.noble.name = "Bob";
-		r0.noble.addExperience();
+		r0.noble.addExperience(false);
 		when(r0.hasNoble()).thenReturn(true);
 		when(w.getRules()).thenReturn(Utils.rules);
 		w.regions = Arrays.asList(r0);
@@ -179,9 +179,9 @@ public class PlotTest {
 		r0.culture = Culture.ANPILAYN;
 		r0.noble = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		w.regions = Arrays.asList(r0);
-		assertEquals(0, r0.noble.unrest, EPSILON);
+		assertEquals(0, r0.noble.unrest.get(), EPSILON);
 		Plot.PlotType.POISON_RELATIONS.onSuccess("Foo", w, null);
-		assertEquals(.15, r0.noble.unrest, EPSILON);
+		assertEquals(.3, r0.noble.unrest.get(), EPSILON);
 	}
 
 	@Test
@@ -211,7 +211,7 @@ public class PlotTest {
 		n.goodwill = 0;
 		when(w.getNation("Nation")).thenReturn(n);
 		Plot.PlotType.PRAISE.onSuccess("Nation", w, null);
-		assertEquals(20, n.goodwill, EPSILON);
+		assertEquals(30, n.goodwill, EPSILON);
 	}
 
 	@Test
@@ -226,7 +226,7 @@ public class PlotTest {
 		n.goodwill = 100;
 		when(w.getNation("Nation")).thenReturn(n);
 		Plot.PlotType.DENOUNCE.onSuccess("Nation", w, null);
-		assertEquals(80, n.goodwill, EPSILON);
+		assertEquals(70, n.goodwill, EPSILON);
 	}
 
 	@Test

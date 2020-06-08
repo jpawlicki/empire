@@ -334,18 +334,19 @@
 				"tyrgaetan": "Tyrgaetan culture is broadly characterized by mysticism, nomadism, and strong family groups, but also by poor literacy, technological backwardness, and sparse population. Tyrgaetan armies are mostly clan or family units, who excel at crossing friendly terrain quickly and operating even in the harshest climates.",
 			};
 			let ideologyDescriptions = {
-				"Iruhan (Chalice of Compassion)": "Your people broadly believe that all life is precious. They are ecological and both produce more food during harvests and consume less food each week, but also produce less tax.",
-				"Iruhan (Sword of Truth)": "Your people broadly believe that other religions are dangerous. They produce far more soldiers and will automatically destroy some fortifications in adjacent enemy regions.",
-				"Iruhan (Tapestry of People)": "Your people broadly believe that all points of view are valuable. They engage in greater economic activity when bordering regions with different cultures, religions, or ideologies, and produce more per unique ideology within your own borders.",
-				"Iruhan (Vessel of Faith)": "Your people broadly believe that God (Iruhan) has a personal relationship with them. They are generally happier and reject the authority of the Church of Iruhan, making you largely immune to the effects of a negative relationship with the Church. They become happier whenever a region is converted to this ideology.",
-				"Northern (Alyrja)": "Your people broadly believe in constant vigilence. They destroy all pirates in your territory and give you reports on all hidden units within or adjacent to your regions.",
+				"Iruhan (Chalice of Compassion)": "Your people broadly believe that all life is precious. They are ecological and produce more food during harvests, but also produce less tax.",
+				"Iruhan (Sword of Truth)": "Your people broadly believe that other religions are dangerous. They produce both more numerous and higher quality soldiers.",
+				"Iruhan (Tapestry of People)": "Your people broadly believe that all points of view are valuable. They engage in greater economic activity when bordering regions with different cultures, religions, or ideologies, and their soldiers become more effective as you develop diverse ideologies within your own borders.",
+				"Iruhan (Vessel of Faith)": "Your people broadly believe that God (Iruhan) has a personal relationship with them. They are generally happier and reject the authority of the Church of Iruhan, making you largely immune to the effects of a negative relationship with the Church. Building temples makes them very happy, and their missionaries can build temples in any nation.",
+				"Northern (Alyrja)": "Your people broadly believe in constant vigilence. They destroy all pirates in your territory and give you reports on all hidden units within or adjacent to your regions. Additionally, they do not object to the use of limited rations, so long as there is no starvation.",
 				"Northern (Lyskr)": "Your people broadly believe in the power of knowledge and secrets. Your plotting and intrigue will be far more effective.",
-				"Northern (Rjinku)": "Your people broadly believe in the glory of war. Your nation generates significantly more soldiers.",
-				"Northern (Syrjen)": "Your people broadly believe in economic cooperation. Your nation produces more economic income.",
-				"Tavian (Flame of Kith)": "Your people broadly believe that the needs of the many outweigh the needs of the few. Your people will freely construct fortifications and gradually abduct and enslave the population of your neighbors.",
-				"Tavian (River of Kuun)": "Your people broadly believe that the duty of the fortunate is to provide for the unfortunate. Any feasts you throw will trigger economic activity and other nations will generate more income for sharing borders with you.",
+				"Northern (Rjinku)": "Your people broadly believe in the glory of war. Your nation generates significantly more soldiers and your generals become far more effective.",
+				"Northern (Syrjen)": "Your people broadly believe in economic cooperation. Your nation produces more economic income, both on land and sea.",
+				"Tavian (Flame of Kith)": "Your people broadly believe that the duty of the fortunate is to provide for the unfortunate. Your people attract more immigrants and your governors are more effective.",
+				"Tavian (River of Kuun)": "Your people broadly believe that trade and prosperity are tightly linked. Using plentiful rations benefits your economy and any tribute relationships you have generate extra gold.",
 			};
 			let traitConsequences = {
+				"Aristocratic": "You start with nobles in every core region, and your nobles gain experience more quickly.",
 				"Defensive": "You start with fortifications in each of your regions, and your people are twice as effective at constructing new fortifications.",
 				"Disciplined": "Your armies are more effective, and your regions are easier to patrol.",
 				"Evangelical": "Your people will fund the spreading of your state religion.",
@@ -360,6 +361,7 @@
 				"Republican": "Your nation is a republic, not a kingdom. Popular unrest decreases in every one of your regions over time, but you cannot use feudal nobles.",
 				"Seafaring": "You start with extra warships and gain more gold from sea regions than other nations do.",
 				"Ship-Building": "Whenever you construct a new shipyard, it immediately produces an extra small fleet of warships.",
+				"Sneaky": "You start with bonus spy rings and your spies are better at sabotaging plots.",
 				"Stoic": "High unrest never decreases the size of the harvest in your regions, and your regions are more difficult for enemies to conquer.",
 				"War-like": "You start with extra soldiers and your rightful regions produce more taxation and recruits per region you've conquered that rightfully belongs to another nation.",
 				"Welcoming": "Your regions are twice as attractive to immigrants.",
@@ -380,6 +382,7 @@
 				if (trait1 == trait2) warnings.push("You cannot select the same trait twice.");
 				if (document.getElementById("ruler_name").value == "") warnings.push("You must generate a ruler name.");
 				if (document.getElementById("title").value == "Prime Minister" && !(trait1 == "Republican" || trait2 == "Republican")) warnings.push("To avoid confusion, only leaders of republics may be called Prime Minister.");
+				if ((trait1 == "Republican" || trait2 == "Republican") && (trait1 == "Aristocratic" || trait2 == "Aristocratic")) warnings.push("Aristocratic republics are not allowed.");
 				if (document.getElementById("email").value.indexOf("@") < 1) warnings.push("Enter an e-mail address for the GM to contact you at.");
 				if (document.getElementById("password").value.length < 1) warnings.push("Enter a password.");
 				if ((trait1 == "Holy" || trait2 == "Holy") && !di.includes("Iruhan")) warnings.push("Only nations with an Iruhan dominant religion can choose the Holy trait.");

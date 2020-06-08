@@ -55,10 +55,6 @@ class OrdersPane extends HTMLElement {
 					<label id="gothi_lyskr"><input type="checkbox" name="gothi_lyskr"/>Vote to summon the <tooltip-element tooltip="The veil makes all armies, navies, and characters hidden from other rulers. It will start to destroy crops worldwide after 2 weeks of activity.">Veil</tooltip-element></label>
 				</div>
 				<div id="content_nations">
-					<h1><tooltip-element tooltip="These communications are usually delayed by 0 to 30 seconds.">Real-Time</tooltip-element> Communications</h1>
-					<div id="nations_rtc">
-						<expandable-snippet text="Only colocated rulers not in hiding can engage in real-time communications."></expandable-snippet>
-					</div>
 					<h1>Relationships</h1>
 					<div id="nations_nations"></div>
 					<expandable-snippet text="All changes will be announced to all rulers."></expandable-snippet>
@@ -83,7 +79,7 @@ class OrdersPane extends HTMLElement {
 					<h1>Economic Controls</h1>
 					<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
 					<label>Shipbuilding: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="1" value="5"/></label>
-					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="75" max="125" step="25" value="100"/></label>
+					<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="0" max="200" step="1" value="100"/></label>
 					<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
 					<div id="economy_consequences">
 					</div>
@@ -360,6 +356,7 @@ class OrdersPane extends HTMLElement {
 				if (r.noble.name == undefined && !g_data.kingdoms[unit.kingdom].tags.includes("Republican")) {
 					opts.push("Instate Noble");
 				}
+				opts.push("Harvest Early");
 			}
 			if (r.type == "land") {
 				if (g_data.spy_rings.find(ring => ring.nation == unit.kingdom && ring.location == r.id) == undefined) {
@@ -647,97 +644,6 @@ class OrdersPane extends HTMLElement {
 		function sanitize(s) {
 			return s.replace(/</g, "&lt").replace(/>/g, "&gt");
 		}
-		if (colocatedRulers.length > 0 && !kingdom.getRuler().hidden) {
-			let rtc = shadow.getElementById("nations_rtc");
-			rtc.innerHTML = "";
-			let d = document.createElement("div");
-			rtc.appendChild(d);
-			let to = document.createElement("div");
-			to.appendChild(document.createTextNode("To: "));
-			let boxes = [];
-			for (let r of colocatedRulers) {
-				let label = document.createElement("label");
-				let box = document.createElement("input");
-				box.setAttribute("data-kingdom", r.kingdom);
-				box.setAttribute("type", "checkbox");
-				boxes.push(box);
-				label.appendChild(box);
-				label.appendChild(document.createTextNode(r.kingdom));
-				to.appendChild(label);
-			}
-			rtc.appendChild(to);
-			let textarea = document.createElement("textarea");
-			rtc.appendChild(textarea);
-			let submit = document.createElement("button");
-			let backoffCount = 0;
-			let backoffMisses = 0;
-			let lastNumMessages = 0;
-			let checkForUpdate = function() {
-				backoffCount++;
-				if (backoffMisses > 7 && backoffCount % 10 != 0) return;
-				let req = new XMLHttpRequest();
-				req.open("get", g_server + "/entry/world?&gid=" + gameId + "&t=" + g_data.date, true);
-				addAuth(req, whoami, password);
-				req.onerror = function (e) {
-					window.alert("Failed to communicate with the server.");
-				};
-				req.onload = function (ev) {
-					if (req.status != 200) {
-						window.alert("Failed to communicate with the server: " + req.status);
-					} else {
-						let rtc = JSON.parse(req.response).rtc;
-						if (lastNumMessages != rtc.length) {
-							lastNumMessages = rtc.length;
-							backoffMisses = 0;
-							backoffCount = 0;
-							d.innerHTML = "";
-							for (let msg of JSON.parse(req.response).rtc) {
-								let m = document.createElement("div");
-								msg.to.push(msg.from);
-								msg.to.sort();
-								m.innerHTML = "<b>(" + sanitize(msg.to.join(", ")) + ") " + sanitize(msg.from) + ": </b>" + sanitize(msg.text).replace(/\n/g, "<br/>");
-								m.style.background = "linear-gradient(90deg, #fff -50%, " + getColor(msg.from) + " 350%)";
-								d.appendChild(m);
-							}
-						} else {
-							backoffMisses++;
-						}
-					}
-				};
-				req.send();
-			}
-			checkForUpdate();
-			setInterval(checkForUpdate, 30000);
-			submit.innerHTML = "Send";
-			submit.addEventListener("click", function(e) {
-				e.preventDefault();
-				let data = {
-					"to": [],
-					"text": textarea.value
-				};
-				for (let b of boxes) {
-					if (b.checked) data.to.push(b.getAttribute("data-kingdom"));
-				}
-				if (data.to.length > 0 && data.text.length > 0) {
-					let req = new XMLHttpRequest();
-					req.open("post", g_server + "/entry/rtc?gid=" + gameId + "&t=" + g_data.date, true);
-					addAuth(req, whoami, password);
-					req.onerror = function (e) {
-						window.alert("Failed to communicate with the server.");
-					};
-					req.onload = function (ev) {
-						if (req.status != 204) {
-							window.alert("Failed to communicate with the server: " + req.status);
-						}
-						checkForUpdate();
-					};
-					req.send(JSON.stringify(data));
-					textarea.value = "";
-				}
-				return false;
-			});
-			rtc.appendChild(submit);
-		}
 		{ // Cede regions.
 			let rr = [];
 			for (let r of g_data.regions) if (r.kingdom == kingdom.name && (r.noble == undefined || r.noble.name == undefined)) rr.push(r);
@@ -776,6 +682,7 @@ class OrdersPane extends HTMLElement {
 			let happiness = 0;
 			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
 			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
+			happiness += Math.max(-35, parseInt(eRation.value) - 100);
 			if (parseInt(eRation.value) == 75) happiness += 15;
 			else if (parseInt(eRation.value) == 125) happiness -= 10;
 			economyConsequences.innerHTML = "";
@@ -788,12 +695,6 @@ class OrdersPane extends HTMLElement {
 					let nobleTaxMod = 0;
 					let nobleRecruitMod = 0;
 					for (let c of g_data.characters) if (c.kingdom == kingdom.name && c.location == rid && shadow.querySelector("[name=action_" + c.name.replace(/[ ']/g, "_") + "]").value == "Govern " + r.name && (governor == null || governor.calcLevel("governor") < c.calcLevel("governor"))) governor = c;
-					let nobleOrder = shadow.querySelector("[name=action_noble_" + rid + "]");
-					if (nobleOrder != undefined) {
-						if (nobleOrder.value == "Soothe Population") nobleTaxMod = -.25;
-						else if (nobleOrder.value == "Levy Tax") nobleTaxMod = .25;
-						else if (nobleOrder.value == "Conscript Recruits") nobleRecruitMod = .25;
-					}
 					taxParts.push(r.calcTaxation(taxRate, governor, rationing, nobleTaxMod));
 					recruitParts.push(r.calcRecruitment(recruitRate, governor, rationing, nobleRecruitMod));
 				}
@@ -823,13 +724,14 @@ class OrdersPane extends HTMLElement {
 			for (let rid = 0; rid < g_data.regions.length; rid++) {
 				let r = g_data.regions[rid];
 				if (r.kingdom == kingdom.name) {
-					let food = r.food;
+					let food = Math.min(r.food, rationing * r.population);
 					for (let ti = 0; ti < obj.economyRowCount; ti++) {
 						if (shadow.querySelector("[name=economy_from_" + ti + "]").value == r.name) food -= parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
 						if (shadow.querySelector("[name=economy_to_" + ti + "]").value.replace(/\(.*\) /, "") == r.name) food += parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
 					}
-					food -= r.calcConsumption(rationing).v;
-					if (food < 0) foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil(-food / 1000.0) + "k measures of food</p>"
+					if (food < r.population * 0.75) {
+						foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * 0.75 - food) / 1000.0) + "k rations of food</p>";
+					}
 				}
 			}
 		}
@@ -1092,8 +994,11 @@ class OrdersPane extends HTMLElement {
 
 	getNobleOptions(r) {
 		let opts = [];
-		opts.push("Relax", "Soothe Population", "Levy Tax", "Conscript Recruits");
+		opts.push("Train", "Relax", "Harvest Early");
 		if (r.isCoastal()) opts.push("Build Shipyard");
+		if (g_data.spy_rings.find(ring => ring.nation == r.kingdom && ring.location == r.id) == undefined) {
+			opts.push("Establish Spy Ring");
+		}
 		opts.push("Build Fortifications");
 		for (let i of ["Chalice of Compassion", "Sword of Truth", "Tapestry of People", "Vessel of Faith"]) opts.push("Build Temple (" + i + ")");
 		for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
@@ -1267,7 +1172,9 @@ class OrdersPane extends HTMLElement {
 		amount.setAttribute("value", "0");
 		amount.setAttribute("name", "economy_amount_" + id);
 		amount.addEventListener("input", function() {
-			td4.innerHTML = Math.round(amount.value / 50 * 10) / 10;
+			let cost = Math.round(amount.value / 50 * 10) / 10;
+			if (getNation(whoami).calcStateReligion() == "Iruhan (Chalice of Compassion)") cost = 0;
+			td4.innerHTML = cost;
 		});
 		amount.addEventListener("change", computeFoodConsequences);
 		td.appendChild(amount);
@@ -1350,6 +1257,7 @@ class OrdersPane extends HTMLElement {
 			{"name": "Denounce the deeds of", "value": "DENOUNCE", "targetType": targetProviderNation},
 			{"name": "Intercept communications of", "value": "INTERCEPT_COMMUNICATIONS", "targetType": targetProviderNation},
 			{"name": "Gather intelligence on", "value": "SURVEY_NATION", "targetType": targetProviderNation},
+			{"name": "Steal gold from", "value": "STEAL_GOLD", "targetType": targetProviderNation},
 		];
 		let sel = this.selectPretty("plot_new_type_" + id, plotTypes);
 		d.appendChild(sel);
@@ -1477,7 +1385,7 @@ class OrdersPane extends HTMLElement {
 				if (!c.act.startsWith("Build ") && c.act != "Establish Spy Ring") continue;
 				fwarns.push(c.warn);
 				if (c.act == "Establish Spy Ring") {
-					projectedConstructionCost += 50;
+					projectedConstructionCost += g_data.regions[c.loc].calcCostToEstablishSpyRing(whoami).v;
 				} else {
 					if (c.act.includes("Shipyard")) {
 						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami).v;
@@ -1491,6 +1399,27 @@ class OrdersPane extends HTMLElement {
 			}
 			if (projectedConstructionCost > getNation(whoami).gold) {
 				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold)";
+			}
+		}
+		{	// Warn about early harvests.
+			let capables = [];
+			for (let c of g_data.characters) {
+				if (c.kingdom == whoami) {
+					let cname = c.name.replace(/[ ']/g, "_");
+					capables.push({
+							"act": shadow.querySelector("select[name=action_" + cname + "]").value,
+							"warn": shadow.getElementById("warning_character_" + cname)});
+				}
+			}
+			for (let q of shadow.querySelectorAll("select")) {
+				if (!q.name.startsWith("action_noble_")) continue;
+				capables.push({
+					"act": q.value,
+					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
+			}
+			for (let c of capables) {
+				if (c.act != "Harvest Early") continue;
+				c.warn.innerHTML += " (harvesting early wastes crops)";
 			}
 		}
 	}

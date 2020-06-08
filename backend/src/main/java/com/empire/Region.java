@@ -25,7 +25,7 @@ class Region extends RulesObject {
 	Culture culture;
 	double population;
 	Ideology religion;
-	double unrestPopular;
+	Percentage unrestPopular;
 	Noble noble;
 	List<Construction> constructions = new ArrayList<>();
 	double food;
@@ -74,10 +74,11 @@ class Region extends RulesObject {
 		double mod = 1;
 		if (religion == Ideology.FLAME_OF_KITH) mod += getRules().flameOfKithImmigrationWeightMod;
 		if (w.getNation(kingdom).hasTag(Nation.Tag.WELCOMING)) mod += 1;
-		return (1 - unrestPopular) * mod;
+		if (Ideology.CHALICE_OF_COMPASSION == w.getDominantIruhanIdeology() && religion.religion == Religion.IRUHAN) mod += 2;
+		return (1 - unrestPopular.get()) * mod;
 	}
 
-	public double calcRecruitment(World w, Character governor, double signingBonus, double nationalCasualties, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, Character governor, double signingBonus, double rationing, Army largestInRegion) {
 		double base = population * getRules().recruitmentPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - getRules().unrestRecruitmentEffectThresh);
@@ -104,21 +105,13 @@ class Region extends RulesObject {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += getRules().tapestryRecruitmentMod;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing >= getRules().riverOfKuunRationingThresh && food > 0) {
-			mods += getRules().riverOfKuunRecruitmentMod;
-		}
-
-		if (Ideology.TAPESTRY_OF_PEOPLE == Nation.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryRecruitmentMod * numUniqueIdeologies(kingdom, w);
-		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE  == w.getDominantIruhanIdeology() && Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN) {
-			mods += getRules().perIdeologyTapestryRecruitmentModGlobal * numUniqueIdeologies(kingdom, w);
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing > 1) {
+			mods += (rationing - 1) * 3;
 		}
 
 		if (largestInRegion != null && !Nation.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += getRules().armyPillagersRecruitmentMod;
 
-		double flatBonus = 0;
-		if (Ideology.RJINKU == Nation.getStateReligion(kingdom, w)) flatBonus += nationalCasualties * getRules().rjinkuCasualtyRecovery / w.regions.stream().filter(r -> kingdom.equals(r.getKingdom())).count();
-
-		return Math.max(0, base * mods) + flatBonus;
+		return Math.max(0, base * mods);
 	}
 
 	// TODO: this belongs alongside the game constants, should determine a way to parameterize these function-type rules
@@ -145,37 +138,23 @@ class Region extends RulesObject {
 		}
 
 		boolean neighborKuun = false;
-		for (Region r : getNeighbors(w)) {
-			if (r.kingdom != null && !r.kingdom.equals(kingdom) && Ideology.RIVER_OF_KUUN == Nation.getStateReligion(r.kingdom, w)) neighborKuun = true;
-		}
-		if (neighborKuun) mods += getRules().riverOfKuunNeighborTaxMod;
 		if (religion == Ideology.SYRJEN) {
 			mods += getRules().syrjenTaxMod;
 		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
 			boolean getTapestryBonus = false;
 			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
 			if (getTapestryBonus) mods += getRules().tapestryTaxMod;
-		} else if (religion == Ideology.RIVER_OF_KUUN && rationing == getRules().riverOfKuunRationingThresh && food > 0) {
-			mods += getRules().riverOfKuunTaxMod;
+		} else if (religion == Ideology.RIVER_OF_KUUN && rationing > 1) {
+			mods += (rationing - 1) * 3;
 		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
 			mods += getRules().chaliceOfCompassionTaxMod;
 		}
 
-		if (Ideology.RIVER_OF_KUUN == Nation.getStateReligion(kingdom, w)) {
-			mods += getRules().riverOfKuunPerNeighborTaxMod * getNeighbors(w).stream().filter(r -> r.isLand()).map(r -> r.getKingdom()).filter(k -> !kingdom.equals(k)).distinct().count();
-		}
-
-		if (Ideology.TAPESTRY_OF_PEOPLE == Nation.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryTaxMod * numUniqueIdeologies(kingdom, w);
-		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN && Ideology.TAPESTRY_OF_PEOPLE == w.getDominantIruhanIdeology()) mods += getRules().perIdeologyTapestryTaxModGlobal * numUniqueIdeologies(kingdom, w);
-
 		return Math.max(0, base * mods * taxRate);
 	}
 
-	public double calcConsumption(World w, double foodMod) {
-		double base = population;
-		double mods = foodMod;
-		if (Nation.getStateReligion(kingdom, w) == Ideology.CHALICE_OF_COMPASSION) mods += getRules().chaliceOfCompassionFoodMod;
-		return Math.max(0, base * mods);
+	public double calcConsumption() {
+		return population;
 	}
 
 	public double calcPirateThreat(World w, boolean wasPatrolled) {
@@ -208,7 +187,7 @@ class Region extends RulesObject {
 		if (Ideology.VESSEL_OF_FAITH == max && religion != max) {
 			for (String k : w.getNationNames()) {
 				if (Ideology.VESSEL_OF_FAITH != Nation.getStateReligion(k, w)) continue;
-				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular = Math.max(0, r.unrestPopular + getRules().vesselOfFaithSetRelUnrestMod);
+				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular.add(getRules().vesselOfFaithSetRelUnrestMod);
 			}
 		}
 		if (max != religion) {
@@ -261,20 +240,17 @@ class Region extends RulesObject {
 	}
 
 	public double getUnrestPopular(){
-		return unrestPopular;
+		return unrestPopular.get();
 	}
 
-	// TODO: Move to a different class (don't know which one but I think there is probably a better home, idea: Ideology)
-	// TODO: Enforce [0.0, 1.0] range wherever this goes?
-	public double calcUnrestClerical(GoodwillProvider w){
-		return religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH ?
-				-w.getGoodwill(kingdom) * getRules().clericalUnrestGoodwillFactor : 0.0;
+	public double calcUnrestClerical(GoodwillProvider w) {
+		return Math.min(1, Math.max(0, religion.religion == Religion.IRUHAN && religion != Ideology.VESSEL_OF_FAITH ?
+				-w.getGoodwill(kingdom) * getRules().clericalUnrestGoodwillFactor : 0.0));
 	}
 
 	// TODO: Some or all of the condition checking into Noble?
-	// TODO: Enforce [0.0, 1.0] range?
-	public double calcUnrestNoble(){
-		return hasNoble() ? noble.unrest : 0.0;
+	public double calcUnrestNoble() {
+		return hasNoble() ? noble.unrest.get() : 0.0;
 	}
 
 	// TODO: Enfore min/max, add testing
@@ -287,7 +263,7 @@ class Region extends RulesObject {
 	}
 
 	// TODO: This is a game rule/equation
-	public double calcBaseConquestStrength(GoodwillProvider w){
+	public double calcBaseConquestStrength(GoodwillProvider w) {
 		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
 	}
 
@@ -355,7 +331,9 @@ class Region extends RulesObject {
 		double actualRations = actualEat / population;
 		w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, actualEat * getRules().foodFedPointFactor);
 		if (actualRations > 1) w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
-		unrestPopular = Math.min(1, Math.max(0, unrestPopular + Math.min(0.35, 1.0 - actualRations)));
+		if (religion != Ideology.ALYRJA || actualRations < 0.75 || actualRations > 1) {
+			unrestPopular.add(Math.min(0.35, 1.0 - actualRations));
+		}
 		if (actualRations < 0.75) {
 			double dead = (0.75 - actualRations) * 0.1 * population;
 			population -= dead;
@@ -382,6 +360,17 @@ class Region extends RulesObject {
 		food += maxHarvest;
 		crops = 0;
 	}
+
+	void harvestEarly(Set<String> stoicNations, GoodwillProvider goodwills) {
+		if (!isLand()) return;
+		double maxHarvest = population * getRules().harvestPerCitizen;
+		double unrest = calcUnrest(goodwills);
+		if (unrest > .25 && !stoicNations.contains(getKingdom())) maxHarvest *= 1.25 - unrest;
+		maxHarvest = Math.min(crops * 0.35, maxHarvest);
+		food += maxHarvest * .5;
+		crops -= maxHarvest;
+	}
+
 
 	void cultAccess(Collection<Nation> nations, boolean isCriticalCultRegion) {
 		if (cultAccessed || !isLand()) return;

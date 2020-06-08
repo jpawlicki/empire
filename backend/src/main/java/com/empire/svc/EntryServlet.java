@@ -142,10 +142,6 @@ public class EntryServlet extends HttpServlet {
 			if (!postSetup(r)) {
 				err = "Not allowed.";
 			}
-		} else if (req.getRequestURI().equals("/entry/rtc")) {
-			if (!postRealTimeCommunication(r)) {
-				err = "Not allowed.";
-			}
 		} else {
 			err = "No such path.";
 		}
@@ -426,23 +422,6 @@ public class EntryServlet extends HttpServlet {
 			return false;
 		} catch (IOException e) {
 			log.log(Level.WARNING, "Failed to initialize world for " + r.gameId + ".", e);
-			return false;
-		}
-		return true;
-	}
-
-	private boolean postRealTimeCommunication(Request r) {
-		try (DataSource dataSource = DataSource.transactional()) {
-			World w = dataSource.loadWorld(r.gameId, r.turn);
-			if (!checkPassword(r, dataSource, w).passesWrite()) return false;
-			w.addRtc(r.body, r.kingdom);
-			dataSource.save(w, r.gameId);
-			dataSource.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
-			return false;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;
 		}
 		return true;
