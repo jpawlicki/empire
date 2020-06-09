@@ -120,7 +120,7 @@ class OrdersPane extends HTMLElement {
 						<option value="salt_the_earth">Salt the Earth</option>
 					</select>
 					<div id="final_action_details"></div>
-					<h1><a href="https://docs.google.com/document/d/1QFb9ul4F1m_x0jxVUio7ry4wI9eCKO7vy08RFlR2N-g/edit?usp=sharing" target="_blank">Rules Document</a></h1>
+					<h1><a href="https://docs.google.com/document/d/1BCjssbKPYEegfva2PqUVy1cD96FTgMtJr3SjUKEsQLw/edit?usp=sharing" target="_blank">Rules Document</a></h1>
 				</div>
 			</form>
 		`;
