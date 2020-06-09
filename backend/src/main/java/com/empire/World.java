@@ -608,11 +608,9 @@ public class World extends RulesObject implements GoodwillProvider {
 			payTroops();
 			reapHarvests();
 			cedeRegions();
-			sendBudgetNotifications();
 			eatFood();
 			growPopulations();
 			evaluateGothiSpells();
-			nobleCrises();
 			checkCultVictory();
 			miscScoreProfiles();
 			appointHeirs();
@@ -624,6 +622,8 @@ public class World extends RulesObject implements GoodwillProvider {
 			applyIncome();
 			recruitTroops();
 			removeInvalidPlots();
+			nobleCrises();
+			sendBudgetNotifications();
 			notifyPirateThreats();
 			notifyInspires();
 			advanceDate();
@@ -675,6 +675,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					getNation(k).signingbonushint = orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_recruit_bonus", "0");
 					getNation(k).rationhint = orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_ration", "100");
 				}
+				taxationRates.put(k, Double.parseDouble(orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_tax", "100")) / 100);
 			}
 		}
 
@@ -1167,7 +1168,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (int rid = 0; rid < regions.size(); rid++) {
 				Region r = regions.get(rid);
 				if (!r.hasNoble()) continue;
-				String action = orders.getOrDefault(r.getKingdom(), new HashMap<String, String>()).getOrDefault("action_noble_" + rid, "Relax");
+				String action = orders.getOrDefault(r.getKingdom(), new HashMap<String, String>()).getOrDefault("action_noble_" + rid, "Train");
 				if (action.startsWith("Build ")) {
 					buildAction(action, r.getKingdom(), r);
 				} else if (action.equals("Train")) {
@@ -1730,7 +1731,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void gainIncome() {
-			for (String k : kingdoms.keySet()) taxationRates.put(k, Double.parseDouble(orders.getOrDefault(k, new HashMap<String, String>()).getOrDefault("economy_tax", "100")) / 100);
 			for (int i = 0; i < regions.size(); i++) {
 				Region r = regions.get(i);
 				if (r.isLand()) {

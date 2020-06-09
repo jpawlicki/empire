@@ -117,7 +117,7 @@ final class Crisis {
 		CONQUEST("%NOBLENAME% is concerned that your nation is too small. Grow it to at least nine regions.", "%NOBLENAME% is pleased that your nation has extensive borders.", "%NOBLENAME% is upset that your nation remains too small.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return w.regions.stream().filter(rr -> rr.getKingdom() == r.getKingdom()).count() >= 9;
+				return w.regions.stream().filter(rr -> rr.getKingdom().equals(r.getKingdom())).count() >= 9;
 			}
 
 			@Override
