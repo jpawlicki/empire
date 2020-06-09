@@ -17,7 +17,7 @@ class Mocks {
 
 	public static Noble noble(double unrest) {
 		Noble n = mock(Noble.class);
-		n.unrest = unrest;
+		n.unrest.set(unrest);
 		n.name = "DONTCARE";
 		return n;
 	}

@@ -83,6 +83,7 @@ public class EntryServlet extends HttpServlet {
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		Request r = Request.from(req);
 		resp.setHeader("Access-Control-Allow-Origin", "*");
+		resp.setHeader("Access-Control-Allow-Headers", "Authorization");
 		String json = "";
 		try {
 			if (req.getRequestURI().equals("/entry/ping")) {
@@ -127,6 +128,7 @@ public class EntryServlet extends HttpServlet {
 	public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+		resp.setHeader("Access-Control-Allow-Headers", "Authorization");
 		Request r = Request.from(req);
 		String err = "";
 		if (req.getRequestURI().equals("/entry/orders")) {
@@ -149,10 +151,6 @@ public class EntryServlet extends HttpServlet {
 			if (!postSetup(r)) {
 				err = "Not allowed.";
 			}
-		} else if (req.getRequestURI().equals("/entry/rtc")) {
-			if (!postRealTimeCommunication(r)) {
-				err = "Not allowed.";
-			}
 		} else {
 			err = "No such path.";
 		}
@@ -167,7 +165,7 @@ public class EntryServlet extends HttpServlet {
 	public void doOptions(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		resp.addHeader("Access-Control-Allow-Origin", "*");
 		resp.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-		resp.addHeader("Access-Control-Allow-Headers", "X-PINGOTHER, Content-Type");
+		resp.addHeader("Access-Control-Allow-Headers", "Authorization, X-PINGOTHER, Content-Type");
 		super.doOptions(req, resp);
 	}
 
@@ -524,30 +522,13 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-	private boolean postRealTimeCommunication(Request r) {
-		try (DataSource dataSource = DataSource.transactional()) {
-			World w = dataSource.loadWorld(r.gameId, r.turn);
-			if (!checkPassword(r, dataSource, w).passesWrite()) return false;
-			w.addRtc(r.body, r.kingdom);
-			dataSource.save(w, r.gameId);
-			dataSource.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found for " + r.gameId + ", " + r.kingdom, e);
-			return false;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
-			return false;
-		}
-		return true;
-	}
-
 	// TODO: remove
 	private boolean migrate(Request rr) {
 		final long gameId = 9;
 		if (!passesGmPassword(Hasher.hashPassword(rr.password))) return false;
 		try (DataSource dataSource = DataSource.transactional()) {
 			World w = dataSource.loadWorld(gameId, dataSource.loadCurrentDate(gameId));
-			//for (com.empire.Region r : w.regions) if ("Tavia".equals(r.getKingdom())) r.unrestPopular = 0;
+			//for (com.empire.Region r : w.regions) if (r.population <= 0) r.population = 1;
 			dataSource.save(w, gameId);
 			dataSource.commit();
 		} catch (EntityNotFoundException e) {

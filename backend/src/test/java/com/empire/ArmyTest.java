@@ -152,7 +152,7 @@ public class ArmyTest {
 		when(w.getDominantIruhanIdeology()).thenReturn(Ideology.SWORD_OF_TRUTH);
 		w.regions.get(0).religion = Ideology.SWORD_OF_TRUTH;
 		w.regions.get(0).population = 1E9;
-		assertEquals(1.25, a.calcStrength(w, null, 0, false), DELTA);
+		assertEquals(1.3, a.calcStrength(w, null, 0, false), DELTA);
 	}
 
 	@Test
@@ -201,7 +201,9 @@ public class ArmyTest {
 	@Test
 	public void razeNothingToRaze() {
 		assertEquals(0, w.regions.get(0).constructions.size());
-		assertEquals(0, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false);
+		assertEquals(0, a.gold, DELTA);
+		assertEquals(0, w.regions.get(0).constructions.size());
 	}
 
 	@Test
@@ -211,7 +213,8 @@ public class ArmyTest {
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 
 		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
-		assertEquals(80, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false);
+		assertEquals(80, a.gold, DELTA);
 		assertEquals(r.religion, Ideology.SWORD_OF_TRUTH);
 		assertEquals(0, r.constructions.size());
 	}
@@ -222,15 +225,16 @@ public class ArmyTest {
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 		r.constructions.add(Construction.makeTemple(Ideology.SWORD_OF_TRUTH, 100));
 		when(r.calcMinConquestStrength(w)).thenReturn(0.1);
-
-		assertEquals(160, a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false), DELTA);
+		a.raze(w, "Raze temple Iruhan (Sword of Truth)", null, 0, false);
+		assertEquals(160, a.gold, DELTA);
 	}
 
 	@Test
 	public void razeRequiresMinimumStrength() {
 		Region r = w.regions.get(0);
 		when(r.calcMinConquestStrength(w)).thenReturn(100.0);
-		assertEquals(0, a.raze(w, "Raze temple Iruhan (Vessel of Faith)", null, 0, false), DELTA);
+		a.raze(w, "Raze temple Iruhan (Vessel of Faith)", null, 0, false);
+		assertEquals(0, a.gold, DELTA);
 	}
 
 	/*

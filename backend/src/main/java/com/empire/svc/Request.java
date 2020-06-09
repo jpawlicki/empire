@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import javax.servlet.http.HttpServletRequest;
 
 final class Request {
@@ -35,6 +36,17 @@ final class Request {
 			String path = req.getQueryString();
 			String kingdom = extract("k", path, null);
 			String password = extract("password", path, null);
+			if (kingdom == null && password == null) {
+				// Try pulling it from Authentication header.
+				String val = req.getHeader("Authorization");
+				if (val != null && val.startsWith("Basic ")) {
+					String[] vals = new String(Base64.getDecoder().decode(val.substring("Basic ".length(), val.length())), StandardCharsets.UTF_8).split(":");
+					if (vals.length == 2) {
+						kingdom = vals[0];
+						password = vals[1];
+					}
+				}
+			}
 			int version = Integer.parseInt(extract("v", path, "0"));
 			int turn = Integer.parseInt(extract("t", path, "0"));
 			long gameId = Long.parseLong(extract("gid", path, "-1"));

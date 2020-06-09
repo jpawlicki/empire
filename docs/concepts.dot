@@ -1,0 +1,44 @@
+digraph {
+	compound=true;
+	subgraph cluster_population {
+		label = "regional population";
+		happy;
+		unrestful;
+	}
+	happy -> unrestful [label="becomes"];
+	unrestful -> happy [label="becomes"];
+	happy -> gold [label="produces"];
+	happy -> soldiers [label="produces"];
+	gold -> soldiers [label="pays"];
+	happy -> crops [label="plants & harvests"];
+	crops -> food [label="becomes"];
+	food -> unrestful [label="prevents"];
+	soldiers -> happy [label="conquers & defends",lhead=cluster_population]; 
+	subgraph cluster_buildings {
+		label = "buildings";
+		shipyards;
+		temples;
+		buildings;
+	}
+	buildings -> soldiers [label="strengthens"]
+	shipyards -> navies [label="produces"]
+	temples -> unrestful [label="prevents"];
+	characters -> shipyards [label="constructs",lhead=cluster_buildings];
+	nobles -> shipyards [label="constructs",lhead=cluster_buildings];
+	nobles -> happy [label="improves production",lhead=cluster_population];
+	gold -> shipyards [label="pays",lhead=cluster_buildings];
+	navies -> soldiers [label="protects"]
+	characters -> nobles [label="produces"]
+	pirates -> gold [label="steals"]
+	gold -> pirates [label="controls"]
+	pirates -> soldiers [label="fight"]
+	church [label="chuch opinion"]
+	religion -> church [label="determines"]
+	church -> gold [label="gives"]
+	temples -> religion [label="determines"]
+	cult -> soldiers [label="gives"]
+	characters -> spies [label="establishes"]
+	spies -> characters [label="kills"]
+	spies -> happy [label="meddles",lhead=cluster_population]
+	religion -> spells [label="determines"]
+}

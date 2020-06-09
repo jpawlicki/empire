@@ -101,7 +101,7 @@ class SpyRing extends RulesObject {
 			outcome.support(strength);
 		} else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SABOTAGING) {
 			double mod = 1;
-			if (Nation.getStateReligion(nation, w) == Ideology.LYSKR) mod += getRules().lyskrSabotageMod;
+			if (w.getNation(nation).hasTag(Nation.Tag.SNEAKY)) mod += 1;
 			outcome.sabotage(strength * mod);
 		}
 	}

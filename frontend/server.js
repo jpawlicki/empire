@@ -6,6 +6,10 @@ function getArg(p) {
 	if (e == -1) e = t.length;
 	return decodeURI(t.substring(s + p.length + 1, e));
 }
+function addAuth(req, user, password) {
+	req.setRequestHeader("Authorization", "Basic " + btoa(user + ":" + password));
+}
+
 let g_server = "";
 if (getArg("server") == "local") {
 	g_server = "http://localhost:8080";

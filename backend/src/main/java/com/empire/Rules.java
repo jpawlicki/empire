@@ -41,6 +41,7 @@ public class Rules {
 	// Scoring
 	double foodFedPointFactor;
 	double foodFedPlentifulPointFactor;
+	double foodRemainderPointFactor;
 	double scoreReligionPerConverted;
 	double scoreIdeologyPerConverted;
 	double scorePerConqueredTerritory;
@@ -71,6 +72,7 @@ public class Rules {
 	double noblePirateThreatMod;
 	int nobleCrisisFrequency;
 	double nobleCrisisSuccessUnrest;
+	double nobleCrisisSuccessExperience;
 	double nobleCrisisFailedUnrest;
 	double noblePlantModPerLevel;
 	double nobleTaxModPerLevel;
@@ -80,13 +82,7 @@ public class Rules {
 	double setupNobleFractionHansa;
 	double setupNobleFractionTavian;
 	double setupNobleFractionTyrgaetan;
-	double nobleActionConscriptionMod;
-	double nobleActionConscriptionUnrest;
-	double nobleActionLevyMod;
-	double nobleActionLevyUnrest;
 	double nobleActionRelaxUnrest;
-	double nobleActionSootheMod;
-	double nobleActionSootheUnrest;
 
 	//Religion
 	double rjinkuRecruitmentMod;
@@ -94,15 +90,11 @@ public class Rules {
 	double syrjenTaxMod;
 	double swordOfTruthRecruitmentMod;
 	double chaliceOfCompassionTaxMod;
-	double chaliceOfCompassionFoodMod;
 	double tapestryRecruitmentMod;
 	double tapestryTaxMod;
 	double vesselOfFaithSetRelUnrestMod;
 	double lyskrSabotageMod;
-	double perIdeologyTapestryRecruitmentMod;
-	double perIdeologyTapestryRecruitmentModGlobal;
-	double perIdeologyTapestryTaxMod;
-	double perIdeologyTapestryTaxModGlobal;
+	double perIdeologyTapestryArmyMod;
 	double riverOfKuunPerNeighborTaxMod;
 	double riverOfKuunRationingThresh;
 	double riverOfKuunTaxMod;
@@ -184,7 +176,6 @@ public class Rules {
 	double pirateThreatDoubleGold;
 
 	double emigrationFactor;
-	double emigrationStarvationMod;
 
 	double baseCostFortifications;
 	double baseCostShipyard;

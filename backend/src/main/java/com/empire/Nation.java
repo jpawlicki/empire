@@ -18,6 +18,7 @@ public class Nation {
 	}
 
 	enum Tag {	
+		@SerializedName("Aristocratic") ARISTOCRATIC,
 		@SerializedName("Defensive") DEFENSIVE,
 		@SerializedName("Disciplined") DISCIPLINED,
 		@SerializedName("Evangelical") EVANGELICAL,
@@ -32,6 +33,7 @@ public class Nation {
 		@SerializedName("Republican") REPUBLICAN,
 		@SerializedName("Seafaring") SEAFARING,
 		@SerializedName("Ship-Building") SHIP_BUILDING,
+		@SerializedName("Sneaky") SNEAKY,
 		@SerializedName("Stoic") STOIC,
 		@SerializedName("War-like") WARLIKE,
 		@SerializedName("Welcoming") WELCOMING;
@@ -133,6 +135,9 @@ public class Nation {
 	String rationhint = "100";
 	String signingbonushint = "0";
 	String email;
+
+	transient double goldStolenLost = 0;
+	transient double goldStolenGained = 0;
 
 	public String getEmail() {
 		return email;

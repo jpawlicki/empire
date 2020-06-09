@@ -45,7 +45,9 @@ class Plot extends RulesObject {
 			PlotType::getTargetRegionCharacter,
 			PlotType::getDefenderCharacter,
 			(targetId, world, conspirators) -> {
-				world.characters.remove(world.getCharacterByName(targetId).get());
+				Character target = world.getCharacterByName(targetId).get();
+				world.characters.remove(target);
+				world.makeNewCharacter(target.kingdom);
 			},
 			PlotType::characterOutcomeInfluencer),
 
@@ -104,7 +106,7 @@ class Plot extends RulesObject {
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
 			(targetId, world, conspirators) -> {
-				getTargetRegionRegion(targetId, world).ifPresent(r -> r.unrestPopular = Math.min(1, r.unrestPopular + 0.4));
+				getTargetRegionRegion(targetId, world).ifPresent(r -> r.unrestPopular.add(0.4));
 			},
 			PlotType::noOpOutcomeInfluencer),
 		PIN_FOOD(
@@ -135,7 +137,7 @@ class Plot extends RulesObject {
 			PlotType::getTargetRegionRegion,
 			PlotType::getDefenderRegion,
 			(targetId, world, conspirators) -> {
-				getTargetRegionRegion(targetId, world).map(r -> r.noble).ifPresent(n -> n.unrest = Math.min(1, n.unrest + .15));
+				getTargetRegionRegion(targetId, world).map(r -> r.noble).ifPresent(n -> n.unrest.add(.30));
 			},
 			PlotType::noOpOutcomeInfluencer),
 
@@ -152,7 +154,7 @@ class Plot extends RulesObject {
 				return Optional.of(nations.get(index == nations.size() - 1 ? index - 1 : index + 1));
 			},
 			(targetId, world, conspirators) -> {
-				world.getNation(targetId).goodwill += 20;
+				world.getNation(targetId).goodwill += 30;
 			},
 			PlotType::noOpOutcomeInfluencer),
 		DENOUNCE(
@@ -161,7 +163,7 @@ class Plot extends RulesObject {
 			PlotType::getTargetRegionChurch,
 			(targetId, world) -> Optional.of(targetId),
 			(targetId, world, conspirators) -> {
-				world.getNation(targetId).goodwill -= 20;
+				world.getNation(targetId).goodwill -= 30;
 			},
 			PlotType::noOpOutcomeInfluencer),
 
@@ -188,7 +190,23 @@ class Plot extends RulesObject {
 					if (a.type == Army.Type.ARMY) soldiers += a.size;
 					else warships += a.size;
 				}
-				for (String conspirator : conspirators) world.notifications.add(new Notification(conspirator, "Report on " + targetId, "Treasury: " + world.getNation(targetId).gold + "\nSoldiers: " + soldiers + "\nWarships: " + warships));
+				for (String conspirator : conspirators) world.notifyPlayer(conspirator, "Report on " + targetId, "Treasury: " + world.getNation(targetId).gold + "\nSoldiers: " + soldiers + "\nWarships: " + warships);
+			},
+			PlotType::noOpOutcomeInfluencer),
+		STEAL_GOLD(
+			(targetId, world) -> "Steal Gold from " + targetId,
+			(targetId, world) -> "Steal gold from the treasury of " + targetId,
+			PlotType::getTargetRegionNation,
+			PlotType::getDefenderNation,
+			(targetId, world, conspirators) -> {
+				Nation defender = world.getNation(targetId);
+				double stolen = Math.min(50, defender.gold);
+				defender.goldStolenLost += stolen;
+				defender.gold -= stolen;
+				conspirators.stream().map(world::getNation).forEach(n -> {
+					n.gold += stolen / conspirators.size();
+					n.goldStolenGained += stolen / conspirators.size();
+				});
 			},
 			PlotType::noOpOutcomeInfluencer);
 
@@ -460,7 +478,7 @@ class Plot extends RulesObject {
 	public boolean check(World w, boolean triggered, Function<Army, Double> armyStrengthProvider) {
 		// If unsupported, eliminate the plot.
 		if (w.spyRings.stream().filter(s -> s.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING).count() == 0) {
-			for (String conspirator : conspirators) w.notifications.add(new Notification(conspirator, "Plot Abandoned",  "A plot to " + type.getDetails(targetId, w) + " was abandoned - all conspirators withdrew support form the plot."));
+			for (String conspirator : conspirators) w.notifyPlayer(conspirator, "Plot Abandoned",  "A plot to " + type.getDetails(targetId, w) + " was abandoned - all conspirators withdrew support form the plot.");
 			for (SpyRing s : w.spyRings) if (s.getInvolvementIn(plotId).isPresent()) s.involve(-1, SpyRing.InvolvementDisposition.SUPPORTING);
 			return true;
 		}

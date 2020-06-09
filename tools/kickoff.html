@@ -38,6 +38,19 @@
 				req.send();
 				return false;
 			}
+
+			function postFormAdvance(gid, turn) {
+				let req = new XMLHttpRequest();
+				req.open("post", g_server + "/entry/advanceworld?gid=" + gid + "&t=" + turn + "&password=" + document.getElementById("gm_adv_password").value, true);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					window.alert(req.status);
+				};
+				req.send();
+				return false;
+			}
 		</script>
 		<style>
 			body {
@@ -73,16 +86,16 @@
 			<button>Trigger Migrate (DANGEROUS)</button>
 		</form>
 		<h1>Advance Game</h1>
-		<div id="advances"></div>
+		<div id="advances">
+			<label>GM Password: <input id="gm_adv_password" type="password"></input></label>
+		</div>
 		<script>
+			let f = document.getElementById("advances");
 			for (let i = 1; i < 30; i++) {
-				let f = document.createElement("form");
-				f.setAttribute("action", g_server + "/entry/advanceworld?gid=0&t=" + i);
-				f.setAttribute("method", "POST");
 				let b = document.createElement("button");
 				b.appendChild(document.createTextNode("Advance game 0 turn " + i));
+				b.addEventListener("click", ()=>postFormAdvance(0, i));
 				f.appendChild(b);
-				document.getElementById("advances").appendChild(f);
 			}
 			for (let i = 0; i < 60 / 5 * 24; i++) {
 				let o = document.createElement("option");

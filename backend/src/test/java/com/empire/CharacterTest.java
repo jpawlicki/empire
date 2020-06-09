@@ -16,7 +16,7 @@ public class CharacterTest {
 	private static World w;
 	private static Nation n1;
 	private static Region r1;
-	private static final double DELTA = 1E-5;
+	private static final double EPSILON = 1E-5;
 
 	private static final String k1 = "k1";
 

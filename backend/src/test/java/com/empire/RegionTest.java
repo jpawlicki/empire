@@ -35,7 +35,7 @@ public class RegionTest {
 		r.setKingdomNoScore(k1);
 		r.religion = Ideology.COMPANY;
 		r.population = pop;
-		r.unrestPopular = unrestMiddle;
+		r.unrestPopular = new Percentage(unrestMiddle);
 		r.setKingdomNoScore(k1);
 
 		w = mockWorld(r);
@@ -128,27 +128,27 @@ public class RegionTest {
 	public void calcUnrestNobleEmptyName(){
 		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
 		r.noble.name = "";
-		r.noble.unrest = unrestMiddle;
+		r.noble.unrest.add(unrestMiddle);
 		assertEquals(0.0, r.calcUnrestNoble(), DELTA);
 	}
 
 	@Test
 	public void calcUnrestNoblePresent(){
 		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
-		r.noble.unrest = unrestMiddle;
+		r.noble.unrest.add(unrestMiddle);
 		assertEquals(unrestMiddle, r.calcUnrestNoble(), DELTA);
 	}
 
 	@Test
 	public void calcUnrestAll(){
-		r.unrestPopular = unrestLower;
+		r.unrestPopular.set(unrestLower);
 		assertEquals(unrestLower, r.calcUnrest(unused -> -25), DELTA);
 
 		r.religion = Ideology.SWORD_OF_TRUTH;
 		assertEquals(0.25, r.calcUnrest(unused -> -25), DELTA);
 
 		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
-		r.noble.unrest = unrestHigher;
+		r.noble.unrest.add(unrestHigher);
 		assertEquals(unrestHigher, r.calcUnrest(unused -> -25), DELTA);
 	}
 
@@ -172,13 +172,13 @@ public class RegionTest {
 
 	@Test
 	public void calcMinPatrolStrength(){
-		r.unrestPopular = 0.4;
+		r.unrestPopular.set(0.4);
 		assertEquals(3.3, r.calcMinPatrolStrength(w), DELTA);
 	}
 
 	@Test
 	public void calcMinPatrolStrengthDisciplined(){
-		r.unrestPopular = 0.4;
+		r.unrestPopular.set(0.4);
 		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
 		assertEquals(1.8, r.calcMinPatrolStrength(w), DELTA);
 	}
@@ -201,23 +201,12 @@ public class RegionTest {
 
 	@Test
 	public void calcConsumptionBasic(){
-		assertEquals(pop, r.calcConsumption(w, 1.0), DELTA);
-	}
-
-	@Test
-	public void calcConsumptionFoodMod(){
-		assertEquals(2E4, r.calcConsumption(w, 2.0), DELTA);
-	}
-
-	@Test
-	public void calcConsumptionChalice(){
-		r.religion = Ideology.CHALICE_OF_COMPASSION;
-		assertEquals(8.5E3, r.calcConsumption(w, 1.0), DELTA);
+		assertEquals(pop, r.calcConsumption(), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatBasic(){
-		r.unrestPopular = 0.0;
+		r.unrestPopular.set(0.0);
 		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
 	}
 
@@ -277,7 +266,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 0;
 		r.plant(false);
-		assertEquals(2000, r.crops, DELTA);
+		assertEquals(2500, r.crops, DELTA);
 	}
 
 	@Test
@@ -309,7 +298,7 @@ public class RegionTest {
 	@Test
 	public void plantHarvestTurnNobleHighLevel() {
 		r.noble = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
-		for (int i = 0; i < 24; i++) r.noble.addExperience();
+		for (int i = 0; i < 24; i++) r.noble.addExperience(false);
 		r.population = 10000;
 		r.crops = 0;
 		r.plant(true);
@@ -331,7 +320,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 1000000;
 		r.food = 0;
-		r.unrestPopular = .95;
+		r.unrestPopular.set(.95);
 		r.harvest(new HashSet<>(), unused -> 0);
 		assertEquals(75000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
@@ -342,7 +331,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 1000000;
 		r.food = 0;
-		r.unrestPopular = .95;
+		r.unrestPopular.set(.95);
 		r.harvest(Collections.singleton("k1"), unused -> 0);
 		assertEquals(250000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);

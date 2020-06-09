@@ -266,36 +266,48 @@ let getNobleBlock = function(r) {
 	let crisis = "";
 	if (r.noble.crisis != undefined && r.noble.crisis.type != undefined && r.noble.crisis.type != "NONE") {
 		let crisisDescription = "";
-		if (r.noble.crisis.type == "RECESSION") {
-			crisisDescription = r.noble.name + " is concerned with a future economic condition."
-			crisisDescription += "\nGoal: " + r.kingdom + " has a national treasury of at least 140 gold.";
-		} else if (r.noble.crisis.type == "WEDDING") {
-			crisisDescription = r.noble.name + "'s child is getting married."
-			crisisDescription += "\nGoal: The ruler of " + r.kingdom + " is in the region.";
-		} else if (r.noble.crisis.type == "BANDITRY") {
-			crisisDescription = r.noble.name + " is plagued by rampant banditry."
+		if (r.noble.crisis.type == "CONQUEST") {
+			crisisDescription = r.noble.name + " is concerned their nation is too small.";
+			crisisDescription += "\nGoal: " + r.kingdom + " controls nine regions.";
+		} else if (r.noble.crisis.type == "FAITH") {
+			crisisDescription = r.noble.name + " is concerned about heresy.";
+			crisisDescription += "\nGoal: " + r.name + "'s ideology matches " + r.kingdom + "'s state ideology.";
+		} else if (r.noble.crisis.type == "FORTIFY") {
+			crisisDescription = r.noble.name + " is concerned about defenses.";
+			crisisDescription += "\nGoal: " + r.name + "'s fortification is at least 175%.";
+		} else if (r.noble.crisis.type == "GROW") {
+			crisisDescription = r.noble.name + " is concerned about population.";
+			crisisDescription += "\nGoal: " + r.name + "'s population is at least 200k.";
+		} else if (r.noble.crisis.type == "INSPIRE") {
+			crisisDescription = r.noble.name + " is concerned about the church.";
+			crisisDescription += "\nGoal: At least one cardinal inspires the faithful.";
+		} else if (r.noble.crisis.type == "NAVY") {
+			crisisDescription = r.noble.name + " is concerned about naval strength.";
+			crisisDescription += "\nGoal: " + r.name + " has at least 2 shipyards.";
+		} else if (r.noble.crisis.type == "NOBILITY") {
+			crisisDescription = r.noble.name + " is concerned about the nobility.";
+			crisisDescription += "\nGoal: " + r.kingdom + " has a noble in every region.";
+		} else if (r.noble.crisis.type == "PARADE") {
+			crisisDescription = r.noble.name + " is concerned about the lack of local heroes.";
+			crisisDescription += "\nGoal: A character of " + r.kingdom + " ends a turn in " + r.name + ".";
+		} else if (r.noble.crisis.type == "PATROL") {
+			crisisDescription = r.noble.name + " is concerned about local military.";
 			crisisDescription += "\nGoal: An army of " + r.kingdom + " at least " + Math.ceil(10 * r.calcMinPatrolSize().v) / 10 + " strength must end the turn in the region.";
-		} else if (r.noble.crisis.type == "BORDER") {
-			crisisDescription = r.noble.name + " is concerned about nearby enemies."
-			crisisDescription += "\nGoal: " + r.name + " has no neighboring enemy regions.";
-		} else if (r.noble.crisis.type == "ENNUI") {
-			crisisDescription = r.noble.name + " is bored with life."
-			crisisDescription += "\nGoal: " + r.kingdom + " throws a feast in the region.";
-		} else if (r.noble.crisis.type == "CULTISM") {
-			crisisDescription = r.noble.name + " is being woo'd by the Cult of the Witness."
-			crisisDescription += "\nGoal: A new temple is built in " + r.name + ".";
-		} else if (r.noble.crisis.type == "OVERWHELMED") {
-			crisisDescription = r.noble.name + " needs to be shown how to better govern the region."
-			crisisDescription += "\nGoal: A character loyal to " + r.kingdom + " performs the Govern action in " + r.name + ".";
+		} else if (r.noble.crisis.type == "RECESSION") {
+			crisisDescription = r.noble.name + " is concerned with a future economic condition.";
+			crisisDescription += "\nGoal: " + r.kingdom + " has a national treasury of at least 200 gold.";
+		} else if (r.noble.crisis.type == "SPY") {
+			crisisDescription = r.noble.name + " is concerned with intrigue.";
+			crisisDescription += "\nGoal: " + r.kingdom + " has a spy ring in " + r.name + ".";
 		} else if (r.noble.crisis.type == "UPRISING") {
-			crisisDescription = r.noble.name + " is facing a popular rebellion."
+			crisisDescription = r.noble.name + " is facing a popular rebellion.";
 			crisisDescription += "\nGoal: Popular unrest in " + r.name + " is 50% or less.";
-		} else if (r.noble.crisis.type == "STARVATION") {
-			crisisDescription = r.noble.name + " is starving alongside their people."
-			crisisDescription += "\nGoal: Starvation in " + r.name + " ceases.";
-		} else if (r.noble.crisis.type == "GUILD") {
-			crisisDescription = r.noble.name + " is losing power to the local guilds."
-			crisisDescription += "\nGoal: A new construction is built in " + r.name + ".";
+		} else if (r.noble.crisis.type == "WEDDING") {
+			crisisDescription = r.noble.name + "'s child is getting married.";
+			crisisDescription += "\nGoal: The ruler of " + r.kingdom + " is in the region.";
+		} else if (r.noble.crisis.type == "WORSHIP") {
+			crisisDescription = r.noble.name + " is concerned about local temples.";
+			crisisDescription += "\nGoal: " + r.name + " has at least 3 temples.";
 		}
 		crisisDescription += "\nDue at the end of week " + r.noble.crisis.deadline + ".";
 		crisis = `<tooltip-element tooltip="All nobles experience crises every six weeks. If resolved positively within six weeks, a crisis decreases noble unrest by 25 percentage points. If unresolved within the deadline, the noble gains 25 percentage points of unrest.">Crisis:</tooltip-element><tooltip-element id="crisis" tooltip="${crisisDescription}">${capitalizeForce(r.noble.crisis.type)}</tooltip-element>`

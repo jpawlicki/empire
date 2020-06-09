@@ -9,16 +9,8 @@ import java.util.Set;
 class Noble extends RulesObject {
 	String name;
 	Crisis crisis;
-	double unrest;
+	Percentage unrest;
 	private double experience;
-
-	enum Action {
-		SOOTHE,
-		LEVY,
-		CONSCRIPT,
-		OTHER;
-	}
-	transient Action action = Action.OTHER;
 
 	static Noble newNoble(Rules rules) {
 		return new Noble(rules);
@@ -27,7 +19,7 @@ class Noble extends RulesObject {
 	static Noble newNoble(Culture culture, int date, Rules rules) {
 		Noble n = newNoble(rules);
 		n.name = WorldConstantData.getRandomName(culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
-		n.unrest = 0;
+		n.unrest = new Percentage(0);
 		n.crisis = new Crisis();
 		n.crisis.type = Crisis.Type.NONE;
 		n.crisis.deadline = date + rules.nobleCrisisFrequency;		
@@ -43,24 +35,20 @@ class Noble extends RulesObject {
 	}
 
 	double calcRecruitMod() {
-		double mod = calcLevel() * getRules().nobleRecruitModPerLevel;
-		if (action == Action.CONSCRIPT) mod += getRules().nobleActionConscriptionMod;
-		return mod;
+		return calcLevel() * getRules().nobleRecruitModPerLevel;
 	}
 
 	double calcTaxMod() {
-		double mod = calcLevel() * getRules().nobleTaxModPerLevel;
-		if (action == Action.LEVY) mod += getRules().nobleActionLevyMod;
-		if (action == Action.SOOTHE) mod += getRules().nobleActionSootheMod;
-		return mod;
+		return calcLevel() * getRules().nobleTaxModPerLevel;
 	}
 
 	double calcPosthumousSpyRingStrength() {
 		return experience;
 	}
 
-	void addExperience() {
+	void addExperience(boolean aristocraticNation) {
 		experience++;
+		if (aristocraticNation) experience += 0.5;
 	}
 
 	/**
@@ -70,10 +58,11 @@ class Noble extends RulesObject {
 	Optional<Notification> resolveCrisis(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 		if (crisis.type.isSolved(w, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) {
 			crisis.type = Crisis.Type.NONE;
-			unrest = Math.max(0, unrest + getRules().nobleCrisisSuccessUnrest);
+			unrest.add(getRules().nobleCrisisSuccessUnrest);
+			experience += getRules().nobleCrisisSuccessExperience;
 			return Optional.of(new Notification(r.getKingdom(), "Noble Crisis Resolved", crisis.type.getSuccessMessage(name, r.name)));
 		} else if (crisis.type != Crisis.Type.NONE && crisis.deadline == w.date) {
-			unrest = Math.min(1, unrest + getRules().nobleCrisisFailedUnrest);
+			unrest.add(getRules().nobleCrisisFailedUnrest);
 			return Optional.of(new Notification(r.getKingdom(), "Noble Crisis Expired", crisis.type.getFailMessage(name, r.name)));
 		}
 		return Optional.empty();
@@ -87,7 +76,9 @@ class Noble extends RulesObject {
 		if (crisis.deadline > w.date) return Optional.empty();
 		List<Crisis.Type> possibleCrises = new ArrayList<>();
 		for (Crisis.Type type : Crisis.Type.values()) {
-			if (type.isCreateable(w, r, getRules(), leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) possibleCrises.add(type);
+			if (!type.isCreateable(w, r, getRules(), leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) continue;
+			if (type.isSolved(w, r, leaders, governors, builds, templeBuilds, rationing, lastStands, inspires)) continue;
+			possibleCrises.add(type);
 		}
 		if (possibleCrises.isEmpty()) {
 			crisis.type = Crisis.Type.NONE;
@@ -107,6 +98,8 @@ class Noble extends RulesObject {
 
 final class Crisis {
 	Type type;
+	String targetCharacter;
+	int targetRegion;
 	int deadline;
 
 	enum Type {
@@ -119,6 +112,151 @@ final class Crisis {
 			@Override
 			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
 				return false;
+			}
+		},
+		CONQUEST("%NOBLENAME% is concerned that your nation is too small. Grow it to at least nine regions.", "%NOBLENAME% is pleased that your nation has extensive borders.", "%NOBLENAME% is upset that your nation remains too small.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.regions.stream().filter(rr -> rr.getKingdom().equals(r.getKingdom())).count() >= 9;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				return n.hasTag(Nation.Tag.REBELLIOUS) || n.hasTag(Nation.Tag.WARLIKE);
+			}
+		},
+		FAITH("%NOBLENAME% is concerned that the people of %REGIONNAME% do not follow your state ideology. Match your state ideology and the regional ideology to make them happy.", "%NOBLENAME% is pleased that the people of %REGIONNAME% now follow your state ideology.", "%NOBLENAME% is upset that the people of %REGIONNAME% still do not follow your state ideology.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return Nation.getStateReligion(r.getKingdom(), w) == r.religion;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				if (!n.hasTag(Nation.Tag.EVANGELICAL) && !n.hasTag(Nation.Tag.HOLY) && !n.hasTag(Nation.Tag.MYSTICAL)) return false;
+				if (Nation.getStateReligion(r.getKingdom(), w) != Ideology.TAPESTRY_OF_PEOPLE) return false;
+				return true;
+			}
+		},
+		FORTIFY("%NOBLENAME% is concerned that %REGIONNAME% does not have sufficient fortifications. Raise the fortification multiplier of the region to 175%.", "%NOBLENAME% is pleased that you have taken their advice and raised the fortifications of %REGIONNAME%.", "%NOBLENAME% is upset that you have ignored their advice to build fortifications in %REGIONNAME%.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return r.calcFortificationPct() >= 1.75;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				return n.hasTag(Nation.Tag.DEFENSIVE) || n.hasTag(Nation.Tag.STOIC);
+			}
+		},
+		GROW("%NOBLENAME% wishes to welcome more people to %REGIONNAME%, and asks you to grow its population to 200k.", "%NOBLENAME% is very pleased that %REGIONNAME% is bursting with people.", "%NOBLENAME% is upset that %REGIONNAME% has not had its population increased.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return r.population >= 200000;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.getNation(r.getKingdom()).hasTag(Nation.Tag.WELCOMING);
+			}
+		},
+		INSPIRE("%NOBLENAME% is dismayed that not a single cardinal of Iruhan is inspiring the faithful in the holy city. Make sure at least one does so soon.", "%NOBLENAME% is pleased that a cardinal of Iruhan is inspiring the faithful.", "%NOBLENAME% is upset that no cardinal of Iruhan has yet inspired the faithful.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return inspires > 0;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				if (!n.hasTag(Nation.Tag.HOLY)) return false;
+				return true;
+			}
+		},
+		NAVY("%NOBLENAME% is concerned that %REGIONNAME% does not contribute to our great navy, and wants it to host at least two shipyards.", "%NOBLENAME% is pleased that you have taken their advice and constructed shipyards in %REGIONNAME%.", "%NOBLENAME% is upset that you have ignored their advice to build shipyards in %REGIONNAME%.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return r.constructions.stream().filter(c -> c.type == Construction.Type.SHIPYARD).count() >= 2;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				return n.hasTag(Nation.Tag.SEAFARING) || n.hasTag(Nation.Tag.SHIP_BUILDING) || n.hasTag(Nation.Tag.INDUSTRIAL);
+			}
+		},
+		NOBILITY("%NOBLENAME% of %REGIONNAME% has many friends who they believe ought to be raised to the nobility. Install nobles in all regions under your control.", "%NOBLENAME% is pleased that you have installed their friends as nobles.", "%NOBLENAME% is upset that you have failed to install additional nobles in your lands.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.regions.stream().filter(rr -> rr.getKingdom() == r.getKingdom() && !rr.hasNoble()).count() == 0;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.getNation(r.getKingdom()).hasTag(Nation.Tag.ARISTOCRATIC);
+			}
+		},
+		PARADE("%NOBLENAME% wishes one of your heroic characters to visit %REGIONNAME% so that they may be thrown a parade!", "%NOBLENAME%'s parade was a huge success, and they are pleased that you made it possible.", "%NOBLENAME% is upset that %REGIONNAME% has not been visited by any heroic character.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				for (Character c : w.characters) if (c.kingdom.equals(r.getKingdom()) && c.location == w.regions.indexOf(r)) return true;
+				return false;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.getNation(r.getKingdom()).hasTag(Nation.Tag.HEROIC);
+			}
+		},
+		PATROL("%NOBLENAME% is concerned about banditry and emigration, and asks you to position a force capable of patrolling the region in %REGIONNAME%.", "%NOBLENAME% is pleased that you have taken their advice and positioned forces to patrol %REGIONNAME%.", "%NOBLENAME% is upset that you have ignored their advice to bring troops to %REGIONNAME%.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				for (Army a : w.armies) if (a.isArmy() && a.calcStrength(w, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > r.calcMinPatrolStrength(w) && a.location == w.regions.indexOf(r) && a.kingdom.equals(r.getKingdom())) return true;
+				return false;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				return n.hasTag(Nation.Tag.DISCIPLINED) || n.hasTag(Nation.Tag.PATRIOTIC);
+			}
+		},
+		RECESSION("%NOBLENAME% of %REGIONNAME% is concerned about the national treasury, and advises building it up to at least 140 gold.", "%NOBLENAME% is pleased that you have taken their advice and increased your national treasury.", "%NOBLENAME% is upset that you have ignored their advice to increase the treasury.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.getNation(r.getKingdom()).gold >= 200;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				return n.hasTag(Nation.Tag.MERCANTILE) || n.hasTag(Nation.Tag.IMPERIALISTIC);
+			}
+		},
+		SPY("%NOBLENAME% thinks that you should have a spy ring in %REGIONNAME%.", "%NOBLENAME% is pleased that you have established a spy ring in %REGIONNAME%, just as they planned...", "%NOBLENAME% is upset that %REGIONNAME% still does not have a spy ring.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				int rid = w.regions.indexOf(r);
+				return w.spyRings.stream().filter(s -> s.getLocation() == rid && s.getNation() == r.getKingdom()).count() > 0;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return w.getNation(r.getKingdom()).hasTag(Nation.Tag.SNEAKY);
+			}
+		},
+		UPRISING("The rampant popular unrest %REGIONNAME% has triggered numerous incidents and %NOBLENAME% can no longer deal with it on their own. They request the nation take some action, urgently, to decrease popular unrest back to manageable levels.", "As unrest settles in %REGIONNAME%, %NOBLENAME% is thankful for your help.", "The uprising in %REGIONNAME% came to a head this week when the dissidents stormed the home of %NOBLENAME% and slew almost all the inhabitants. In grief and rage, %NOBLENAME% blames you for letting things get this bad.") {
+			@Override
+			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return r.unrestPopular.get() <= .5;
+			}
+
+			@Override
+			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				return r.unrestPopular.get() > .5;
 			}
 		},
 		WEDDING("%NOBLENAME%'s daughter is being wed in %REGIONNAME% and they request your presence as ruler.", "The wedding of the daughter of %NOBLENAME% was a spectacular affair. It is rare for the nobility to find much joy in their political marriage, but in this case the couple's obvious love for one another warmed your heart to witness. %NOBLENAME% could not thank you enough for attending, and swore never to forget this day.", "The wedding %NOBLENAME% invited you to in %REGIONNAME% has taken place without you and %NOBLENAME% is very cross.") {
@@ -139,113 +277,16 @@ final class Crisis {
 				return false;
 			}
 		},
-		RECESSION("Economic issues plague %REGIONNAME% and %NOBLENAME% seeks to take out a loan from the kingdom - build up a treasury of at least 140 gold to support them.", "By learning from your example (and taking out a small loan from your treasury), %NOBLENAME% has solved the financial worries in %REGIONNAME% and has stimulated the local economy.", "The economic issues in %REGIONNAME% have been resolved, but %NOBLENAME% has pledged to never let go of gold so easily again - not even to our tax collectors.") {
+		WORSHIP("%NOBLENAME% is concerned that the people of %REGIONNAME% do not have enough temples to attend. Make sure there are at least three temples in %REGIONNAME%.", "%NOBLENAME% is pleased that the people of %REGIONNAME% now have ample places to worship.", "%NOBLENAME% is upset that the people of %REGIONNAME% still are lacking in temples.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return w.getNation(r.getKingdom()).gold >= 140;
+				return r.constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE).count() >= 3;
 			}
 
 			@Override
 			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return w.getNation(r.getKingdom()).gold < 20;
-			}
-		},
-		BANDITRY("Bow-wielding outlaws in %REGIONNAME% have been attacking merchants and agents of the nobility. %NOBLENAME% requests the presence of a sizeable army in the region to help eliminate them.", "With the aid of our troops, %NOBLENAME% has eliminated the bandit threat from %REGIONNAME%, and has established a personal police to ensure the region remains secure.", "The bandits in %REGIONNAME% have been legitimized by the %NOBLENAME%, in a deal to avoid future incidents. Regrettably, in so doing %REGIONNAME% has become a gathering place of undesireables.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				for (Army a : w.armies) if (a.isArmy() && a.calcStrength(w, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > r.calcMinPatrolStrength(w) && a.location == w.regions.indexOf(r) && a.kingdom.equals(r.getKingdom())) return true;
-				return false;
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				double troopsInRegion = 0;
-				for (Army a : w.armies) if (a.isArmy() && a.kingdom.equals(r.getKingdom()) && a.location == w.regions.indexOf(r)) troopsInRegion += a.size;
-				return troopsInRegion < 1000;
-			}
-		},
-		BORDER("%NOBLENAME%, the noble ruling %REGIONNAME%, has become deeply concerned with the neighboring enemy region, and requests that you deal with the situation one way or another.", "%NOBLENAME% has capitalized on the new security of the borders of %REGIONNAME%, citing this as an example of the glorious purpose of our armies to potential recruits.", "%NOBLENAME% has dealt with their fears by building up a large personal guard. Unfortunately, they take the best of %REGIONNAME% recruits, leaving the kingdom with only the bottom quality.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && Nation.isEnemy(r.getKingdom(), n.getKingdom(), w)) return false;
-				return true;
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				for (Region n : r.getNeighbors(w)) if (n.getKingdom() != null && Nation.isEnemy(r.getKingdom(), n.getKingdom(), w)) return true;
-				return false;
-			}
-		},
-		ENNUI("%NOBLENAME% has lost the luster of life and sinks into deep depressions. Implement generous rationing to show them the joy in life.", "%NOBLENAME% was refreshed by witnessing the feasting and jubilation in %REGIONNAME%, and has discovered a new joy in generousity.", "%NOBLENAME% has found purpose in their work, but regrettably demands everyone else in %REGIONNAME% work just as tirelessly.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return rationing.getOrDefault(r.getKingdom(), 1.0) > 1;
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return true;
-			}
-		},
-		CULTISM("%NOBLENAME% has written you, warning that the Cult is especially active in %REGIONNAME% and is gradually taking power there. They suggest that construction of a temple might turn the people back toward a safer religion.", "With people flocking to the new temple in %REGIONNAME%, %NOBLENAME% has been able to turn them away from assisting the Cult.", "%NOBLENAME% has dealt with the cultists by agreeing to grant them access to the section of %REGIONNAME% they desire.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return templeBuilds.contains(r);
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return true;
-			}
-		},
-		OVERWHELMED("%NOBLENAME% can't keep up with the stresses of managing a %REGIONNAME% and has asked for one of our agents to assist by governing it for a week.", "Assisted by our governance of %REGIONNAME%, %NOBLENAME% has gotten back on their feet - and picked up a trick or two!", "%NOBLENAME% has resolved their troubles %REGIONNAME% but acquired a habit of accepting wastefulness.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return governors.containsKey(r);
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				Set<Integer> closeRegions = r.getCloseRegionIds(w, rules.nobleCrisisFrequency);
-				for (Character c : w.characters) {
-					if (c.kingdom.equals(r.getKingdom()) && closeRegions.contains(c.location)) {
-						return true;
-					}
-				}
-				return false;
-			}
-		},
-		UPRISING("The rampant popular unrest %REGIONNAME% has triggered numerous incidents and %NOBLENAME% can no longer deal with it on their own. They request the nation take some action, urgently, to decrease popular unrest back to manageable levels.", "As unrest settles in %REGIONNAME%, %NOBLENAME% has made a name for themself among the people, listening to concerns and addressing sources of conflict.", "The uprising in %REGIONNAME% came to a head this week when the dissidents stormed the home of %NOBLENAME% and slew almost all the inhabitants. In grief and rage, %NOBLENAME% retaliated in kind, wiping out the rebels and their families, and vows to never let this repeat.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return r.unrestPopular <= .5;
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return r.unrestPopular > .5;
-			}
-		},
-		STARVATION("%NOBLENAME% feels deeply for their subjects in %REGIONNAME% and has asked the nation to fix the starvation situation immediately.", "With the immediate starvation in %REGIONNAME% addressed, %NOBLENAME% has made reforms in how food is handled or wasted to help ensure that starvation does not become a problem again.", "Faced with rampant starvation in %REGIONNAME%, %NOBLENAME% has despaired of help from our kingdom and solicited other rulers to take over. We should no longer trust the region's natural defenses.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return r.food > 0;
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return r.food == 0;
-			}
-		},
-		GUILD("%NOBLENAME% has notified us that the guilds forming in %REGIONNAME% are becoming economic powerhouses, threatening to cut out the nobility altogether. They request we construct an improvement in %REGIONNAME% as part of a plan to out-compete the guilds.", "By clever hiring of persons to fill our construction order, %NOBLENAME% has given the guilds in %REGIONNAME% a reputation of ineffectiveness and curtailed their growth. They have promised to subsidize future constructions in the region as well.", "%NOBLENAME% has dealt with the guilds in %REGIONNAME% by personally financing a trade war against them. Although successful, they are now thoroughly broke and attempting to rebuild their wealth by high permitting costs. We can expect any construction in the region to be more expensive.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
-				return builds.contains(r);
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, Set<String> lastStands, int inspires) {
+				Nation n = w.getNation(r.getKingdom());
+				if (!n.hasTag(Nation.Tag.EVANGELICAL) && !n.hasTag(Nation.Tag.HOLY) && !n.hasTag(Nation.Tag.MYSTICAL)) return false;
 				return true;
 			}
 		};

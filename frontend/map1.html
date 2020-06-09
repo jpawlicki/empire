@@ -242,7 +242,7 @@
 			}
 
 			function enterPassword(noisyFailure) {
-				password = encodeURIComponent(document.getElementById("password_input").value);
+				password = document.getElementById("password_input").value;
 				whoami = document.getElementById("kingdom_input").value;
 				startRequest(-1, function() { changeReport("kingdom/" + whoami); }, function() {
 					if (noisyFailure) window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
@@ -258,7 +258,8 @@
 			function startRequest(date = -1, callback = function(){}, errorCallback = function(){}) {
 				document.getElementById("password_submit").disabled = true;
 				let req = new XMLHttpRequest();
-				req.open("get", g_server + "/entry/world?k=" + whoami + "&gid=" + gameId + "&password=" + password + (date != -1 ? "&t=" + date : ""), true);
+				req.open("get", g_server + "/entry/world?gid=" + gameId + (date != -1 ? "&t=" + date : ""), true);
+				addAuth(req, whoami, password);
 				req.onerror = function (e) {};
 				req.onload = function (ev) {
 					if (req.status != 200) {
@@ -768,6 +769,7 @@
 			<p>Welcome! Would you like to open the getting started guide?</p>
 			<p><a id="tutorialPopup_yes" href="#" target="_blank">Yes</a></p>
 			<p><a id="tutorialPopup_no" href="#">No</a></p>
+			<p>Reminder: communication difficulty is a part of the game. Please don't use out-of-game tools to discuss plans with other players.</p>
 			<script>
 				document.getElementById("tutorialPopup_yes").setAttribute("href", "https://pawlicki.kaelri.com/empire/tutorial.html?g=" + gameId);
 				document.getElementById("tutorialPopup_yes").addEventListener("click", () => { document.getElementById("tutorialPopup").style.display = "none"; });
