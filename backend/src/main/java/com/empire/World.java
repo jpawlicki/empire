@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -169,7 +170,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		double totalFood = totalPopulation * 10;
 		double totalNavy = totalPopulation / 26000 * 3;
 		double totalArmy = totalPopulation / 26000 * 100;
-		double totalGold = (totalPopulation / 10000 - totalNavy / 3 - totalArmy / 100) * 5;
+		double totalGold = (totalPopulation / 10000 - totalNavy / 3 - totalArmy / 100) * 10;
 		double totalSharesGold = 0;
 		double totalSharesArmy = 0;
 		double totalSharesNavy = 0;
@@ -193,7 +194,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
 			else if ("armies".equals(setup.bonus)) totalSharesArmy += 0.5;
 			else if ("navies".equals(setup.bonus)) totalSharesNavy += 0.5;
-			else if ("gold".equals(setup.bonus)) totalSharesGold += 0.5;
+			else if ("gold".equals(setup.bonus)) totalSharesGold += 1.5;
 		}
 		for (String kingdom : nationSetup.keySet()) {
 			NationSetup setup = nationSetup.get(kingdom);
@@ -528,6 +529,7 @@ public class World extends RulesObject implements GoodwillProvider {
 	}
 
 	private static class Budget {
+		double start;
 		double incomeTax;
 		double incomeIntrigue;
 		double incomeSea;
@@ -606,6 +608,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			adjustUnrestDueToTaxation();
 			transferFood();
 			payTroops();
+			recruitTroops();
 			reapHarvests();
 			cedeRegions();
 			eatFood();
@@ -620,7 +623,6 @@ public class World extends RulesObject implements GoodwillProvider {
 			gainChurchIncome();
 			payTribute();
 			applyIncome();
-			recruitTroops();
 			removeInvalidPlots();
 			nobleCrises();
 			sendBudgetNotifications();
@@ -749,7 +751,11 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void transferGold() {
-			for (String k : kingdoms.keySet()) incomeSources.put(k, new Budget());
+			for (String k : kingdoms.keySet()) {
+				Budget b = new Budget();
+				b.start = getNation(k).gold;
+				incomeSources.put(k, b);
+			}
 			// Gold transfers take place.
 			HashMap<String, Double> credits = new HashMap<>();
 			for (String k : orders.keySet()) {
@@ -2128,27 +2134,45 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 		}
 
+		private class BudgetLine {
+			public final double amount;
+			public final String source;
+			public BudgetLine(double amount, String source) {
+				this.amount = amount;
+				this.source = source;
+			}
+		}
+
 		void sendBudgetNotifications() {
 			for (String k : kingdoms.keySet()) {
 				Budget b = incomeSources.getOrDefault(k, new Budget());
 				String notification = "Our treasurer reports a net change in the treasury of " + Math.round(b.sum()) + " gold:";
-				if (b.incomeTax > 0) notification += "\n" + Math.round(b.incomeTax) + " gold earned from taxation.";
-				if (b.incomeIntrigue > 0) notification += "\n" + Math.round(b.incomeTax) + " gold earned from intrigue.";
-				if (b.incomeSea > 0) notification += "\n" + Math.round(b.incomeSea) + " gold earned from sea trade.";
-				if (b.incomeChurch > 0) notification += "\n" + Math.round(b.incomeChurch) + " gold charitably donated by the Church of Iruhan.";
-				if (b.incomeTribute > 0) notification += "\n" + Math.round(b.incomeTribute) + " gold gained from the tribute of other nations.";
-				if (b.incomeGift > 0) notification += "\n" + Math.round(b.incomeGift) + " gold gained from other nations (non-tribute).";
-				if (b.incomeArmyDelivery > 0) notification += "\n" + Math.round(b.incomeArmyDelivery) + " gold delivered from our armies.";
-				if (b.incomeShipSales > 0) notification += "\n" + Math.round(b.incomeShipSales) + " gold earned from ship sales.";
-				if (b.spentTribute > 0) notification += "\n" + Math.round(b.spentTribute) + " gold spent paying tribute to other nations.";
-				if (b.spentIntrigue > 0) notification += "\n" + Math.round(b.incomeTax) + " gold lost due to intrigue.";
-				if (b.spentSoldiers > 0) notification += "\n" + Math.round(b.spentSoldiers) + " gold spent to pay our sailors and soldiers.";
-				if (b.spentRecruits > 0) notification += "\n" + Math.round(b.spentRecruits) + " gold spent to pay our soldiers' bonuses.";
-				if (b.spentConstruction > 0) notification += "\n" + Math.round(b.spentConstruction) + " gold spent constructing buildings.";
-				if (b.spentGift > 0) notification += "\n" + Math.round(b.spentGift) + " gold given to other nations (non-tribute).";
-				if (b.spentFoodTransfers > 0) notification += "\n" + Math.round(b.spentFoodTransfers) + " gold spent to transfer food.";
-				if (b.spentBribes > 0) notification += "\n" + Math.round(b.spentBribes) + " gold spent to bribe pirates.";
-				if (b.spentSpyEstablishments > 0) notification += "\n" + Math.round(b.spentSpyEstablishments) + " gold spent establishing new spy rings.";
+				notification += "\n" + Math.round(b.start) + " gold treasured prior to this week.";
+				double amt = b.start;
+				ArrayList<Supplier<BudgetLine>> lines = new ArrayList<>();
+				lines.add(() -> new BudgetLine(-b.spentGift, " sent to other nations"));
+				lines.add(() -> new BudgetLine(b.incomeGift, " received from other nations"));
+				lines.add(() -> new BudgetLine(b.incomeIntrigue, " earned by plots"));
+				lines.add(() -> new BudgetLine(-b.spentIntrigue, " lost due to plots"));
+				lines.add(() -> new BudgetLine(-b.spentConstruction, " spent constructing"));
+				lines.add(() -> new BudgetLine(-b.spentSpyEstablishments, " spent establishing spy rings"));
+				lines.add(() -> new BudgetLine(-b.spentBribes, " spent bribing pirates"));
+				lines.add(() -> new BudgetLine(-b.spentFoodTransfers, " spent transferring food"));
+				lines.add(() -> new BudgetLine(-b.spentSoldiers, " spent paying our soldiers and sailors"));
+				lines.add(() -> new BudgetLine(-b.spentRecruits, " spent hiring new recruits"));
+				lines.add(() -> new BudgetLine(b.incomeArmyDelivery, " delivered by our armies"));
+				lines.add(() -> new BudgetLine(b.incomeTax, " earned from taxation"));
+				lines.add(() -> new BudgetLine(b.incomeSea, " earned from sea trade"));
+				lines.add(() -> new BudgetLine(b.incomeChurch, " donated to us by the Church of Iruhan"));
+				lines.add(() -> new BudgetLine(b.incomeShipSales, " earned from shipyards"));
+				lines.add(() -> new BudgetLine(b.incomeTribute, " gained from tribute"));
+				lines.add(() -> new BudgetLine(-b.spentTribute, " spent on tribute"));
+
+				for (Supplier<BudgetLine> lineItemSupplier : lines) {
+					BudgetLine item = lineItemSupplier.get();
+					amt += item.amount;
+					if (item.amount != 0) notification += "\n" + Math.round(amt) + " (" + (item.amount > 0 ? "+" : "") + Math.round(item.amount) + item.source + ")";
+				}
 				notifyPlayer(k, "Budget", notification);
 			}
 		}

@@ -287,7 +287,7 @@ class OrdersPane extends HTMLElement {
 			}
 			textarea {
 				width: 100%;
-				height: 7em;
+				height: 12em;
 				resize: vertical;
 			}
 			button {
