@@ -46,25 +46,15 @@
 						window.alert("HTTP " + req.status + " when trying to load game data.");
 					} else {
 						g_geo = JSON.parse(req.response);
-						let nation_opts = [];
-						for (let k of g_geo.kingdoms) {
-							nation_opts.push(k.name);
-						}
-						nation_opts.sort();
-						for (let o of nation_opts) {
-							let oe = document.createElement("option");
-							oe.appendChild(document.createTextNode(o));
-							document.getElementById("kingdom_input").appendChild(oe);
-						}
 						if (g_latest_date != 0) {
 							start(g_latest_date);
 						} else {
 							try {
-								let login = localStorage.getItem("g_" + gameId + "_login");
-								if (login != null) {
-									document.getElementById("kingdom_input").value = JSON.parse(login).nation;
-									document.getElementById("password_input").value = JSON.parse(login).password;
-									enterPassword(false);
+								if (g_password == null) {
+									window.alert("Halt! You are not logged in, so your nation's security council is sending you to the home page. Consider checking the \"Remember Me\" button there.");
+									window.location.href = "https://pawlicki.kaelri.com/empire";
+								} else {
+									enterPassword();
 								}
 							} catch (err) {
 								console.log(err);
@@ -236,19 +226,18 @@
 			window.onload = function() {
 				if (gameId == undefined) {
 					window.alert("The link you got to this page should have included a ?g=NUMBER parameter.");
-				} else {
-					document.getElementById("passwordBox").style.display = "flex";
 				}
 			}
 
-			function enterPassword(noisyFailure) {
-				password = document.getElementById("password_input").value;
-				whoami = document.getElementById("kingdom_input").value;
-				startRequest(-1, function() { changeReport("kingdom/" + whoami); }, function() {
-					if (noisyFailure) window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
-					document.getElementById("passwordBox").style.display = "flex";
-					document.getElementById("password_submit").disabled = false;
-				});
+			function enterPassword() {
+				startRequest(
+					-1,
+					function() {
+						changeReport("kingdom/" + whoami);
+					},
+					function() {
+						window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
+					});
 			}
 
 			function showTutorialPopup() {
@@ -256,17 +245,16 @@
 			}
 
 			function startRequest(date = -1, callback = function(){}, errorCallback = function(){}) {
-				document.getElementById("password_submit").disabled = true;
 				let req = new XMLHttpRequest();
 				req.open("get", g_server + "/entry/world?gid=" + gameId + (date != -1 ? "&t=" + date : ""), true);
-				addAuth(req, whoami, password);
+				addAuth(req, g_player, g_password);
 				req.onerror = function (e) {};
 				req.onload = function (ev) {
 					if (req.status != 200) {
 						errorCallback();
 					} else {
-						document.getElementById("passwordBox").style.display = "none";
 						let d = JSON.parse(req.response);
+						whoami = d.filtered_to;
 						g_turndata[d.date] = d;
 						if (g_latest_date < d.date) {
 							try {
@@ -567,12 +555,6 @@
 				grid-row-start: 2;
 				grid-column-start: 2;
 			}
-			#passwordBox {
-				grid-row-start: 1;
-				grid-column-start: 1;
-				grid-row-end: 3;
-				grid-column-end: 4;
-			}
 			#orders {
 				grid-row-start: 1;
 				grid-row-end: 3;
@@ -632,32 +614,12 @@
 			#plannedMotions {
 				pointer-events: none;
 			}
-			#passwordBox {
-				display: none;
-				background-color: #fff;
-				height: 100%;
-				width: 100%;
-				z-index: 1;
-				flex-direction: column;
-				justify-content: center;
-				align-items: center;
-				font-family: sans-serif;
-				font-size: 120%;
-			}
 			table, input, select, button {
 				font-size: inherit;
 			}
     </style>
   </head>
   <body>
-		<form id="passwordBox" action="javascript:enterPassword(true);">
-			<label>Nation:
-				<select id="kingdom_input" name="username" autocomplete="username">
-				</select>
-			</label>
-			<label>Password: <input id="password_input" name="password" type="password" autocomplete="password"></input></label>
-			<button id="password_submit">Log In</button>
-		</form>
 		<div id="reports_links">
 			<svg id="homekey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" /></svg>
 			<svg id="churchkey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M11,2H13V4H15V6H13V9.4L22,13V15L20,14.2V22H14V17A2,2 0 0,0 12,15A2,2 0 0,0 10,17V22H4V14.2L2,15V13L11,9.4V6H9V4H11V2M6,20H8V15L7,14L6,15V20M16,20H18V15L17,14L16,15V20Z" /></svg>

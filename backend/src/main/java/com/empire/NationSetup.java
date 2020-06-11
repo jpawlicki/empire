@@ -23,7 +23,6 @@ public class NationSetup {
 	public Ideology dominantIdeology;
 	public String bonus = "";
 	public String email = "";
-	public String password = "";
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();

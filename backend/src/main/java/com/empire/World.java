@@ -55,6 +55,7 @@ public class World extends RulesObject implements GoodwillProvider {
 	int numPlayers;
 	long nextTurn;
 	boolean gameover;
+	String filteredTo = null; // This should never be serialized to the backend, only to the client.
 
 	public int getRuleSet() {
 		return ruleSet;
@@ -2748,10 +2749,10 @@ public class World extends RulesObject implements GoodwillProvider {
 
 	// Filter the data to a specific kingdom's point of view.
 	public void filter(String kingdom) {
+		filteredTo = kingdom;
 		for (String k : kingdoms.keySet()) {
-			getNation(k).filterForView(!kingdom.equals(k) && !"(Observer)".equals(kingdom));
+			getNation(k).filterForView(!kingdom.equals(k));
 		}
-		if ("(Observer)".equals(kingdom)) return;
 		// Filter out cult regions.
 		cultRegions = null;
 		// Filter out gold.

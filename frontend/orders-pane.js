@@ -778,7 +778,7 @@ class OrdersPane extends HTMLElement {
 				}
 				op.currentlySubmitting = true;
 				req.open("post", g_server + "/entry/orders?gid=" + gameId + "&t=" + g_data.date, true);
-				addAuth(req, whoami, password);
+				addAuth(req, g_player, g_password);
 				req.onerror = function (e) {
 					op.currentlySubmitting = false;
 					window.alert("Failed to communicate with the server.");
@@ -819,7 +819,7 @@ class OrdersPane extends HTMLElement {
 		// Load Old Orders
 		let req = new XMLHttpRequest();
 		req.open("get", g_server + "/entry/orders?gid=" + gameId + "&t=" + g_data.date, true);
-		addAuth(req, whoami, password);
+		addAuth(req, g_player, g_password);
 		req.onerror = function (e) {
 			console.log(e);
 			op.syncDisabled = false;

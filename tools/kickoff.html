@@ -28,20 +28,22 @@
 
 			function postFormMigrate() {
 				let req = new XMLHttpRequest();
-				req.open("post", g_server + "/entry/migrate?password=" + document.getElementById("gm_password").value, true);
+				req.open("post", g_server + "/entry/migrate", true);
 				req.onerror = function (e) {
 					window.alert(req.status);
 				};
 				req.onload = function (ev) {
 					window.alert(req.status);
 				};
+				addAuth(req, "gm", document.getElementById("gm_password").value);
 				req.send();
 				return false;
 			}
 
 			function postFormAdvance(gid, turn) {
 				let req = new XMLHttpRequest();
-				req.open("post", g_server + "/entry/advanceworld?gid=" + gid + "&t=" + turn + "&password=" + document.getElementById("gm_adv_password").value, true);
+				req.open("post", g_server + "/entry/advanceworld?gid=" + gid + "&t=" + turn, true);
+				addAuth(req, "gm", document.getElementById("gm_adv_password").value);
 				req.onerror = function (e) {
 					window.alert(req.status);
 				};
@@ -90,11 +92,12 @@
 			<label>GM Password: <input id="gm_adv_password" type="password"></input></label>
 		</div>
 		<script>
+			let game = 6162943;
 			let f = document.getElementById("advances");
 			for (let i = 1; i < 30; i++) {
 				let b = document.createElement("button");
-				b.appendChild(document.createTextNode("Advance game 0 turn " + i));
-				b.addEventListener("click", ()=>postFormAdvance(0, i));
+				b.appendChild(document.createTextNode("Advance game " + game + " turn " + i));
+				b.addEventListener("click", ()=>postFormAdvance(game, i));
 				f.appendChild(b);
 			}
 			for (let i = 0; i < 60 / 5 * 24; i++) {

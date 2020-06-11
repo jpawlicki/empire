@@ -137,40 +137,46 @@ public class EntryServlet extends HttpServlet {
 		resp.setHeader("Access-Control-Allow-Headers", "Authorization");
 		Request r = Request.from(req);
 		String err = "";
-		if (req.getRequestURI().equals("/entry/orders")) {
-			if (!postOrders(r)) {
-				err = "Failure.";
+		try {
+			if (req.getRequestURI().equals("/entry/orders")) {
+				if (!postOrders(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/advanceworld")) {
+				if (!postAdvanceWorld(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/startlobby")) {
+				if (!postStartLobby(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/migrate")) {
+				if (!migrate(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/setup")) {
+				if (!postSetup(r)) {
+					err = "Not allowed.";
+				}
+			} else if (req.getRequestURI().equals("/entry/newplayer")) {
+				if (!postNewPlayer(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/changepassword")) {
+				if (!postChangePassword(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/resetpassword")) {
+				if (!postResetPassword(r)) {
+					err = "Failure.";
+				}
+			} else {
+				err = "No such path.";
 			}
-		} else if (req.getRequestURI().equals("/entry/advanceworld")) {
-			if (!postAdvanceWorld(r)) {
-				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/startlobby")) {
-			if (!postStartLobby(r)) {
-				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/migrate")) {
-			if (!migrate(r)) {
-				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/setup")) {
-			if (!postSetup(r)) {
-				err = "Not allowed.";
-			}
-		} else if (req.getRequestURI().equals("/entry/newplayer")) {
-			if (!postNewPlayer(r)) {
-				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/changepassword")) {
-			if (!postChangePassword(r)) {
-				err = "Failure.";
-			}
-		} else if (req.getRequestURI().equals("/entry/resetpassword")) {
-			if (!postResetPassword(r)) {
-				err = "Failure.";
-			}
-		} else {
-			err = "No such path.";
+		} catch (PasswordException e) {
+			resp.setHeader("X-Empire-Error-Cause", "PasswordException");
+			resp.sendError(403, "Password failure: " + e);
+			return;
 		}
 		if ("".equals(err)) {
 			resp.setStatus(204);
@@ -191,9 +197,9 @@ public class EntryServlet extends HttpServlet {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 	}
 
-	private String getOrders(Request r, HttpServletResponse resp) {
+	private String getOrders(Request r, HttpServletResponse resp) throws PasswordException {
 		try (DataSource dataSource = DataSource.transactional()) {
-			if (!dataSource.loadPlayer(r.player).checkPassword(r.password)) return null;
+			if (!dataSource.loadPlayer(r.player).checkPassword(r.password)) throw new PasswordException("Password does not pass read ACL.");
 			Orders o = dataSource.loadOrder(r.gameId, r.player, r.turn);
 			resp.setHeader("SJS-Version", "" + o.version);
 			return o.json;
@@ -291,13 +297,13 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private String getWorld(Request r) {
+	private String getWorld(Request r) throws PasswordException {
 		try (DataSource dataSource = DataSource.nontransactional()) {
-			if (dataSource.loadPlayer(r.player).checkPassword(r.password)) return null;
+			if (!dataSource.loadPlayer(r.player).checkPassword(r.password)) throw new PasswordException("Password does not pass read ACL.");
 			int date = r.hasTurn() ? r.turn : dataSource.loadCurrentDate(r.gameId);
 			World w = dataSource.loadWorld(r.gameId, date);
 			Optional<String> k = w.getNationName(r.player);
-			if (k.isEmpty()) return null;
+			if (!k.isPresent()) return null;
 			w.filter(k.get());
 			return w.toString();
 		} catch (EntityNotFoundException e) {
@@ -391,8 +397,8 @@ public class EntryServlet extends HttpServlet {
 		return "";
 	}
 
-	private boolean postAdvanceWorld(Request r) {
-		if (!Player.passesGmPassword(r.password)) return false;
+	private boolean postAdvanceWorld(Request r) throws PasswordException {
+		if (!Player.passesGmPassword(r.password)) throw new PasswordException("Password fails GM ACL.");
 		try (DataSource dataSource = DataSource.transactional()) {
 			HashSet<String> kingdoms = new HashSet<>();
 			World	w = dataSource.loadWorld(r.gameId, r.turn);
@@ -576,6 +582,7 @@ public class EntryServlet extends HttpServlet {
 			Lobby lobby = dataSource.loadLobby(r.gameId);
 			Geography geo = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
 			NationSetup nation = NationSetup.fromJson(r.body);
+			nation.email = p.email;
 			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(nation.name))) {
 				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + nation.name);
 				return false;
