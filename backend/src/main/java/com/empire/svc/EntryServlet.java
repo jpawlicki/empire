@@ -614,7 +614,7 @@ public class EntryServlet extends HttpServlet {
 	private void mail(HashSet<String> addresses, String subject, String body) {
 		try {
 			Message msg = new MimeMessage(Session.getDefaultInstance(new Properties(), null));
-			msg.setFrom(new InternetAddress("gilgarn@gmail.com", "Joshua Pawlicki"));
+			msg.setFrom(new InternetAddress("gilgarn@gmail.com", "Joshua Pawlicki (Empire)"));
 			for (String address : addresses) {
 				msg.addRecipient(Message.RecipientType.BCC, new InternetAddress(address, "Empire Player"));
 			}
