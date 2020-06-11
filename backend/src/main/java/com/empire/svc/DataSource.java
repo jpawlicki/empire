@@ -15,6 +15,8 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.api.datastore.Text;
 import com.google.appengine.api.datastore.Transaction;
 import com.google.appengine.api.datastore.TransactionOptions;
+import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.io.BaseEncoding;
@@ -63,7 +65,7 @@ class DataSource implements AutoCloseable {
 				loadEntity(
 						KeyFactory.createKey(TYPE_WORLD, gameId + "_" + turn),
 						World::fromJson,
-						null /* worldCache */); // worldCache is buggy because getWorld() mutates the returned object to filter it to a particular player's view.
+						null /* worldCache */); // worldCache is buggy because getWorld() mutates the returned object to filter it to a particular player's view. Otherwise, it is immutable so it could be cached.
 	}
 
 	Orders loadOrder(long gameId, String kingdom, int turn) throws EntityNotFoundException, IOException {
@@ -71,7 +73,7 @@ class DataSource implements AutoCloseable {
 				loadEntity(
 						KeyFactory.createKey(KeyFactory.createKey(TYPE_WORLD, gameId + "_" + turn), TYPE_ORDERS, gameId + "_" + turn + "_" + kingdom),
 						body -> new Orders(gameId, kingdom, turn, 0, body),
-						ordersCache);
+						null /* ordersCache */); // ordersCache can get buggy if multiple instance are up, since it is mutable.
 	}
 
 	int loadCurrentDate(long gameId) throws EntityNotFoundException {
@@ -91,12 +93,20 @@ class DataSource implements AutoCloseable {
 				loadEntity(
 						KeyFactory.createKey(TYPE_LOBBY, "_" + gameId),
 						Lobby::fromJson,
-						lobbyCache);
+						null /* lobbyCache */); // lobbyCache can be buggy if multiple instances are up, since it is mutable.
 	}
 
 	Player loadPlayer(String email) throws EntityNotFoundException, IOException {
 		Entity e = service.get(KeyFactory.createKey(TYPE_PLAYER, email));
-		return new Player(email, (String)e.getProperty("passHash"));
+		Player p = new Player();
+		p.email = email;
+		p.passHash = (String)e.getProperty("passHash");
+		p.passwordOtp = (String)e.getProperty("passwordOtp");
+		p.passwordOtpDeadline = (Long)e.getProperty("passwordOtpDeadline");
+		p.salt = (String)e.getProperty("salt");
+		p.emailConfirmed = (Boolean)e.getProperty("emailConfirmed");
+		for (String s : Splitter.on(",").omitEmptyStrings().split((String)e.getProperty("activeGames"))) p.activeGames.add(Long.parseLong(s));
+		return p;
 	}
 
 	void save(World world, long gameId) {
@@ -126,6 +136,11 @@ class DataSource implements AutoCloseable {
 	void save(Player player) {
 		Entity e = new Entity(TYPE_PLAYER, player.email);
 		e.setProperty("passHash", player.passHash);
+		e.setProperty("passwordOtp", player.passwordOtp);
+		e.setProperty("passwordOtpDeadline", player.passwordOtpDeadline);
+		e.setProperty("salt", player.salt);
+		e.setProperty("emailConfirmed", player.emailConfirmed);
+		e.setProperty("activeGames", Joiner.on(",").join(player.activeGames));
 		service.put(e);
 	}
 

@@ -6,9 +6,6 @@ function getArg(p) {
 	if (e == -1) e = t.length;
 	return decodeURI(t.substring(s + p.length + 1, e));
 }
-function addAuth(req, user, password) {
-	req.setRequestHeader("Authorization", "Basic " + btoa(user + ":" + password));
-}
 
 let g_server = "";
 if (getArg("server") == "local") {
@@ -20,3 +17,16 @@ if (getArg("server") == "local") {
 } else {
 	g_server = "https://empire-189013.appspot.com";
 }
+
+function addAuth(req, user, password) {
+	req.setRequestHeader("Authorization", "Basic " + btoa(user + ":" + password));
+}
+
+function loadFromStorage(key) {
+	let val = localStorage.getItem(key);
+	if (val == null) val = sessionStorage.getItem(key);
+	return val;
+}
+
+let g_player = loadFromStorage("g_player");
+let g_password = loadFromStorage("g_password");

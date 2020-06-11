@@ -28,7 +28,6 @@ public class Lobby {
 	}
 
 	public boolean update(String nation, NationSetup setup) {
-		// TODO: prevent one account from registering multiple nations.
 		return nations.putIfAbsent(nation, setup) == null;
 	}
 

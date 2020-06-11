@@ -2824,6 +2824,11 @@ public class World extends RulesObject implements GoodwillProvider {
 		characters.add(c);
 		return c;
 	}
+
+	public Optional<String> getNationName(String email) {
+		for (Map.Entry<String, Nation> n : kingdoms.entrySet()) if (n.getValue().email.equals(email)) return Optional.of(n.getKey());
+		return Optional.empty();
+	}
 	
 	private World(Rules rules) {
 		super(rules);

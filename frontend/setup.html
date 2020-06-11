@@ -28,6 +28,10 @@
 			}
 			var taken = {};
 			window.onload = function() {
+				if (g_player == null || g_password == null) {
+					window.alert("Could not load your login state. Redirecting to home page to log in.");
+					window.location.replace(window.location.href.replace("setup.html", "index.html"));
+				}
 				let t = window.location.search;
 				let s = t.indexOf("g=");
 				if (s == -1) window.alert("The link you received to this page should have included a g= query parameter. Contact Josh (gilgarn@gmail.com).");
@@ -261,6 +265,7 @@
 				<h1 id="nationName"></h1>
 				<div id="description">Default description.</div>
 				<form id="form" action="javascript:void(0);">
+					<input id="nationNameInput" type="hidden" name="name"></input>
 					<h2>Ruler</h2>
 					<div id="name">You are:
 						<select name="title" id="title">
@@ -308,9 +313,6 @@
 						<option>gold</option>
 						<option>food</option>
 					</select>, due to your preparation in recent years.
-					<h2>Player Info</h2>
-					<label><input id="email" name="email" type="text"></input> (Email - Will not be shared with other players.)</label>
-					<label><input id="password" name="password" type="password"></input> (New Password)</label>
 					<button id="submit">Confirm Selection</button>
 					<div id="warning"></div>
 				</form>
@@ -383,8 +385,6 @@
 				if (document.getElementById("ruler_name").value == "") warnings.push("You must generate a ruler name.");
 				if (document.getElementById("title").value == "Prime Minister" && !(trait1 == "Republican" || trait2 == "Republican")) warnings.push("To avoid confusion, only leaders of republics may be called Prime Minister.");
 				if ((trait1 == "Republican" || trait2 == "Republican") && (trait1 == "Aristocratic" || trait2 == "Aristocratic")) warnings.push("Aristocratic republics are not allowed.");
-				if (document.getElementById("email").value.indexOf("@") < 1) warnings.push("Enter an e-mail address for the GM to contact you at.");
-				if (document.getElementById("password").value.length < 1) warnings.push("Enter a password.");
 				if ((trait1 == "Holy" || trait2 == "Holy") && !di.includes("Iruhan")) warnings.push("Only nations with an Iruhan dominant religion can choose the Holy trait.");
 				document.getElementById("warning").innerHTML = warnings.join(" ");
 				document.getElementById("submit").disabled = warnings.length > 0;
@@ -413,6 +413,7 @@
 					document.getElementById("nationName").innerHTML = nation;
 					document.getElementById("description").innerHTML = (taken[nation] ? "<p>A player has already claimed this nation.</p>" : "") + nations[nation].description + "<p>" + cultureDescriptions[nations[nation].culture] + "</p>";
 					if (!taken[nation]) for (let s of document.querySelectorAll("form input, form button, form select")) if (s.getAttribute("id") != "submit") s.disabled = false;
+					document.getElementById("nationNameInput").value = capitalize(selected);
 					document.getElementById("trait1").value = nations[nation].traits[0];
 					document.getElementById("trait2").value = nations[nation].traits[1];
 					document.getElementById("title").value = nations[nation].title;
@@ -455,7 +456,8 @@
 				for (let s of document.querySelectorAll("form input, form button, form select")) s.disabled = true;
 				submit.innerHTML = "Checking with server...";
 				let req = new XMLHttpRequest();
-				req.open("post", g_server + "/entry/setup?k=" + capitalize(selected) + "&gid=" + gameId, true);
+				req.open("post", g_server + "/entry/setup?gid=" + gameId, true);
+				addAuth(req, g_player, g_password);
 				req.onerror = function (e) {
 					submit.innerHTML = "A different player has already claimed this nation";
 				};
@@ -467,11 +469,6 @@
 						document.querySelector("#nationDiv > div").className = "selectionDone";
 						document.querySelector("#confirmation").style.display = "block";
 						for (let e of document.querySelectorAll("img")) e.style.display = "none";
-						try {
-							localStorage.setItem("g_" + gameId + "_login", JSON.stringify({"nation": capitalize(selected), "password": document.getElementById("password").value}));
-						} catch (err) {
-							console.log(err);
-						}
 					} else {
 						window.alert("HTTP " + req.status + ". Contact Josh (gilgarn@gmail.com)");
 					}

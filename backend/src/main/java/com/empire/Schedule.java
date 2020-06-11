@@ -31,10 +31,14 @@ public final class Schedule {
 	}
 
 	public long getNextTimeFirstTurn() {
-		return
-				getNextTimeAfter(
-						getNextTimeAfter(
-								Instant.now().atZone(ZoneId.of(locale))))
-				.toInstant().toEpochMilli();
+		return getNextPeriod(2);
+	}
+
+	public long getNextPeriod(int periods) {
+		ZonedDateTime time = Instant.now().atZone(ZoneId.of(locale));
+		for (; periods > 0; periods--) {
+			time = getNextTimeAfter(time);
+		}
+		return time.toInstant().toEpochMilli();
 	}
 }

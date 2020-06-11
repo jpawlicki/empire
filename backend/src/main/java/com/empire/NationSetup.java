@@ -6,6 +6,7 @@ import com.google.gson.FieldNamingPolicy;
 
 public class NationSetup {
 	public static String TYPE = "Nation";
+	public String name = "";
 	public String rulerName = "";
 	public String title = "";
 	public String prosperity = "";

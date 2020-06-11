@@ -22,15 +22,17 @@ import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.logging.Level;
@@ -61,6 +63,7 @@ GET /entry/advanceworldpoll
 GET /entry/lobbypoll
   Checks all lobbies for whether they can be launched.
 GET /entry/index?k=example@example.com&password=foobar
+  List all past and current games a player is in.
 
 POST /entry/orders?gid=1234&k=Aefoss&password=foobar&t=22
 	Check password and post the given order data.
@@ -70,14 +73,17 @@ POST /entry/advanceworld?gid=1234
 	Check cadence and possibly advance world to next step, mail players.
 POST /entry/startlobby?gid=1234
 	Start a new lobby.
-
-TODO: Will eventually need a changePassword/change-email.
+POST /entry/newplayer
+  Create a new player account.
+POST /entry/resetpassword
+	Trigger password reset.
+POST /entry/changepassword
+	Change the user's password.
 */
 
 @WebServlet(name = "EntryServlet", value = "/entry/*")
 public class EntryServlet extends HttpServlet {
 	private static final Logger log = Logger.getLogger(EntryServlet.class.getName());
-	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("DFEC33349F0EE2E0BC2085D761553BDDF1753698DDAD94491664F14EA58EA072");
 
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -151,6 +157,18 @@ public class EntryServlet extends HttpServlet {
 			if (!postSetup(r)) {
 				err = "Not allowed.";
 			}
+		} else if (req.getRequestURI().equals("/entry/newplayer")) {
+			if (!postNewPlayer(r)) {
+				err = "Failure.";
+			}
+		} else if (req.getRequestURI().equals("/entry/changepassword")) {
+			if (!postChangePassword(r)) {
+				err = "Failure.";
+			}
+		} else if (req.getRequestURI().equals("/entry/resetpassword")) {
+			if (!postResetPassword(r)) {
+				err = "Failure.";
+			}
 		} else {
 			err = "No such path.";
 		}
@@ -175,8 +193,8 @@ public class EntryServlet extends HttpServlet {
 
 	private String getOrders(Request r, HttpServletResponse resp) {
 		try (DataSource dataSource = DataSource.transactional()) {
-			if (!checkPassword(r, dataSource, dataSource.loadWorld(r.gameId, r.turn)).passesRead()) return null;
-			Orders o = dataSource.loadOrder(r.gameId, r.kingdom, r.turn);
+			if (!dataSource.loadPlayer(r.player).checkPassword(r.password)) return null;
+			Orders o = dataSource.loadOrder(r.gameId, r.player, r.turn);
 			resp.setHeader("SJS-Version", "" + o.version);
 			return o.json;
 		} catch (EntityNotFoundException | IOException e) {
@@ -206,6 +224,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private static class GetIndexResponse {
+		boolean mailConfirmed = false;
 		List<LobbyData> lobbies = new ArrayList<>();
 		List<ActiveGameData> games = new ArrayList<>();
 
@@ -242,42 +261,47 @@ public class EntryServlet extends HttpServlet {
 			}
 		}
 	}
+	
 	private String getIndex(Request r) throws PasswordException {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		if (r.newAccount) {
+		try (DataSource dataSource = DataSource.transactional()) {
+			Player p;
 			try {
-				Player.loadPlayer(r.kingdom, service);
-				throw new PasswordException("Account exists.");
-			} catch (EntityNotFoundException expected) {}
-			service.put(new Player(r.kingdom, BaseEncoding.base16().encode(hashPassword(r.password))).toEntity());
-		} else {
-			CheckPasswordResult result = checkPassword(r, service);
-			if (!result.passesRead()) {
+				p = dataSource.loadPlayer(r.player);
+				if (!p.checkPassword(r.password)) {
+					throw new PasswordException("Password does not pass read ACL.");
+				}
+			} catch (EntityNotFoundException e) {
 				throw new PasswordException("Password does not pass read ACL.");
 			}
+			Set<Long> games = new HashSet<>();
+			try {
+				games.addAll(dataSource.loadActiveGames().activeGameIds);
+			} catch (EntityNotFoundException e) {
+				// No game has ever been started.
+			}
+			GetIndexResponse response = new GetIndexResponse();
+			p.activeGames.stream().forEach(gid -> response.addGame(gid, games.contains(gid)));
+			dataSource.loadAllLobbies().forEach(lobby -> {
+				response.addLobby(lobby.getGameId(), lobby.getNations().size(), lobby.getNumPlayers(), lobby.getStartAt(), lobby.getSchedule());
+			});
+			return getGson().toJson(response);
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return null;
 		}
-		/* // TODO: Need a more scalable thing here than loading every game from the DB. Consider storing it in the Player field?
-		for (Long id : ActiveGames.load(service).activeGameIds) {
-			// Check if the player is a player in this game.
-		}
-		*/
-		GetIndexResponse response = new GetIndexResponse();
-		Lobby.loadAll(service).forEach(lobby -> {
-			response.addLobby(lobby.getGameId(), lobby.getNations().size(), lobby.getNumPlayers(), lobby.getStartAt(), lobby.getSchedule());
-		});
-		return getGson().toJson(response);
 	}
 
 	private String getWorld(Request r) {
 		try (DataSource dataSource = DataSource.nontransactional()) {
+			if (dataSource.loadPlayer(r.player).checkPassword(r.password)) return null;
 			int date = r.hasTurn() ? r.turn : dataSource.loadCurrentDate(r.gameId);
 			World w = dataSource.loadWorld(r.gameId, date);
-			CheckPasswordResult result = checkPassword(r, dataSource, w);
-			if (!result.passesRead()) return null;
-			w.filter(r.kingdom);
+			Optional<String> k = w.getNationName(r.player);
+			if (k.isEmpty()) return null;
+			w.filter(k.get());
 			return w.toString();
 		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "No such world.");
+			log.log(Level.INFO, "No such world.", e);
 			return null;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
@@ -317,7 +341,7 @@ public class EntryServlet extends HttpServlet {
 					for (String kingdom : w.getNationNames()) {
 						kingdoms.add(kingdom);
 						try {
-							orders.put(kingdom, dataSource.loadOrder(gameId, kingdom, w.getDate()).getOrders());
+							orders.put(kingdom, dataSource.loadOrder(gameId, w.getNation(kingdom).email, w.getDate()).getOrders());
 						} catch (EntityNotFoundException e) {
 							// Can't load the relevant orders - tool will make default orders.
 						}
@@ -368,7 +392,7 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private boolean postAdvanceWorld(Request r) {
-		if (!passesGmPassword(Hasher.hashPassword(r.password))) return false;
+		if (!Player.passesGmPassword(r.password)) return false;
 		try (DataSource dataSource = DataSource.transactional()) {
 			HashSet<String> kingdoms = new HashSet<>();
 			World	w = dataSource.loadWorld(r.gameId, r.turn);
@@ -421,32 +445,31 @@ public class EntryServlet extends HttpServlet {
 	}
 
 	private boolean postStartLobby(Request r) {
-		DatastoreService service = DatastoreServiceFactory.getDatastoreService();
-		Transaction txn = service.beginTransaction(TransactionOptions.Builder.withXG(true));
 		StartLobbyBody startLobby = getGson().fromJson(r.body, StartLobbyBody.class);
-		// These checks limit the kinds of lobbies that can be started. While the player base is so small, the intent is to force them into the same kinds of games.
-		if (startLobby.players != 26) return false;
-		if (startLobby.minPlayers != 13) return false;
-
-		// Sanity scale-guard check that there aren't more than 20 open lobbies.
-		if (Lobby.loadAll(service).count() > 20) return false;
 
 		try (DataSource dataSource = DataSource.transactional()) {
+			// Sanity scale-guard check that there aren't more than 100 open lobbies.
+			if (dataSource.loadAllLobbies().count() > 100) return false;
 			long gameId = -1;
 			boolean gameOk = false;
 			for (int i = 0; i < 15; i++) {
 				gameId = (long) (Math.random() * 10000000L);
 				try {
-					Lobby exists = Lobby.load(r.gameId, service);
+					Lobby exists = dataSource.loadLobby(r.gameId);
 					continue;
 				} catch (EntityNotFoundException expected) {}
 				try {
-					World exists = World.load(r.gameId, 1, service);
+					World exists = dataSource.loadWorld(r.gameId, 1);
 					continue;
 				} catch (EntityNotFoundException expected) {}
 				gameOk = true;
 			}
 			if (!gameOk) return false;
+			if (startLobby.players <= 1 || startLobby.players > 26) return false;
+			if (startLobby.minPlayers <= 1 || startLobby.minPlayers > startLobby.players) return false;
+			if (startLobby.startAtMillis == -1) {
+				startLobby.startAtMillis = startLobby.schedule.getNextPeriod(3);
+			}
 			dataSource.save(Lobby.newLobby(gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis));
 			dataSource.commit();
 			QueueFactory.getDefaultQueue().add(TaskOptions.Builder.withUrl("/entry/lobbypoll").etaMillis(startLobby.startAtMillis).method(TaskOptions.Method.GET));
@@ -457,60 +480,11 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-	private enum CheckPasswordResult {
-		PASS_GM(true, true),
-		PASS_PLAYER(true, true),
-		FAIL(false, false),
-		NO_ENTITY(false, false);
-
-		private final boolean passesRead;
-		private final boolean passesWrite;
-
-		private CheckPasswordResult(boolean passesRead, boolean passesWrite) {
-			this.passesRead = passesRead;
-			this.passesWrite = passesWrite;
-		}
-
-		public boolean passesRead() {
-			return passesRead;
-		}
-		public boolean passesWrite() {
-			return passesWrite;
-		}
-	}
-
-	private boolean passesGmPassword(byte[] passwordHash) {
-		return Arrays.equals(GM_PASSWORD_HASH, passwordHash);
-	}
-
-	private CheckPasswordResult checkPassword(Request r, DatastoreService service) {
-		try {
-			if (r.password == null) return CheckPasswordResult.FAIL;
-			byte[] attemptHash = hashPassword(r.password);
-			if (passesGmPassword(attemptHash)) return CheckPasswordResult.PASS_GM;
-			Player p = null;
-			if (r.gameId != -1) {
-				World w = World.load(r.gameId, getWorldDate(r.gameId, service), service);
-				if (w.getNationNames().contains(r.kingdom) && Arrays.equals(attemptHash, BaseEncoding.base16().decode(dataSource.loadPlayer(w.getNation(r.kingdom).getEmail()).passHash))) return CheckPasswordResult.PASS_PLAYER;
-			} else {
-				if (Arrays.equals(attemptHash, BaseEncoding.base16().decode(dataSource.loadPlayer(r.kingdom).passHash))) return CheckPasswordResult.PASS_PLAYER;
-			}
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "No player for " + w.getNation(r.kingdom).getEmail() + " in " + r.gameId);
-			return CheckPasswordResult.NO_ENTITY;
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "IOException finding player " + w.getNation(r.kingdom).getEmail(), e);
-			return CheckPasswordResult.NO_ENTITY;
-		}
-		return CheckPasswordResult.FAIL;
-	}
-
 	private boolean postOrders(Request r) {
 		try (DataSource dataSource = DataSource.transactional()) {
-			World w = dataSource.loadWorld(r.gameId, r.turn);
-			if (!checkPassword(r, dataSource, w).passesWrite()) return false;
+			if (!dataSource.loadPlayer(r.player).checkPassword(r.password)) return false;
 			if (r.turn != dataSource.loadCurrentDate(r.gameId)) return false;
-			dataSource.save(new Orders(r.gameId, r.kingdom, r.turn, r.version, r.body));
+			dataSource.save(new Orders(r.gameId, r.player, r.turn, r.version, r.body));
 			dataSource.commit();
 		} catch (EntityNotFoundException e) {
 			log.log(Level.WARNING, "No current turn for " + r.gameId + ".", e);
@@ -522,10 +496,63 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
+	private boolean postNewPlayer(Request r) {
+		try (DataSource dataSource = DataSource.transactional()) {
+			try {
+				dataSource.loadPlayer(r.player);
+				return false;
+			} catch (EntityNotFoundException expected) {
+			}
+			dataSource.save(new Player(r.player, r.password));
+			dataSource.commit();
+			// TODO: do email confirmation.
+			return true;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "postNewPlayer exception", e);
+			return false;
+		}
+	}
+
+	private boolean postChangePassword(Request r) {
+		try (DataSource dataSource = DataSource.transactional()) {
+			Player p = dataSource.loadPlayer(r.player);
+			if (!p.checkPassword(r.password)) return false;
+			p.passwordOtp = null;
+			p.setPassword(r.body);
+			dataSource.save(p);
+			dataSource.commit();
+			return true;
+		} catch (EntityNotFoundException e) {
+			// Pretend no error - don't disclose the existence of the account to the requestor.
+			return true;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "postNewPlayer exception", e);
+			return false;
+		}
+	}
+
+	private boolean postResetPassword(Request r) {
+		try (DataSource dataSource = DataSource.transactional()) {
+			Player p = dataSource.loadPlayer(r.player);
+			p.passwordOtp = new BigInteger(256, new SecureRandom()).toString(Character.MAX_RADIX);
+			p.passwordOtpDeadline = Instant.now().plus(10, ChronoUnit.MINUTES).toEpochMilli();
+			dataSource.save(p);
+			dataSource.commit();
+			mail(r.player, "Empire Password Reset", "The password reset flow has been triggered for your Empire account. In addition to your normal password, you may use the following password to log in to your account:<br/><br/>" + p.passwordOtp + "<br/><br/>The above password and any login sessions associated with it expire ten minutes from now.");
+			return true;
+		} catch (EntityNotFoundException e) {
+			// Pretend no error - don't disclose the existence of the account to the requestor.
+			return true;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "postResetPassword exception", e);
+			return false;
+		}
+	}
+
 	// TODO: remove
 	private boolean migrate(Request rr) {
 		final long gameId = 9;
-		if (!passesGmPassword(Hasher.hashPassword(rr.password))) return false;
+		if (!Player.passesGmPassword(rr.password)) return false;
 		try (DataSource dataSource = DataSource.transactional()) {
 			World w = dataSource.loadWorld(gameId, dataSource.loadCurrentDate(gameId));
 			//for (com.empire.Region r : w.regions) if (r.population <= 0) r.population = 1;
@@ -541,37 +568,31 @@ public class EntryServlet extends HttpServlet {
 		return true;
 	}
 
-	// Don't update the password if the player exists - instead we require a standard login.
-	// We should respond with a particular error in this case, though, so that the UI can offer
-	// password reset.
 	private boolean postSetup(Request r) {
 		try (DataSource dataSource = DataSource.transactional()) {
+			Player p = dataSource.loadPlayer(r.player);
+			if (!p.checkPassword(r.password)) return false;
+			if (p.activeGames.contains(r.gameId)) return false;
 			Lobby lobby = dataSource.loadLobby(r.gameId);
 			Geography geo = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
-			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(r.kingdom))) {
-				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + r.kingdom);
+			NationSetup nation = NationSetup.fromJson(r.body);
+			if (!geo.getKingdoms().stream().anyMatch(k -> k.name.equals(nation.name))) {
+				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + nation.name);
 				return false;
 			}
-			NationSetup nation = NationSetup.fromJson(r.body);
-			if (!lobby.update(r.kingdom, nation)) {
-				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + r.kingdom);
+			if (!lobby.update(nation.name, nation)) {
+				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + nation.name);
 				return false;
 			}
 			dataSource.save(lobby);
-			String password = BaseEncoding.base16().encode(Hasher.hashPassword(nation.password));
-			try {
-				// TODO: remove this vulnerability.
-				dataSource.save(dataSource.loadPlayer(nation.email).withNewPassword(password));
-			} catch (EntityNotFoundException e) {
-				// New player.
-				dataSource.save(new Player(nation.email, password));
-			}
+			p.activeGames.add(r.gameId);
+			dataSource.save(p);
 			if (lobby.canStart(Instant.now()) == Lobby.StartResult.START) {
 				startWorld(lobby, dataSource);
 			}
 			dataSource.commit();
 		} catch (EntityNotFoundException | IOException ee) {
-			log.log(Level.SEVERE, "postSetup Failure for " + r.gameId + ", " + r.kingdom, ee);
+			log.log(Level.SEVERE, "postSetup Failure for " + r.gameId, ee);
 			return false;
 		}
 		return true;

@@ -9,14 +9,16 @@
 				display: grid;
 				margin: 0;
 				font-family: sans-serif;
-				background: url("images/empire_dawn.jpg");
-				background-size: cover;
-				background-position: center;
 			}
 			#login, #logged_in {
 				padding: 0.2em;
 				margin-left: auto;
 				margin-right: auto;
+			}
+			#logged_in > div {
+				margin: 2em;
+				flex-basis: 10em;
+				flex-grow: 1;
 			}
 			#login {
 				max-width: 23em;
@@ -31,12 +33,34 @@
 			}
 			#menu {
 				padding: 0.2em;
+				background: url("images/empire_dawn_strip.jpg");
+				background-size: cover;
+				background-position: center;
+				text-shadow: 0px 0px 4px #000, 0px 0px 4px #000, 0px 0px 7px #000;
+				color: #fff;
+				font-size: 120%;
+			}
+			#menu a, #menu a:visited {
+				color: #ccf;
+				font-weight: bold;
+				transition: color 0.3s;
+			}
+			#menu a:hover {
+				color: #fff;
+				text-decoration: underline;
 			}
 			#menu li {
 				list-style-type: none;
+				padding-left: 1em;
+				padding-right: 1em;
 			}
 			#logged_in {
 				display: none;
+				width: 100%;
+				justify-content: space-between;
+			}
+			#logged_in table {
+				width: 100%;
 			}
 			.flex {
 				display: flex;
@@ -44,8 +68,23 @@
 				justify-content: space-between;
 			}
 			#menu h1 {
-				text-shadow: 0px 0px 4px #fff;
-				font-family: serif;
+				font-family: "Flamenco", serif;
+				text-shadow: 0px 0px 4px #000;
+				color: #fff;
+			}
+			#active_games table th {
+				width: 50%;
+			}
+			tr > td:first-child, tr > th:first-child {
+				text-align: right;
+			}
+			tr > td:last-child, tr > th:last-child {
+				text-align: left;
+			}
+			tr > td, tr > th {
+				text-align: center;
+				padding-left: 0.3em;
+				padding-right: 0.3em;
 			}
 			h1, h2, h3 {
 				margin: 0;
@@ -72,30 +111,39 @@
 			a:hover {
 				color: #a00;
 			}
-			#background {
-				background-color: #fff;
-				opacity: 0.8;
-				z-index: -1;
+			#password_change {
+				visibility: hidden;
+				max-width: 20em;
+			}
+			#newlobby_daysOfWeek {
+				overflow: hidden;
+			}
+			#new_lobby {
+				visibility: hidden;
+			}
+			#lobby_add {
+				float: right;
+				font-size: 200%;
+				padding: 0;
+				width: 1.3em;
+				height: 1.3em;
+				border-radius: 3em;
 			}
 			@media (orientation: landscape) {
 				body {
 					grid-template-rows: min-content 1fr;
-					grid-template-columns: 25% 50% 25%;
-				}
-				#background {
-					grid-column: 1/4;
-					grid-row: 2/4;
+					grid-template-columns: 25% 75%;
 				}
 				#banner {
 					grid-row: 1;
 					grid-column: 1;
 				}
 				#menu {
-					grid-column: 1/4;
+					grid-column: 1/3;
 					grid-row: 2;
 				}
 				#banner {
-					grid-column: 1/4;
+					grid-column: 1/3;
 					grid-row: 1;
 				}
 				#login {
@@ -108,10 +156,6 @@
 				}
 				#welcome {
 					grid-column: 1;
-					grid-row: 3;
-				}
-				#stats {
-					grid-column: 3;
 					grid-row: 3;
 				}
 			}
@@ -136,35 +180,36 @@
 					grid-column: 1;
 					grid-row: 4;
 				}
-				#stats {
-					grid-column: 1;
-					grid-row: 5;
-				}
-				#background {
-					grid-column: 1;
-					grid-row: 2/6;
+				#logged_in {
+					flex-direction: column;
 				}
 			}
 		</style>
 		<script>
 			let whoami = "";
 			let password = "";
+
+			function clearLogin() {
+				try {
+					sessionStorage.clear();
+					localStorage.clear();
+				} catch (e) {
+					console.log(e);
+				}
+			}
 		</script>
 	</head>
 	<body>
-		<div id="background"></div>
 		<ul id="menu">
-			<li><h1>Hungry Empire</h1></li>
+			<li><h1>Empire</h1></li>
+			<li><a href="about.html">About</a></li>
 			<li><a href="https://groups.google.com/forum/#!forum/empire-playtesters">Forum</a></li>
 			<li><a href="https://github.com/jpawlicki/empire/issues/new/choose">Report Bug</a></li>
-			<li><a href="contribute.html">Contribute</a></li>
-			<li><a href="privacy_policy.html">Privacy</a></li>
-			<li><a href="contact.html">Contact</a></li>
 		</ul>
 		<div id="welcome">
-			<p>Hungry Empire is a lightweight browser-based grand strategy game with asynchronous turn-based play. Each of the 26 players rules a nation and tries to achieve the goals they select. Game turns advance every few days, and players can set up their orders at any time between those advances.</p>
+			<p>Empire is a browser-based multiplayer-only grand strategy game with asynchronous turn-based play. Each of the 26 players rules a nation and tries to achieve the goals they select. Game turns advance every few days, and players can set up their orders at any time between those advances.</p>
 			<p>Whether the game is cooperative or competitive is up to the players. Players are trying to beat national high scores from past games.</p>
-			<p>We don't run ads or microtransactions, and instead are supported by <a href="contribute.html">donations</a>.</p>
+			<p>The game is free and I don't run ads. If running the server gets too expensive I'll ask for donations.</p>
 		</div>
 		<div id="login">
 			<h3>Log in to start or join a game lobby.</h3>
@@ -178,7 +223,7 @@
 			</div>
 			<div id="login_outcome"></div>
 			<script>
-				function enterPassword(noisyFailure = true, newAccount = false) {
+				function enterPassword(noisyFailure = true) {
 					// Attempt to log in.
 					document.getElementById("loginbutton").disabled = true;
 					document.getElementById("createaccountbutton").disabled = true;
@@ -187,7 +232,8 @@
 					let req = new XMLHttpRequest();
 					whoami = document.getElementById("email").value;
 					password = document.getElementById("password").value;
-					req.open("get", g_server + "/entry/index?k=" + window.encodeURIComponent(whoami) + "&password=" + window.encodeURIComponent(password) + (newAccount ? "&newaccount=t" : ""), true);
+					req.open("GET", g_server + "/entry/index", true);
+					addAuth(req, whoami, password);
 					req.onerror = function (e) {
 						document.getElementById("login_outcome").innerHTML = "Error logging in: " + e;
 						document.getElementById("createaccountbutton").disabled = false;
@@ -199,104 +245,181 @@
 							if (noisyFailure) {
 								if (req.status == 403) {
 									document.getElementById("password").value = "";
-									if (newAccount) document.getElementById("login_outcome").innerHTML = "An account with that e-mail address exists.";
-									else document.getElementById("login_outcome").innerHTML = "Incorrect account / password.";
-									try {
-										localStorage.clear();
-									} catch (e) {
-										console.log(e);
-									}
+									document.getElementById("login_outcome").innerHTML = "Incorrect account / password.";
+									clearLogin();
+									req.onerror("Incorrect account / password.");
 								} else {
-									document.getElementById("login_outcome").innerHTML = "Error logging in: HTTP " + req.status;
+									req.onerror("Error logging in: HTTP " + req.status);
 								}
-								document.getElementById("createaccountbutton").disabled = false;
-								document.getElementById("loginbutton").disabled = false;
-								document.getElementById("resetbutton").disabled = false;
 							}
+							document.getElementById("createaccountbutton").disabled = false;
+							document.getElementById("loginbutton").disabled = false;
+							document.getElementById("resetbutton").disabled = false;
 						} else {
 							document.getElementById("login").style.display = "none";
 							document.getElementById("welcome").style.display = "none";
 							document.getElementById("loggedin_whoami").appendChild(document.createTextNode(whoami));
-							document.getElementById("logged_in").style.display = "block";
-							let d = JSON.parse(req.response);
-							// TODO Do something with the response data.
+							document.getElementById("logged_in").style.display = "flex";
 							// If remember-me is checked, write login data to disk.
-							if (document.getElementById("login_rememberme").checked) {
-								try {
-									localStorage.setItem("login", JSON.stringify({"email": whoami, "password": password}));
-								} catch (e) {
-									console.log("Will not save login data to local disk: " + e);
-								}
+							let storage = document.getElementById("login_rememberme").checked ? localStorage : sessionStorage;
+							try {
+								storage.setItem("g_player", whoami);
+								storage.setItem("g_password", password);
+							} catch (e) {
+								console.log("Will not save login data to local disk: " + e);
 							}
+							loadIndexData(JSON.parse(req.response));
+							let d = JSON.parse(req.response);
 						}
 					};
 					req.send();
 				}
 				function newAccount() {
-					enterPassword(true, true);					
-				}
-				function resetPassword() {
+					// Attempt to log in.
 					document.getElementById("loginbutton").disabled = true;
 					document.getElementById("createaccountbutton").disabled = true;
 					document.getElementById("resetbutton").disabled = true;
-					// TODO Trigger password reset flow: send nonce to client.
+					let req = new XMLHttpRequest();
+					whoami = document.getElementById("email").value;
+					password = document.getElementById("password").value;
+					req.open("POST", g_server + "/entry/newplayer", true);
+					addAuth(req, whoami, password);
+					req.onerror = function (e) {
+						document.getElementById("login_outcome").innerHTML = "Error creating account: " + e;
+						document.getElementById("createaccountbutton").disabled = false;
+						document.getElementById("loginbutton").disabled = false;
+						document.getElementById("resetbutton").disabled = false;
+					};
+					req.onload = function (ev) {
+						if (req.status != 204) {
+							req.onerror("Account already exists");
+						} else {
+							enterPassword(true);
+						}
+					};
+					req.send();
+				}
+				function resetPassword() {
+					document.getElementById("resetbutton").disabled = true;
+					let req = new XMLHttpRequest();
+					req.open("POST", g_server + "/entry/resetpassword", true);
+					addAuth(req, document.getElementById("email").value, "_");
+					req.onerror = function (e) {
+						document.getElementById("login_outcome").innerHTML = "Error: " + e;
+						document.getElementById("resetbutton").disabled = false;
+					};
+					req.onload = function (ev) {
+						if (req.status != 204) {
+							req.onerror(req.status);
+						} else {
+							document.getElementById("login_outcome").innerHTML = "Password reset mail sent.";
+						}
+					};
+					req.send();
 				}
 				document.getElementById("loginbutton").addEventListener("click", enterPassword);
 				document.getElementById("createaccountbutton").addEventListener("click", newAccount);
 				document.getElementById("resetbutton").addEventListener("click", resetPassword);
-				try {
-					let login = localStorage.getItem("login");
-					if (login != null) {
-						document.getElementById("email").value = JSON.parse(login).email;
-						document.getElementById("password").value = JSON.parse(login).password;
-						enterPassword(false);
-					}
-				} catch (e) {
-					console.log("Will not load login data from local disk: " + e);
+				if (g_player != null) {
+					document.getElementById("email").value = g_player;
+					document.getElementById("password").value = g_password;
+					enterPassword(false);
 				}
 			</script>
 		</div>
 		<div id="logged_in">
-			<div>Logged in as <span id="loggedin_whoami"></span> <button>Log Out</button> <button>Change Password</button></div>
-			<div id="active_games">
-				<h3>Games You are Playing</h3>
-				<table><tr></tr></table>
+			<div>
+				Logged in as <span id="loggedin_whoami"></span> <button id="logout">Log Out</button>
+				<div><button id="password_change_open">Change Password</button></div>
+				<div id="password_change">
+					<label>New password: <input id="new_password" type="password"></input></label>
+					<button id="commit_password_change">Commit Change</button>
+					<div id="password_change_outcome"></div>
+				</div>
 			</div>
-			<div id="lobbies">
-				<h3>Lobbies Looking for Players</h3>
+			<div id="active_games">
+				<h3>Your Games</h3>
 				<table>
 					<tr>
-						<th># Players Needed</th>
-						<th>Capacity</th>
-						<th>Deadline</th>
+						<th>ID</th>
+						<th>Status</th>
+					</tr>
+					<tbody id="games_table">
+					</tbody>
+				</table>
+			</div>
+			<div id="lobbies">
+				<h3>Lobbies</h3>
+				<table>
+					<tr>
+						<th>ID</th>
+						<th>Players</th>
 						<th>Pace</th>
 					</tr>
+					<tbody id="lobbies_table">
+					</tbody>
 				</table>
-				<h3>Make New Lobby</h3>
-				<div>
+				<button id="lobby_add">+</button>
+				<div id="new_lobby">
 					<form onsubmit="return postFormStartLobby();">
-						<label>Turns Advance: <select required>
-							<option>Daily</option>
-							<option>Daily (Weekdays Only)</option>
-							<option>Monday &amp; Wednesday &amp; Friday</option>
-							<option>Tuesday &amp; Friday</option>
-							<option>Every 5 minutes</option>
+						<h4>Players:</h4>
+						<label>Min: <input id="newlobby_minplayers" type="number" min="1" max="26" value="22"></input></label>
+						<label>Max: <input id="newlobby_maxplayers" type="number" min="1" max="26" value="26"></input></label>
+						<h4>Turns Advance:</h4>
+						<label>Every: <select id="newlobby_daysOfWeek" size="7" multiple required>
+							<option value="MONDAY">Monday</option>
+							<option value="TUESDAY">Tuesday</option>
+							<option value="WEDNESDAY">Wednesday</option>
+							<option value="THURSDAY">Thursday</option>
+							<option value="FRIDAY">Friday</option>
+							<option value="SATURDAY">Saturday</option>
+							<option value="SUNDAY">Sunday</option>
 						</select></label>
-						<label>Days Of Week: <select id="newlobby_daysOfWeek" multiple required>
-							<option>MONDAY</option>
-							<option>TUESDAY</option>
-							<option>WEDNESDAY</option>
-							<option>THURSDAY</option>
-							<option>FRIDAY</option>
-							<option>SATURDAY</option>
-							<option>SUNDAY</option>
-						</select></label>
-						<label>Time(s) (America/Los_Angeles): <select id="newlobby_times" multiple required></select></label>
-						<label>Starting no later than (Local Time): <input id="newlobby_startAt" type="datetime-local" value="" required/></label>
+						<label>at (America/Los_Angeles time) <select id="newlobby_times" multiple required></select></label>
+						<h4>Notes</h4>
+						<p>If the lobby does not reach the minimum player count within 3 turn-advance periods, it will be deleted.</p>
+						<p>Consider posting on the forum advertising the new game.</p>
 						<button id="newlobby">Create Lobby</button>
 						<div id="newlobby_outcome"></div>
 					</form>
 					<script>
+						document.getElementById("logout").addEventListener("click", () => {
+							clearLogin();
+							window.location.reload();
+						});
+						document.getElementById("lobby_add").addEventListener("click", () => {
+							document.getElementById("lobby_add").style.display = "none";
+							document.getElementById("new_lobby").style.visibility = "visible";
+						});
+						document.getElementById("password_change_open").addEventListener("click", () => {
+							document.getElementById("password_change_open").style.display = "none";
+							document.getElementById("password_change").style.visibility = "visible";
+						});
+						document.getElementById("commit_password_change").addEventListener("click", () => {
+							let newPassword = document.getElementById("new_password").value;
+							if (newPassword.length == 0) {
+								document.getElementById("password_change_outcome").innerHTML = "Error: You must specify a new password.";
+								return;
+							}
+							document.getElementById("commit_password_change").disabled = true;
+							let req = new XMLHttpRequest();
+							req.open("POST", g_server + "/entry/changepassword", true);
+							addAuth(req, whoami, password);
+							req.onerror = function (e) {
+								document.getElementById("password_change_outcome").innerHTML = "Error: " + e;
+								document.getElementById("commit_password_change").disabled = false;
+							};
+							req.onload = function (ev) {
+								if (req.status != 204) {
+									req.onerror(req.status);
+								} else {
+									clearLogin();
+									window.alert("Password changed. Reloading page to log in again.");
+									window.location.reload();
+								}
+							};
+							req.send(newPassword);
+						});
 						for (let i = 0; i < 60 / 5 * 24; i++) {
 							let o = document.createElement("option");
 							o.setAttribute("value", i * 5);
@@ -304,36 +427,77 @@
 							document.getElementById("newlobby_times").appendChild(o);
 						}
 						function postFormStartLobby() {
-							document.getElementById()
+							document.getElementById("newlobby").disabled = true;
 							let req = new XMLHttpRequest();
 							req.open("post", g_server + "/entry/startlobby", true);
 							req.onerror = function (e) {
 								document.getElementById("newlobby_outcome").innerHTML = "Lobby creation failed.";
 							};
 							req.onload = function (ev) {
-								enterPassword(false);
+								if (req.status != 204) {
+									req.onerror();
+								} else {
+									enterPassword(false);
+									document.getElementById("new_lobby").style.visibility = "hidden";
+								}
 							};
-							let players = 26;
 							req.send(JSON.stringify({
-								"players": players,
+								"players": parseInt(document.getElementById("newlobby_maxplayers").value),
+								"min_players": parseInt(document.getElementById("newlobby_minplayers").value),
 								"schedule": {
 									"times": Array.from(document.getElementById("newlobby_times").selectedOptions).map(e => parseInt(e.value)),
 									"days": Array.from(document.getElementById("newlobby_daysOfWeek").selectedOptions).map(e => e.value),
 									"locale": "America/Los_Angeles"
 								},
-								"min_players": Math.ceil(players / 2),
-								"start_at_millis": new Date(document.getElementById("newlobby_startAt").value).getTime(),
+								"start_at_millis": -1
 							}));
 							return false;
+						}
+						function loadIndexData(data) {
+							console.log(data);
+							document.getElementById("lobbies_table").innerHTML = "";
+							document.getElementById("games_table").innerHTML = "";
+							function createRow(es) {
+								let tr = document.createElement("tr");
+								for (let e of es) {
+									let td = document.createElement("td");
+									td.appendChild(e);
+									tr.appendChild(td);
+								}
+								return tr;
+							}
+							for (let l of data.lobbies) {
+								let scheduleE = document.createElement("span");
+								scheduleE.setAttribute("title", JSON.stringify(l.schedule));
+								scheduleE.appendChild(
+									document.createTextNode(
+											"Every "
+											+ l.schedule.days.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(" & ")
+											+ (l.schedule.times.length == 1 ? "" : ", " + l.schedule.times.length + " times per day")));
+								let a = document.createElement("a");
+								a.setAttribute("href", "setup.html?g=" + l.id);
+								a.appendChild(document.createTextNode(l.id));
+								document.getElementById("lobbies_table").appendChild(createRow([
+									a,
+									document.createTextNode(l.players + " / " + l.capacity),
+									scheduleE]));
+							}
+							let lobbySet = new Set();
+							for (let l of data.lobbies) lobbySet.add(l.id);
+							for (let g of data.games) {
+								let lobby = lobbySet.has(g.id);
+								let active = g.active;
+								let a = document.createElement("a");
+								a.setAttribute("href", (lobby ? "setup.html" : "map1.html") + "?g=" + g.id);
+								a.appendChild(document.createTextNode(g.id));
+								document.getElementById("games_table").appendChild(createRow([
+									a,
+									document.createTextNode(lobby ? "Waiting for Players" : active ? "Active" : "Game Over")]));
+							}
 						}
 					</script>
 				</div>
 			</div>
-		</div>
-		<div id="stats">
-			<div id="active_games"># Active Games</div>
-			<div id="top_scores">Top Scores This Quarter</div>
-			<div id="score_data">Score Percentile Breakdown (Flame Chart?)</div>
 		</div>
 	</body>
 </html>

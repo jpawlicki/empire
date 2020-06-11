@@ -113,11 +113,9 @@ public class Nation {
 
 	// Instance members.
 
-	private Map<ScoreProfile, Double> score = new HashMap<>();
-	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
-	private Set<ScoreProfile> profiles = new HashSet<>();
+	public String email;
+
 	double gold;
-	private Map<String, Relationship> relationships = new HashMap<>();
 	Map<Gothi, Boolean> gothi = new HashMap<>();
 	double goodwill;
 	boolean loyalToCult;
@@ -126,15 +124,19 @@ public class Nation {
 	String colorBg;
 	Culture culture;
 	List<Integer> coreRegions = new ArrayList<>();
-	private List<Tag> tags = new ArrayList<>();
 	List<String> previousTributes = new ArrayList<>();
-	private boolean scoreProfilesLocked;
-	private boolean tookFinalAction;
 	String taxratehint = "100";
 	String shipratehint = "5";
 	String rationhint = "100";
 	String signingbonushint = "0";
-	String email;
+
+	private List<Tag> tags = new ArrayList<>();
+	private boolean scoreProfilesLocked;
+	private boolean tookFinalAction;
+	private Map<String, Relationship> relationships = new HashMap<>();
+	private Map<ScoreProfile, Double> score = new HashMap<>();
+	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
+	private Set<ScoreProfile> profiles = new HashSet<>();
 
 	transient double goldStolenLost = 0;
 	transient double goldStolenGained = 0;

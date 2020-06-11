@@ -14,20 +14,20 @@ final class Request {
 	final int version;
 	final long gameId;
 	final String password;
-	final String kingdom;
+	//final String kingdom;
+	final String player;
 	final String body;
 	final boolean skipMail;
-	final boolean newAccount;
 
-	private Request(int turn, int version, long gameId, String password, String kingdom, String body, boolean skipMail, boolean newAccount) {
+	private Request(int turn, int version, long gameId, String password, String kingdom, String player, String body, boolean skipMail) {
 		this.turn = turn;
 		this.version = version;
 		this.gameId = gameId;
 		this.password = password;
-		this.kingdom = kingdom;
+		//this.kingdom = kingdom;
+		this.player = player;
 		this.body = body;
 		this.skipMail = skipMail;
-		this.newAccount = newAccount;
 	}
 
 	public static Request from(HttpServletRequest req) throws IOException {
@@ -35,14 +35,14 @@ final class Request {
 			// Manual parsing is necessary: req.getParameter consumes the req inputstream.
 			String path = req.getQueryString();
 			String kingdom = extract("k", path, null);
-			String password = extract("password", path, null);
-			if (kingdom == null && password == null) {
-				// Try pulling it from Authentication header.
+			String player = null;
+			String password = null;
+			{
 				String val = req.getHeader("Authorization");
 				if (val != null && val.startsWith("Basic ")) {
 					String[] vals = new String(Base64.getDecoder().decode(val.substring("Basic ".length(), val.length())), StandardCharsets.UTF_8).split(":");
 					if (vals.length == 2) {
-						kingdom = vals[0];
+						player = vals[0];
 						password = vals[1];
 					}
 				}
@@ -51,8 +51,7 @@ final class Request {
 			int turn = Integer.parseInt(extract("t", path, "0"));
 			long gameId = Long.parseLong(extract("gid", path, "-1"));
 			boolean skipMail = "t".equals(extract("skipmail", path, "f"));
-			boolean newAccount = "t".equals(extract("newaccount", path, "f"));
-			return new Request(turn, version, gameId, password, kingdom, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail, newAccount);
+			return new Request(turn, version, gameId, password, kingdom, player, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail);
 		} catch (NumberFormatException e) {
 			throw new IOException(e);
 		}
