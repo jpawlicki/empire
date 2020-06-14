@@ -87,7 +87,7 @@ class Noble extends RulesObject {
 		} else {
 			crisis.deadline = w.date + 6;
 			crisis.type = possibleCrises.get((int)(Math.random() * possibleCrises.size()));
-			return Optional.of(new Notification(r.getKingdom(), "Noble Crisis (" + crisis.type.toString().toLowerCase() + ")", crisis.type.getStartMessage(name, r.name)));
+			return Optional.of(new Notification(r.getKingdom(), "Noble Crisis", crisis.type.getStartMessage(name, r.name)));
 		}
 	}
 
