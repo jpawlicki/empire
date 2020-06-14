@@ -234,6 +234,8 @@
 					-1,
 					function() {
 						changeReport("kingdom/" + whoami);
+						document.getElementById("splashScreen").style.opacity = 0;
+						setTimeout(()=>{ document.getElementById("splashScreen").style.display = "none"; }, 1000);
 					},
 					function() {
 						window.alert("Error when trying to load game data. Perhaps the password is incorrect.");
@@ -255,6 +257,11 @@
 					} else {
 						let d = JSON.parse(req.response);
 						whoami = d.filtered_to;
+						try {
+							localStorage.setItem("splash_" + gameId, whoami.toLowerCase() + "_hd.jpg");
+						} catch (e) {
+							console.log(e);
+						}
 						g_turndata[d.date] = d;
 						if (g_latest_date < d.date) {
 							try {
@@ -572,6 +579,20 @@
 				z-index: 2;
 				background-color: #fff;
 			}
+			#splashScreen {
+				display: flex;
+				grid-row-start: 1;
+				grid-row-end: 3;
+				grid-column-start: 1;
+				grid-column-end: 4;
+				z-index: 3;
+				font-size: 300%;
+				justify-content: center;
+				align-items: center;
+				transition: opacity 1s;
+				background-size: cover;
+				background-position: center;
+			}
 			#views, #reports_links {
 				display: flex;
 				justify-content: space-around;
@@ -620,6 +641,13 @@
     </style>
   </head>
   <body>
+		<div id="splashScreen">Loading...
+			<script>
+				let bg = loadFromStorage("splash_" + gameId);
+				if (bg == null) bg = "empire_dawn_hd.jpg";
+				document.getElementById("splashScreen").style.backgroundImage = "url(images/" + bg + ")";
+			</script>
+		</div>
 		<div id="reports_links">
 			<svg id="homekey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" /></svg>
 			<svg id="churchkey" style="width:24px;height:24px" viewBox="0 0 24 24"><path d="M11,2H13V4H15V6H13V9.4L22,13V15L20,14.2V22H14V17A2,2 0 0,0 12,15A2,2 0 0,0 10,17V22H4V14.2L2,15V13L11,9.4V6H9V4H11V2M6,20H8V15L7,14L6,15V20M16,20H18V15L17,14L16,15V20Z" /></svg>
