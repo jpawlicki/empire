@@ -80,12 +80,36 @@ class DataSource implements AutoCloseable {
 		return ((Long)service.get(KeyFactory.createKey("CURRENTDATE", "game_" + gameId)).getProperty("date")).intValue();
 	}
 
-	ActiveGames loadActiveGames() throws EntityNotFoundException {
-		return ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
+	ActiveGames loadActiveGames() {
+		try {
+			return ActiveGames.fromGson((String)service.get(KeyFactory.createKey("ACTIVEGAMES", "_")).getProperty("active_games"));
+		} catch (EntityNotFoundException unused) {
+			return new ActiveGames();
+		}
 	}
 
 	Stream<Lobby> loadAllLobbies() {
 		return StreamSupport.stream(service.prepare(new Query(TYPE_LOBBY)).asIterable().spliterator(), false).map(e -> Lobby.fromJson(getJson(e)));
+	}
+
+	HighScores loadHighScores() {
+		try {
+			return HighScores.fromJson(getJson(service.get(KeyFactory.createKey("HIGHSCORES", "_"))));
+		} catch (EntityNotFoundException unused) {
+			return new HighScores();
+		}
+	}
+
+	Stream<World> loadAllWorlds() throws IOException {
+		ArrayList<World> worlds = new ArrayList<>();
+		for (Entity e : service.prepare(new Query(TYPE_WORLD)).asIterable()) {
+			try {
+				worlds.add(World.fromJson(getJson(e)));
+			} catch (Exception unused) {
+				// Not all worlds are parseable anymore.
+			}
+		}
+		return worlds.stream();
 	}
 
 	Lobby loadLobby(long gameId) throws EntityNotFoundException, IOException {
@@ -141,6 +165,12 @@ class DataSource implements AutoCloseable {
 		e.setProperty("salt", player.salt);
 		e.setProperty("emailConfirmed", player.emailConfirmed);
 		e.setProperty("activeGames", Joiner.on(",").join(player.activeGames));
+		service.put(e);
+	}
+
+	void save(HighScores scores) {
+		Entity e = new Entity("HIGHSCORES", "_");
+		setProperties(e, scores.toString());
 		service.put(e);
 	}
 

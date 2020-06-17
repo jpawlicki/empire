@@ -6,7 +6,7 @@ import com.google.gson.GsonBuilder;
 import java.util.ArrayList;
 
 class ActiveGames {
-	ArrayList<Long> activeGameIds;
+	ArrayList<Long> activeGameIds = new ArrayList<>();
 
 	static ActiveGames fromGson(String s) {
 		return getGson().fromJson(s, ActiveGames.class);

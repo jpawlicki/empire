@@ -208,6 +208,12 @@ public class Nation {
 		else shadowScore.put(p, shadowScore.getOrDefault(p, 0.0) + amount);
 	}
 
+	public double getScore() {
+		double s = 0;
+		for (Double d : score.values()) s += d;
+		return s;
+	}
+
 	void filterForView(boolean filterScore) {
 		email = "";
 		if (filterScore) {

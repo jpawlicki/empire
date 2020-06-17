@@ -18,7 +18,7 @@ class ScoreReport extends HTMLElement {
 						<div>ALL-TIME</div>
 					</div>
 				</div>
-				<expandable-snippet text="Your score is compared to players of your nation in other games (alternate histories), not to the other players in this game. It is finalized on week 27 and every 6 weeks thereafter - whether you are still in the game or not! You earn and lose points on active score profiles only. You can change which score profiles are active by ordering your ruler to spend the week reflecting. You keep points you have accumulated so far."></expandable-snippet>
+				<expandable-snippet text="Your score percentile (above) is based on the scores achieved by other players of your nation (in other games). You earn and lose points on active score profiles only. You can change which score profiles are active by ordering your ruler to spend the week reflecting. You keep points you have accumulated so far."></expandable-snippet>
 				<h1>Total: <span id="scorepoints"></span></h1>
 				<div id="profiles">
 					<expandable-snippet text="All of the below conditions can stack."></expandable-snippet>

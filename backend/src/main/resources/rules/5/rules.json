@@ -28,7 +28,7 @@
 		"emigrationFactor": 0.15,
 		"foodFedPlentifulPointFactor": 1E-6,
 		"foodFedPointFactor": 1E-6,
-		"foodRemainderPointFactor": 1E-7,
+		"foodRemainderPointFactor": 5E-8,
 		"flameOfKithImmigrationWeightMod": 2,
 		"fraternityOpinion": -35,
 		"gloryCasualtyPunishmentThreshold": 500,

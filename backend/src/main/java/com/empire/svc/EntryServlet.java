@@ -108,6 +108,8 @@ public class EntryServlet extends HttpServlet {
 				json = getLobbyPoll();
 			} else if (req.getRequestURI().equals("/entry/index")) {
 				json = getIndex(r);
+			} else if (req.getRequestURI().equals("/entry/scores")) {
+				json = getScores(r);
 			} else {
 				resp.sendError(404, "No such path.");
 				return;
@@ -279,12 +281,7 @@ public class EntryServlet extends HttpServlet {
 			} catch (EntityNotFoundException e) {
 				throw new PasswordException("Password does not pass read ACL.");
 			}
-			Set<Long> games = new HashSet<>();
-			try {
-				games.addAll(dataSource.loadActiveGames().activeGameIds);
-			} catch (EntityNotFoundException e) {
-				// No game has ever been started.
-			}
+			Set<Long> games = new HashSet<>(dataSource.loadActiveGames().activeGameIds);
 			GetIndexResponse response = new GetIndexResponse();
 			p.activeGames.stream().forEach(gid -> response.addGame(gid, games.contains(gid)));
 			dataSource.loadAllLobbies().forEach(lobby -> {
@@ -294,6 +291,12 @@ public class EntryServlet extends HttpServlet {
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return null;
+		}
+	}
+
+	private String getScores(Request r) {
+		try (DataSource dataSource = DataSource.nontransactional()) {
+			return getGson().toJson(dataSource.loadHighScores());
 		}
 	}
 
@@ -333,9 +336,6 @@ public class EntryServlet extends HttpServlet {
 		List<Long> activeGames;
 		try (DataSource dataSource = DataSource.nontransactional()) {
 			activeGames = dataSource.loadActiveGames().activeGameIds;
-		} catch (EntityNotFoundException e) {
-			log.log(Level.SEVERE, "Poller failed.", e);
-			return null;
 		}
 		for (Long gameId : activeGames) {
 			try (DataSource dataSource = DataSource.transactional()) {
@@ -353,6 +353,9 @@ public class EntryServlet extends HttpServlet {
 						}
 					}
 					Map<String, String> emails = w.advance(orders);
+					HighScores scores = dataSource.loadHighScores();
+					for (String k : w.getNationNames()) scores.record(w.getDate(), k, w.getNation(k).getScore());
+					dataSource.save(scores);
 					dataSource.save(w, gameId);
 					dataSource.saveCurrentDate(w.getDate(), gameId);
 					if (!skipMail && Instant.ofEpochMilli(w.getNextTurn()).isAfter(Instant.now().plus(5, ChronoUnit.HOURS))) {
@@ -423,14 +426,7 @@ public class EntryServlet extends HttpServlet {
 			World w = World.startNew(lobby);
 			dataSource.save(w, gameId);
 			dataSource.saveCurrentDate(1, gameId);
-			ActiveGames activeGames;
-			try {
-				activeGames = dataSource.loadActiveGames();
-			} catch (EntityNotFoundException e) {
-				// No active game registry - create it.
-				activeGames = new ActiveGames();
-				activeGames.activeGameIds = new ArrayList<>();
-			}
+			ActiveGames activeGames = dataSource.loadActiveGames();
 			activeGames.activeGameIds.add(gameId);
 			dataSource.save(activeGames);
 			dataSource.delete(lobby);
@@ -474,7 +470,7 @@ public class EntryServlet extends HttpServlet {
 			if (startLobby.players <= 1 || startLobby.players > 26) return false;
 			if (startLobby.minPlayers <= 1 || startLobby.minPlayers > startLobby.players) return false;
 			if (startLobby.startAtMillis == -1) {
-				startLobby.startAtMillis = startLobby.schedule.getNextPeriod(3);
+				startLobby.startAtMillis = startLobby.schedule.getNextPeriod(4);
 			}
 			dataSource.save(Lobby.newLobby(gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis));
 			dataSource.commit();
@@ -559,14 +555,16 @@ public class EntryServlet extends HttpServlet {
 	private boolean migrate(Request rr) {
 		final long gameId = 9;
 		if (!Player.passesGmPassword(rr.password)) return false;
-		try (DataSource dataSource = DataSource.transactional()) {
-			World w = dataSource.loadWorld(gameId, dataSource.loadCurrentDate(gameId));
-			//for (com.empire.Region r : w.regions) if (r.population <= 0) r.population = 1;
-			dataSource.save(w, gameId);
+		try (DataSource dataSource = DataSource.nontransactional()) {
+			HighScores scores = new HighScores();
+			dataSource.loadAllWorlds().forEach(w -> {
+				try { // Not all worlds are really parseable anymore.
+					for (String k : w.getNationNames()) scores.record(w.getDate(), k, w.getNation(k).getScore());
+				} catch (Exception e) {
+				}
+			});
+			dataSource.save(scores);
 			dataSource.commit();
-		} catch (EntityNotFoundException e) {
-			log.log(Level.INFO, "Not found!", e);
-			return false;
 		} catch (IOException e) {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;

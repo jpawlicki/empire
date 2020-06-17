@@ -2563,7 +2563,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					// Game ends. Early return.
 					gameover = true;
 					// Add final prosperity scores.
-					for (Region r : regions) if (r.isLand()) score(r.getKingdom(), Nation.ScoreProfile.PROSPERITY, r.food * getRules().foodRemainderPointFactor);
+					for (Region r : regions) if (r.isLand()) score(r.getKingdom(), Nation.ScoreProfile.PROSPERITY, (r.crops + r.food) * getRules().foodRemainderPointFactor);
 					HashMap<String, String> emails = new HashMap<>();
 					for (String kingdom : kingdoms.keySet()) emails.put(getNation(kingdom).email, "The curtain has closed on this stage of history. Your decisions, and those of your fellow rulers, good and bad, have set the course for the known world and its inhabitants.\n\nTo review the final state of the game, as well as any letters you received from the final turn, you can view https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\n\nThank you for playing and we hope to see you again soon!");
 					return emails;
