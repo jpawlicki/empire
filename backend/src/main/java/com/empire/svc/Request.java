@@ -14,17 +14,15 @@ final class Request {
 	final int version;
 	final long gameId;
 	final String password;
-	//final String kingdom;
 	final String player;
 	final String body;
 	final boolean skipMail;
 
-	private Request(int turn, int version, long gameId, String password, String kingdom, String player, String body, boolean skipMail) {
+	private Request(int turn, int version, long gameId, String password, String player, String body, boolean skipMail) {
 		this.turn = turn;
 		this.version = version;
 		this.gameId = gameId;
 		this.password = password;
-		//this.kingdom = kingdom;
 		this.player = player;
 		this.body = body;
 		this.skipMail = skipMail;
@@ -34,7 +32,6 @@ final class Request {
 		try {
 			// Manual parsing is necessary: req.getParameter consumes the req inputstream.
 			String path = req.getQueryString();
-			String kingdom = extract("k", path, null);
 			String player = null;
 			String password = null;
 			{
@@ -42,7 +39,7 @@ final class Request {
 				if (val != null && val.startsWith("Basic ")) {
 					String[] vals = new String(Base64.getDecoder().decode(val.substring("Basic ".length(), val.length())), StandardCharsets.UTF_8).split(":");
 					if (vals.length == 2) {
-						player = vals[0];
+						player = vals[0].toLowerCase();
 						password = vals[1];
 					}
 				}
@@ -51,7 +48,7 @@ final class Request {
 			int turn = Integer.parseInt(extract("t", path, "0"));
 			long gameId = Long.parseLong(extract("gid", path, "-1"));
 			boolean skipMail = "t".equals(extract("skipmail", path, "f"));
-			return new Request(turn, version, gameId, password, kingdom, player, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail);
+			return new Request(turn, version, gameId, password, player, new String(getBody(req.getInputStream()), StandardCharsets.UTF_8), skipMail);
 		} catch (NumberFormatException e) {
 			throw new IOException(e);
 		}

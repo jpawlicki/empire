@@ -214,18 +214,39 @@ public class EntryServlet extends HttpServlet {
 		final int ruleSet;
 		final int numPlayers;
 		final Set<String> takenNations;
+		final String chosen;
+		final NationSetup chosenConfig;
 		final Geography geography;
-		GetSetupResponse(Lobby lobby) throws IOException {
+		GetSetupResponse(Lobby lobby, String email) throws IOException {
 			this.ruleSet = lobby.getRuleSet();
 			this.numPlayers = lobby.getNumPlayers();
 			this.takenNations = lobby.getNations().keySet();
 			this.geography = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
+			String whoami = null;
+			NationSetup whoamiConfig = null;
+			for (Map.Entry<String, NationSetup> e : lobby.getNations().entrySet()) {
+				if (e.getValue().email.equals(email)) {
+					whoami = e.getKey();
+					whoamiConfig = e.getValue();
+				}
+			}
+			this.chosen = whoami;
+			this.chosenConfig = whoamiConfig;
 		}
 	}
 	private String getSetup(Request r) {
 		try (DataSource dataSource = DataSource.nontransactional()) {
-			return getGson().toJson(new GetSetupResponse(dataSource.loadLobby(r.gameId)));
-		} catch (EntityNotFoundException | IOException e) {
+			Player p;
+			try {
+				p = dataSource.loadPlayer(r.player);
+				if (!p.checkPassword(r.password)) {
+					throw new PasswordException("Password does not pass read ACL.");
+				}
+			} catch (EntityNotFoundException e) {
+				throw new PasswordException("Password does not pass read ACL.");
+			}
+			return getGson().toJson(new GetSetupResponse(dataSource.loadLobby(r.gameId), r.player));
+		} catch (EntityNotFoundException | IOException | PasswordException e) {
 			log.log(Level.WARNING, "Failed to fetch setup information for game " + r.gameId, e);
 			return null;
 		}
@@ -576,7 +597,6 @@ public class EntryServlet extends HttpServlet {
 		try (DataSource dataSource = DataSource.transactional()) {
 			Player p = dataSource.loadPlayer(r.player);
 			if (!p.checkPassword(r.password)) return false;
-			if (p.activeGames.contains(r.gameId)) return false;
 			Lobby lobby = dataSource.loadLobby(r.gameId);
 			Geography geo = Geography.loadGeography(lobby.getRuleSet(), lobby.getNumPlayers());
 			NationSetup nation = NationSetup.fromJson(r.body);

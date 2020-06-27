@@ -28,7 +28,20 @@ public class Lobby {
 	}
 
 	public boolean update(String nation, NationSetup setup) {
-		return nations.putIfAbsent(nation, setup) == null;
+		if (nations.containsKey(nation)) {
+			if (nations.get(nation).email.equals(setup.email)) {
+				nations.put(nation, setup);
+				return true;
+			}
+			return false;
+		}
+		String remove = null;
+		for (Map.Entry<String, NationSetup> e : nations.entrySet()) {
+			if (e.getValue().email.equals(setup.email)) remove = e.getKey();
+		}
+		if (remove != null) nations.remove(remove);
+		nations.put(nation, setup);
+		return true;
 	}
 
 	private static Gson getGson() {

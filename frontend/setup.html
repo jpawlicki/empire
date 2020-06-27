@@ -27,6 +27,8 @@
 			function regionClick() {
 			}
 			var taken = {};
+			var chosenNation = "";
+			var chosenConfig = {};
 			window.onload = function() {
 				if (g_player == null || g_password == null) {
 					window.alert("Could not load your login state. Redirecting to home page to log in.");
@@ -41,6 +43,7 @@
 
 				let req = new XMLHttpRequest();
 				req.open("get", g_server + "/entry/setup?gid=" + gameId, true);
+				addAuth(req, g_player, g_password);
 				req.onerror = function (e) { window.alert("Error - check network connectivity: " + JSON.stringify(e)); };
 				req.onload = function (ev) {
 					if (req.status != 200) {
@@ -55,7 +58,24 @@
 						for (let r of document.querySelectorAll("path." + k.toLowerCase())) {
 							r.setAttribute("class", r.getAttribute("class") + " taken");
 						}
-						taken[k.toLowerCase()] = true;
+						if (resp.chosen != k) taken[k.toLowerCase()] = true;
+					}
+					if (resp.hasOwnProperty("chosen")) {
+						chosenNation = resp.chosen;
+						chosenConfig = resp.chosen_config;
+						let override = nations[chosenNation.toLowerCase()];
+						override.traits[0] = chosenConfig.trait1;
+						override.traits[1] = chosenConfig.trait2;
+						override.ruler_name = chosenConfig.ruler_name;
+						override.title = chosenConfig.title;
+						override.bonus = chosenConfig.bonus;
+						override.religion = chosenConfig.dominant_ideology;
+						override.score = [];
+						for (let s of ["prosperity", "happiness", "territory", "glory", "religion", "ideology", "security", "riches", "culture"]) if (chosenConfig[s] == "checked") override.score.push(s);
+						document.querySelector("img[name=" + chosenNation.toLowerCase() + "]").className = "mine";
+						for (let r of document.querySelectorAll("path." + chosenNation.toLowerCase())) {
+							r.setAttribute("class", r.getAttribute("class") + " mine");
+						}
 					}
 				};
 				req.send();
@@ -145,6 +165,9 @@
 			#regions path.taken {
 				fill: #222;
 			}
+			#regions path.mine {
+				fill: #fc0;
+			}
 			#body > .icons {
 				display: flex;
 				flex-direction: column;
@@ -168,6 +191,9 @@
 			}
 			.icons img.taken {
 				filter: grayscale(100%) drop-shadow(0 0 5px #888);
+			}
+			.icons img.mine {
+				filter: invert(71%) sepia(94%) saturate(796%) hue-rotate(357deg) brightness(102%) contrast(107%);
 			}
 			.icons img.taken:hover {
 				filter: grayscale(100%) drop-shadow(0 0 5px #fff);
@@ -386,8 +412,9 @@
 				if (document.getElementById("title").value == "Prime Minister" && !(trait1 == "Republican" || trait2 == "Republican")) warnings.push("To avoid confusion, only leaders of republics may be called Prime Minister.");
 				if ((trait1 == "Republican" || trait2 == "Republican") && (trait1 == "Aristocratic" || trait2 == "Aristocratic")) warnings.push("Aristocratic republics are not allowed.");
 				if ((trait1 == "Holy" || trait2 == "Holy") && !di.includes("Iruhan")) warnings.push("Only nations with an Iruhan dominant religion can choose the Holy trait.");
-				document.getElementById("warning").innerHTML = warnings.join(" ");
 				document.getElementById("submit").disabled = warnings.length > 0;
+				if (chosenNation != "") warnings.push("This will replace your current nation selection.");
+				document.getElementById("warning").innerHTML = warnings.join(" ");
 			});
 			
 			function selectNation(nation) {
@@ -418,7 +445,7 @@
 					document.getElementById("trait2").value = nations[nation].traits[1];
 					document.getElementById("title").value = nations[nation].title;
 					document.getElementById("bonus").value = nations[nation].bonus;
-					document.getElementById("ruler_name").value = "";
+					document.getElementById("ruler_name").value = nations[nation].hasOwnProperty("ruler_name") ? nations[nation].ruler_name : "";
 					document.getElementById("dominant_ideology").innerHTML = "";
 					document.getElementById("form").style.display = taken[nation] ? "none" : "block";
 					for (let r of nations[nation].hasOwnProperty("legalIdeologiesOverride") ? nations[nation].legalIdeologiesOverride : legalIdeologies[nations[nation].culture]) {

@@ -213,7 +213,7 @@
 		<div id="login">
 			<h3>Log in to start or join a game lobby.</h3>
 			<label>Email Address: <input type="email" id="email" placeholder="example@example.com"></input></label>
-			<label>Password: <input type="password" id="password" placeholder="•••••••••"></input></label>
+			<label>Password: <input type="password" id="password"></input></label>
 			<label>Remember me on this device: <input type="checkbox" id="login_rememberme"></input></label>
 			<div class="flex">
 				<button id="loginbutton">Log In</button>
@@ -223,14 +223,18 @@
 			<div id="login_outcome"></div>
 			<script>
 				function enterPassword(noisyFailure = true) {
+					whoami = document.getElementById("email").value;
+					password = document.getElementById("password").value;
+					if (whoami == "" || password == "") {
+						document.getElementById("login_outcome").innerHTML = "Specify an e-mail address and password.";
+						return;
+					}
 					// Attempt to log in.
 					document.getElementById("loginbutton").disabled = true;
 					document.getElementById("createaccountbutton").disabled = true;
 					document.getElementById("resetbutton").disabled = true;
 					// Get lobby data.
 					let req = new XMLHttpRequest();
-					whoami = document.getElementById("email").value;
-					password = document.getElementById("password").value;
 					req.open("GET", g_server + "/entry/index", true);
 					addAuth(req, whoami, password);
 					req.onerror = function (e) {
@@ -275,16 +279,20 @@
 				}
 				function newAccount() {
 					// Attempt to log in.
+					whoami = document.getElementById("email").value;
+					password = document.getElementById("password").value;
+					if (whoami == "" || password == "") {
+						document.getElementById("login_outcome").innerHTML = "Specify an e-mail address and password.";
+						return;
+					}
 					document.getElementById("loginbutton").disabled = true;
 					document.getElementById("createaccountbutton").disabled = true;
 					document.getElementById("resetbutton").disabled = true;
 					let req = new XMLHttpRequest();
-					whoami = document.getElementById("email").value;
-					password = document.getElementById("password").value;
 					req.open("POST", g_server + "/entry/newplayer", true);
 					addAuth(req, whoami, password);
 					req.onerror = function (e) {
-						document.getElementById("login_outcome").innerHTML = "Error creating account: " + e;
+						document.getElementById("login_outcome").innerHTML = "Error creating account: " + req.status;
 						document.getElementById("createaccountbutton").disabled = false;
 						document.getElementById("loginbutton").disabled = false;
 						document.getElementById("resetbutton").disabled = false;
@@ -292,6 +300,7 @@
 					req.onload = function (ev) {
 						if (req.status != 204) {
 							req.onerror("Account already exists");
+							document.getElementById("login_outcome").innerHTML = "Error creating account: Account already exists.";
 						} else {
 							enterPassword(true);
 						}
@@ -484,7 +493,7 @@
 										{amt: 1000 * 60 * 60, unit: "hours"},
 										{amt: 1000 * 60, unit: "minutes"},
 										{amt: 1000, unit: "seconds"}]) {
-									if (msRemaining > t.amt) {
+									if (msRemaining > t.amt * 2) {
 										timeRemaining = Math.floor(msRemaining / t.amt) + " " + t.unit;
 										break;
 									}
@@ -514,7 +523,7 @@
 		</div>
 		<div id="stats">
 			<h3>Historical Score Distributions</h3>
-			<label>Nation: <select id="scores_who"></select></label>
+			<label>Nation: <select id="scores_who"><option>(Overall)</option></select></label>
 			<score-chart id="scores"></score-chart>
 			<script>
 				let req = new XMLHttpRequest();
@@ -548,15 +557,27 @@
 							o.appendChild(document.createTextNode(opt));
 							sw.appendChild(o);
 						}
-						sw.addEventListener("change", ()=> {
-							document.getElementById("scores").setData(nationScoreData[sw.value], mins, maxes);
-						});
+						function update() {
+							if (sw.value == "(Overall)") {
+								let merge = [];
+								for (let k in nationScoreData) {
+									for (let i = 0; i < nationScoreData[k].length; i++) {
+										if (merge.length <= i) merge[i] = [];
+										for (let v of nationScoreData[k][i]) merge[i].push(v);
+									}
+								}
+								document.getElementById("scores").setData(merge, mins, maxes);
+							} else {
+								document.getElementById("scores").setData(nationScoreData[sw.value], mins, maxes);
+							}
+						}
+						sw.addEventListener("change", update);
 						let nationSorted = [];
 						for (let k in nationScoreData) nationSorted.push(k);
 						nationSorted.sort();
 						for (let k of nationSorted) appendOption(k);
 						if (nationSorted.length > 0) {
-							document.getElementById("scores").setData(nationScoreData[sw.value], mins, maxes);
+							update();
 						}
 					}
 				};
