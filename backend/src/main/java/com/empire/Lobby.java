@@ -27,13 +27,19 @@ public class Lobby {
 		return new Lobby(gameId, ruleSet, numPlayers, schedule, minPlayers, startAt);
 	}
 
-	public boolean update(String nation, NationSetup setup) {
+	public enum UpdateResult {
+		DENIED,
+		ADDED,
+		REPLACED
+	}
+
+	public UpdateResult update(String nation, NationSetup setup) {
 		if (nations.containsKey(nation)) {
 			if (nations.get(nation).email.equals(setup.email)) {
 				nations.put(nation, setup);
-				return true;
+				return REPLACED;
 			}
-			return false;
+			return DENIED;
 		}
 		String remove = null;
 		for (Map.Entry<String, NationSetup> e : nations.entrySet()) {
@@ -41,7 +47,7 @@ public class Lobby {
 		}
 		if (remove != null) nations.remove(remove);
 		nations.put(nation, setup);
-		return true;
+		return remove == null ? ADDED : REPLACED;
 	}
 
 	private static Gson getGson() {

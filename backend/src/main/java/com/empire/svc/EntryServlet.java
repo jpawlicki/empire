@@ -605,13 +605,16 @@ public class EntryServlet extends HttpServlet {
 				log.log(Level.WARNING, "postSetup kingdom matching failure for " + r.gameId + ", " + nation.name);
 				return false;
 			}
-			if (!lobby.update(nation.name, nation)) {
+			Lobby.UpdateResult result = lobby.update(nation.name, nation);
+			if (result == DENIED) {
 				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + nation.name);
 				return false;
 			}
 			dataSource.save(lobby);
-			p.activeGames.add(r.gameId);
-			dataSource.save(p);
+			if (result == ADDED) {
+				p.activeGames.add(r.gameId);
+				dataSource.save(p);
+			}
 			if (lobby.canStart(Instant.now()) == Lobby.StartResult.START) {
 				startWorld(lobby, dataSource);
 			}
