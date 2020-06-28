@@ -606,12 +606,12 @@ public class EntryServlet extends HttpServlet {
 				return false;
 			}
 			Lobby.UpdateResult result = lobby.update(nation.name, nation);
-			if (result == DENIED) {
+			if (result == Lobby.UpdateResult.DENIED) {
 				log.log(Level.WARNING, "postSetup lobby update failure for " + r.gameId + ", " + nation.name);
 				return false;
 			}
 			dataSource.save(lobby);
-			if (result == ADDED) {
+			if (result == Lobby.UpdateResult.ADDED) {
 				p.activeGames.add(r.gameId);
 				dataSource.save(p);
 			}

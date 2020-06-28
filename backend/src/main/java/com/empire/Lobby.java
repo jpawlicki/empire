@@ -37,9 +37,9 @@ public class Lobby {
 		if (nations.containsKey(nation)) {
 			if (nations.get(nation).email.equals(setup.email)) {
 				nations.put(nation, setup);
-				return REPLACED;
+				return UpdateResult.REPLACED;
 			}
-			return DENIED;
+			return UpdateResult.DENIED;
 		}
 		String remove = null;
 		for (Map.Entry<String, NationSetup> e : nations.entrySet()) {
@@ -47,7 +47,7 @@ public class Lobby {
 		}
 		if (remove != null) nations.remove(remove);
 		nations.put(nation, setup);
-		return remove == null ? ADDED : REPLACED;
+		return remove == null ? UpdateResult.ADDED : UpdateResult.REPLACED;
 	}
 
 	private static Gson getGson() {
