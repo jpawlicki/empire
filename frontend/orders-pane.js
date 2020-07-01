@@ -121,6 +121,9 @@ class OrdersPane extends HTMLElement {
 					</select>
 					<div id="final_action_details"></div>
 					<h1><a href="https://docs.google.com/document/d/1BCjssbKPYEegfva2PqUVy1cD96FTgMtJr3SjUKEsQLw/edit?usp=sharing" target="_blank">Rules Document</a></h1>
+					<h1>Let's Play Notes (Optional)</h1>
+					<expandable-snippet text="After the game is over, the app will publish these notes to all players for inclusion in a Let's Play style blog. Feel free to record your thoughts, plans, and reactions, to add perspectives to that record."></expandable-snippet>
+					<textarea name="letsplay_notes"></textarea>
 				</div>
 			</form>
 		`;
@@ -724,13 +727,18 @@ class OrdersPane extends HTMLElement {
 			for (let rid = 0; rid < g_data.regions.length; rid++) {
 				let r = g_data.regions[rid];
 				if (r.kingdom == kingdom.name) {
-					let food = Math.min(r.food, rationing * r.population);
+					let food = r.food;
 					for (let ti = 0; ti < obj.economyRowCount; ti++) {
 						if (shadow.querySelector("[name=economy_from_" + ti + "]").value == r.name) food -= parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
 						if (shadow.querySelector("[name=economy_to_" + ti + "]").value.replace(/\(.*\) /, "") == r.name) food += parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
 					}
-					if (food < r.population * 0.75) {
-						foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * 0.75 - food) / 1000.0) + "k rations of food</p>";
+					let actualRations = Math.min(food / r.population, rationing);
+					if (rationing < 0.75) {
+						foodConsequences.innerHTML += "<p>" + r.name + " will suffer " + Math.ceil((0.75 - actualRations) * 0.1 * r.population / 1000.0) + "k deaths due to strict rationing</p>";
+					} else if (actualRations < rationing && actualRations >= 0.75) {
+						foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * rationing - food) / 1000.0) + "k rations of food; no starvation will occur</p>";
+					} else if (actualRations < rationing) {
+						foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * rationing - food) / 1000.0) + "k rations of food; " + Math.ceil((0.75 - actualRations) * 0.1 * r.population / 1000.0) + "k will starve</p>";
 					}
 				}
 			}

@@ -577,17 +577,12 @@ public class EntryServlet extends HttpServlet {
 		final long gameId = 9;
 		if (!Player.passesGmPassword(rr.password)) return false;
 		try (DataSource dataSource = DataSource.nontransactional()) {
-			HighScores scores = new HighScores();
-			dataSource.loadAllWorlds().forEach(w -> {
-				try { // Not all worlds are really parseable anymore.
-					for (String k : w.getNationNames()) scores.record(w.getDate(), k, w.getNation(k).getScore());
-				} catch (Exception e) {
-				}
-			});
-			dataSource.save(scores);
+			World w = dataSource.loadWorld(9293657, 1);
+			for (String s : w.getNationNames()) w.getNation(s).email = w.getNation(s).email.toLowerCase();
+			dataSource.save(w, 9293657);
 			dataSource.commit();
-		} catch (IOException e) {
-			log.log(Level.SEVERE, "Failed to read rule data.", e);
+		} catch (Exception e) {
+			log.log(Level.SEVERE, "Exception", e);
 			return false;
 		}
 		return true;
