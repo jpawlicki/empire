@@ -18,9 +18,6 @@
 <appengine-web-app xmlns="http://appengine.google.com/ns/1.0">
   <runtime>java8</runtime>
   <threadsafe>true</threadsafe>
-	<basic-scaling>
-		<max-instances>1</max-instances>
-	</basic-scaling>
   <resource-files>
     <include path="/**" />
   </resource-files>
