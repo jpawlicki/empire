@@ -4,7 +4,7 @@ class InternationalReport extends HTMLElement {
 		let html = `
 			<div id="abspos">
 				<div>International</div>
-				<svg id="graph" viewbox="0,0,1,1">
+				<svg id="graph" viewbox="0,0,1,1" xmlns="http://www.w3.org/2000/svg">
 				</svg>
 				<select id="chart_type">
 					<option value="overall">Friendships / Enmities / Tributaries</option>
@@ -125,7 +125,29 @@ class InternationalReport extends HTMLElement {
 	}
 
 	makeSvg(t, svg, legendEle) {
-		svg.innerHTML = "";
+		svg.innerHTML = `
+			<style>
+				path {
+					stroke-width: 0.002;
+					fill: transparent;
+				}
+				.dotted {
+					stroke-dasharray: 0.02, 0.04;
+					animation: dash 1.6s linear infinite;
+				}
+				@keyframes dash {
+					to {
+						stroke-dashoffset: -0.06;
+					}
+				}
+				text {
+					font: 0.055px sans-serif;
+					text-anchor: middle;
+					alignment-baseline: middle;
+					pointer-events: none;
+				}
+			</style>
+			`;
 		let rel = t.rel;
 		let weights = t.weights;
 		let legend = t.legend;
@@ -243,8 +265,8 @@ class InternationalReport extends HTMLElement {
 			c.innerHTML = "<title>" + kingdoms[i] + "</title>";
 			let t = document.createElementNS("http://www.w3.org/2000/svg", "text");
 			t.setAttribute("x", pp[0]);
-			t.setAttribute("y", pp[1] - .00475);
-			t.innerHTML = "&nbsp;" + kingdoms[i].substr(0, 1) + "&nbsp;";
+			t.setAttribute("y", pp[1]);
+			t.appendChild(document.createTextNode(kingdoms[i].substr(0, 1)));
 			t.setAttribute("fill", getForegroundColor(kingdoms[i]));
 			svg.appendChild(t);
 		}

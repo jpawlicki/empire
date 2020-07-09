@@ -616,7 +616,6 @@ public class World extends RulesObject implements GoodwillProvider {
 			growPopulations();
 			evaluateGothiSpells();
 			checkCultVictory();
-			miscScoreProfiles();
 			appointHeirs();
 			takeFinalActions();
 			deliverGoldFromArmies();
@@ -629,6 +628,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			sendBudgetNotifications();
 			notifyPirateThreats();
 			notifyInspires();
+			miscScoreProfiles();
 			advanceDate();
 			Map<String, String> emails = checkGameEnd();
 			if (emails == null) {
@@ -1675,9 +1675,6 @@ public class World extends RulesObject implements GoodwillProvider {
 			// Most unrest mods.
 			for (Region r : regions) if (r.isLand()) {
 				double unrestMod = 0;
-				double ration = rationing.getOrDefault(r.getKingdom(), 1.0);
-				if (ration < 0.9 && r.religion != Ideology.ALYRJA) unrestMod += .15;
-				if (ration > 1) unrestMod -= .1;
 				if (getNation(r.getKingdom()).hasTag(Nation.Tag.REPUBLICAN)) unrestMod -= .03;
 				if (r.getKingdom() != null && getNation(r.getKingdom()).hasTag(Nation.Tag.IMPERIALISTIC)) {
 					int tributeC = 0;

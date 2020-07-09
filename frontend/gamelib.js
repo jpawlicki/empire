@@ -812,13 +812,13 @@ class Plot {
 		if (this.type == "ASSASSINATE") return getTargetRegionCharacter();
 		if (this.type == "BURN_SHIPYARD" || this.type == "SABOTAGE_FORTIFICATIONS" || this.type == "SPOIL_FOOD" || this.type == "SPOIL_CROPS" || this.type == "INCITE_UNREST" || this.type == "PIN_FOOD" || this.type == "MURDER_NOBLE" || this.type == "POISON_RELATIONS") return getTargetRegionRegion();
 		if (this.type == "PRAISE" || this.type == "DENOUNCE") return getTargetRegionChurch();
-		if (this.type == "INTERCEPT_COMMUNICATIONS" || this.type == "SURVEY_NATION") return getTargetRegionNation();
+		if (this.type == "INTERCEPT_COMMUNICATIONS" || this.type == "SURVEY_NATION" || this.type == "STEAL_GOLD") return getTargetRegionNation();
 	}
 
 	getDefender() {
 		let characterPlots = ["ASSASSINATE"];
 		let regionPlots = ["BURN_SHIPYARD", "SABOTAGE_FORTIFICATIONS", "SPOIL_FOOD", "SPOIL_CROPS", "INCITE_UNREST", "PIN_FOOD", "MURDER_NOBLE", "POISON_RELATIONS"];
-		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION"];
+		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION", "STEAL_GOLD"];
 		let goodwillPlots = ["PRAISE"];
 		if (characterPlots.includes(this.type)) {
 			let c = g_data.characters.find(c => c.name == this.target_id);
@@ -881,7 +881,7 @@ let doctrineDescriptions = {
 
 // ============ SCORE CONSTANTS ============
 let g_scoreProfiles = {
-	"PROSPERITY": {"selectable": true,  "description": ["+2 points per million civilians you feed with plentiful rations.", "+1 point per million civilians you feed with normal rations.", "-1 point per 6000 civilians that starve to death in your historical regions.", "-1 point per 12000 civilians that starve in the historical regions of a nation paying you tribute."]},
+	"PROSPERITY": {"selectable": true,  "description": ["+1 point per million rations of food your population consumes.", "+1 point per million measures consumed due to rations above 100%.", "-1 point per 6000 civilians that starve to death in your historical regions.", "+1 point per 20 million measures of food and crops you control at the end of the game."]},
 	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
 	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 2000 gold.", "+1 point per turn you have more than 500 gold.", "-1 point per turn you have less than 300 gold."]},
 	"TERRITORY":  {"selectable": true,  "description": ["+4 points whenever you gain rulership of a region.", "-4 points whenever you lose rulership of a region."]},
