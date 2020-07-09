@@ -15,6 +15,7 @@ class OrdersPane extends HTMLElement {
 	connectedCallback() {
 		let kingdom = g_data.kingdoms[this.getAttribute("kingdom")];
 		let shadow = this.attachShadow({mode: "open"});
+		this.shadow = shadow;
 		let undeadCount = 0;
 		for (let c of g_data.cult_caches) {
 			if (c.eligible_nations.includes(whoami)) undeadCount += c.size;
@@ -315,23 +316,10 @@ class OrdersPane extends HTMLElement {
 		content.innerHTML = html;
 		shadow.appendChild(content);
 		let form = shadow.getElementById("form");
-		const tabList = ["units", "plots", "tiecel", "nations", "economy", "game"];
-		let changeTab = function (tab) {
-			shadow.getElementById("tabs").className = "tab_" + tab;
-			for (let t of tabList) {
-				shadow.getElementById("content_" + t).style.display = "none";
-				shadow.getElementById("tab_" + t).style.paddingBottom = "0.5em";
-				shadow.getElementById("tab_" + t).style.color = "#777";
-				shadow.getElementById("tab_" + t).style.paddingTop = "0";
-			}
-			shadow.getElementById("content_" + tab).style.display = "block";
-			shadow.getElementById("tab_" + tab).style.paddingBottom = "0";
-			shadow.getElementById("tab_" + tab).style.paddingTop = "0.5em";
-			shadow.getElementById("tab_" + tab).style.color = "#000";
-		};
-		for (let t of tabList) {
+		this.tabList = ["units", "plots", "tiecel", "nations", "economy", "game"];
+		for (let t of this.tabList) {
 			shadow.getElementById("content_" + t).style.display = "none";
-			shadow.getElementById("tab_" + t).addEventListener("click", ((tt)=>()=>changeTab(tt))(t));
+			shadow.getElementById("tab_" + t).addEventListener("click", ((tt)=>()=>this.changeTab(tt))(t));
 		}
 		let addRow = function(ele, link, div, selec, before = undefined) {
 			let r = document.createElement("tr");
@@ -483,7 +471,7 @@ class OrdersPane extends HTMLElement {
 		if (armyCount == 0) shadow.getElementById("table_armies").style.display = "none";
 		if (navyCount == 0) shadow.getElementById("table_navies").style.display = "none";
 		if (nobleCount == 0) shadow.getElementById("table_nobles").style.display = "none";
-		changeTab("units");
+		this.changeTab("units");
 
 		// PLOT TAB
 		{
@@ -636,7 +624,7 @@ class OrdersPane extends HTMLElement {
 		}
 		shadow.getElementById("nations_newgift").addEventListener("click", ()=>this.addGift(shadow));
 		let newletter = shadow.getElementById("nations_newletter");
-		newletter.addEventListener("click", ()=>this.addLetter(shadow));
+		newletter.addEventListener("click", ()=>this.addLetter(shadow, [], true));
 		let colocatedRulers = [];
 		let rulerLocation = kingdom.getRuler().location;
 		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
@@ -898,7 +886,7 @@ class OrdersPane extends HTMLElement {
 				} else if (p.startsWith("economy_bribe_amount_")) {
 					op.addBribe(shadow);
 				} else if (p.startsWith("letter_") && p.endsWith("_sig")) {
-					op.addLetter(shadow);
+					op.addLetter(shadow, [], false);
 				} else if (p.startsWith("plot_new_type")) {
 					op.addPlot(shadow);
 				} else if (p.startsWith("nations_gift_target_")) {
@@ -1193,7 +1181,7 @@ class OrdersPane extends HTMLElement {
 		tbody.appendChild(tr);
 	}
 
-	addLetter(shadow) {
+	addLetter(shadow, recipients, focus) {
 		let id = this.letterCount;
 		this.letterCount++;
 		let d = document.createElement("div");
@@ -1201,6 +1189,14 @@ class OrdersPane extends HTMLElement {
 		to.appendChild(document.createTextNode("To: "));
 		let textarea = document.createElement("textarea");
 		let boxes = [];
+		function updateWho() {
+			let rulers = [];
+			for (let b of boxes) if (b.checked) {
+				let ruler = g_data.kingdoms[b.getAttribute("data-kingdom")].getRuler();
+				rulers.push(ruler.honorific + " " + ruler.name);
+			}
+			textarea.value = rulers.join(", ") + (rulers.length == 0 ? "" : ",");
+		}
 		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
 			if (k == whoami) continue;
 			let label = document.createElement("label");
@@ -1208,15 +1204,9 @@ class OrdersPane extends HTMLElement {
 			box.setAttribute("name", "letter_" + id + "_to_" + k);
 			box.setAttribute("data-kingdom", k);
 			box.setAttribute("type", "checkbox");
+			if (recipients.includes(k)) box.checked = true;
 			boxes.push(box);
-			box.addEventListener("change", function() {
-				let rulers = [];
-				for (let b of boxes) if (b.checked) {
-					let ruler = g_data.kingdoms[b.getAttribute("data-kingdom")].getRuler();
-					rulers.push(ruler.honorific + " " + ruler.name);
-				}
-				textarea.innerHTML = rulers.join(", ") + ",";
-			});
+			box.addEventListener("change", updateWho);
 			label.appendChild(box);
 			let sp = document.createElement("span");
 			sp.appendChild(document.createTextNode(k));
@@ -1234,6 +1224,11 @@ class OrdersPane extends HTMLElement {
 		let sendAs = this.select("letter_" + id + "_sig", ["Signed, " + g_data.kingdoms[whoami].getRuler().honorific + " " + g_data.kingdoms[whoami].getRuler().name + " of " + whoami, "Anonymous"]);
 		d.appendChild(sendAs);
 		shadow.getElementById("nations_letters").appendChild(d);
+		updateWho();
+		if (focus) {
+			this.changeTab("nations");
+			textarea.focus();
+		}
 	}
 
 	addPlot(shadow) {
@@ -1484,6 +1479,25 @@ class OrdersPane extends HTMLElement {
 			}
 		}
 		updateMotions(amotions, dmotions); /* map1.html */
+	}
+
+	changeTab(tab) {
+		let shadow = this.shadow;
+		shadow.getElementById("tabs").className = "tab_" + tab;
+		for (let t of this.tabList) {
+			shadow.getElementById("content_" + t).style.display = "none";
+			shadow.getElementById("tab_" + t).style.paddingBottom = "0.5em";
+			shadow.getElementById("tab_" + t).style.color = "#777";
+			shadow.getElementById("tab_" + t).style.paddingTop = "0";
+		}
+		shadow.getElementById("content_" + tab).style.display = "block";
+		shadow.getElementById("tab_" + tab).style.paddingBottom = "0";
+		shadow.getElementById("tab_" + tab).style.paddingTop = "0.5em";
+		shadow.getElementById("tab_" + tab).style.color = "#000";
+	};
+
+	startLetter(recipients) {
+		this.addLetter(this.shadow, recipients, true);
 	}
 }
 customElements.define("orders-pane", OrdersPane);

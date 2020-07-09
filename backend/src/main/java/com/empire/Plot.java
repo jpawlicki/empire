@@ -448,8 +448,10 @@ class Plot extends RulesObject {
 			if (!supporters.isEmpty()) {
 				unlucky = supporters.get((int) (Math.random() * supporters.size()));
 				unlucky.expose();
+				w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has failed. The involvement of " + unlucky.getNation() + " was proven and their spy ring in " + w.regions.get(unlucky.getLocation()).name + " exposed." + apparentChance);
+			} else {
+				for (String k : conspirators) w.notifyPlayer(k, "Plot: " + title, "A plot to " + details + " has failed, but no spy rings were exposed and the defender of the plot not notified." + apparentChance);
 			}
-			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has failed. " + (unlucky != null ? "The involvement of " + unlucky.getNation() + " was proven and their spy ring in " + w.regions.get(unlucky.getLocation()).name + " exposed." : "In the end, all kingdoms withdrew support from the plot.") + apparentChance);
 		} else {
 			// Build reveal set. - One random supporting ring, then all others have a 50% chance.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
@@ -470,7 +472,11 @@ class Plot extends RulesObject {
 				knownConspirators.add(ring.getNation());
 				exposureLocations.add(w.regions.get(ring.getLocation()).name);
 			}
-			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has critically failed. " + (knownConspirators.isEmpty() ? "In the end, all conspirators withdrew support from the plot." : "The involvement of " + StringUtil.and(knownConspirators) + " was proven. Spy rings were exposed in " + StringUtil.and(exposureLocations) + ".") + apparentChance);
+			if (knownConspirators.isEmpty()) {
+				for (String k : conspirators) w.notifyPlayer(k, "Plot: " + title, "A plot to " + details + " has failed, but no spy rings were exposed and the defender of the plot not notified." + apparentChance);
+			} else {
+				w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has critically failed.  The involvement of " + StringUtil.and(knownConspirators) + " was proven. Spy rings were exposed in " + StringUtil.and(exposureLocations) + "." + apparentChance);
+			}
 		}
 	}
 

@@ -852,6 +852,7 @@ class Plot {
 		else if (this.type == "DENOUNCE") desc = "Denounce the deeds of";
 		else if (this.type == "INTERCEPT_COMMUNICATIONS") desc = "Intercept communications of";
 		else if (this.type == "SURVEY_NATION") desc = "Survey";
+		else if (this.type == "STEAL_GOLD") desc = "Steal gold from";
 		return desc + " " + this.target_id + " (vs " + this.getDefender() + ")";
 		return undefined;
 	}

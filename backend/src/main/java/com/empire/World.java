@@ -171,7 +171,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		double totalFood = totalPopulation * 10;
 		double totalNavy = totalPopulation / 26000 * 3;
 		double totalArmy = totalPopulation / 26000 * 100;
-		double totalGold = (totalPopulation / 10000 - totalNavy / 3 - totalArmy / 100) * 10;
+		double totalGold = (totalPopulation / 10000 - totalNavy / 3 - totalArmy / 100) * 20;
 		double totalSharesGold = 0;
 		double totalSharesArmy = 0;
 		double totalSharesNavy = 0;
@@ -2781,6 +2781,11 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 		}
 		for (Communication c : removeComm) communications.remove(c);
+		for (Communication c : communications) c.from = "";
+		for (Communication c : communications) if (c.signed == "Anonymous" && !c.intercepted.contains(kingdom)) {
+			c.to.clear();
+			c.to.add(kingdom);
+		}
 		// Filter hidden characters, except with Alyrja.
 		for (Character c : characters) {
 			if (isHidden(c, kingdom)) c.location = -1;
@@ -2879,10 +2884,4 @@ final class Notification {
 		this.title = title;
 		this.text = text;
 	}
-}
-
-final class Message {
-	String from;
-	List<String> to;
-	String text;
 }

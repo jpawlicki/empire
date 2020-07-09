@@ -150,11 +150,27 @@ class KingdomReport extends HTMLElement {
 				font-weight: bold;
 				font-family: sans-serif;
 			}
+			h2 {
+				margin-top: 0.3em;
+				margin-bottom: 0;
+				margin-left: 0;
+				font-size: 90%;
+				font-weight: bold;
+				font-family: sans-serif;
+			}
 			table {
 				width: 100%;
 			}
 			tr td:nth-child(2), tr th:nth-child(2) {
 				text-align: right;
+			}
+			.replylink {
+				cursor: pointer;
+				font-size: 70%;
+				font-family: sans-serif;
+				font-variant: small-caps;
+				font-color: #00f;
+				margin-left: 1em;
 			}
 			`;
 		shadow.appendChild(style);
@@ -191,18 +207,34 @@ class KingdomReport extends HTMLElement {
 			else if (!afrom && bfrom) return 1;
 			return 0;
 		});
+		let last_date = -1;
+		let sent = null;
 		for (let l of comms) {
-			let line = "";
-			let date = l.post_date;
-			if (contains(l.to, kingdom.name)) {
-				line = "Received week " + (date + 1) + " from " + l.signed.replace(/.* /, "");
-			} else if (l.signed.indexOf(kingdom.name) >= 0) {
-				line = "Sent week " + date + " to " + l.to.join(", ");
-			} else {
-				continue;
+			let from = l.signed.replace(/.* /, "");
+			if (l.post_date != last_date) {
+				let h2 = document.createElement("h2");
+				h2.appendChild(document.createTextNode("Week " + l.post_date));
+				letDiv.appendChild(h2);
+				last_date = l.post_date;
 			}
 			let lt = document.createElement("div");
-			lt.appendChild(document.createTextNode(line));
+			let line = from + " to " + l.to.join(", ");
+			if (!contains(l.to, kingdom.name) && from != kingdom.name) continue;
+			if (kingdom.name == whoami) {
+				if (from == whoami) line = "to " + l.to.join(", ");
+				else if (l.to.length == 1 && l.to[0] == whoami) line = "from " + from;
+			}
+			lt.appendChild(document.createTextNode((from == kingdom.name ? "→" : "←") + " " + line));
+			if (kingdom.name == whoami && from != "Anonymous") {
+				let reply = document.createElement("span");
+				reply.setAttribute("class", "replylink");
+				reply.appendChild(document.createTextNode("reply"));
+				let group = [];
+				for (let r of l.to) if (r != whoami) group.push(r);
+				if (from != whoami) group.push(from);
+				reply.addEventListener("click", () => document.querySelector("orders-pane").startLetter(group));
+				lt.appendChild(reply);
+			}
 			let snippet = document.createElement("expandable-snippet");
 			snippet.setAttribute("text", l.text.replace(/</g, "&lt").replace(/>/g, "&gt") + "\n\n" + l.signed);
 			snippet.setAttribute("max-length", 64);
