@@ -696,7 +696,9 @@ class OrdersPane extends HTMLElement {
 			let consumptionRate = parseInt(eRation.value) - 100;
 			let shipyardCount = 0;
 			for (let region of g_data.regions) if (region.kingdom == kingdom.name) for (let c of region.constructions) if (c.type == "shipyard") shipyardCount++;
-			for (let army of g_data.armies) if (army.kingdom == kingdom.name && !contains(army.tags, "Higher Power")) soldiers += army.size;
+			for (let army of g_data.armies) if (army.kingdom == kingdom.name) {
+				if (!contains(army.tags, "Higher Power")) soldiers += army.size;
+			}
 			economyConsequences.innerHTML += "<p>" + ((taxRate - 1 > 0 ? "+" : "") + Math.round(taxRate * 100)) + "% Tax Income</p>";
 			economyConsequences.innerHTML += "<p>" + (shipyardCount * parseInt(eShip.value)) + " new warships and +" + (shipyardCount * (5 - parseInt(eShip.value))) + " gold.</p>";
 			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
@@ -1365,6 +1367,11 @@ class OrdersPane extends HTMLElement {
 		}
 		{ // Warn about construction cost overruns.
 			let projectedConstructionCost = 0;
+			let projectedSalaries = 0;
+			for (let army of g_data.armies) if (army.kingdom == whoami) {
+				let travelling = shadow.querySelector("[name=action_army_" + army.id + "]").value.startsWith("Travel");
+				projectedSalaries += army.calcCost(travelling).v;
+			}
 			let capables = [];
 			for (let c of g_data.characters) {
 				if (c.kingdom == whoami) {
@@ -1401,7 +1408,9 @@ class OrdersPane extends HTMLElement {
 				}
 			}
 			if (projectedConstructionCost > getNation(whoami).gold) {
-				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold)";
+				for (let w of fwarns) w.innerHTML += " (insufficient gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold on actions)";
+			} else if (projectedConstructionCost + projectedSalaries > getNation(whoami).gold) {
+				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost + projectedSalaries) + " of " + Math.round(getNation(whoami).gold) + " gold on actions and troop salaries)";
 			}
 		}
 		{	// Warn about early harvests.

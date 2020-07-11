@@ -744,6 +744,21 @@ class Army {
 		}
 		return Calc.moddedNum(base, mods);
 	}
+
+	calcCost(travelling) {
+		if (this.tags.includes("Higher Power")) return Calc.moddedNum({"v": 0, "unit": " gold", "why": "High Power armies are free."}, []);
+		let base = this.type == "army"
+				? new Calc("*", [{"v": this.size, "unit": " soldiers", "why": "Army Size"}, {"v": 1 / 100.0, "unit": " gold per soldier", "why": "Base Cost Rate"}])
+				: new Calc("*", [{"v": this.size, "unit": " warships", "why": "Navy Size"}, {"v": 1 / 3.0, "unit": " gold per warship", "why": "Base Cost Rate"}]);
+		let mods = [];
+		if (this.tags.includes("Crafts-soldiers") && !travelling) mods.push({"v": -0.5, "unit": "%", "why": "Crafts-soldiers not travelling."});
+		let k = getNation(this.kingdom);
+		if (k != undefined) {
+			if (k.calcStateReligion().startsWith("Company")) mods.push({"v": -0.5, "unit": "%", "why": "Company state ideology"});
+			if (k.tags.includes("Rebellious") && k.core_regions.includes(this.location)) mods.push({"v": -0.5, "unit": "%", "why": "Rebellious unit in core territory"});
+		}
+		return Calc.moddedNum(base, mods);
+	}
 }
 
 // ============ SPY RING ============

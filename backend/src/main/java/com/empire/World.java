@@ -1453,28 +1453,37 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void spawnCultists() {
+			HashSet<String> newCultists = new HashSet<>();
 			for (String kingdom : orders.keySet()) {
 				if ("checked".equals(orders.get(kingdom).get("plot_cult")) && !getNation(kingdom).loyalToCult) {
 					getNation(kingdom).loyalToCult = true;
 					getNation(kingdom).toggleProfile(Nation.ScoreProfile.CULTIST);
-					new ArrayList<CultCache>(cultCaches).stream().filter(c -> c.isEligible(kingdom)).forEach(c -> {
-						Army a = Army.newArmy(getRules());
-						a.location = c.getLocation();
-						a.type = Army.Type.ARMY;
-						a.size = c.getSize();
-						a.tags = new ArrayList<>();
-						a.id = getNewArmyId();
-						a.kingdom = kingdom;
-						a.composition.put("Undead", a.size);
-						a.orderhint = "";
-						a.addTag(Army.Tag.UNDEAD);
-						a.addTag(Army.Tag.HIGHER_POWER);
-						armies.add(a);
-						cultCaches.remove(c);
-					});
+					newCultists.add(kingdom);
 					notifyAllPlayers(kingdom + " Joins Cult", "Throughout " + kingdom + ", the dead crawl forth from their graves, animated by some ancient magic. The shambling sight of a corpse searching for an unknown quarry becomes commonplace.");
 				}
 			}
+			new ArrayList<CultCache>(cultCaches)
+					.stream()
+					.forEach(c -> {
+							HashSet<String> claims = new HashSet<>();
+							for (String k : newCultists) if (c.isEligible(k)) claims.add(k);
+							if (claims.isEmpty()) return;
+							for (String kingdom : claims) {
+								Army a = Army.newArmy(getRules());
+								a.location = c.getLocation();
+								a.type = Army.Type.ARMY;
+								a.size = c.getSize() / claims.size();
+								a.tags = new ArrayList<>();
+								a.id = getNewArmyId();
+								a.kingdom = kingdom;
+								a.composition.put("Undead", a.size);
+								a.orderhint = "";
+								a.addTag(Army.Tag.UNDEAD);
+								a.addTag(Army.Tag.HIGHER_POWER);
+								armies.add(a);
+							}
+							cultCaches.remove(c);
+						});
 		}
 
 		void bribePirates() {
@@ -1983,7 +1992,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						cost = getNation(k).gold;
 					}
 					if (!from.canFoodTransferTo(World.this, to)) throw new RuntimeException("Can't transfer food from " + fromName + " to " + toName);
-					notifyPlayer(to.getKingdom(), "Food Transfer to " + to.name, Math.round(amount / 1000) + "k measures of food were transferred from " + from.name + " to " + to.name);
+					notifyPlayer(to.getKingdom(), "Food Transfer", Math.round(amount / 1000) + "k measures of food were transferred from " + from.name + " to " + to.name);
 					getNation(k).gold -= cost;
 					incomeSources.getOrDefault(k, new Budget()).spentFoodTransfers += cost;
 					from.food -= amount;
@@ -2023,7 +2032,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						a.size -= des;
 						double threatIncrease = a.isNavy() ? des : des / 100;
 						pirate.threat += threatIncrease;
-						pirate.bribes.put(a.kingdom, pirate.bribes.getOrDefault(a.kingdom, 0.0) + threatIncrease / 100);
+						pirate.bribes.put(a.kingdom, pirate.bribes.getOrDefault(a.kingdom, 0.0) + threatIncrease);
 						pirateThreatSources.put("Desertion from " + a.kingdom, pirateThreatSources.getOrDefault("Desertion from " + a.kingdom, 0.0) + threatIncrease);
 					}
 					notifyPlayer(k, "Desertion", Math.round(desertion * 100) + "% of our troops deserted due to lack of pay.");
@@ -2055,7 +2064,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						notifyPlayer(c, r.name + " Cede Refused", r.getKingdom() + " attempted to cede rulership of " + r.name + " to us, but we refused.");
 						continue;
 					}
-					notifyAllPlayers(r.name + " Ceded", r.name + ", formerly a region of " + r.getKingdom() + ", has been ceded to " + c + ".");
+					notifyAllPlayers("Region Ceded", r.name + ", formerly a region of " + r.getKingdom() + ", has been ceded to " + c + ".");
 					r.setKingdom(World.this, c);
 				}
 			}
@@ -2463,7 +2472,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				if ("salt_the_earth".equals(final_action)) {
 					for (Region r : regions) if (k.equals(r.getKingdom())) {
 						r.constructions.clear();
-						if (r.unrestPopular.get() < 0.75) r.unrestPopular.add(0.75 - r.unrestPopular.get());
+						r.unrestPopular.set(Math.max(r.unrestPopular.get(), 0.75));
 						r.food /= 2;
 						r.crops /= 2;
 					}

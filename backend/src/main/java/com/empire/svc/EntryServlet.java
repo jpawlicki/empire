@@ -427,6 +427,7 @@ public class EntryServlet extends HttpServlet {
 			HashSet<String> kingdoms = new HashSet<>();
 			World	w = dataSource.loadWorld(r.gameId, r.turn);
 			w.setNextTurn(0);
+			dataSource.saveCurrentDate(r.turn, r.gameId);
 			dataSource.save(w, r.gameId);
 			dataSource.commit();
 		} catch (EntityNotFoundException e) {
@@ -435,7 +436,7 @@ public class EntryServlet extends HttpServlet {
 			log.log(Level.SEVERE, "Failed to read rule data.", e);
 			return false;
 		}
-		getAdvancePoll(r.skipMail);
+		getAdvancePoll(true);
 		return true;
 	}
 

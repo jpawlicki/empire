@@ -33,6 +33,7 @@ class ArmyReport extends HTMLElement {
 				<h1>Strength: ${num(army.calcStrength(), 2)}</h1>
 				<div>Size: ${Math.floor(army.size)}</div>
 				<div>Hoarding: ${Math.floor(army.gold)} gold</div>
+				<div>Upkeep: ${num(army.calcCost(true), 1)} gold</div>
 				<h1>Tags</h1>
 				<div id="tags">
 				</div>
