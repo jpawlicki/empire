@@ -7,6 +7,16 @@ let nations = {
 		"religion": "Northern (Alyrja)",
 		"title": "Jarl",
 		"bonus": "food",
+		"characters": [
+			{"name": "Lyydia Reidunsdottr", "portrait": 905, "skill": "Governor"},
+			{"name": "Kati Michaeldottr", "portrait": 1913, "skill": "General"},
+			{"name": "Gitte Ansgardottr", "portrait": 713, "skill": "Admiral"},
+			{"name": "Lovisa Matthiasdottr", "portrait": 769, "skill": "Spy"},
+			{"name": "Reidun Kirstidottr", "portrait": 804, "skill": "Governor"},
+			{"name": "Lilly Otsodottr", "portrait": 939, "skill": "Spy"},
+			{"name": "Gro Eliinadottr", "portrait": 1334, "skill": "General"},
+			{"name": "Rika Adriandottr", "portrait": 1337, "skill": "Spy"}
+		],
 	},
 	"balyucesu": {
 		"culture": "anpilayn",
@@ -16,6 +26,16 @@ let nations = {
 		"religion": "Iruhan (Sword of Truth)",
 		"title": "Lord",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Ilat Slinirrayc Pecsul", "portrait": 267, "skill": "General"},
+			{"name": "Ciethremm Pictimmayc Gycsyc", "portrait": 457, "skill": "General"},
+			{"name": "Ernuc Kyalamayc Cilephamyc", "portrait": 536, "skill": "Admiral"},
+			{"name": "Jiuljise Nezanayc Eylie", "portrait": 405, "skill": "Governor"},
+			{"name": "Pebleat Dellayc Falnamyc", "portrait": 663, "skill": "Spy"},
+			{"name": "Bulshi Esiayc Ylce", "portrait": 139, "skill": "Spy"},
+			{"name": "Ebir Slidremyc Limese", "portrait": 429, "skill": "Governor"},
+			{"name": "Bewab Wirayc Wawaemyc", "portrait": 586, "skill": "Admiral"}
+		],
 	},
 	"celyn": {
 		"culture": "anpilayn",
@@ -25,6 +45,16 @@ let nations = {
 		"religion": "Iruhan (Chalice of Compassion)",
 		"title": "King",
 		"bonus": "food",
+		"characters": [
+			{"name": "Van Tulmirayc Rypyc", "portrait": 23, "skill": "Governor"},
+			{"name": "Faummsem Frewamayc Depsacse", "portrait": 179, "skill": "General"},
+			{"name": "Diesi Muldemyc Shilecae", "portrait": 690, "skill": "Admiral"},
+			{"name": "Lase Teipelayc Qesilame", "portrait": 1681, "skill": "Spy"},
+			{"name": "Qeshi Prusayc Wawaeme", "portrait": 174, "skill": "Spy"},
+			{"name": "Ilmu Pactayc Dimibatsyc", "portrait": 130, "skill": "General"},
+			{"name": "Tunjer Cilsulayc Tumcsemc", "portrait": 916, "skill": "Governor"},
+			{"name": "Firataemyc Meiwayc Turyndemyc", "portrait": 1114, "skill": "Admiral"}
+		],
 	},
 	"doomstoll": {
 		"culture": "eolsung",
@@ -34,6 +64,16 @@ let nations = {
 		"religion": "Northern (Rjinku)",
 		"title": "Queen",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Eliisa Sakudottr", "portrait": 1174, "skill": "Governor"},
+			{"name": "Gottfrid Sepison", "portrait": 427, "skill": "General"},
+			{"name": "Irene Viljadottr", "portrait": 295, "skill": "Admiral"},
+			{"name": "Torvald Helleson", "portrait": 326, "skill": "Spy"},
+			{"name": "Svend Augustson", "portrait": 288, "skill": "General"},
+			{"name": "Sisko Påldottr", "portrait": 104, "skill": "Governor"},
+			{"name": "Victoria Aagedottr", "portrait": 425, "skill": "Spy"},
+			{"name": "Esa Jannikson", "portrait": 723, "skill": "Admiral"}
+		],
 	},
 	"ejymsyn": {
 		"culture": "tavian",
@@ -44,6 +84,16 @@ let nations = {
 		"title": "King",
 		"bonus": "food",
 		"legalIdeologiesOverride": ["Iruhan (Chalice of Compassion)", "Iruhan (Sword of Truth)", "Iruhan (Tapestry of People)", "Iruhan (Vessel of Faith)"],
+		"characters": [
+			{"name": "Mustafa", "portrait": 29, "skill": "Governor"},
+			{"name": "Vural", "portrait": 2265, "skill": "General"},
+			{"name": "Harun", "portrait": 2125, "skill": "Admiral"},
+			{"name": "Ata", "portrait": 411, "skill": "Spy"},
+			{"name": "Mikail", "portrait": 1006, "skill": "General"},
+			{"name": "Uğur", "portrait": 470, "skill": "Spy"},
+			{"name": "Danyal", "portrait": 520, "skill": "Governor"},
+			{"name": "Ayberk", "portrait": 751, "skill": "Admiral"}
+		],
 	},
 	"fiskrbaer": {
 		"culture": "eolsung",
@@ -53,6 +103,16 @@ let nations = {
 		"religion": "Northern (Lyskr)",
 		"title": "Chieftess",
 		"bonus": "food",
+		"characters": [
+			{"name": "Magdalena Oivadottr", "portrait": 1268, "skill": "Admiral"},
+			{"name": "Torbjørg Maxdottr", "portrait": 1554, "skill": "Spy"},
+			{"name": "Heidi Leenadottr", "portrait": 1246, "skill": "Governor"},
+			{"name": "Uffe Dagnyson", "portrait": 197, "skill": "Spy"},
+			{"name": "Lovisa Kalevadottr", "portrait": 194, "skill": "Spy"},
+			{"name": "Njål Topiasson", "portrait": 195, "skill": "Spy"},
+			{"name": "Alvilda Henrikedottr", "portrait": 196, "skill": "Spy"},
+			{"name": "Veera Konraddottr", "portrait": 885, "skill": "Spy"}
+		],
 	},
 	"gangrjata": {
 		"culture": "eolsung",
@@ -62,6 +122,16 @@ let nations = {
 		"religion": "Northern (Alyrja)",
 		"title": "Jarl",
 		"bonus": "food",
+		"characters": [
+			{"name": "Raakel Hegedottr", "portrait": 1362, "skill": "Admiral"},
+			{"name": "Aapo Jarison", "portrait": 1053, "skill": "General"},
+			{"name": "Arttu Emilson", "portrait": 1055, "skill": "Admiral"},
+			{"name": "Aino Maltedottr", "portrait": 1082, "skill": "Spy"},
+			{"name": "Skaði Kettildottr", "portrait": 593, "skill": "Spy"},
+			{"name": "Balder Hagenson", "portrait": 957, "skill": "Spy"},
+			{"name": "Sassa Nikodottr", "portrait": 998, "skill": "Governor"},
+			{"name": "Laura Iirodottr", "portrait": 1989, "skill": "Governor"}
+		],
 	},
 	"hosshofn": {
 		"culture": "eolsung",
@@ -71,6 +141,16 @@ let nations = {
 		"religion": "Northern (Rjinku)",
 		"title": "Jarl",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Jere Ástríðurson", "portrait": 209, "skill": "Governor"},
+			{"name": "Gregers Örjanson", "portrait": 400, "skill": "General"},
+			{"name": "Armas Millyson", "portrait": 398, "skill": "Admiral"},
+			{"name": "Severi Roaldson", "portrait": 376, "skill": "Spy"},
+			{"name": "Jorma Yngvison", "portrait": 399, "skill": "General"},
+			{"name": "Agathe Severidottr", "portrait": 377, "skill": "Spy"},
+			{"name": "Vilma Lærkedottr", "portrait": 513, "skill": "Governor"},
+			{"name": "Ingvild Ferdinanddottr", "portrait": 505, "skill": "Admiral"}
+		],
 	},
 	"isla": {
 		"culture": "tyrgaetan",
@@ -80,6 +160,16 @@ let nations = {
 		"religion": "Northern (Syrjen)",
 		"title": "Chieftain",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Birgir Alyrjakun", "portrait": 1568, "skill": "Governor"},
+			{"name": "Perttu Thyrruki", "portrait": 1567, "skill": "General"},
+			{"name": "Ahti Audityrski", "portrait": 360, "skill": "Admiral"},
+			{"name": "Eleonora Audityrskun", "portrait": 354, "skill": "Spy"},
+			{"name": "Bjarne Herjaki", "portrait": 118, "skill": "General"},
+			{"name": "Arja Alyrjaki", "portrait": 1211, "skill": "Spy"},
+			{"name": "Katrina Lyskrskun", "portrait": 7, "skill": "Governor"},
+			{"name": "Väinämöinen Herjaki", "portrait": 2161, "skill": "Admiral"}
+		],
 	},
 	"jaraslatr": {
 		"culture": "eolsung",
@@ -89,6 +179,16 @@ let nations = {
 		"religion": "Northern (Rjinku)",
 		"title": "Jarl",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Siiri Jounidottr", "portrait": 1639, "skill": "Governor"},
+			{"name": "Astrid Jounidottr", "portrait": 1155, "skill": "Spy"},
+			{"name": "Armas Eemilson", "portrait": 1227, "skill": "General"},
+			{"name": "Folke Benediktson", "portrait": 1640, "skill": "Admiral"},
+			{"name": "Oluf Elvarson", "portrait": 1156, "skill": "General"},
+			{"name": "Kjeld Birteson", "portrait": 1226, "skill": "Spy"},
+			{"name": "Taru Jounidottr", "portrait": 343, "skill": "General"},
+			{"name": "Ruuben Torsteinson", "portrait": 342, "skill": "General"}
+		],
 	},
 	"kyaradis": {
 		"culture": "hansa",
@@ -98,6 +198,16 @@ let nations = {
 		"religion": "Iruhan (Vessel of Faith)",
 		"title": "King",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Lukas of Proudsail", "portrait": 327, "skill": "Governor"},
+			{"name": "Heinz of Deathbringer", "portrait": 1215, "skill": "General"},
+			{"name": "Kasimir of Deathbringer", "portrait": 1534, "skill": "Admiral"},
+			{"name": "Max of Hawkclaw", "portrait": 2264, "skill": "Spy"},
+			{"name": "Huppert of Cutlass", "portrait": 876, "skill": "General"},
+			{"name": "Sigi of Seaswallow", "portrait": 816, "skill": "Spy"},
+			{"name": "Malthe of Prancer", "portrait": 1463, "skill": "Governor"},
+			{"name": "Irmingard of Honor", "portrait": 1538, "skill": "Admiral"}
+		],
 	},
 	"landhylli": {
 		"culture": "eolsung",
@@ -107,6 +217,16 @@ let nations = {
 		"religion": "Northern (Alyrja)",
 		"title": "Prime Minister",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Fredrik Jacobineson", "portrait": 1482, "skill": "Governor"},
+			{"name": "Anton Kustison", "portrait": 1690, "skill": "General"},
+			{"name": "Gunnarr Asgeirson", "portrait": 1704, "skill": "Admiral"},
+			{"name": "Iris Nikolajdottr", "portrait": 1994, "skill": "Spy"},
+			{"name": "Audhild Ceciliedottr", "portrait": 251, "skill": "General"},
+			{"name": "Kyösti Monikason", "portrait": 252, "skill": "Spy"},
+			{"name": "Pentti Waldemarson", "portrait": 375, "skill": "Governor"},
+			{"name": "Tuula Ǫrvardottr", "portrait": 490, "skill": "Admiral"}
+		],
 	},
 	"mabe": {
 		"culture": "hansa",
@@ -116,6 +236,16 @@ let nations = {
 		"religion": "Iruhan (Sword of Truth)",
 		"title": "King",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Dietfried of Eversail", "portrait": 220, "skill": "Governor"},
+			{"name": "Werther of Stargazer", "portrait": 235, "skill": "General"},
+			{"name": "Ignatz of Tidehunter", "portrait": 258, "skill": "Admiral"},
+			{"name": "Vera of Truthsayer", "portrait": 291, "skill": "Spy"},
+			{"name": "Meinrad of Gemini", "portrait": 336, "skill": "Spy"},
+			{"name": "Raimund of Ridicule", "portrait": 1361, "skill": "General"},
+			{"name": "Katinka of Wavetreader", "portrait": 1349, "skill": "Governor"},
+			{"name": "Adele of Horizon", "portrait": 1522, "skill": "Admiral"}
+		],
 	},
 	"nysiunarri": {
 		"culture": "anpilayn",
@@ -125,6 +255,16 @@ let nations = {
 		"religion": "Iruhan (Tapestry of People)",
 		"title": "King",
 		"bonus": "gold",
+		"characters": [
+			{"name": "Payc Terabayc Terazsyc", "portrait": 1196, "skill": "General"},
+			{"name": "Ceny Hilimmayc Riumayc", "portrait": 156, "skill": "Admiral"},
+			{"name": "Muina Disaraimyc Dimibatse", "portrait": 106, "skill": "Governor"},
+			{"name": "Julnfreash Ezayc Plybimsae", "portrait": 480, "skill": "Spy"},
+			{"name": "Urawil Waslywayc Depsacse", "portrait": 1043, "skill": "Spy"},
+			{"name": "Telio Tenarrayc Turynde", "portrait": 131, "skill": "Governor"},
+			{"name": "Pisil Muwayc Firataemyc", "portrait": 914, "skill": "Governor"},
+			{"name": "Jieluab Walabayc Cedirrayc", "portrait": 1158, "skill": "Governor"}
+		],
 	},
 	"orkatopt": {
 		"culture": "eolsung",
@@ -134,6 +274,16 @@ let nations = {
 		"religion": "Northern (Syrjen)",
 		"title": "Jarl",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Kalle Valterson", "portrait": 1862, "skill": "Admiral"},
+			{"name": "Kielo Perttudottr", "portrait": 1861, "skill": "Governor"},
+			{"name": "Hulda Bodottr", "portrait": 1865, "skill": "General"},
+			{"name": "Valpuri Virvadottr", "portrait": 1860, "skill": "Spy"},
+			{"name": "Erland Gustavson", "portrait": 1866, "skill": "General"},
+			{"name": "Rolf Kajsason", "portrait": 1868, "skill": "Spy"},
+			{"name": "Jyrki Hedvigson", "portrait": 2141, "skill": "Governor"},
+			{"name": "Aulis Yngveson", "portrait": 2136, "skill": "Admiral"}
+		],
 	},
 	"pernepulse": {
 		"culture": "anpilayn",
@@ -143,6 +293,16 @@ let nations = {
 		"religion": "Iruhan (Vessel of Faith)",
 		"title": "King",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Delme Enesayc Fyrjimsayc", "portrait": 31, "skill": "Governor"},
+			{"name": "Sailmio Temamayc Ajmesayc", "portrait": 69, "skill": "General"},
+			{"name": "Aelreash Punpumayc Plybimsayc", "portrait": 1019, "skill": "Admiral"},
+			{"name": "Bisrif Eirayc Terrazsyc", "portrait": 785, "skill": "Spy"},
+			{"name": "Fieljhec Elsulayc Jedamyc", "portrait": 458, "skill": "Spy"},
+			{"name": "Meserae Reisulayc Cilephame", "portrait": 304, "skill": "Governor"},
+			{"name": "Meserayc Wurycimme Cemtsayc", "portrait": 1064, "skill": "General"},
+			{"name": "Gylac Dedybayc Planyc", "portrait": 1066, "skill": "General"}
+		],
 	},
 	"quencalia": {
 		"culture": "tavian",
@@ -152,6 +312,16 @@ let nations = {
 		"religion": "Tavian (River of Kuun)",
 		"title": "Warlord",
 		"bonus": "food",
+		"characters": [
+			{"name": "Polat", "portrait": 2225, "skill": "Governor"},
+			{"name": "Talip", "portrait": 1943, "skill": "General"},
+			{"name": "Enise", "portrait": 187, "skill": "Admiral"},
+			{"name": "Bünyamin", "portrait": 279, "skill": "Spy"},
+			{"name": "Yalçin", "portrait": 770, "skill": "General"},
+			{"name": "Riza", "portrait": 729, "skill": "Spy"},
+			{"name": "Aytaç", "portrait": 728, "skill": "Governor"},
+			{"name": "Aydin", "portrait": 942, "skill": "Admiral"}
+		],
 	},
 	"rettrsvelt": {
 		"culture": "tyrgaetan",
@@ -161,6 +331,16 @@ let nations = {
 		"religion": "Northern (Alyrja)",
 		"title": "Chieftain",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Sakari Syrjenkun", "portrait": 37, "skill": "General"},
+			{"name": "Philip Thyrruki", "portrait": 39, "skill": "Governor"},
+			{"name": "Ahti Rjinkukun", "portrait": 40, "skill": "Admiral"},
+			{"name": "Audhild Dagmynskun", "portrait": 43, "skill": "Spy"},
+			{"name": "Ragnar Alyrjaki", "portrait": 41, "skill": "General"},
+			{"name": "Vertti Audityrski", "portrait": 38, "skill": "Spy"},
+			{"name": "Niels Rjinkuki", "portrait": 36, "skill": "Governor"},
+			{"name": "Elov Rjinkuki", "portrait": 44, "skill": "Admiral"}
+		],
 	},
 	"slail": {
 		"culture": "anpilayn",
@@ -170,6 +350,16 @@ let nations = {
 		"religion": "Iruhan (Vessel of Faith)",
 		"title": "King",
 		"bonus": "gold",
+		"characters": [
+			{"name": "Anlyc Amcsiayc Humulayc", "portrait": 1157, "skill": "Governor"},
+			{"name": "Dlymu Pumsabayc Cilwesayc", "portrait": 1092, "skill": "General"},
+			{"name": "Lulai Fyfayc Yldemyc", "portrait": 1944, "skill": "Admiral"},
+			{"name": "Chie Fyfayc Pectherac", "portrait": 2261, "skill": "Spy"},
+			{"name": "Gulj Ekyarrayc Terracsyc", "portrait": 899, "skill": "General"},
+			{"name": "Faummdhell Majarayc Aycsamyc", "portrait": 385, "skill": "Spy"},
+			{"name": "Jusshurb Wadayc Dimajmyc", "portrait": 407, "skill": "Governor"},
+			{"name": "Dlembyce Cilwarayc Enembe", "portrait": 1284, "skill": "General"}
+		],
 	},
 	"tavia": {
 		"culture": "tavian",
@@ -179,6 +369,16 @@ let nations = {
 		"religion": "Tavian (Flame of Kith)",
 		"title": "Warlady",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Irem", "portrait": 1390, "skill": "General"},
+			{"name": "Ramazan", "portrait": 35, "skill": "Governor"},
+			{"name": "Sadik", "portrait": 422, "skill": "Admiral"},
+			{"name": "Kaan", "portrait": 1853, "skill": "Spy"},
+			{"name": "Lütfi", "portrait": 594, "skill": "General"},
+			{"name": "Süleyman", "portrait": 595, "skill": "General"},
+			{"name": "Ikbal", "portrait": 1755, "skill": "Governor"},
+			{"name": "Recep", "portrait": 31746, "skill": "Spy"}
+		],
 	},
 	"upiceil": {
 		"culture": "anpilayn",
@@ -188,6 +388,16 @@ let nations = {
 		"religion": "Iruhan (Sword of Truth)",
 		"title": "King",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Saelmem Esayc Linajayc", "portrait": 924, "skill": "Governor"},
+			{"name": "Rimx Jlesayc Pecsul", "portrait": 551, "skill": "General"},
+			{"name": "Ianham Tulbayc Frulamyc", "portrait": 2088, "skill": "Admiral"},
+			{"name": "Carway Hirwisayc Tumcsemc", "portrait": 896, "skill": "Spy"},
+			{"name": "Ubum Teilirrayc Humulayc", "portrait": 1960, "skill": "Spy"},
+			{"name": "Ime Nisarayc Carwae", "portrait": 280, "skill": "Spy"},
+			{"name": "Cecthe Deldesayc Wamtimsayc", "portrait": 922, "skill": "Governor"},
+			{"name": "Jilju Welayc Dumafesayc", "portrait": 854, "skill": "Admiral"}
+		],
 	},
 	"varthavaettr": {
 		"culture": "tyrgaetan",
@@ -197,6 +407,16 @@ let nations = {
 		"religion": "Northern (Rjinku)",
 		"title": "Warlord",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Thorstein Dagmynski", "portrait": 1416, "skill": "General"},
+			{"name": "Edith Alyrjakun", "portrait": 558, "skill": "General"},
+			{"name": "Dorit Herjaki", "portrait": 1291, "skill": "Admiral"},
+			{"name": "Toril Dagmynski", "portrait": 1327, "skill": "Spy"},
+			{"name": "Svend Audityrski", "portrait": 730, "skill": "General"},
+			{"name": "Martha Syrjenkun", "portrait": 1588, "skill": "Spy"},
+			{"name": "Elsa Rjinkuki", "portrait": 1721, "skill": "Governor"},
+			{"name": "Senja Syrjenkun", "portrait": 1976, "skill": "Admiral"}
+		],
 	},
 	"walymyn": {
 		"culture": "anpilayn",
@@ -206,6 +426,16 @@ let nations = {
 		"religion": "Iruhan (Sword of Truth)",
 		"title": "King",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Terrazsyc Slidirrayc Firatayc", "portrait": 1669, "skill": "General"},
+			{"name": "Naqce Reisulayc Planasawyc", "portrait": 1649, "skill": "General"},
+			{"name": "Jixe Waslywayc Frulamyc", "portrait": 158, "skill": "Admiral"},
+			{"name": "Didhamm Mipayc Luneme", "portrait": 1643, "skill": "Governor"},
+			{"name": "Qiwem Trubayc Guhemmic", "portrait": 315, "skill": "Spy"},
+			{"name": "Dlymu Tenarrayc Watsulamyc", "portrait": 242, "skill": "General"},
+			{"name": "Tremto Kyamtsayc Aycsyc", "portrait": 245, "skill": "Governor"},
+			{"name": "Acabul Csilsamayc Pilijlamyc", "portrait": 523, "skill": "General"}
+		],
 	},
 	"xilyn": {
 		"culture": "anpilayn",
@@ -215,6 +445,16 @@ let nations = {
 		"religion": "Iruhan (Chalice of Compassion)",
 		"title": "Queen",
 		"bonus": "armies",
+		"characters": [
+			{"name": "Qenarre Pramayc Niremae", "portrait": 136, "skill": "Governor"},
+			{"name": "Sajhi Truirayc Watsulayc", "portrait": 137, "skill": "Governor"},
+			{"name": "Csifem Majabayc Cazsyc", "portrait": 362, "skill": "Governor"},
+			{"name": "Nacqe Emmayc Lunemyc", "portrait": 2023, "skill": "Spy"},
+			{"name": "Ialiemm Peicimsayc Currinmae", "portrait": 1376, "skill": "Governor"},
+			{"name": "Symbil Nenarayc Watsulame", "portrait": 1374, "skill": "Governor"},
+			{"name": "Rimmels Rawayc Planyc", "portrait": 2024, "skill": "Governor"},
+			{"name": "Nelwam Rytayc Fulsymesyc", "portrait": 2022, "skill": "Governor"}
+		],
 	},
 	"yrslekye": {
 		"culture": "anpilayn",
@@ -224,6 +464,16 @@ let nations = {
 		"religion": "Iruhan (Tapestry of People)",
 		"title": "Lady",
 		"bonus": "gold",
+		"characters": [
+			{"name": "Miece Einarayc Pilpisye", "portrait": 421, "skill": "Governor"},
+			{"name": "Cxemble Slinirrayc Deldele", "portrait": 346, "skill": "Governor"},
+			{"name": "Femi Pyrru Reylyc", "portrait": 1134, "skill": "Admiral"},
+			{"name": "Bemair Mammayc Tlictimc", "portrait": 1511, "skill": "Admiral"},
+			{"name": "Rulamt Gywimsayc Kyalamyc", "portrait": 2242, "skill": "Spy"},
+			{"name": "Rarre Slidremyc Flemtacte", "portrait": 369, "skill": "Spy"},
+			{"name": "Iwiram Deldesayc Dieslaz", "portrait": 694, "skill": "Governor"},
+			{"name": "Gimta Disaraimyc Diesyc", "portrait": 1089, "skill": "Governor"}
+		],
 	},
 	"zemsim": {
 		"culture": "anpilayn",
@@ -233,5 +483,15 @@ let nations = {
 		"religion": "Iruhan (Vessel of Faith)",
 		"title": "Chieftess",
 		"bonus": "navies",
+		"characters": [
+			{"name": "Luneme Wadayc Niremae", "portrait": 938, "skill": "Governor"},
+			{"name": "Tumcsemsam Dyttyriayc Cedirrayc", "portrait": 48, "skill": "General"},
+			{"name": "Baelneab Sebayc Tembabyc", "portrait": 45, "skill": "Admiral"},
+			{"name": "Varro Dlyssayc Dimibatse", "portrait": 935, "skill": "Spy"},
+			{"name": "Guxca Emsumayc Cemtsayc", "portrait": 1188, "skill": "Spy"},
+			{"name": "Treyc Pictimmayc Plybimsayc", "portrait": 1722, "skill": "General"},
+			{"name": "Eberdils Wacirrayc Trinimsayc", "portrait": 1343, "skill": "Governor"},
+			{"name": "Qulmirae Wibayc Lijyre", "portrait": 1558, "skill": "Governor"}
+		],
 	},
 };
