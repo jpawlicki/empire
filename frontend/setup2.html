@@ -15,7 +15,6 @@
 		<script src="gothi-report.js"></script>
 		<script src="expandable-snippet.js"></script>
 		<script src="tooltip-element.js"></script>
-		<script src="formToJson.js"></script>
 		<script src="orders-pane.js"></script>
 		<script src="zip-div.js"></script>
 		<script src="names.js"></script>
@@ -432,14 +431,18 @@
 				z-index: 3;
 			}
 
-			#regionstab input {
+			input[type='text'] {
 				color: #fff;
 				background: #000;
-				border: 1px solid white;
-				border-radius: 2em;
-				font-size: 120%;
 				margin: 0.5em;
 				padding: 0.5em;
+				border: 0;
+			}
+
+			#regionstab input {
+				font-size: 120%;
+				border: 1px solid white;
+				border-radius: 2em;
 			}
     </style>
   </head>
@@ -969,8 +972,13 @@
 						window.alert("HTTP " + req.status + ". Contact Josh (gilgarn@gmail.com)");
 					}
 				};
-				req.send(formToJson("form"));
+				req.send(formToJson());
 			});
+
+			function formToJson() {
+				return {};
+				// TODO
+			}
 
 			window.addEventListener("popstate", (event) => selectNation(event.state.nation, false));
 			history.replaceState({"nation": ""}, "Empire Setup", "");

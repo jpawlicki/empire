@@ -435,7 +435,7 @@ class Plot extends RulesObject {
 
 		String title = type.getTitle(targetId, w);
 		String details = type.getDetails(targetId, w);
-		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chancee of success, assuming no sabotage.";
+		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chance of success, assuming no sabotage.";
 		if (roll <= outcome.success) {
 			type.onSuccess(targetId, w, conspirators);
 			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has succeeded." + apparentChance);

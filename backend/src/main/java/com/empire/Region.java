@@ -86,7 +86,7 @@ class Region extends RulesObject {
 		double mods = 1;
 		mods += calcSigningBonusMod(signingBonus);
 
-		if (governor != null) governor.calcGovernRecruitMod();
+		if (governor != null) mods += governor.calcGovernRecruitMod();
 		if (hasNoble()) mods += noble.calcRecruitMod();
 
 		Nation wKingdom = w.getNation(kingdom);

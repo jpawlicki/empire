@@ -1259,9 +1259,6 @@ public class World extends RulesObject implements GoodwillProvider {
 						continue;
 					}
 					// Relocate 10 civilians per soldier.
-					// Unrest in target region increases (new population is furious).
-					// Unrest in source increases (2 angry per moved).
-					// Church wrath increases.
 					double populationMoved = Math.min(region.population - 1, army.size * 10);
 					if (!target.getKingdom().equals(army.kingdom)) notifyPlayer(target.getKingdom(), "Refugees from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + ".");
 					if (!region.getKingdom().equals(army.kingdom) && !region.getKingdom().equals(target.getKingdom())) notifyPlayer(target.getKingdom(), "Forced Relocation from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + ".");

@@ -5,31 +5,50 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
 
 public class NationSetup {
+	public static enum Bonus {
+		ARMIES,
+		NAVIES,
+		FOOD,
+		GOLD;
+	}
+
+	public static CharacterSetup {
+		public static enum Skill {
+			GOVERNOR,
+			ADMIRAL,
+			GENERAL,
+			SPY;
+		}
+
+		public String name;
+		public Skill skill;
+		public int portrait;
+	}
+
 	public static String TYPE = "Nation";
+
 	public String name = "";
-	public String rulerName = "";
-	public String title = "";
-	public String prosperity = "";
-	public String happiness = "";
-	public String territory = "";
-	public String glory = "";
-	public String religion = "";
-	public String ideology = "";
-	public String security = "";
-	public String riches = "";
-	public String culture = "";
-	public Nation.Tag trait1;
-	public Nation.Tag trait2;
+	public String title;
+	public Set<Nation.Tag> traits;
 	public Ideology dominantIdeology;
-	public String bonus = "";
 	public String email = "";
+	public Bonus bonus;
+	public List<CharacterSetup> characters;
+	public List<String> regionNames;
+	public Set<Nation.ScoreProfile> profiles;
 
 	private static Gson getGson() {
 		return new GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
 	}
 
 	public static NationSetup fromJson(String json) {
-		return getGson().fromJson(json, NationSetup.class);
+		NationSetup s = getGson().fromJson(json, NationSetup.class);
+		if (s.profiles.contains(Nation.ScoreProfile.CULTIST)) throw IllegalArgumentException("Cannot setup with cultist profile.");
+		if (traits.size() != 2) throw IllegalArgumentException("Must have two traits.");
+		if (title.equals("")) throw IllegalArgumentException("Must have a title.");
+		if (regionNames.stream().anyMatch(s -> s.equals(""))) throw IllegalArgumentException("Cannot submit empty region name.");
+		if (characters.stream().anyMatch(s -> s.name.equals("") || s.skill == null || s.portrait < 0)) throw IllegalArgumentException("Bad character.");
+		return s;
 	}
 
 	public boolean hasTag(Nation.Tag tag) {
@@ -37,18 +56,6 @@ public class NationSetup {
 	}
 
 	public boolean hasScoreProfile(Nation.ScoreProfile profile) {
-		switch (profile) {
-			case CULTIST: return false;
-			case CULTURE: return "checked".equals(culture);
-			case GLORY: return "checked".equals(glory);
-			case HAPPINESS: return "checked".equals(happiness);
-			case IDEOLOGY: return "checked".equals(ideology);
-			case PROSPERITY: return "checked".equals(prosperity);
-			case RELIGION: return "checked".equals(religion);
-			case RICHES: return "checked".equals(riches);
-			case SECURITY: return "checked".equals(security);
-			case TERRITORY: return "checked".equals(territory);
-			default: throw new IllegalArgumentException("Nation did not implement support for " + profile);
-		}
+		return profiles.contains(profile);
 	}
 }
