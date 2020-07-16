@@ -3,6 +3,8 @@ package com.empire;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.FieldNamingPolicy;
+import java.util.List;
+import java.util.Set;
 
 public class NationSetup {
 	public static enum Bonus {
@@ -12,7 +14,7 @@ public class NationSetup {
 		GOLD;
 	}
 
-	public static CharacterSetup {
+	public static class CharacterSetup {
 		public static enum Skill {
 			GOVERNOR,
 			ADMIRAL,
@@ -43,16 +45,16 @@ public class NationSetup {
 
 	public static NationSetup fromJson(String json) {
 		NationSetup s = getGson().fromJson(json, NationSetup.class);
-		if (s.profiles.contains(Nation.ScoreProfile.CULTIST)) throw IllegalArgumentException("Cannot setup with cultist profile.");
-		if (traits.size() != 2) throw IllegalArgumentException("Must have two traits.");
-		if (title.equals("")) throw IllegalArgumentException("Must have a title.");
-		if (regionNames.stream().anyMatch(s -> s.equals(""))) throw IllegalArgumentException("Cannot submit empty region name.");
-		if (characters.stream().anyMatch(s -> s.name.equals("") || s.skill == null || s.portrait < 0)) throw IllegalArgumentException("Bad character.");
+		if (s.profiles.contains(Nation.ScoreProfile.CULTIST)) throw new IllegalArgumentException("Cannot setup with cultist profile.");
+		if (s.traits.size() != 2) throw new IllegalArgumentException("Must have two traits.");
+		if (s.title.equals("")) throw new IllegalArgumentException("Must have a title.");
+		if (s.traits.stream().anyMatch(e -> e == null)) throw new IllegalArgumentException("Cannot submit null traits.");
+		if (s.characters.stream().anyMatch(e -> e.name.equals("") || e.skill == null || e.portrait < 0)) throw new IllegalArgumentException("Bad character.");
 		return s;
 	}
 
 	public boolean hasTag(Nation.Tag tag) {
-		return trait1 == tag || trait2 == tag;
+		return traits.contains(tag);
 	}
 
 	public boolean hasScoreProfile(Nation.ScoreProfile profile) {

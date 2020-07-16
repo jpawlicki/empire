@@ -692,6 +692,7 @@ class Character {
 		this.values = dataEntry.values;
 		this.leadingArmy = dataEntry.leading_army;
 		this.hidden = dataEntry.hidden;
+		this.portrait = dataEntry.portrait;
 	}
 
 	calcLevel(dimension) {

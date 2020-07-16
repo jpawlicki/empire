@@ -206,8 +206,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (int i = 0; i < w.geography.regions.size(); i++) if (w.geography.regions.get(i).core == w.geography.getKingdomId(kingdom)) nation.coreRegions.add(i);
 			nation.goodwill = setup.hasTag(Nation.Tag.HOLY) ? 15 : 5;
 			for (Nation.Gothi g : Nation.Gothi.values()) nation.gothi.put(g, false);
-			nation.addTag(setup.trait1);
-			nation.addTag(setup.trait2);
+			for (Nation.Tag trait : setup.traits) nation.addTag(trait);
 			for (Nation.ScoreProfile profile : Nation.ScoreProfile.values()) {
 				if (setup.hasScoreProfile(profile)) nation.addProfile(profile);
 			}
@@ -337,31 +336,27 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(Nation.Tag.REPUBLICAN)) numCharacters += 1;
 			for (int i = 0; i < numCharacters; i++) {
 				Character c = Character.newCharacter(w.getRules());
-				c.name = WorldConstantData.getRandomName(w.geography.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
-				if (i == 0) {
-					c.name = setup.rulerName;
-					c.honorific = setup.title;
-				}
 				c.kingdom = kingdom;
-				if (i == 0) c.addTag(Character.Tag.RULER);
-				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
-				if (i == 2) {
-					c.addExperienceGeneral();
-					c.addExperienceGeneral();
-					c.addExperienceGeneral();
-				} else if (i == 3) {
-					c.addExperienceAdmiral();
-					c.addExperienceAdmiral();
-					c.addExperienceAdmiral();
-				} else if (i == 0) {
-					c.addExperienceGovernor();
-					c.addExperienceGovernor();
-					c.addExperienceGovernor();
-				} else if (i == 1) {
-					c.addExperienceSpy();
-					c.addExperienceSpy();
-					c.addExperienceSpy();
+				if (setup.characters.size() > i) {
+					NationSetup.CharacterSetup csetup = setup.characters.get(i);
+					c.name = csetup.name;
+					c.portrait = csetup.portrait;
+					for (int j = 0; j < 3; j++) {
+						if (csetup.skill == NationSetup.CharacterSetup.Skill.GENERAL) c.addExperienceGeneral();
+						else if (csetup.skill == NationSetup.CharacterSetup.Skill.GOVERNOR) c.addExperienceGovernor();
+						else if (csetup.skill == NationSetup.CharacterSetup.Skill.ADMIRAL) c.addExperienceAdmiral();
+						else c.addExperienceSpy();
+					}
+				} else {
+					c.name = WorldConstantData.getRandomName(w.geography.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+					c.portrait = -1;
+					for (int j = 0; j < 3; j++) c.addExperienceSpy();
 				}
+				if (i == 0) {
+					c.honorific = setup.title;
+					c.addTag(Character.Tag.RULER);
+				}
+				if (i == 4 && cardinal) c.addTag(Character.Tag.CARDINAL);
 				c.location = regions.get((int)(Math.random() * regions.size()));
 				c.orderhint = "Stay in " + w.regions.get(c.location).name;
 				w.characters.add(c);

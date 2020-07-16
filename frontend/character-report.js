@@ -16,8 +16,8 @@ class CharacterReport extends HTMLElement {
 				<div>
 					<tooltip-element tooltip="Admirals make navies they lead more effective. They improve their skill by leading navies.">Admiral:</tooltip-element><div id="skill_admiral"></div>
 					<tooltip-element tooltip="Generals make armies they lead more effective. They improve their skill by leading armies.">General:</tooltip-element><div id="skill_general"></div>
-					<tooltip-element tooltip="Governors can increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
-					<tooltip-element tooltip="Spies establish can establish spy rings of greater power. They improve their skill while hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
+					<tooltip-element tooltip="Governors increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
+					<tooltip-element tooltip="Spies establish spy rings of greater power. They improve their skill by hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
 				</div>
 			</div>
 		`;
@@ -84,6 +84,11 @@ class CharacterReport extends HTMLElement {
 			ul {
 				list-style-type: none;
 			}
+			img {
+				margin-top: 1em;
+				width: 100%;
+				height: auto;
+			}
 			`;
 		let shadow = this.attachShadow({mode: "open"});
 		shadow.appendChild(style);
@@ -96,6 +101,12 @@ class CharacterReport extends HTMLElement {
 			t.innerHTML = Math.floor(c.calcLevel(skill) * 10) / 10;
 			t.setAttribute("tooltip", getEffect(c.calcLevel(skill), skill));
 			shadow.getElementById("skill_" + skill).appendChild(t);
+		}
+		// Portrait override.
+		if (c.portrait != undefined && c.portrait >= 0) {
+			let img = document.createElement("img");
+			img.setAttribute("src", "images/portraits/" + c.portrait + ".png");
+			content.appendChild(img);
 		}
 	}
 }

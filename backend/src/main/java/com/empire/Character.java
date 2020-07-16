@@ -22,6 +22,7 @@ public class Character extends RulesObject {
 	String kingdom = "";
 	String honorific = "";
 	int location = -1;
+	int portrait = -1;
 	boolean hidden = false;
 	List<Preparation> preparation = new ArrayList<>();
 	private List<Tag> tags = new ArrayList<>();

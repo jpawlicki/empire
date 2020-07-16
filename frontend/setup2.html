@@ -55,7 +55,7 @@
 					g_geo = resp.geography;
 					start(resp);
 					for (let k of resp.taken_nations) {
-						document.querySelector("img[name=" + k.toLowerCase() + "]").className = "taken";
+						document.querySelector("img[name=" + k.toLowerCase() + "]").className = "icon taken";
 						for (let r of document.querySelectorAll("path." + k.toLowerCase())) {
 							r.setAttribute("class", r.getAttribute("class") + " taken");
 						}
@@ -65,15 +65,14 @@
 						chosenNation = resp.chosen;
 						chosenConfig = resp.chosen_config;
 						let override = nations[chosenNation.toLowerCase()];
-						override.traits[0] = chosenConfig.trait1;
-						override.traits[1] = chosenConfig.trait2;
-						override.ruler_name = chosenConfig.ruler_name;
+						override.traits = chosenConfig.traits;
 						override.title = chosenConfig.title;
 						override.bonus = chosenConfig.bonus;
 						override.religion = chosenConfig.dominant_ideology;
-						override.score = [];
-						for (let s of ["prosperity", "happiness", "territory", "glory", "religion", "ideology", "security", "riches", "culture"]) if (chosenConfig[s] == "checked") override.score.push(s);
-						document.querySelector("img[name=" + chosenNation.toLowerCase() + "]").classList.add("mine");
+						override.regions = chosenConfig.region_names;
+						override.characters = chosenConfig.characters;
+						override.score = chosenConfig.profiles;
+						document.querySelector("img[name='" + chosenNation.toLowerCase() + "']").classList.add("mine");
 						for (let r of document.querySelectorAll("path." + chosenNation.toLowerCase())) {
 							r.setAttribute("class", r.getAttribute("class") + " mine");
 						}
@@ -206,14 +205,17 @@
 			.icon:hover {
 				filter: grayscale(100%) invert(100%) drop-shadow(0 0 5px #000) drop-shadow(0 0 4px #000) drop-shadow(0 0 3px #000);
 			}
-			.icon.mine {
-				filter: invert(71%) sepia(94%) saturate(796%) hue-rotate(357deg) brightness(102%) contrast(107%);
-			}
 			.icon.taken {
 				filter: grayscale(100%) drop-shadow(0 0 5px #888);
 			}
 			.icon.taken:hover {
 				filter: grayscale(100%) drop-shadow(0 0 5px #fff);
+			}
+			.icon.mine {
+				filter: invert(71%) sepia(94%) saturate(796%) hue-rotate(357deg) brightness(102%) contrast(107%);
+			}
+			.icon.mine:hover {
+				filter: grayscale(100%) invert(100%) drop-shadow(0 0 5px #000) drop-shadow(0 0 4px #000) drop-shadow(0 0 3px #000);
 			}
 			#description {
 				max-width: 40em;
@@ -502,10 +504,10 @@
 						<div>
 							<h2>Bonus</h2>
 							<select name="bonus" id="bonus">
-								<option value="armies">Armies</option>
-								<option value="navies">Navies</option>
-								<option value="gold">Gold</option>
-								<option value="food">Food</option>
+								<option value="ARMIES">Armies</option>
+								<option value="NAVIES">Navies</option>
+								<option value="GOLD">Gold</option>
+								<option value="FOOD">Food</option>
 							</select>
 							<div id="bonus_consequences"></div>
 						</div>
@@ -514,7 +516,7 @@
 				<div id="values" class="tabcontent">
 					<div>
 						<label>
-							<input type="checkbox" name="prosperity"/>
+							<input type="checkbox" name="PROSPERITY"/>
 							<h2>Prosperity</h2>
 							<ul>
 								<li>Gain points for feeding people.</li>
@@ -523,7 +525,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="happiness"/>
+							<input type="checkbox" name="HAPPINESS"/>
 							<h2>Happiness</h2>
 							<ul>
 								<li>Gain points for having low unrest.</li>
@@ -531,7 +533,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="territory"/>
+							<input type="checkbox" name="TERRITORY"/>
 							<h2>Territory</h2>
 							<ul>
 								<li>Gain points for gaining territory.</li>
@@ -539,7 +541,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="glory"/>
+							<input type="checkbox" name="GLORY"/>
 							<h2>Glory</h2>
 							<ul>
 								<li>Gain points for fighting in large battles.</li>
@@ -547,7 +549,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="religion"/>
+							<input type="checkbox" name="RELIGION"/>
 							<h2>Religion</h2>
 							<ul>
 								<li>Gain points for converting regions to your religion.</li>
@@ -555,7 +557,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="ideology"/>
+							<input type="checkbox" name="IDEOLOGY"/>
 							<h2>Ideology</h2>
 							<ul>
 								<li>Gain points for converting regions to your ideology.</li>
@@ -563,7 +565,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="security"/>
+							<input type="checkbox" name="SECURITY"/>
 							<h2>Security</h2>
 							<ul>
 								<li>Gain points for keeping enemy and neutral forces away from your regions.</li>
@@ -571,7 +573,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="riches"/>
+							<input type="checkbox" name="RICHES"/>
 							<h2>Riches</h2>
 							<ul>
 								<li>Gain points for treasuring up lots of gold.</li>
@@ -579,7 +581,7 @@
 							</ul>
 						</label>
 						<label>
-							<input type="checkbox" name="culture"/>
+							<input type="checkbox" name="CULTURE"/>
 							<h2>Culture</h2>
 							<ul>
 								<li>Gain points when people of your culture are happier than others.</li>
@@ -627,10 +629,10 @@
 							<button onclick="nameClick(1, 'm');">Masculine Name</button><button onclick="nameClick(1, 'f');">Feminine Name</button><button onclick="nameClick(1, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(1);">Choose Portrait</button>
 							<select name="ability_1" id="ability_1">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char2">
@@ -639,10 +641,10 @@
 							<button onclick="nameClick(2, 'm');">Masculine Name</button><button onclick="nameClick(2, 'f');">Feminine Name</button><button onclick="nameClick(2, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(2);">Choose Portrait</button>
 							<select name="ability_2" id="ability_2">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char3">
@@ -651,10 +653,10 @@
 							<button onclick="nameClick(3, 'm');">Masculine Name</button><button onclick="nameClick(3, 'f');">Feminine Name</button><button onclick="nameClick(3, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(3);">Choose Portrait</button>
 							<select name="ability_3" id="ability_3">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char4">
@@ -663,10 +665,10 @@
 							<button onclick="nameClick(4, 'm');">Masculine Name</button><button onclick="nameClick(4, 'f');">Feminine Name</button><button onclick="nameClick(4, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(4);">Choose Portrait</button>
 							<select name="ability_4" id="ability_4">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char5">
@@ -676,10 +678,10 @@
 							<button onclick="nameClick(5, 'm');">Masculine Name</button><button onclick="nameClick(5, 'f');">Feminine Name</button><button onclick="nameClick(5, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(5);">Choose Portrait</button>
 							<select name="ability_5" id="ability_5">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char6">
@@ -689,10 +691,10 @@
 							<button onclick="nameClick(6, 'm');">Masculine Name</button><button onclick="nameClick(6, 'f');">Feminine Name</button><button onclick="nameClick(6, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(6);">Choose Portrait</button>
 							<select name="ability_6" id="ability_6">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char7">
@@ -702,10 +704,10 @@
 							<button onclick="nameClick(7, 'm');">Masculine Name</button><button onclick="nameClick(7, 'f');">Feminine Name</button><button onclick="nameClick(7, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(7);">Choose Portrait</button>
 							<select name="ability_7" id="ability_7">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 						<div id="char8">
@@ -715,10 +717,10 @@
 							<button onclick="nameClick(8, 'm');">Masculine Name</button><button onclick="nameClick(8, 'f');">Feminine Name</button><button onclick="nameClick(8, 'mf');">Ungendered Name</button>
 							<button onclick="changePortrait(8);">Choose Portrait</button>
 							<select name="ability_8" id="ability_8">
-								<option>Admiral</option>
-								<option>General</option>
-								<option>Governor</option>
-								<option>Spy</option>
+								<option value="ADMIRAL">Admiral</option>
+								<option value="GENERAL">General</option>
+								<option value="GOVERNOR">Governor</option>
+								<option value="SPY">Spy</option>
 							</select>
 						</div>
 					</div>
@@ -735,9 +737,12 @@
 					<input type="text" id="region8" name="region8"></input>
 					<input type="text" id="region9" name="region9"></input>
 				</div>
+				<div id="confirmationtab" class="tabcontent">
+					<h1>You rule <span id="nationnameconfirm"></span></h1>
+					Your selection has been confirmed and you will be e-mailed when all other players are ready.
+				</div>
 				<div id="warning"></div>
 			</div>
-			<section id="confirmation"><h1>You rule <span id="nationnameconfirm"></span></h1>Your selection has been confirmed and you will be e-mailed when all other players are ready.</section>
 		</div>
 		<script>
 			function showTab(tab) {
@@ -745,8 +750,9 @@
 				for (let t of document.querySelectorAll("#banner > span")) t.className = "";
 				if (tab != "") {
 					document.getElementById(tab).style.display = "block";
-					document.getElementById("tab_menu_" + tab).className = "active";
 					document.getElementById("background").style.opacity = 0.2;
+					let menuitem = document.getElementById("tab_menu_" + tab);
+					if (menuitem) menuitem.className = "active";
 				}
 			}
 			for (let t of ["about", "traits", "values", "characters", "regionstab"]) document.getElementById("tab_menu_" + t).addEventListener("click", () => showTab(t));
@@ -800,10 +806,10 @@
 				"Welcoming": "Your regions are twice as attractive to immigrants.",
 			};
 			let bonusConsequences = {
-				"armies": "You start with +50% armies. This will help you acquire and defend territory in the early weeks, but will place greater demands on your economy.",
-				"navies": "You start with +50% navies. This will help you project power overseas in the early weeks, but will place greater demands on your economy.",
-				"gold": "You start with +100% gold. This will help you with construction in the early weeks.",
-				"food": "You start with +50% food. This will help you avoid starvation in the early weeks, but other nations may seek to take your food from you.",
+				"ARMIES": "You start with +50% armies. This will help you acquire and defend territory in the early weeks, but will place greater demands on your economy.",
+				"NAVIES": "You start with +50% navies. This will help you project power overseas in the early weeks, but will place greater demands on your economy.",
+				"GOLD": "You start with +100% gold. This will help you with construction in the early weeks.",
+				"FOOD": "You start with +50% food. This will help you avoid starvation in the early weeks, but other nations may seek to take your food from you.",
 			};
 
 			for (let trait in traitConsequences) {
@@ -831,6 +837,7 @@
 				document.getElementById("submit").disabled = warnings.length > 0;
 				if (chosenNation != "") warnings.push("This will replace your current nation selection.");
 				document.getElementById("warning").innerHTML = warnings.join(" ");
+				if (chosenNation != "") submit.innerHTML = "Replace Selection";
 
 				// Show / Hide character panels.
 				let count = 5;
@@ -954,6 +961,7 @@
 
 				for (let s of document.querySelectorAll("form input, form button, form select")) s.disabled = true;
 				submit.innerHTML = "Checking with server...";
+				submit.disabled = true;
 				let req = new XMLHttpRequest();
 				req.open("post", g_server + "/entry/setup?gid=" + gameId, true);
 				addAuth(req, g_player, g_password);
@@ -966,8 +974,18 @@
 					} else if (req.status == 204) {
 						document.querySelector("#nationnameconfirm").innerHTML = capitalize(selected);
 						document.querySelector("#nationDiv > div").className = "selectionDone";
-						document.querySelector("#confirmation").style.display = "block";
-						for (let e of document.querySelectorAll("img")) e.style.display = "none";
+						showTab("confirmationtab");
+						chosenNation = "";
+						formChange();
+						chosenNation = capitalize(selected);
+						submit.innerHTML = "Selection Confirmed";
+						submit.disabled = true;
+						for (let r of document.querySelectorAll("img, path")) {
+							r.classList.remove("mine");
+						}
+						for (let r of document.querySelectorAll("img[name='" + selected + "'], path." + selected)) {
+							r.classList.add("mine");
+						}
 					} else {
 						window.alert("HTTP " + req.status + ". Contact Josh (gilgarn@gmail.com)");
 					}
@@ -976,8 +994,50 @@
 			});
 
 			function formToJson() {
-				return {};
-				// TODO
+				function val(name) {
+					return document.querySelector("[name='" + name + "']").value;
+				}
+				function characters() {
+					let c = [];
+					for (let i = 1; i <= 8; i++) {
+						c.push({
+							"name": val("cname" + i),
+							"portrait": val("char" + i + "_portrait"),
+							"skill": val("ability_" + i)
+						});
+					}
+					return c;
+				}
+				function profiles() {
+					let p = [];
+					for (let prof of document.querySelectorAll("#values input")) {
+						if (prof.checked) p.push(prof.name);
+					}
+					return p;
+				}
+				return JSON.stringify({
+					"name": capitalize(selected),
+					"title": val("title"),
+					"dominant_ideology": val("dominant_ideology"),
+					"traits": [
+						val("trait1"),
+						val("trait2")
+					],
+					"bonus": val("bonus"),
+					"characters": characters(),
+					"region_names": [
+						val("region1"),
+						val("region2"),
+						val("region3"),
+						val("region4"),
+						val("region5"),
+						val("region6"),
+						val("region7"),
+						val("region8"),
+						val("region9"),
+					],
+					"profiles": profiles()
+				});
 			}
 
 			window.addEventListener("popstate", (event) => selectNation(event.state.nation, false));
