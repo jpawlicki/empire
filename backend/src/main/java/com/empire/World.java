@@ -2596,7 +2596,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		Map<String, String> prepareEmails() {
 			HashMap<String, String> emails = new HashMap<>();
 			for (String kingdom : kingdoms.keySet()) {
-				if (getNation(kingdom).tookFinalAction) continue;
+				if (getNation(kingdom).tookFinalAction()) continue;
 				String ruler = null;
 				for (Character c : characters) if (c.kingdom.equals(kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c.honorific + " " + c.name;
 				if (ruler == null) ruler = "Ruler of " + kingdom;
