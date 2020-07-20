@@ -197,6 +197,8 @@ public class World extends RulesObject implements GoodwillProvider {
 			else if ("navies".equals(setup.bonus)) totalSharesNavy += 0.5;
 			else if ("gold".equals(setup.bonus)) totalSharesGold += 1.5;
 		}
+		HashSet<String> regionNames = new HashSet<>();
+		for (Region r : w.regions) regionNames.add(r.name);
 		for (String kingdom : nationSetup.keySet()) {
 			NationSetup setup = nationSetup.get(kingdom);
 			Nation nation = new Nation();
@@ -204,6 +206,15 @@ public class World extends RulesObject implements GoodwillProvider {
 			nation.culture = w.geography.getKingdom(kingdom).culture;
 			nation.coreRegions = new ArrayList<>();
 			for (int i = 0; i < w.geography.regions.size(); i++) if (w.geography.regions.get(i).core == w.geography.getKingdomId(kingdom)) nation.coreRegions.add(i);
+			for (int i = 0; i < nation.coreRegions.size(); i++) {
+				if (setup.regionNames.size() > i) {
+					String rename = StringUtil.sanitizeName(setup.regionNames.get(i));
+					if (rename != null && rename.length() > 0 && !regionNames.contains(rename)) {
+						w.regions.get(nation.coreRegions.get(i)).name = rename;
+						regionNames.add(rename);
+					}
+				}
+			}
 			nation.goodwill = setup.hasTag(Nation.Tag.HOLY) ? 15 : 5;
 			for (Nation.Gothi g : Nation.Gothi.values()) nation.gothi.put(g, false);
 			for (Nation.Tag trait : setup.traits) nation.addTag(trait);
@@ -320,11 +331,12 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 		}
 		// Add characters, incl Cardinals
+		HashSet<String> characterNames = new HashSet<String>();
+		characterNames.add("");
 		for (String kingdom : nationSetup.keySet()) {
 			NationSetup setup = nationSetup.get(kingdom);
 			ArrayList<Integer> regions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
-			log.log(Level.INFO, "Setting up " + kingdom + ", " + regions.size());
 			ArrayList<Character> characters = new ArrayList<>();
 			int numCharacters = 4;
 			boolean cardinal = false;
@@ -339,7 +351,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				c.kingdom = kingdom;
 				if (setup.characters.size() > i) {
 					NationSetup.CharacterSetup csetup = setup.characters.get(i);
-					c.name = csetup.name;
+					c.name = StringUtil.sanitizeName(csetup.name);
 					c.portrait = csetup.portrait;
 					for (int j = 0; j < 3; j++) {
 						if (csetup.skill == NationSetup.CharacterSetup.Skill.GENERAL) c.addExperienceGeneral();
@@ -352,6 +364,17 @@ public class World extends RulesObject implements GoodwillProvider {
 					c.portrait = -1;
 					for (int j = 0; j < 3; j++) c.addExperienceSpy();
 				}
+				// Rename if name collision.
+				for (String suffix : new String[]{"", " II", " III", " IV", " V", " VI", " VII", " VIII", " IX", " X"}) {
+					if (!characterNames.contains(c.name + suffix)) {
+						c.name = c.name + suffix;
+						break;
+					}
+				}
+				while (characterNames.contains(c.name)) {
+					c.name = WorldConstantData.getRandomName(w.geography.getKingdom(kingdom).culture, Math.random() < 0.5 ? WorldConstantData.Gender.MAN : WorldConstantData.Gender.WOMAN);
+				}
+				characterNames.add(c.name);
 				if (i == 0) {
 					c.honorific = setup.title;
 					c.addTag(Character.Tag.RULER);
@@ -2340,17 +2363,17 @@ public class World extends RulesObject implements GoodwillProvider {
 				Optional<String> overlord = getNationNames().stream().filter(n -> getNation(n).loyalToCult).max(Comparator.comparingDouble(a -> higherPowerCount.getOrDefault(a, 0.0)));
 				if (!overlord.isPresent()) return;
 				cultTriggered = true;
-				// The overlord loses all score profiles, gains Territory, are marked to turn off Reflect.
 				Nation overlordNation = getNation(overlord.get());
-				overlordNation.clearProfiles();
-				overlordNation.toggleProfile(Nation.ScoreProfile.TERRITORY);
-				overlordNation.lockScoreProfiles();
 				// All other Cultist players transfer all regions / armies / navies / non-Ruler characters, then lose the Cultist profile.
 				armies.stream().filter(a -> cultists.contains(a.kingdom)).forEach(a -> a.kingdom = overlord.get());
 				armies.stream().filter(a -> a.hasTag(Army.Tag.HIGHER_POWER)).forEach(a -> a.kingdom = overlord.get());
 				characters.stream().filter(c -> !c.hasTag(Character.Tag.RULER)).filter(c -> cultists.contains(c.kingdom)).forEach(c -> c.kingdom = overlord.get());
 				regions.stream().filter(r -> cultists.contains(r.getKingdom())).forEach(r -> r.setKingdom(World.this, overlord.get()));
 				getNationNames().stream().forEach(k -> getNation(k).removeProfile(Nation.ScoreProfile.CULTIST));
+				// The overlord loses all score profiles, gains Territory, are marked to turn off Reflect.
+				overlordNation.clearProfiles();
+				overlordNation.toggleProfile(Nation.ScoreProfile.TERRITORY);
+				overlordNation.lockScoreProfiles();
 				notifyAllPlayers("Cult Rises", "The Cult of the Witness has drawn close to accomplishing their mysterious objective! Agents of the Cult throughout the world reveal themselves, establishing de facto rule under " + overlord.get() + ". Other rulers loyal to the Cult are discarded, having outlived their usefulness, and are forced to flee for their lives with nothing but the clothes on their backs.");
 			}
 		}
@@ -2573,6 +2596,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		Map<String, String> prepareEmails() {
 			HashMap<String, String> emails = new HashMap<>();
 			for (String kingdom : kingdoms.keySet()) {
+				if (getNation(kingdom).tookFinalAction) continue;
 				String ruler = null;
 				for (Character c : characters) if (c.kingdom.equals(kingdom) && c.hasTag(Character.Tag.RULER)) ruler = c.honorific + " " + c.name;
 				if (ruler == null) ruler = "Ruler of " + kingdom;

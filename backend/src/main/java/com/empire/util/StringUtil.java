@@ -21,5 +21,10 @@ public class StringUtil {
 		return num + " " + unit + (num != 1 ? "s" : "");
 	}
 
+	public static String sanitizeName(String in) {
+		for (String remove : new String[]{"<", ">", "\t", "\n"}) in = in.replaceAll(remove, "");
+		return in.trim();
+	}
+
 	private StringUtil() {}
 }
