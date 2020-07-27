@@ -227,6 +227,17 @@ class Region extends RulesObject {
 		return neighbors;
 	}
 
+	public Set<Integer> getNeighborsIds(World w) {
+		int id = w.regions.indexOf(this);
+		Set<Integer> neighbors = new HashSet<>();
+		for (Geography.Border b : w.getGeography().borders) {
+			if (b.b == null) continue;
+			if (b.a == id) neighbors.add(b.b);
+			else if (b.b == id) neighbors.add(b.a);
+		}
+		return neighbors;
+	}
+
 	public boolean isCoastal(World w) {
 		if (isSea()) return false;
 		for (Region r : getNeighbors(w)) {

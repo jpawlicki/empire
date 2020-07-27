@@ -316,6 +316,7 @@ class OrdersPane extends HTMLElement {
 		content.innerHTML = html;
 		shadow.appendChild(content);
 		let form = shadow.getElementById("form");
+		let postLoadOps = [];
 		this.tabList = ["units", "plots", "tiecel", "nations", "economy", "game"];
 		for (let t of this.tabList) {
 			shadow.getElementById("content_" + t).style.display = "none";
@@ -476,6 +477,7 @@ class OrdersPane extends HTMLElement {
 		// PLOT TAB
 		{
 			let computePlotSuccessChances = () => {
+				if (op.syncDisabled) return;
 				for (let plot of g_data.plots) {
 					let support_mods = 0;
 					let sabotage_mods = 0;
@@ -483,7 +485,7 @@ class OrdersPane extends HTMLElement {
 					if (targetRegion != undefined) {
 						for (let ring of shadow.querySelectorAll("#plot_rings select")) {
 							if (ring.name.startsWith("spyring_type_")) continue;
-							let realRing = g_data.spy_rings.find(r => r.location == parseInt(ring.name.replace("spyring_", "")));
+							let realRing = g_data.spy_rings.find(r => r.location == parseInt(ring.name.replace("spyring_", "")) && r.nation == whoami);
 							let strength = realRing.calcStrengthIn(targetRegion.id)
 							if (realRing.involved_in_plot_id == plot.plot_id) {
 								// Discount the strength of the ring from the apparent success strength. Add it back based on whether the ring is currently ordered to support or sabotage, etc.
@@ -550,7 +552,7 @@ class OrdersPane extends HTMLElement {
 				rings.appendChild(l);
 			}
 			shadow.getElementById("plot_newplot").addEventListener("click", ()=>this.addPlot(shadow));
-			computePlotSuccessChances();
+			postLoadOps.push(computePlotSuccessChances);
 		}
 		if (g_data.cult_triggered) shadow.querySelector("[name=plot_cult]").disabled = true;
 
@@ -664,6 +666,7 @@ class OrdersPane extends HTMLElement {
 		let eBonus = shadow.getElementById("economy_recruit_bonus");
 		let economyConsequences = shadow.getElementById("economy_consequences");
 		let computeEconomyConsequences = function () {
+			if (op.syncDisabled) return;
 			let taxRate = parseInt(eTax.value) / 100.0;
 			let recruitRate = 0;
 			if (parseInt(eBonus.value) == -1) recruitRate = -.5;
@@ -711,6 +714,7 @@ class OrdersPane extends HTMLElement {
 		let foodConsequences = shadow.getElementById("food_consequences");
 		let obj = this;
 		let computeFoodConsequences = function () {
+			if (op.syncDisabled) return;
 			let rationing = parseInt(eRation.value) / 100.0;
 			foodConsequences.innerHTML = "";
 			let expectedFood = {};
@@ -739,8 +743,8 @@ class OrdersPane extends HTMLElement {
 		eRation.addEventListener("input", computeFoodConsequences);
 		eBonus.addEventListener("input", computeEconomyConsequences);
 		for (let s of shadow.querySelectorAll("#units select")) s.addEventListener("input", computeEconomyConsequences);
-		computeEconomyConsequences();
-		computeFoodConsequences();
+		postLoadOps.push(computeEconomyConsequences);
+		postLoadOps.push(computeFoodConsequences);
 		let op = this;
 		shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow, computeFoodConsequences));
 		shadow.getElementById("economy_newbribe").addEventListener("click", ()=>op.addBribe(shadow));
@@ -821,6 +825,7 @@ class OrdersPane extends HTMLElement {
 		req.onerror = function (e) {
 			console.log(e);
 			op.syncDisabled = false;
+			for (let operation of postLoadOps) operation();
 		};
 		req.onload = function (ev) {
 			if (req.status != 200) {
@@ -865,8 +870,8 @@ class OrdersPane extends HTMLElement {
 				}
 				op.checkWarnings(shadow);
 				op.plannedMotions(shadow);
-				op.calcPlo
 				op.syncDisabled = false;
+				for (let operation of postLoadOps) operation();
 				return;
 			}
 			let resp = JSON.parse(req.responseText).orders;
@@ -920,6 +925,7 @@ class OrdersPane extends HTMLElement {
 			op.checkWarnings(shadow);
 			op.plannedMotions(shadow);
 			op.syncDisabled = false;
+			for (let operation of postLoadOps) operation();
 		};
 		req.send();
 		if (g_turndata.length - 1 != g_data.date) {

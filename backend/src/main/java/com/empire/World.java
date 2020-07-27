@@ -683,6 +683,10 @@ public class World extends RulesObject implements GoodwillProvider {
 						aiOrders.put("rel_" + kk + "_fealty", getNation(k).getRelationship(kk).fealty.toString());
 						aiOrders.put("rel_" + kk + "_construct", getNation(k).getRelationship(kk).construct.toString());
 					}
+
+					// Experimental AI.
+					aiOrders.putAll(ArtificialIntelligence.getOrders(k, World.this));
+
 					orders.put(k, aiOrders);
 				}
 			}
@@ -738,13 +742,17 @@ public class World extends RulesObject implements GoodwillProvider {
 				double totalTribute = 0;
 				for (String kk : kingdoms.keySet()) {
 					if (kk.equals(k)) continue;
+					if (kingdoms.get(kk).tookFinalAction()) continue;
 					totalTribute += Math.max(0, Math.min(1, Double.parseDouble(kOrders.getOrDefault("rel_" + kk + "_tribute", "0"))));
 				}
 				if (totalTribute < 1) totalTribute = 1;
 				for (String kk : kingdoms.keySet()) {
 					if (k.equals(kk)) continue;
-					if (kingdoms.get(kk).tookFinalAction()) continue;
 					Relationship r = getNation(k).getRelationship(kk);
+					if (kingdoms.get(kk).tookFinalAction()) {
+						r.tribute = 0;
+						continue;
+					}
 					Relationship old = new Relationship(r);
 					r.battle = Relationship.War.valueOf(kOrders.getOrDefault("rel_" + kk + "_attack", "NEUTRAL"));
 					r.refugees = Relationship.Refugees.valueOf(kOrders.getOrDefault("rel_" + kk + "_refugees", "ACCEPT"));
@@ -2020,19 +2028,8 @@ public class World extends RulesObject implements GoodwillProvider {
 			HashMap<String, Double> payments = new HashMap<String, Double>();
 			for (Army a : armies) {
 				if ("Pirate".equals(a.kingdom)) continue;
-				if (a.hasTag(Army.Tag.HIGHER_POWER)) continue;
-				double cost = a.size;
-				double mods = 1;
-				if (a.isArmy()) cost *= 1.0 / 100;
-				else cost *= 1 / 3.0;
-				if (a.hasTag(Army.Tag.CRAFTS_SOLDIERS) && !orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, "").startsWith("Travel ")) {
-					mods -= 0.5;
-				}
-				if (Ideology.COMPANY == Nation.getStateReligion(a.kingdom, World.this)) mods -= 0.5;
-				if (getNation(a.kingdom).hasTag(Nation.Tag.REBELLIOUS) && getNation(a.kingdom).coreRegions.contains(a.location)) {
-					mods -= 0.5;
-				}
-				cost = Math.max(0, cost * mods);
+				double cost = a.getCost(World.this, orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, ""));
+				if (cost == 0) continue;
 				payments.put(a.kingdom, payments.getOrDefault(a.kingdom, 0.0) + cost);
 			}
 			for (String k : payments.keySet()) {

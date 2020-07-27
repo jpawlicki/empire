@@ -80,6 +80,22 @@ class Army extends RulesObject {
 		return type == Type.NAVY;
 	}
 
+	double getCost(World w, String order) {
+		if (hasTag(Army.Tag.HIGHER_POWER)) return 0;
+		double cost = size;
+		double mods = 1;
+		if (isArmy()) cost *= 1.0 / 100;
+		else cost *= 1 / 3.0;
+		if (hasTag(Army.Tag.CRAFTS_SOLDIERS) && !order.startsWith("Travel ")) {
+			mods -= 0.5;
+		}
+		if (Ideology.COMPANY == Nation.getStateReligion(kingdom, w)) mods -= 0.5;
+		if (w.getNation(kingdom).hasTag(Nation.Tag.REBELLIOUS) && w.getNation(kingdom).coreRegions.contains(location)) {
+			mods -= 0.5;
+		}
+		return Math.max(0, cost * mods);
+	}
+
 	void addTag(Army.Tag tag) {
 		tags.add(tag);
 	}
