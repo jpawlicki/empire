@@ -297,6 +297,10 @@ class ArtificialIntelligence {
 		}
 
 		private final ArrayList<Threat> threats;
+		private final int primaryResponseRegion;
+		private final double neededSize;
+		private final HashSet<Integer> ourRegions = new HashSet<>();
+		private final HashSet<Integer> neighborRegions = new HashSet<>();
 
 		// TODO: break into regional subintents.
 
@@ -305,8 +309,6 @@ class ArtificialIntelligence {
 			// Armies adjacent to or occupying our regions have a threat based on their strength.
 			// Nations that have declared war on us have a 2x threat multiplier.
 			HashMap<String, Double> threats = new HashMap<>();
-			HashSet<Integer> ourRegions = new HashSet<>();
-			HashSet<Integer> neighborRegions = new HashSet<>();
 			for (int i = 0; i < world.regions.size(); i++) if (whoami.equals(world.regions.get(i).getKingdom())) ourRegions.add(i);
 			for (Integer ourRegion : ourRegions) neighborRegions.addAll(world.regions.get(ourRegion).getNeighborsIds(world));
 			neighborRegions.removeAll(ourRegions);
@@ -322,6 +324,19 @@ class ArtificialIntelligence {
 			this.threats = new ArrayList<Threat>();
 			for (Map.Entry<String, Double> threat : threats.entrySet()) this.threats.add(new Threat(threat.getKey(), threat.getValue()));
 			Collections.sort(this.threats, Comparator.comparingDouble((Threat t) -> t.threatValue).reversed());
+
+			double neededSize = 0;
+			int primaryResponseRegion = 0;
+			for (Army a : world.armies) {
+				if (whoami.equals(a.kingdom)) continue;
+				if (!ourRegions.contains(a.location)) continue;
+				if (a.size > neededSize) {
+					neededSize = a.size;
+					primaryResponseRegion = a.location;
+				}
+			}
+			this.neededSize = neededSize;
+			this.primaryResponseRegion = primaryResponseRegion;
 		}
 
 		@Override
@@ -329,7 +344,12 @@ class ArtificialIntelligence {
 			return true; // Not so sure about this.
 		}
 
-		// TODO: assign value to the largest defender army within our region, and move it to the most threatened region.
+		@Override
+		double valueOf(Army piece) {
+			if (piece.size < neededSize) return 0;
+			if (!ourRegions.contains(piece.location) && !neighborRegions.contains(piece.location)) return 0;
+			return piece.size / neededSize;
+		}
 
 		@Override
 		double valueOf(RelationshipPiece piece) {
@@ -353,6 +373,20 @@ class ArtificialIntelligence {
 			for (RelationshipPiece r : allocatedPieces.relationships) {
 				orders.put("rel_" + r.who + "_attack", "DEFEND");
 				orders.put("rel_" + r.who + "_tribute", "0.25");
+			}
+			for (Army a : allocatedPieces.armies) {
+				// If the army is in or can respond to the region, do so.
+				String primaryResponseRegionName = world.regions.get(primaryResponseRegion).name;
+				if (a.location == primaryResponseRegion) {
+					orders.put("action_army_" + a.id, "Stay in " + world.regions.get(a.location).name);
+				} else if (world.regions.get(a.location).getNeighbors(world).stream().anyMatch(r -> r.name.equals(primaryResponseRegionName))) {
+					orders.put("action_army_" + a.id, "Travel to " + primaryResponseRegionName);
+				} else {
+					ArrayList<Region> neighbors = new ArrayList<>(world.regions.get(a.location).getNeighbors(world));
+					neighbors.removeIf(r -> !whoami.equals(r.getKingdom()));
+					if (!neighbors.isEmpty()) orders.put("action_army_" + a.id, "Travel to " + neighbors.get((int)(Math.random() * neighbors.size())).name);
+				}
+				// Otherwise wander randomly in our territory.
 			}
 			return orders;
 		}
@@ -494,8 +528,7 @@ class ArtificialIntelligence {
 				if (a == piece) break;
 				if (whoami.equals(a.kingdom) && a.type == piece.type && a.location == piece.location) return 1;
 			}
-			// TODO: Other armies should maneuver to rally points.
-			return 0;
+			return 0.05;
 		}
 
 		@Override
@@ -512,12 +545,14 @@ class ArtificialIntelligence {
 		@Override
 		Map<String, String> generateOrders() {
 			HashMap<String, String> orders = new HashMap<>();
+			HashSet<Army> leftovers = new HashSet<>(allocatedPieces.armies);
 			for (Army piece : allocatedPieces.armies) {
 				// Navies at shore go to sea.
 				if (piece.type == Army.Type.NAVY && world.regions.get(piece.location).type == Region.Type.LAND) {
 					for (Region r : world.regions.get(piece.location).getNeighbors(world)) {
 						if (r.type == Region.Type.WATER) {
 							orders.put("action_army_" + piece.id, "Travel to " + r.name);
+							leftovers.remove(piece);
 							break;
 						}
 					}
@@ -527,9 +562,33 @@ class ArtificialIntelligence {
 				for (Army a : world.armies) {
 					if (a.location == piece.location && whoami.equals(a.kingdom) && a.id < piece.id) {
 						orders.put("action_army_" + piece.id, "Merge into " + a.id);
+						leftovers.remove(piece);
 						break;
 					}
 				}
+			}
+
+			// Leftover armies should try to travel to regions where they can merge up.
+			HashMap<Integer, Double> regionScores = new HashMap<>();
+			for (Army a : leftovers) {
+				for (Integer rid : world.regions.get(a.location).getNeighborsIds(world)) {
+					regionScores.put(rid, regionScores.getOrDefault(rid, 0.0) + a.size);
+				}
+			}
+			for (Army a : world.armies) {
+				if (!whoami.equals(a.kingdom)) {
+					regionScores.put(a.location, regionScores.getOrDefault(a.location, 0.0) - a.size * 2);
+				}
+			}
+			for (int i = 0; i < world.regions.size(); i++) {
+				if (whoami.equals(world.regions.get(i).getKingdom())) regionScores.put(i, regionScores.getOrDefault(i, 0.0) * 2);
+			}
+			for (Army a : leftovers) {
+				int bestOption = -1;
+				for (Integer rid : world.regions.get(a.location).getNeighborsIds(world)) {
+					if (bestOption == -1 || regionScores.get(rid) > regionScores.get(bestOption)) bestOption = rid;
+				}
+				orders.put("action_army_" + a.id, "Travel to " + world.regions.get(bestOption).name);
 			}
 			return orders;
 		}
@@ -630,13 +689,17 @@ class ArtificialIntelligence {
 	/** An intent to establish additional spy rings. */
 	private class BuildSpies extends Intent {
 		final HashSet<Integer> immediateBuildOpportunities;
+		final int numSpyRings;
 
 		public BuildSpies() {
 			HashSet<Integer> noBuildLocations = new HashSet<>();
 			immediateBuildOpportunities = new HashSet<>();
+			int numSpyRings = 0;
 			for (SpyRing s : world.spyRings) if (whoami.equals(s.getNation())) {
 				noBuildLocations.add(s.getLocation());
+				numSpyRings++;
 			}
+			this.numSpyRings = numSpyRings;
 			for (int i = 0; i < world.regions.size(); i++) if (world.regions.get(i).type == Region.Type.WATER) noBuildLocations.add(i);
 			// for (Character c : world.characters) if (whoami.equals(c.kingdom) && !noBuildLocations.contains(c.location)) immediateBuildOpportunities.add(c.location);
 			for (int i = 0; i < world.regions.size(); i++) {
@@ -670,7 +733,7 @@ class ArtificialIntelligence {
 
 		@Override
 		double importance() {
-			return 0.18; // TODO: importance should scale down the more spy rings we have.
+			return 0.4 / numSpyRings;
 		}
 
 		@Override
