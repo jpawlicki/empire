@@ -92,7 +92,7 @@ class ArtificialIntelligence {
 	private List<Intent> getPossibleIntents() {
 		ArrayList<Intent> ret = new ArrayList<>();
 		ret.add(new Defense());
-		ret.add(new Attack());
+		//ret.add(new Attack());
 		ret.add(new Happiness());
 		ret.add(new PayTroops());
 		ret.add(new BuildMilitary());
@@ -314,7 +314,7 @@ class ArtificialIntelligence {
 			neighborRegions.removeAll(ourRegions);
 			for (String k : world.getNationNames()) if (!whoami.equals(k)) threats.put(k, 0.0);
 			for (Army a : world.armies) {
-				if (whoami.equals(a.kingdom)) continue;
+				if (!threats.containsKey(a.kingdom)) continue;
 				if (ourRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100 * 0.6);
 				else if (neighborRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100);
 			}
@@ -346,17 +346,25 @@ class ArtificialIntelligence {
 
 		@Override
 		double valueOf(Army piece) {
+			if (piece.type == Army.Type.NAVY) return 0;
 			if (piece.size < neededSize) return 0;
 			if (!ourRegions.contains(piece.location) && !neighborRegions.contains(piece.location)) return 0;
 			return piece.size / neededSize;
 		}
 
 		@Override
+		double valueOf(Character piece) {
+			if (!allocatedPieces.characters.isEmpty()) return 0;
+			for (Army a : allocatedPieces.armies) if (a.location == piece.location) return piece.calcLeadMod(Army.Type.ARMY);
+			return 0;
+		}
+
+		@Override
 		double valueOf(RelationshipPiece piece) {
 			// Relationships for the top four threats are valuable, if threat is above 25.
 			if (threats.size() > 0 && threats.get(0).kingdom.equals(piece.who) && threats.get(0).threatValue > 40) return 1.00;
-			if (threats.size() > 1 && threats.get(1).kingdom.equals(piece.who) && threats.get(1).threatValue > 80) return 0.75;
-			if (threats.size() > 2 && threats.get(2).kingdom.equals(piece.who) && threats.get(2).threatValue > 120) return 0.50;
+			if (threats.size() > 1 && threats.get(1).kingdom.equals(piece.who) && threats.get(1).threatValue > 60) return 0.75;
+			if (threats.size() > 2 && threats.get(2).kingdom.equals(piece.who) && threats.get(2).threatValue > 100) return 0.50;
 			if (threats.size() > 3 && threats.get(3).kingdom.equals(piece.who) && threats.get(3).threatValue > 160) return 0.25;
 			return 0;
 		}
@@ -371,8 +379,28 @@ class ArtificialIntelligence {
 			HashMap<String, String> orders = new HashMap<>();
 			// Tribute top threats.
 			for (RelationshipPiece r : allocatedPieces.relationships) {
-				orders.put("rel_" + r.who + "_attack", "DEFEND");
-				orders.put("rel_" + r.who + "_tribute", "0.25");
+				int nobleCount = 0;
+				double ourNavy = 0;
+				double theirNavy = 0;
+				for (Region rr : world.regions) if (r.who.equals(rr.getKingdom()) && rr.noble != null) nobleCount++;
+				for (Army a : world.armies) {
+					if (a.type != Army.Type.NAVY) continue;
+					if (whoami.equals(a.kingdom)) {
+						ourNavy += a.size;
+					} else if (r.who.equals(a.kingdom)) {
+						theirNavy += a.size;
+					}
+				}
+				if (nobleCount >= 2) {
+					orders.put("rel_" + r.who + "_attack", "DEFEND");
+					orders.put("rel_" + r.who + "_tribute", "0.25");
+				} else if (ourNavy < theirNavy * 1.2) {
+					orders.put("rel_" + r.who + "_attack", "ATTACK");
+					orders.put("rel_" + r.who + "_tribute", "0");
+				} else {
+					orders.put("rel_" + r.who + "_attack", "NEUTRAL");
+					orders.put("rel_" + r.who + "_tribute", "0");
+				}
 			}
 			for (Army a : allocatedPieces.armies) {
 				// If the army is in or can respond to the region, do so.
@@ -382,11 +410,19 @@ class ArtificialIntelligence {
 				} else if (world.regions.get(a.location).getNeighbors(world).stream().anyMatch(r -> r.name.equals(primaryResponseRegionName))) {
 					orders.put("action_army_" + a.id, "Travel to " + primaryResponseRegionName);
 				} else {
+					// Otherwise wander randomly in our territory.
 					ArrayList<Region> neighbors = new ArrayList<>(world.regions.get(a.location).getNeighbors(world));
 					neighbors.removeIf(r -> !whoami.equals(r.getKingdom()));
 					if (!neighbors.isEmpty()) orders.put("action_army_" + a.id, "Travel to " + neighbors.get((int)(Math.random() * neighbors.size())).name);
 				}
-				// Otherwise wander randomly in our territory.
+			}
+			for (Character c : allocatedPieces.characters) {
+				for (Army a : allocatedPieces.armies) {
+					if (c.location == a.location) {
+						orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Lead army " + a.id);
+						break;
+					}
+				}
 			}
 			return orders;
 		}
@@ -394,11 +430,38 @@ class ArtificialIntelligence {
 
 	/** An intent to conquer a region. */
 	private class Attack extends Intent {
-		// TODO: break into regional subintents.
+		class AttackTarget {
+			public int region = -1;
+			public double score = 0;
+			public double neededForce = 0;
+			public final String who;
+			public AttackTarget(String who) {
+				this.who = who;
+			}
+		}
+
+		private final AttackTarget idealTarget;
+		private final Army idealArmy;
+
+		public Attack() {
+			Army bestArmy = null;
+			for (Army a : world.armies) if (whoami.equals(a.kingdom) && a.type == Army.Type.ARMY && (bestArmy == null || bestArmy.size < a.size)) bestArmy = a;
+			if (bestArmy == null) {
+				idealTarget = null;
+				idealArmy = null;
+			} else {
+				Map<Region, Integer> regionDistances = world.regions.get(bestArmy.location).getRegionsByDistance(world);
+				for (Region r : world.regions) {
+					double rScore = 0;
+				}
+				idealTarget = null; // TODO
+				idealArmy = bestArmy;
+			}
+		}
 
 		@Override
 		boolean feasible() {
-			return false;
+			return idealArmy != null && allocatedPieces.armies.contains(idealArmy);
 		}
 
 		@Override
@@ -560,7 +623,7 @@ class ArtificialIntelligence {
 				}
 				// Look for merges.
 				for (Army a : world.armies) {
-					if (a.location == piece.location && whoami.equals(a.kingdom) && a.id < piece.id) {
+					if (a.location == piece.location && whoami.equals(a.kingdom) && a.id < piece.id && a.type == piece.type) {
 						orders.put("action_army_" + piece.id, "Merge into " + a.id);
 						leftovers.remove(piece);
 						break;
@@ -571,6 +634,7 @@ class ArtificialIntelligence {
 			// Leftover armies should try to travel to regions where they can merge up.
 			HashMap<Integer, Double> regionScores = new HashMap<>();
 			for (Army a : leftovers) {
+				regionScores.put(a.location, regionScores.getOrDefault(a.location, 0.0) + a.size);
 				for (Integer rid : world.regions.get(a.location).getNeighborsIds(world)) {
 					regionScores.put(rid, regionScores.getOrDefault(rid, 0.0) + a.size);
 				}
@@ -586,9 +650,9 @@ class ArtificialIntelligence {
 			for (Army a : leftovers) {
 				int bestOption = -1;
 				for (Integer rid : world.regions.get(a.location).getNeighborsIds(world)) {
-					if (bestOption == -1 || regionScores.get(rid) > regionScores.get(bestOption)) bestOption = rid;
+					if (bestOption == -1 || regionScores.get(rid) > regionScores.get(bestOption) && (a.type != Army.Type.NAVY || world.regions.get(rid).type != Region.Type.LAND)) bestOption = rid;
 				}
-				orders.put("action_army_" + a.id, "Travel to " + world.regions.get(bestOption).name);
+				orders.put("action_army_" + a.id, (a.location == bestOption ? "Stay in " : "Travel to ") + world.regions.get(bestOption).name);
 			}
 			return orders;
 		}
@@ -764,7 +828,15 @@ class ArtificialIntelligence {
 			return 1;
 		}
 
-		// TODO: value of governors.
+		@Override
+		double valueOf(Character piece) {
+			for (Character c : allocatedPieces.characters) if (c.location == piece.location) return 0;
+			if (whoami.equals(world.regions.get(piece.location).getKingdom())) {
+				return 0.05;
+			}
+			return 0;
+		}
+
 		// TODO: value of spy rings.
 
 		@Override
@@ -780,7 +852,11 @@ class ArtificialIntelligence {
 
 		@Override
 		Map<String, String> generateOrders() {
-			return new HashMap<>(); // For now, just hoard gold assigned here.
+			HashMap<String, String> orders = new HashMap<>();
+			for (Character c : allocatedPieces.characters) {
+				orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Govern " + world.regions.get(c.location).name);
+			}
+			return orders;
 		}
 	}
 

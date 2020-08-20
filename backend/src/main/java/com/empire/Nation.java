@@ -129,6 +129,7 @@ public class Nation {
 	String shipratehint = "5";
 	String rationhint = "100";
 	String signingbonushint = "0";
+	int idleStrikes = 0;
 
 	private List<Tag> tags = new ArrayList<>();
 	private boolean scoreProfilesLocked;
@@ -216,6 +217,7 @@ public class Nation {
 
 	void filterForView(boolean filterScore) {
 		email = "";
+		idleStrikes = 0;
 		if (filterScore) {
 			score = new HashMap<>();
 			shadowScore = new HashMap<>();

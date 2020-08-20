@@ -207,9 +207,6 @@ class Region {
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(getNation(this.kingdom).core_regions, i)) conquests++;
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
-		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : getNation(this.kingdom).calcNumUniqueIdeologies();
-		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
-		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
 		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
 		return Calc.moddedNum(base, mods);
 	}
@@ -259,9 +256,6 @@ class Region {
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(getNation(this.kingdom).core_regions, i)) conquests++;
 			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
-		let numUniqueIdeologies = "Unruled" == this.kingdom ? 0 : getNation(this.kingdom).calcNumUniqueIdeologies();
-		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People state ideology with " + numUniqueIdeologies + " unique ideologies"});
-		if ("Unruled" != this.kingdom && getNation(this.kingdom).calcStateReligion().startsWith("Iruhan") && World.calcGlobalIdeology() == "Iruhan (Tapestry of People)") mods.push({"v": numUniqueIdeologies * .03, "unit": "%", "why": "Tapestry of People global Church ideology with " + numUniqueIdeologies + " unique ideologies"});
 		return Calc.moddedNum(base, mods);
 	}
 
@@ -736,6 +730,8 @@ class Army {
 			let state = k.calcStateReligion();
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) state ideology"});
 			if (World.calcGlobalIdeology() == "Iruhan (Sword of Truth)" && state.startsWith("Iruhan")) mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology and Iruhan state religion"});
+			let numUniqueIdeologies = k.calcNumUniqueIdeologies();
+			if (state == "Iruhan (Tapestry of People)") mods.push(new Calc("*", [{"v": 0.04, "unit": "%", "why": "Tapestry of People bonus per unique ideology"}, {"v": numUniqueIdeologies, "unit": " regions", "why": "unique ideologies"}]));
 		}
 		if (k != undefined && k.calcStateReligion().startsWith("Iruhan") && g_data.inspires_hint > 0) {
 			mods.push(new Calc("*", [{"v": .05, "unit": "%", "why": "bonus per inspiration"}, {"v": g_data.inspires_hint, "unit": " Inspirations", "why": g_data.inspires_hint + " Iruhan cardinals inspiring in Sancta Civitate"}]));
@@ -907,5 +903,5 @@ let g_scoreProfiles = {
 	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy or neutral army is within two regions of your historical regions.", "+1 point per turn no enemy army is adjacent to or occupying any of your historical regions.", "-1 point if neither of the above apply."]},
 	"CULTURE":    {"selectable": true,  "description": ["+2 points per turn the mean unrest of population of your culture is lower than the mean unrest of all other people.", "-2 points otherwise."]},
 	"IDEOLOGY":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion and ideology.", "-2 points whenever a region of your ideology is converted to another religion or ideology."]},
-	"CULTIST":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region that is not an objective region."]}
+	"CULTIST":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region."]}
 };

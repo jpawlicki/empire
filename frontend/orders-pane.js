@@ -677,8 +677,6 @@ class OrdersPane extends HTMLElement {
 			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
 			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
 			happiness += Math.min(35, 100 - parseInt(eRation.value));
-			if (parseInt(eRation.value) == 75) happiness += 15;
-			else if (parseInt(eRation.value) == 125) happiness -= 10;
 			economyConsequences.innerHTML = "";
 			let taxParts = [];
 			let recruitParts = [];

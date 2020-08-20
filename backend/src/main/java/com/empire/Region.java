@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -236,6 +237,28 @@ class Region extends RulesObject {
 			else if (b.b == id) neighbors.add(b.a);
 		}
 		return neighbors;
+	}
+
+	public Map<Region, Integer> getRegionsByDistance(World w) {
+		class Node {
+			final Region r;
+			final int v;
+			Node(Region r, int v) {
+				this.r = r;
+				this.v = v;
+			}
+		}
+
+		HashMap<Region, Integer> ret = new HashMap<>();
+		LinkedList<Node> queue = new LinkedList<>();
+		queue.add(new Node(this, 0));
+		while (!queue.isEmpty()) {
+			Node n = queue.poll();
+			if (ret.containsKey(n.r)) continue;
+			ret.put(n.r, n.v);
+			for (Region r : n.r.getNeighbors(w)) queue.add(new Node(r, n.v + 1));
+		}
+		return ret;
 	}
 
 	public boolean isCoastal(World w) {

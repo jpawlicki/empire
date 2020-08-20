@@ -662,6 +662,8 @@ public class World extends RulesObject implements GoodwillProvider {
 		void synthesizeOrders() {
 			for (String k : kingdoms.keySet()) {
 				if (!orders.containsKey(k)) {
+					getNation(k).idleStrikes++;
+
 					// AI: Snythesize orders from hints.
 					HashMap<String, String> aiOrders = new HashMap<>();
 					aiOrders.put("economy_tax", getNation(k).taxratehint);
@@ -688,6 +690,8 @@ public class World extends RulesObject implements GoodwillProvider {
 					aiOrders.putAll(ArtificialIntelligence.getOrders(k, World.this));
 
 					orders.put(k, aiOrders);
+				} else {
+					getNation(k).idleStrikes = 0;
 				}
 			}
 		}
@@ -1262,7 +1266,14 @@ public class World extends RulesObject implements GoodwillProvider {
 							}
 						}
 					}
-					spyRings.removeIf(r -> r.isExposed() && Nation.isEnemy(r.getNation(), army.kingdom, World.this, region) && r.getLocation() == army.location);
+					List<SpyRing> removals = new ArrayList<>();
+					for (SpyRing r : spyRings) {
+						if (r.isExposed() && Nation.isEnemy(r.getNation(), army.kingdom, World.this, region) && r.getLocation() == army.location) {
+							notifyPlayer(r.getNation(), "Spy Ring Destroyed", "Our spy ring in " + region.name + " has been destroyed by a patrolling army.");
+							removals.add(r);
+						}
+					}
+					spyRings.removeAll(removals);
 				} else if (action.startsWith("Raze ")) {
 					army.raze(World.this, action, leaders.get(army), inspires, lastStands.contains(army.kingdom));
 				} else if (action.startsWith("Force civilians to ")) {
@@ -1735,7 +1746,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				for (Region r : regions) if (k.equals(r.getKingdom()) && r.noble != null && r.noble.unrest.get() >= .75) rebels = true;
 				if (rebels) {
 					ArrayList<String> rebelTo = new ArrayList<>();
-					for (String kk : kingdoms.keySet()) if (Nation.isEnemy(k, kk, World.this) && !getNation(kk).hasTag(Nation.Tag.REPUBLICAN)) rebelTo.add(kk);
+					for (String kk : kingdoms.keySet()) if (Nation.isEnemy(k, kk, World.this) && !getNation(kk).hasTag(Nation.Tag.REPUBLICAN) && !getNation(kk).tookFinalAction()) rebelTo.add(kk);
 					if (rebelTo.isEmpty()) {
 						HashMap<String, ArrayList<Double>> unrests = new HashMap<>();
 						for (Region r : regions) if (!k.equals(r.getKingdom()) && r.noble != null) {
