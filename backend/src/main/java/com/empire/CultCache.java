@@ -6,28 +6,28 @@ import java.util.Set;
 
 class CultCache {
 	private double size;
-	private Set<String> eligibleNations;
+	private String eligibleNation;
 	private int location;
-
-	static CultCache newCache(double size, Collection<String> eligibleNations, int location) {
-		return new CultCache(size, eligibleNations, location);
-	}
 
 	double getSize() {
 		return size;
 	}
 
 	boolean isEligible(String nation) {
-		return eligibleNations.contains(nation);
+		return eligibleNation.equals(nation);
 	}
 
 	int getLocation() {
 		return location;
 	}
 
-	private CultCache(double size, Collection<String> eligibleNations, int location) {
+	void grow(double size) {
+		this.size += size;
+	}
+
+	CultCache(double size, String eligibleNation, int location) {
 		this.size = size;
-		this.eligibleNations = new HashSet<>(eligibleNations);
+		this.eligibleNation = eligibleNation;
 		this.location = location;
 	}
 }

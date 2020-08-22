@@ -41,7 +41,6 @@ public class Rules {
 	// Scoring
 	double foodFedPointFactor;
 	double foodFedPlentifulPointFactor;
-	double foodRemainderPointFactor;
 	double scoreReligionPerConverted;
 	double scoreIdeologyPerConverted;
 	double scorePerConqueredTerritory;
@@ -63,7 +62,6 @@ public class Rules {
 
 	double swordOfTruthMod;
 	double iruhanMod;
-	double lastStandMod;
 	double perInspireMod;
 
 	double patrolledPirateThreatMod;

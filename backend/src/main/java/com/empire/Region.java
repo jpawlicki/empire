@@ -196,8 +196,8 @@ class Region extends RulesObject {
 				Ideology si = Nation.getStateReligion(k, w);
 				if (max.religion == si.religion) w.score(k, Nation.ScoreProfile.RELIGION, getRules().scoreReligionPerConverted);
 				if (religion.religion == si.religion) w.score(k, Nation.ScoreProfile.RELIGION, -getRules().scoreReligionPerConverted);
-				if (max == si) w.score(k, Nation.ScoreProfile.IDEOLOGY, getRules().scoreIdeologyPerConverted);
-				if (religion == si) w.score(k, Nation.ScoreProfile.IDEOLOGY, -getRules().scoreIdeologyPerConverted);
+				if (max == si) w.score(k, Nation.ScoreProfile.RELIGION, getRules().scoreIdeologyPerConverted);
+				if (religion == si) w.score(k, Nation.ScoreProfile.RELIGION, -getRules().scoreIdeologyPerConverted);
 			}
 		}
 		religion = max;

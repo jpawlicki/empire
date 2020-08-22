@@ -41,14 +41,11 @@ public class Nation {
 
 	enum ScoreProfile {
 		CULTIST,
-		CULTURE,
 		GLORY,
 		HAPPINESS,
-		IDEOLOGY,
 		PROSPERITY,
 		RELIGION,
 		RICHES,
-		SECURITY,
 		TERRITORY;
 	}
 
@@ -119,7 +116,6 @@ public class Nation {
 	Map<Gothi, Boolean> gothi = new HashMap<>();
 	double goodwill;
 	boolean loyalToCult;
-	List<Noble> court = new ArrayList<>();
 	String colorFg;
 	String colorBg;
 	Culture culture;
@@ -130,6 +126,7 @@ public class Nation {
 	String rationhint = "100";
 	String signingbonushint = "0";
 	int idleStrikes = 0;
+	boolean sendEmail = true;
 
 	private List<Tag> tags = new ArrayList<>();
 	private boolean scoreProfilesLocked;
@@ -215,10 +212,11 @@ public class Nation {
 		return s;
 	}
 
-	void filterForView(boolean filterScore) {
+	void filterForView(boolean otherNation) {
 		email = "";
 		idleStrikes = 0;
-		if (filterScore) {
+		if (otherNation) {
+			sendEmail = false;
 			score = new HashMap<>();
 			shadowScore = new HashMap<>();
 			profiles = new HashSet<>();

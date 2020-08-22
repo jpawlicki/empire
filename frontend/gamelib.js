@@ -549,14 +549,13 @@ class Kingdom {
 		this.tags = dataEntry.tags;
 		this.goodwill = dataEntry.goodwill;
 		this.loyal_to_cult = dataEntry.loyal_to_cult;
-		this.court = dataEntry.court;
 		this.taxratehint = dataEntry.taxratehint;
 		this.shipratehint = dataEntry.shipratehint;
 		this.signingbonushint = dataEntry.signingbonushint;
 		this.rationhint = dataEntry.rationhint;
 		this.score = dataEntry.score;
 		this.profiles = dataEntry.profiles;
-		this.score_profiles_locked = dataEntry.score_profiles_locked;
+		this.send_email = dataEntry.send_email;
 	}
 
 	calcRecruitment() {

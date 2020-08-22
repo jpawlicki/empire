@@ -111,18 +111,10 @@ class OrdersPane extends HTMLElement {
 							<option value="extend">Extend the game by 6 turns</option>
 						</select>
 					</div>
-					<h1>Final Actions</h1>
-					<expandable-snippet text="Final Actions are powerful actions that end the story of your nation and remove you from the game."></expandable-snippet>
-					<select id="final_action" name="final_action">
-						<option value="continue_ruling">Continue Ruling</option>
-						<option value="exodus">Exodus</option>
-						<option value="abdicate">Gracefully Abdicate</option>
-						<option value="last_stand">Last Stand</option>
-						<option value="salt_the_earth">Salt the Earth</option>
-					</select>
-					<div id="final_action_details"></div>
+					<h1>Email Notifications</h1>
+					<label><input type="checkbox" name="send_email"></input>Email me on each turn.</label>
 					<h1><a href="https://docs.google.com/document/d/1BCjssbKPYEegfva2PqUVy1cD96FTgMtJr3SjUKEsQLw/edit?usp=sharing" target="_blank">Rules Document</a></h1>
-					<h1>Let's Play Notes (Optional)</h1>
+					<h1>Let's Play Notes</h1>
 					<expandable-snippet text="After the game is over, the app will publish these notes to all players for inclusion in a Let's Play style blog. Feel free to record your thoughts, plans, and reactions, to add perspectives to that record."></expandable-snippet>
 					<textarea name="letsplay_notes"></textarea>
 				</div>
@@ -371,17 +363,6 @@ class OrdersPane extends HTMLElement {
 				for (let k in g_data.kingdoms) {
 					if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;
 					opts.push("Transfer character to " + k);
-				}
-			} else {
-				if (!g_data.kingdoms[whoami].score_profiles_locked) {
-					for (let profile of Object.keys(g_scoreProfiles).sort()) {
-						if (!g_scoreProfiles[profile].selectable) continue;
-						if (g_data.kingdoms[whoami].profiles.includes(profile)) {
-							opts.push("Reflect on " + profile.toLowerCase() + " (remove)");
-						} else {
-							opts.push("Reflect on " + profile.toLowerCase() + " (add)");
-						}
-					}
 				}
 			}
 			return opts;
@@ -837,6 +818,7 @@ class OrdersPane extends HTMLElement {
 					if (c.kingdom != whoami) continue;
 					shadow.querySelector("[name=action_army_" + c.id + "]").value = c.orderhint;
 				}
+				if (g_data.kingdoms[whoami].send_email != undefined) shadow.querySelector("[name=send_email]").checked = g_data.kingdoms[whoami].send_email;
 				if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
 				if (g_data.kingdoms[whoami].shipratehint != undefined) shadow.querySelector("[name=economy_ship]").value = g_data.kingdoms[whoami].shipratehint;
 				if (g_data.kingdoms[whoami].signingbonushint != undefined) shadow.querySelector("[name=economy_recruit_bonus]").value = g_data.kingdoms[whoami].signingbonushint;

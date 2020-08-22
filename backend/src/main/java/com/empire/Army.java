@@ -42,7 +42,7 @@ class Army extends RulesObject {
 	Map<String, Double> composition = new HashMap<>();
 	String orderhint = "";
 
-	public double calcStrength(World w, Character leader, int inspires, boolean lastStand) {
+	public double calcStrength(World w, Character leader, int inspires) {
 		double strength = size * (isArmy() ? getRules().armyBaseStrength : getRules().navyBaseStrength);
 
 		double mods = 1.0;
@@ -55,7 +55,6 @@ class Army extends RulesObject {
 		if (Ideology.SWORD_OF_TRUTH == Nation.getStateReligion(kingdom, w)) mods += getRules().swordOfTruthMod;
 		if (Ideology.SWORD_OF_TRUTH == w.getDominantIruhanIdeology() && Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += getRules().iruhanMod;
 		if (Ideology.TAPESTRY_OF_PEOPLE == Nation.getStateReligion(kingdom, w)) mods += getRules().perIdeologyTapestryArmyMod * Region.numUniqueIdeologies(kingdom, w);
-		if (lastStand) mods += getRules().lastStandMod;
 		if (Nation.getStateReligion(kingdom, w).religion == Religion.IRUHAN) mods += inspires * getRules().perInspireMod;
 		if (leader != getRules().noLeader) {
 			mods += leader.calcLeadMod(type);
@@ -64,8 +63,8 @@ class Army extends RulesObject {
 		return strength * mods;
 	}
 
-	public double getCasualtySize() {
-		return size * (isNavy() ? 100 : 1);
+	public double getEffectiveSize() {
+		return size * (isNavy() ? 30 : 1);
 	}
 
 	public boolean hasTag(Tag tag) {
@@ -103,10 +102,10 @@ class Army extends RulesObject {
 	/**
 	 * Orders the army to attempt to raze something.
 	 */
-	public void raze(World w, String order, Character leader, int inspires, boolean lastStanding) {
+	public void raze(World w, String order, Character leader, int inspires) {
 		if (!isArmy()) return;
 		Region region = w.regions.get(location);
-		int razes = (int) (calcStrength(w, leader, inspires, lastStanding) * getRules().razesPerNormalizedStrength / region.calcMinConquestStrength(w));
+		int razes = (int) (calcStrength(w, leader, inspires) * getRules().razesPerNormalizedStrength / region.calcMinConquestStrength(w));
 		if (razes == 0) {
 			w.notifyPlayer(kingdom, "Razing Failed", "Army " + id + " is not powerful enough to raze constructions in " + region.name + ".");
 			return;
@@ -141,7 +140,7 @@ class Army extends RulesObject {
 	 * Orders the army to conquer the region they inhabit.
 	 * Modifies conqueredRegions.
 	 */
-	public void conquer(World w, String order, Set<Region> conqueredRegions, Map<String, List<String>> tributes, Map<Army, Character> leaders, int inspires, Set<String> lastStands, Set<String> excommunicatedNations) {
+	public void conquer(World w, String order, Set<Region> conqueredRegions, Map<String, List<String>> tributes, Map<Army, Character> leaders, int inspires, Set<String> excommunicatedNations) {
 		if (!isArmy()) return;
 		String target = order.replace("Conquer for ", "");
 		if (target.equals("Conquer")) target = kingdom;
@@ -152,9 +151,9 @@ class Army extends RulesObject {
 		if (conqueredRegions.contains(region)) return;
 		// Must be strongest in region (not counting other armies of the same ruler).
 		boolean stopped = false;
-		double strength = calcStrength(w, leaders.get(this), inspires, lastStands.contains(kingdom));
+		double strength = calcStrength(w, leaders.get(this), inspires);
 		for (Army a : w.armies) {
-			if (a.isArmy() && a.location == location && !a.kingdom.equals(kingdom) && a.calcStrength(w, leaders.get(a), inspires, lastStands.contains(a.kingdom)) > strength) {
+			if (a.isArmy() && a.location == location && !a.kingdom.equals(kingdom) && a.calcStrength(w, leaders.get(a), inspires) > strength) {
 				stopped = true;
 				w.notifyPlayer(kingdom, "Conquest Failed", "Army " + id + " is not the strongest army in " + region.name + " and cannot conquer it.");
 				break;
