@@ -1122,12 +1122,19 @@ public class World extends RulesObject implements GoodwillProvider {
 		void orderOverrides() {
 			for (Army army : armies) {
 				if (army.hasTag(Army.Tag.HIGHER_POWER)) {
-					// If they are adjacent to a special region, move into it, regardless of other orders.
 					String originalOrder = orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "");
-					for (Region r : regions.get(army.location).getNeighbors(World.this)) {
-						if (cultRegions.contains(regions.indexOf(r)) && !r.cultAccessed) orders.get(army.kingdom).put("action_army_" + army.id, "Travel to " + r.name);
+					if ("Disband".equals(originalOrder)) {
+						army.addTag(Army.Tag.PILLAGERS);
+						army.addTag(Army.Tag.UNPREDICTABLE);
+						army.kingdom = "Pirate";
+						notifyPlayer(army.kingdom, "Army Ignores Orders", "An army we control that serves a Higher Power has refused to disband. Instead they now rove the world as pirates!");
+					} else {
+						// If they are adjacent to a special region, move into it, regardless of other orders.
+						for (Region r : regions.get(army.location).getNeighbors(World.this)) {
+							if (cultRegions.contains(regions.indexOf(r)) && !r.cultAccessed) orders.get(army.kingdom).put("action_army_" + army.id, "Travel to " + r.name);
+						}
+						if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifyPlayer(army.kingdom, "Army Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!");
 					}
-					if (!orders.getOrDefault(army.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + army.id, "").equals(originalOrder)) notifyPlayer(army.kingdom, "Army " + army.id + " Ignores Orders", "An army we control that serves a Higher Power has ignored your orders!");
 				}
 			}
 		}
@@ -1292,7 +1299,6 @@ public class World extends RulesObject implements GoodwillProvider {
 						notifyPlayer(army.kingdom, "Soldiers To " + target, target + " has refused to accept responsibility for our soldiers.");
 					}
 				} else if (action.startsWith("Disband")) {
-					if (army.hasTag(Army.Tag.HIGHER_POWER)) continue;
 					double threatIncrease = 0;
 					if (region.isLand()) {
 						addPopulation(region, army.getEffectiveSize() * .67);

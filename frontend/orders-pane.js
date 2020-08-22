@@ -972,7 +972,6 @@ class OrdersPane extends HTMLElement {
 			if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;
 			opts.push("Transfer " + unit.type + " to " + k);
 		}
-		if (!contains(unit.tags, "Higher Power")) opts.push("Disband");
 		return opts;
 	};
 
