@@ -136,7 +136,6 @@ final class Crisis {
 			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {
 				Nation n = w.getNation(r.getKingdom());
 				if (!n.hasTag(Nation.Tag.EVANGELICAL) && !n.hasTag(Nation.Tag.HOLY) && !n.hasTag(Nation.Tag.MYSTICAL)) return false;
-				if (Nation.getStateReligion(r.getKingdom(), w) != Ideology.TAPESTRY_OF_PEOPLE) return false;
 				return true;
 			}
 		},
@@ -155,7 +154,7 @@ final class Crisis {
 		GROW("%NOBLENAME% wishes to welcome more people to %REGIONNAME%, and asks you to grow its population to 200k.", "%NOBLENAME% is very pleased that %REGIONNAME% is bursting with people.", "%NOBLENAME% is upset that %REGIONNAME% has not had its population increased.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {
-				return r.population >= 200000;
+				return r.population >= 125000;
 			}
 
 			@Override

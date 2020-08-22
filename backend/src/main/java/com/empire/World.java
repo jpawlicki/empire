@@ -154,6 +154,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		// Set up regions (culture, popular unrest).
 		for (Geography.Region r : w.geography.regions) {
 			Region rr = Region.newRegion(w.getRules());
+			rr.id = w.regions.size();
 			rr.type = r.type;
 			rr.name = r.name;
 			if (rr.isLand()) {
@@ -509,6 +510,9 @@ public class World extends RulesObject implements GoodwillProvider {
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 				r.constructions.add(Construction.makeFortifications(w.getRules().baseCostFortifications));
 			}
+			if (nationSetup.containsKey(r.getKingdom()) && nationSetup.get(r.getKingdom()).hasTag(Nation.Tag.MYSTICAL)) {
+				r.constructions.add(Construction.makeTemple(r.religion, w.getRules().baseCostTemple));
+			}
 		}
 		return w;
 	}
@@ -830,45 +834,45 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 			// Spell tickers.
 			if (passedSpells.contains(Nation.Gothi.RJINKU)) {
-				if (tivar.quake == 0)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi of Rjinku have agreed to call forth the Quake. Buildings will be destroyed every week until the earthquakes end. If they do not end soon, destruction of crops will follow.");
+				if (tivar.quake == 0)	notifyAllPlayers("The Quake Begins", "The necessary number of gothi have agreed to call forth the Quake. In his underground domain, the eldritch diety Rjinku hammers at the pillars of the world, shaking the surface. Buildings will be destroyed every week until the earthquakes end. If they do not end soon, destruction of crops will follow.");
 				tivar.quake++;
 			} else if (tivar.quake > 0) {
 				if (Math.random() > getRules().tivarSpellContinueChance) {
 					tivar.quake = 0;
-					notifyAllPlayers("Earthquakes End", "The magical earthquakes wracking the land have finally been ended.");
+					notifyAllPlayers("Earthquakes End", "Rjinku has grown weary, and the magical earthquakes wracking the land have finally been ended.");
 				} else {
 					tivar.quake++;
 				}
 			}
 			if (passedSpells.contains(Nation.Gothi.SYRJEN)) {
-				if (tivar.deluge == 0) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi of Syrjen have agreed to call forth the Deluge. Swollen rivers and lakes cause land regions to be navigable by warships, but flash floods wash away a quarter of any ships or soldiers trying to traverse them. As the floods intensify, crops will be lost to the rising waters.");
+				if (tivar.deluge == 0) notifyAllPlayers("The Deluge Begins", "The necessary number of gothi have agreed to call forth the Deluge. From her riverbeds and springs, the eldritch diety Syrjen sends forth torrential waters, swelling rivers and lakes enough to cause land regions to be navigable by warships. Flash floods wash away a quarter of any ships or soldiers trying to traverse them. As the floods intensify, crops will be lost to the rising waters.");
 				tivar.deluge++;
 			} else if (tivar.deluge > 0) {
 				if (Math.random() > getRules().tivarSpellContinueChance) {
 					tivar.deluge = 0;
-					notifyAllPlayers("Deluge Ends", "The magical deluge drowning the land has finally ceased.");
+					notifyAllPlayers("Deluge Ends", "Syrjen has been appeased, and the magical deluge drowning the land has finally ceased.");
 				} else {
 					tivar.deluge++;
 				}
 			}
 			if (passedSpells.contains(Nation.Gothi.LYSKR)) {
-				if (tivar.veil == 0) notifyAllPlayers("The Veil Falls", "The necessary number of gothi of Lyskr have agreed to call forth the Veil. Heavy fog chokes out the sun and reduces visibility severely. If the fog does not lift soon, crops will starve.");
+				if (tivar.veil == 0) notifyAllPlayers("The Veil Falls", "The necessary number of gothi have agreed to call forth the Veil. Beneath the sea, the eldritch diety Lyskr breathes out a heavy fog, choking out the sun and concealing the movements of fleets and armies. Lyskr's presence can be felt aiding those who plot in secret. If the fog does not lift soon, crops will starve.");
 				tivar.veil++;
 			} else if (tivar.veil > 0) {
 				if (Math.random() > getRules().tivarSpellContinueChance) {
 					tivar.veil = 0;
-					notifyAllPlayers("Veil Ends", "The magical fog blanketing the land has finally lifted.");
+					notifyAllPlayers("Veil Ends", "Lyskr has returned to slumber, and the magical fog blanketing the land has finally lifted.");
 				} else {
 					tivar.veil++;
 				}
 			}
 			if (passedSpells.contains(Nation.Gothi.ALYRJA)) {
-				if (tivar.warwinds == 0) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi of Alyrja have agreed to call forth the Warwinds. Titanic waves destroy a quarter of any ship or army at sea, and powerful winds blow all vessels at sea off course. The temperature begins to plummet, threating to freeze crops worldwide.");
+				if (tivar.warwinds == 0) notifyAllPlayers("The Warwinds Howl", "The necessary number of gothi have agreed to call forth the Warwinds. From her high mountaintop, the eldritch diety Alyrja throws forth horrific winds, flattening crops and summoning titanic waves. Powerful winds blow all vessels at sea off course, and send many straight to the depths. If the storm does not abate soon, crops will be lost.");
 				tivar.warwinds++;
 			} else if (tivar.warwinds > 0) {
 				if (Math.random() > getRules().tivarSpellContinueChance) {
 					tivar.warwinds = 0;
-					notifyAllPlayers("Warwinds End", "The magical storms devastating the land have finally calmed.");
+					notifyAllPlayers("Warwinds End", "Alyrja has calmed, and the magical storms devastating the land have finally calmed.");
 				} else {
 					tivar.warwinds++;
 				}
@@ -1142,13 +1146,12 @@ public class World extends RulesObject implements GoodwillProvider {
 		void buildAction(String action, String kingdom, Region region) {
 			double costMod = 1;
 			Nation nation = getNation(kingdom);
-			if (nation.hasTag(Nation.Tag.INDUSTRIAL)) costMod -= .25;
+			if (nation.hasTag(Nation.Tag.INDUSTRIAL)) costMod -= .35;
 			Construction ct;
 			if (action.contains("Shipyard")) {
 				ct = Construction.makeShipyard(Math.max(0, getRules().baseCostShipyard * costMod));
 			} else if (action.contains("Temple")) {
 				Ideology ideo = Ideology.fromString(action.replace("Build Temple (", "").replace(")", ""));
-				if (nation.hasTag(Nation.Tag.MYSTICAL)) costMod -= .5;
 				if (nation.hasTag(Nation.Tag.EVANGELICAL) && region.religion != Nation.getStateReligion(kingdom, World.this)) costMod -= 1;
 				if (ideo.religion == Religion.IRUHAN && region.religion.religion != Religion.IRUHAN && getDominantIruhanIdeology() == Ideology.VESSEL_OF_FAITH) costMod -= 1;
 				if (region.religion == Ideology.TAPESTRY_OF_PEOPLE) {
@@ -1172,7 +1175,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (ct.religion == Ideology.VESSEL_OF_FAITH) {
 						for (Region rr : regions) if (rr.isLand() && rr.religion == Ideology.VESSEL_OF_FAITH) rr.unrestPopular.add(-0.06);
 					}
-					if (nation.hasTag(Nation.Tag.MYSTICAL)) region.unrestPopular.add(-0.1);
 					if (church.hasDoctrine(Church.Doctrine.ANTIECUMENISM) && ct.religion.religion != Religion.IRUHAN) nation.goodwill += getRules().antiecumenismConstructionOpinion;
 					if (church.hasDoctrine(Church.Doctrine.ANTISCHISMATICISM) && ct.religion == Ideology.VESSEL_OF_FAITH) nation.goodwill += getRules().antischismaticismConstructionOpinion;
 					if (church.hasDoctrine(Church.Doctrine.WORKS_OF_IRUHAN) && ct.religion.religion == Religion.IRUHAN) nation.goodwill += getRules().worksOfIruhanConstructionOpinion;
@@ -1199,8 +1201,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					r.noble.addExperience(getNation(r.getKingdom()).hasTag(Nation.Tag.ARISTOCRATIC));
 				} else if (action.equals("Relax")) {
 					r.noble.unrest.add(getRules().nobleActionRelaxUnrest);
-				} else if (action.equals("Harvest Early")) {
-					r.harvestEarly(kingdoms.keySet().stream().filter(k -> getNation(k).hasTag(Nation.Tag.STOIC)).collect(Collectors.toSet()), World.this);
 				} else if (action.equals("Establish Spy Ring")) {
 					String kingdom = r.getKingdom();
 					final int ridf = rid;
@@ -1431,9 +1431,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					incomeSources.get(c.kingdom).spentSpyEstablishments += cost;
 					spyRings.add(SpyRing.newSpyRing(getRules(), c.kingdom, c.calcSpyRingEstablishmentStrength(), c.location));
 					c.orderhint = "Hide in " + region.name;
-				} else if (action.equals("Harvest Early")) {
-					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
-					region.harvestEarly(kingdoms.keySet().stream().filter(k -> getNation(k).hasTag(Nation.Tag.STOIC)).collect(Collectors.toSet()), World.this);
 				} else if (action.startsWith("Govern")) {
 					if (!region.isLand() || !region.getKingdom().equals(c.kingdom)) continue;
 					if (!governors.containsKey(region) || governors.get(region).calcGovernTaxMod() < c.calcGovernTaxMod()) governors.put(region, c);
@@ -1656,7 +1653,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					if (region.isSea()) continue;
 					for (Army a : armies) if (a.location == i && a.isNavy()) {
 						Army max = getMaxArmyInRegion(i, leaders, inspires);
-						if (max != null && Nation.isEnemy(a.kingdom, max.kingdom, World.this)) {
+						if (max != null && Nation.isEnemy(a.kingdom, max.kingdom, World.this, region)) {
 							notifyPlayer(a.kingdom, "Fleet Captured", "Our fleet of " + Math.round(a.size) + " warships in " + region.name + " was seized by " + max.kingdom + ".");
 							a.kingdom = max.kingdom;
 							if (leaders.containsKey(a)) leaders.get(a).leadingArmy = -1;
@@ -1696,7 +1693,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				if (r.getKingdom() != null && !Nation.UNRULED_NAME.equals(r.getKingdom())) {
 					for (String k : tributes.get(r.getKingdom())) if (getNation(k).hasTag(Nation.Tag.IMPERIALISTIC)) unrestMod -= 0.03;
 				}
-				for (Construction c : r.constructions) if (c.type == Construction.Type.TEMPLE) unrestMod -= 0.02;
+				for (Construction c : r.constructions) if (c.type == Construction.Type.TEMPLE && (c.religion == Ideology.VESSEL_OF_FAITH || c.religion == Ideology.RIVER_OF_KUUN)) unrestMod -= 0.02;
 				r.unrestPopular.add(unrestMod);
 
 				if (r.noble != null) for (String k : tributes.keySet()) if (tributes.get(k).contains(r.getKingdom()) && Nation.isEnemy(k, r.getKingdom(), World.this) && getNation(k).previousTributes.contains(r.getKingdom())) r.noble.unrest.add(.08);
@@ -1904,12 +1901,15 @@ public class World extends RulesObject implements GoodwillProvider {
 
 		void gainChurchIncome() {
 			double churchIncome = getRules().churchIncomePerPlayer * numPlayers + inspires * 20;
-			if (Ideology.TAPESTRY_OF_PEOPLE == getDominantIruhanIdeology()) churchIncome *= 2;
+			double mods = 1;
+			if (Ideology.TAPESTRY_OF_PEOPLE == getDominantIruhanIdeology()) mods += 1;
+			mods += inspires * .2;
 
 			HashMap<String, Double> foodBalance = new HashMap<>();
 			for (Region r : regions) {
 				if (r.isSea()) continue;
-				double balance = r.calcConsumption() * turnsUntilHarvest() - r.food;
+				int turnsUntilHarvest = 3 - (date + 1) % 4; // Note that gainChurchIncome runs after the harvest and eat steps, hence the use of date + 1.
+				double balance = r.calcConsumption() * turnsUntilHarvest - r.food;
 				foodBalance.put(r.getKingdom(), foodBalance.getOrDefault(r.getKingdom(), 0.0) + balance);
 			}
 			double totalMeasuresDeficit = 0;
@@ -2007,9 +2007,19 @@ public class World extends RulesObject implements GoodwillProvider {
 		void payTroops() {
 			HashMap<String, Double> payments = new HashMap<String, Double>();
 			for (Army a : armies) {
-				if ("Pirate".equals(a.kingdom)) continue;
 				double cost = a.getCost(World.this, orders.getOrDefault(a.kingdom, new HashMap<String, String>()).getOrDefault("action_army_" + a.id, ""));
 				if (cost == 0) continue;
+				if ("Pirate".equals(a.kingdom)) {
+					if (a.gold < cost) {
+						a.gold -= cost;
+					} else {
+						double deserting = (1 - (a.gold / cost)) * a.size * 0.33;
+						a.size -= deserting;
+						regions.get(a.location).population += deserting;
+						a.gold = 0;
+					}
+					continue;
+				}
 				payments.put(a.kingdom, payments.getOrDefault(a.kingdom, 0.0) + cost);
 			}
 			for (String k : payments.keySet()) {
@@ -2037,10 +2047,10 @@ public class World extends RulesObject implements GoodwillProvider {
 		void reapHarvests() {
 			Set<String> stoicNations = new HashSet<>();
 			for (String k : kingdoms.keySet()) if (kingdoms.get(k).hasTag(Nation.Tag.STOIC)) stoicNations.add(k);
-			if (isHarvestTurn()) {
+			if (Season.isHarvest(date)) {
 				for (Region r : regions) r.harvest(stoicNations, World.this);
 			}
-			for (Region r : regions) r.plant(isHarvestTurn());
+			for (Region r : regions) r.plant(date);
 		}
 
 		void cedeRegions() {
@@ -2254,7 +2264,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			}
 
 			// Growth
-			for (Region r : regions) r.population *= 1.001;
+			for (Region r : regions) r.grow();
 		}
 
 		private void damageCrops(int spellDuration) {
@@ -2434,8 +2444,16 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (String k : kingdoms.keySet()) getNation(k).previousTributes = tributes.get(k);
 
 			// Notify of upcoming harvest.
-			if (isHarvestTurn()) {
-				notifyAllPlayers("Harvest Preparations", "People all over the world prepare to reap the harvest upon which they have labored, and hunger is (perhaps only temporarily) banished. All regions will produce their harvest this turn (before eating).");
+			if (Season.isHarvest(date)) {
+				notifyAllPlayers("Harvest Preparations", "People all over the world prepare to reap the harvest upon which they have labored, and hunger is temporarily banished. All regions will produce their harvest this turn (before eating).");
+			}
+
+			Season season = Season.get(date);
+			if (season != Season.get(date - 1)) {
+				if (season == Season.WINTER) notifyAllPlayers("Winter Arrives", "It is now winter. Icy winds blow from the north, carrying snow and hail. Fewer crops are planted in winter than in autumn.");
+				else if (season == Season.SPRING) notifyAllPlayers("Spring Arrives", "It is now spring. The days length, and the natural world wakes from hibernation. More crops are planted during the spring than during autumn or winter.");
+				else if (season == Season.SUMMER) notifyAllPlayers("Summer Arrives", "It is now summer. The people celebrate the warm weather and long days. The most crops of any season are planted during summer.");
+				else if (season == Season.AUTUMN) notifyAllPlayers("Autumn Arrives", "It is now autumn. The days shorten and the weather cools. The fat months of summer have passed, and the people look toward a lean winter.");
 			}
 		}
 
@@ -2698,14 +2716,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		// Filter orderhints.
 		for (Army a : armies) if (!a.kingdom.equals(kingdom)) a.orderhint = "";
 		for (Character a : characters) if (!a.kingdom.equals(kingdom)) a.orderhint = "";
-	}
-
-	public boolean isHarvestTurn() {
-		return (date + 52 - 12) % 13 == 0;
-	}
-
-	public int turnsUntilHarvest() {
-		return (13 - ((date + 52 - 12) % 13)) % 13;
 	}
 
 	@Override

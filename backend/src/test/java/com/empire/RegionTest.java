@@ -1,6 +1,7 @@
 package com.empire;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,12 +68,25 @@ public class RegionTest {
 		when(r.getKingdom()).thenReturn(kingdom);
 		r.type = type;
 		r.religion = religion;
+		r.constructions = new ArrayList<>();
 		return r;
 	}
 
 	@Test
 	public void numUniqueIdeologiesTest(){
+		assertEquals(0, Region.numUniqueIdeologies(k1, w));
+		w.regions.get(0).constructions.add(Construction.makeTemple(Ideology.ALYRJA, 0));
+		assertEquals(1, Region.numUniqueIdeologies(k1, w));
+		assertEquals(0, Region.numUniqueIdeologies(k2, w));
+		w.regions.get(0).constructions.add(Construction.makeTemple(Ideology.LYSKR, 0));
+		assertEquals(2, Region.numUniqueIdeologies(k1, w));
+		assertEquals(0, Region.numUniqueIdeologies(k2, w));
+		w.regions.get(1).constructions.add(Construction.makeTemple(Ideology.RJINKU, 0));
 		assertEquals(3, Region.numUniqueIdeologies(k1, w));
+		assertEquals(0, Region.numUniqueIdeologies(k2, w));
+		w.regions.get(1).constructions.add(Construction.makeTemple(Ideology.LYSKR, 0));
+		assertEquals(3, Region.numUniqueIdeologies(k1, w));
+		assertEquals(0, Region.numUniqueIdeologies(k2, w));
 	}
 
 	// TODO(s):	The can transfer food tests rely on making a test w that is too complex at the moment, these should
@@ -265,7 +279,7 @@ public class RegionTest {
 		r.religion = Ideology.CHALICE_OF_COMPASSION;
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(false);
+		r.plant(2);
 		assertEquals(2500, r.crops, DELTA);
 	}
 
@@ -274,7 +288,7 @@ public class RegionTest {
 		r.religion = Ideology.ALYRJA;
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(false);
+		r.plant(2);
 		assertEquals(0, r.crops, DELTA);
 	}
 
@@ -282,8 +296,32 @@ public class RegionTest {
 	public void plantHarvestTurn() {
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(true);
-		assertEquals(130000, r.crops, DELTA);
+		r.plant(4);
+		assertEquals(30000, r.crops, DELTA);
+	}
+
+	@Test
+	public void plantHarvestTurnWinter() {
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(8);
+		assertEquals(20000, r.crops, DELTA);
+	}
+
+	@Test
+	public void plantHarvestTurnSpring() {
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(20);
+		assertEquals(40000, r.crops, DELTA);
+	}
+
+	@Test
+	public void plantHarvestTurnSummer() {
+		r.population = 10000;
+		r.crops = 0;
+		r.plant(32);
+		assertEquals(70000, r.crops, DELTA);
 	}
 
 	@Test
@@ -291,8 +329,8 @@ public class RegionTest {
 		r.noble = Noble.newNoble(Culture.ANPILAYN, 0, Utils.rules);
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(true);
-		assertEquals(130000 * (1 + 0.05), r.crops, DELTA);
+		r.plant(4);
+		assertEquals(30000 * (1 + 0.05), r.crops, DELTA);
 	}
 
 	@Test
@@ -301,8 +339,8 @@ public class RegionTest {
 		for (int i = 0; i < 24; i++) r.noble.addExperience(false);
 		r.population = 10000;
 		r.crops = 0;
-		r.plant(true);
-		assertEquals(130000 * (1 + 0.25), r.crops, DELTA);
+		r.plant(4);
+		assertEquals(30000 * (1 + 0.25), r.crops, DELTA);
 	}
 
 	@Test
@@ -311,7 +349,7 @@ public class RegionTest {
 		r.crops = 1000000;
 		r.food = 0;
 		r.harvest(new HashSet<>(), unused -> 0);
-		assertEquals(250000, r.food, DELTA);
+		assertEquals(80000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
 
@@ -322,7 +360,7 @@ public class RegionTest {
 		r.food = 0;
 		r.unrestPopular.set(.95);
 		r.harvest(new HashSet<>(), unused -> 0);
-		assertEquals(75000, r.food, DELTA);
+		assertEquals(24000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
 
@@ -333,7 +371,7 @@ public class RegionTest {
 		r.food = 0;
 		r.unrestPopular.set(.95);
 		r.harvest(Collections.singleton("k1"), unused -> 0);
-		assertEquals(250000, r.food, DELTA);
+		assertEquals(80000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
 }

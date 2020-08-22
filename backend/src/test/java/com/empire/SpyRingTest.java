@@ -20,6 +20,9 @@ public class SpyRingTest {
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
+		r0.constructions = Arrays.asList();
+		w.tivar = new Tivar();
+		w.characters = Arrays.asList();
 		when(w.getNation("nation")).thenReturn(n);
 		r.involve(0, SpyRing.InvolvementDisposition.SUPPORTING);
 		Plot.OutcomeWeights outcome = new Plot.OutcomeWeights(Utils.rules);
@@ -36,6 +39,9 @@ public class SpyRingTest {
 		Nation n = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
+		r0.constructions = Arrays.asList();
+		w.tivar = new Tivar();
+		w.characters = Arrays.asList();
 		w.regions = Arrays.asList(r0);
 		when(w.getNation("nation")).thenReturn(n);
 		r.involve(0, SpyRing.InvolvementDisposition.SABOTAGING);
@@ -54,6 +60,9 @@ public class SpyRingTest {
 		Nation defender = mock(Nation.class);
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("defender");
+		r0.constructions = Arrays.asList();
+		w.tivar = new Tivar();
+		w.characters = Arrays.asList();
 		w.regions = Arrays.asList(r0);
 		Relationship enmity = new Relationship();
 		enmity.battle = Relationship.War.ATTACK;
@@ -77,6 +86,9 @@ public class SpyRingTest {
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
+		r0.constructions = Arrays.asList();
+		w.tivar = new Tivar();
+		w.characters = Arrays.asList();
 		when(w.getNation("nation")).thenReturn(n);
 		r.involve(0, SpyRing.InvolvementDisposition.SUPPORTING);
 		Plot.OutcomeWeights outcome = new Plot.OutcomeWeights(Utils.rules);
@@ -101,6 +113,9 @@ public class SpyRingTest {
 		Region r0 = mock(Region.class);
 		when(r0.getKingdom()).thenReturn("nation");
 		w.regions = Arrays.asList(r0);
+		r0.constructions = Arrays.asList();
+		w.tivar = new Tivar();
+		w.characters = Arrays.asList();
 		when(w.getNation("nation")).thenReturn(n);
 		r.involve(0, SpyRing.InvolvementDisposition.SUPPORTING);
 		Plot.OutcomeWeights outcome = new Plot.OutcomeWeights(Utils.rules);

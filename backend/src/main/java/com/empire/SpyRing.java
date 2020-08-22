@@ -95,12 +95,17 @@ class SpyRing extends RulesObject {
 	void addContributionTo(int plotId, Region targetRegion, String defender, World w, Plot.OutcomeWeights outcome) {
 		if (!nation.equals(defender) && (involvedInPlotId == null || involvedInPlotId != plotId)) return;
 		double strength = calcPlotPower(w, targetRegion);
+		double mod = 1;
+		if (getNation().equals(w.regions.get(location).getKingdom())) {
+			mod += w.regions.get(location).constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.LYSKR).count() * 0.2;
+		}
 		if (nation.equals(defender)) {
-			outcome.defend(strength);
+			outcome.defend(strength * mod);
 		} else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SUPPORTING) {
-			outcome.support(strength);
+			if (w.tivar.veil > 0) mod += 1;
+			mod += w.characters.stream().filter(c -> nation.equals(c.kingdom) && c.location == targetRegion.id).map(c -> c.calcSpyRingStrengthBonus()).reduce((a, b) -> a + b).orElse(0.0);
+			outcome.support(strength * mod);
 		} else if (plotId == involvedInPlotId && involvementType == InvolvementDisposition.SABOTAGING) {
-			double mod = 1;
 			if (w.getNation(nation).hasTag(Nation.Tag.SNEAKY)) mod += 1;
 			outcome.sabotage(strength * mod);
 		}

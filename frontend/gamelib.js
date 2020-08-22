@@ -51,10 +51,16 @@ class Calc {
 		return Math.round(10000 * (arg.unit.startsWith("%") ? arg.v * 100 : arg.v)) / 10000 + arg.unit + " {" + arg.why + "}";
 	}
 
-	static moddedNum(base, mods) {
+	static moddedNum(base, mods, flats = []) {
 		let m2 = mods.slice();
 		m2.unshift({"v": 1, "unit": "%", "why": "Normal Rate"});
-		return new Calc("max", [{"v": 0, "unit": "", "why": "Minimum"}, new Calc("*", [base, new Calc("+", m2)])]);
+		let inner = new Calc("*", [base, new Calc("+", m2)]);
+		if (flats.length != 0) {
+			let f2 = flats.slice();
+			f2.unshift(inner);
+			inner = new Calc("+", f2);
+		}
+		return new Calc("max", [{"v": 0, "unit": "", "why": "Minimum"}, inner]);
 	}
 }
 
@@ -192,11 +198,6 @@ class Region {
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
 		if (this.religion == "Iruhan (Sword of Truth)") mods.push({"v": 1, "unit": "%", "why": "Sword of Truth ideology"});
-		if (this.religion == "Iruhan (Tapestry of People)") {
-			let getTapestryBonus = false;
-			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
-			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
-		}
 		let effectiveRationing = Math.min(rationing, this.food / this.population);
 		if (this.religion == "Tavian (River of Kuun)" && effectiveRationing > 1) {
 			mods.push({"v": (effectiveRationing - 1) * 3, "unit": "%", "why": "Plentiful rations w/ River of Kuun"});
@@ -205,10 +206,19 @@ class Region {
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(getNation(this.kingdom).core_regions, i)) conquests++;
-			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
+			mods.push({"v": conquests * .07, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
 		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
-		return Calc.moddedNum(base, mods);
+
+		let flats = [];
+		for (let c of constructions) {
+			if (c.type == "temple") {
+				if (c.religion == "Northern (Rjinku)") flats.push({"v": 100, "unit": " soldiers", "why": "Rjinku Temple"});
+				if (c.religion == "Iruhan (Sword of Truth)") flats.push({"v": 100, "unit": " soldiers", "why": "Sword of Truth Temple"});
+			}
+		}
+
+		return Calc.moddedNum(base, mods, flats);
 	}
 
 	calcUnrest() {
@@ -246,17 +256,24 @@ class Region {
 		}
 		if (this.religion == "Northern (Syrjen)") mods.push({"v": 0.75, "unit": "%", "why": "Worships Syrjen"});
 		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});
-		if (this.religion == "Iruhan (Tapestry of People)") {
-			let getTapestryBonus = false;
-			for (let r of this.getNeighbors()) if (r.type == "land" && (r.culture != this.culture || r.religion != this.religion)) getTapestryBonus = true;
-			if (getTapestryBonus) mods.push({"v": .5, "unit": "%", "why": "Tapestry of People ideology"});
-		}
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(getNation(this.kingdom).core_regions, i)) conquests++;
-			mods.push({"v": conquests * .05, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
+			mods.push({"v": conquests * .07, "unit": "%", "why": "War-like rulers with " + conquests + " conquered regions"});
 		}
-		return Calc.moddedNum(base, mods);
+		let flats = [];
+		let numForts = 0;
+		for (let c of constructions) if (c.type == "fortifications") numForts++;
+		for (let c of constructions) {
+			if (c.type == "temple") {
+				if (c.religion == "Northern (Syrjen)") flats.push({"v": 3, "unit": " gold", "why": "Syrjen Temple"});
+				if (c.religion == "Iruhan (Tapestry of People)") flats.push({"v": 3, "unit": " gold", "why": "Tapestry of People Temple"});
+				if (c.religion == "Northern (Alyrja)") flats.push(new Calc("*", [{"v": 1, "unit": " gold per fort", "why": "Tapestry of People Temple"}, {"v": numForts, "unit": " forts", "why": "Forts"}]);
+				if (c.religion == "Iruhan (Chalice of Compassion)") flats.push({"v": -1, "unit": " gold", "why": "Chalice of Compassion Temple"});
+			}
+		}
+
+		return Calc.moddedNum(base, mods, flats);
 	}
 
 	calcCrops() {
@@ -315,7 +332,7 @@ class Region {
 
 	calcFortification() {
 		let forts = 0;
-		for (let c of this.constructions) if (c.type == "fortifications") forts ++;
+		for (let c of this.constructions) if (c.type == "fortifications") forts++;
 		if (forts == 0) {
 			return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}]);
 		}
@@ -627,7 +644,10 @@ class Kingdom {
 		let m = {};
 		for (let r of g_data.regions) {
 			if (r.kingdom != this.name) continue;
-			m[r.religion] = true;
+			for (let c of r.constructions) {
+				if (c.type != "temple") continue;
+				m[c.religion] = true;
+			}
 		}
 		let c = 0;
 		for (let k in m) if (m.hasOwnProperty(k)) c++;
@@ -691,6 +711,10 @@ class Character {
 	calcLevel(dimension) {
 		return Math.sqrt(this.experience[dimension] + 1);
 	}
+
+	calcPlotStrengthMod() {
+		return calcLevel("spy") * 0.3;
+	}
 }
 
 
@@ -730,7 +754,7 @@ class Army {
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) state ideology"});
 			if (World.calcGlobalIdeology() == "Iruhan (Sword of Truth)" && state.startsWith("Iruhan")) mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) global ideology and Iruhan state religion"});
 			let numUniqueIdeologies = k.calcNumUniqueIdeologies();
-			if (state == "Iruhan (Tapestry of People)") mods.push(new Calc("*", [{"v": 0.04, "unit": "%", "why": "Tapestry of People bonus per unique ideology"}, {"v": numUniqueIdeologies, "unit": " regions", "why": "unique ideologies"}]));
+			if (state == "Iruhan (Tapestry of People)") mods.push(new Calc("*", [{"v": 0.025, "unit": "%", "why": "Tapestry of People bonus per unique ideology"}, {"v": numUniqueIdeologies, "unit": " regions", "why": "unique ideologies"}]));
 		}
 		if (k != undefined && k.calcStateReligion().startsWith("Iruhan") && g_data.inspires_hint > 0) {
 			mods.push(new Calc("*", [{"v": .05, "unit": "%", "why": "bonus per inspiration"}, {"v": g_data.inspires_hint, "unit": " Inspirations", "why": g_data.inspires_hint + " Iruhan cardinals inspiring in Sancta Civitate"}]));
@@ -770,6 +794,10 @@ class SpyRing {
 
 	calcStrengthIn(region) {
 		let ring = this;
+		let mod = 1;
+		if (g_data.tivar.veil) mod += 1;
+		if (g_data.regions[this.location].kingdom == this.nation) for (let c of g_data.regions[this.location].constructions) if (c.type == "temple" && c.religion == "Northern (Lyskr)") mod += 0.2;
+		for (let c of g_data.characters) if (c.kingdom == this.nation && c.location == region) mod += c.calcPlotStrengthMod().v;
 		let gp = function(power, loc) {
 			let r = g_data.regions[loc];
 			if (r.kingdom == undefined || "Unruled" == r.kingdom) return [power * .8, loc];
@@ -781,7 +809,7 @@ class SpyRing {
 		}
 		let pq = new PriorityQueue((a, b) => (a[0] > b[0]));
 		let visited = {};
-		pq.push(gp(this.strength, this.location));
+		pq.push(gp(this.strength * mod, this.location));
 		while (!pq.isEmpty()) {
 			let i = pq.pop();
 			if (visited[i[1]]) continue;
@@ -793,7 +821,7 @@ class SpyRing {
 				if (!visited[b.id]) pq.push(gp(i[0], b.id));
 			}
 		}
-		return maxPlotPowers;
+		return 0;
 	}
 }
 
@@ -881,7 +909,7 @@ function religionFromIdeology(ideo) {
 let doctrineDescriptions = {
 	"ANTIAPOSTASY": ["-10 opinion each turn for nations loyal to the Cult."],
 	"ANTIECUMENISM": ["-20 opinion for constructing a non-Iruhan temple.", "-5 opinion each turn for having a non-Iruhan, non-Company state ideology."],
-	"ANTISCHISMATICISM": ["-10 opinion for constructing a Vessel of Faith temple."],
+	"ANTISCHISMATICISM": ["-15 opinion for constructing a Vessel of Faith temple."],
 	"ANTITERRORISM": ["-30 opinion for voting to summon any Gothi spell."],
 	"CRUSADE": ["-35 opinion each turn for any Iruhan nation not attacking every non-Iruhan nation (except Companies)."],
 	"DEFENDERS_OF_FAITH": ["+2 opinion per 100 casualties inflicted on nations with negative opinion.", "+15 opinion for conquering a region belonging to a ruler with negative opinion."],

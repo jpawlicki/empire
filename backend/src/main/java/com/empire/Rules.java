@@ -157,7 +157,6 @@ public class Rules {
 	double unrestTaxEffectThresh;
 
 	double harvestPerCitizen;
-	double plantsPerCitizen;
 
 	double chaliceOfCompassionPlantPerCitizen;
 

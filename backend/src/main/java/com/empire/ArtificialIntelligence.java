@@ -865,7 +865,7 @@ class ArtificialIntelligence {
 		private final boolean foodShort;
 
 		FeedPeople() {
-			int turnsUntilHarvest = world.turnsUntilHarvest();
+			int turnsUntilHarvest = 4 - world.date % 4;
 			double totalStocks = 0;
 			double totalDemand = 0;
 			for (Region r : world.regions) {

@@ -340,7 +340,6 @@ class OrdersPane extends HTMLElement {
 				if (r.noble.name == undefined && !g_data.kingdoms[unit.kingdom].tags.includes("Republican")) {
 					opts.push("Instate Noble");
 				}
-				opts.push("Harvest Early");
 			}
 			if (r.type == "land") {
 				if (g_data.spy_rings.find(ring => ring.nation == unit.kingdom && ring.location == r.id) == undefined) {
@@ -977,7 +976,7 @@ class OrdersPane extends HTMLElement {
 
 	getNobleOptions(r) {
 		let opts = [];
-		opts.push("Train", "Relax", "Harvest Early");
+		opts.push("Train", "Relax");
 		if (r.isCoastal()) opts.push("Build Shipyard");
 		if (g_data.spy_rings.find(ring => ring.nation == r.kingdom && ring.location == r.id) == undefined) {
 			opts.push("Establish Spy Ring");
@@ -1413,10 +1412,6 @@ class OrdersPane extends HTMLElement {
 				capables.push({
 					"act": q.value,
 					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
-			}
-			for (let c of capables) {
-				if (c.act != "Harvest Early") continue;
-				c.warn.innerHTML += " (harvesting early wastes crops)";
 			}
 		}
 	}

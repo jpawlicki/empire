@@ -67,6 +67,10 @@ public class Character extends RulesObject {
 		return calcLevel(experience.spy) * getRules().perLevelSpyRingEstablishmentStrength;
 	}
 
+	public double calcSpyRingStrengthBonus() {
+		return calcLevel(experience.spy) * 0.3;
+	}
+
 	public void addExperienceAll() {
 		experience.general += getRules().allDimExpAdd;
 		experience.admiral += getRules().allDimExpAdd;

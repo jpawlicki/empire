@@ -21,6 +21,7 @@ class Region extends RulesObject {
 		@SerializedName("water") WATER
 	}
 
+	int id;
 	String name;
 	Type type;
 	Culture culture;
@@ -41,8 +42,11 @@ class Region extends RulesObject {
 	static int numUniqueIdeologies(String kingdom, World w) {
 		return (int) w.regions.stream()
 				.filter(r -> kingdom.equals(r.getKingdom()))
-				.map(r -> r.religion)
-				.distinct().count();
+				.flatMap(r -> r.constructions.stream())
+				.filter(c -> c.type == Construction.Type.TEMPLE)
+				.map(c -> c.religion)
+				.distinct()
+				.count();
 	}
 
 	public boolean canFoodTransferTo(World w, Region target) {
@@ -85,6 +89,8 @@ class Region extends RulesObject {
 		if (unrest > getRules().unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - getRules().unrestRecruitmentEffectThresh);
 
 		double mods = 1;
+		double flat = 0;
+		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.RJINKU || c.religion == Ideology.SWORD_OF_TRUTH)).count() * 100;
 		mods += calcSigningBonusMod(signingBonus);
 
 		if (governor != null) mods += governor.calcGovernRecruitMod();
@@ -102,17 +108,13 @@ class Region extends RulesObject {
 			mods += getRules().rjinkuRecruitmentMod;
 		} else if (religion == Ideology.SWORD_OF_TRUTH) {
 			mods += getRules().swordOfTruthRecruitmentMod;
-		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
-			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
-			if (getTapestryBonus) mods += getRules().tapestryRecruitmentMod;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing > 1) {
 			mods += (rationing - 1) * 3;
 		}
 
 		if (largestInRegion != null && !Nation.isFriendly(kingdom, largestInRegion.kingdom, w) && largestInRegion.hasTag(Army.Tag.PILLAGERS)) mods += getRules().armyPillagersRecruitmentMod;
 
-		return Math.max(0, base * mods);
+		return Math.max(0, base * mods + flat);
 	}
 
 	// TODO: this belongs alongside the game constants, should determine a way to parameterize these function-type rules
@@ -126,6 +128,11 @@ class Region extends RulesObject {
 		if (unrest > getRules().unrestTaxEffectThresh) base *= 1.0 - (unrest - getRules().unrestTaxEffectThresh);
 
 		double mods = 1;
+		double flat = 0;
+		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.TAPESTRY_OF_PEOPLE || c.religion == Ideology.SYRJEN)).count() * 100;
+		long numFortifications = constructions.stream().filter(c -> c.type == Construction.Type.FORTIFICATIONS).count();
+		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.ALYRJA).count() * numFortifications;
+		flat -= constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count();
 
 		if (governor != null) mods += governor.calcGovernTaxMod();
 		if (hasNoble()) mods += noble.calcTaxMod();
@@ -141,17 +148,13 @@ class Region extends RulesObject {
 		boolean neighborKuun = false;
 		if (religion == Ideology.SYRJEN) {
 			mods += getRules().syrjenTaxMod;
-		} else if (religion == Ideology.TAPESTRY_OF_PEOPLE) {
-			boolean getTapestryBonus = false;
-			for (Region r : getNeighbors(w)) if (r.isLand() && (r.culture != culture || r.religion != religion)) getTapestryBonus = true;
-			if (getTapestryBonus) mods += getRules().tapestryTaxMod;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing > 1) {
 			mods += (rationing - 1) * 3;
 		} else if (religion == Ideology.CHALICE_OF_COMPASSION) {
 			mods += getRules().chaliceOfCompassionTaxMod;
 		}
 
-		return Math.max(0, base * mods * taxRate);
+		return Math.max(0, base * mods * taxRate + flat);
 	}
 
 	public double calcConsumption() {
@@ -376,12 +379,13 @@ class Region extends RulesObject {
 		}
 	}
 
-	void plant(boolean isHarvestTurn) {
+	void plant(int date) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * getRules().chaliceOfCompassionPlantPerCitizen;
+		crops += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count() * 10000;
 		double mod = 1;
 		if (hasNoble()) mod += noble.calcPlantMod();
-		if (isHarvestTurn) {
-			crops += population * getRules().plantsPerCitizen * mod;
+		if (Season.isHarvest(date)) {
+			crops += population * Season.get(date).getCrops() * mod;
 		}
 	}
 
@@ -395,16 +399,10 @@ class Region extends RulesObject {
 		crops = 0;
 	}
 
-	void harvestEarly(Set<String> stoicNations, GoodwillProvider goodwills) {
-		if (!isLand()) return;
-		double maxHarvest = population * getRules().harvestPerCitizen;
-		double unrest = calcUnrest(goodwills);
-		if (unrest > .25 && !stoicNations.contains(getKingdom())) maxHarvest *= 1.25 - unrest;
-		maxHarvest = Math.min(crops * 0.35, maxHarvest);
-		food += maxHarvest * .5;
-		crops -= maxHarvest;
+	void grow() {
+		population += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.FLAME_OF_KITH).count() * 2000;
+		population *= 1.001;
 	}
-
 
 	void cultAccess(Collection<Nation> nations, boolean isCriticalCultRegion) {
 		if (cultAccessed || !isLand()) return;

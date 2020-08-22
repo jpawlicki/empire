@@ -59,11 +59,11 @@ class RegionReport extends HTMLElement {
 					<div>
 						<tooltip-element tooltip="The total measures of food stockpiled in the region.">Total Measures:</tooltip-element><div><tooltip-element tooltip="${r.food}">${Math.round(r.food / 1000)}k</tooltip-element></div>
 					</div>
-					<h1><tooltip-element tooltip="Harvests happen every 13 weeks, turn crops into food. Battles in a region can destroy crops. High unrest can also reduce the yield of the harvest.">Crops:</tooltip-element> +${num(r.calcHarvestWeeks(), 1)} Weeks</h1>
+					<h1><tooltip-element tooltip="Crops are harvested into food every 4 weeks, and new crops are planted. Fewer crops are planted during the fall and winter.">Crops:</tooltip-element> +${num(r.calcHarvestWeeks(), 1)} Weeks</h1>
 					<div>
 						<tooltip-element tooltip="The total crops in this region.">Crops:</tooltip-element><div>${num(r.calcCrops(), 0, 1 / 1000)}k</div>
 						<tooltip-element tooltip="The maximum amount of crops the region currently has labor available to harvest.">Harvest Capacity:</tooltip-element><div>${num(r.calcHarvestCapacity(), 0, 1 / 1000)}k</div>
-						<div>Time Until Harvest:</div><div>${(13 - ((g_data.date + 52 - 12) % 13)) % 13} Weeks</div>
+						<div>Time Until Harvest:</div><div>${3 - g_data.date % 4} Weeks</div>
 					</div>
 					<h1><tooltip-element tooltip="Taxation output of the region, when taxed at 100%. Tax is primarily determined by population and unrest, though several religious ideologies also affect taxation output.">Tax:</tooltip-element> +${num(r.calcTaxation())} gold</h1>
 					<h1><tooltip-element tooltip="Recuit output of the region. Recuritment is primarily determined by population and unrest, though several religious ideologies also affect recruitment output.">Recruits:</tooltip-element> +${num(r.calcRecruitment())} recruits</h1>
