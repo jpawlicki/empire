@@ -51,3 +51,7 @@ class TooltipElement extends HTMLElement {
 	}
 }
 customElements.define("tooltip-element", TooltipElement);
+
+let num = function(c, places = 0, scale = 1) {
+	return "<tooltip-element tooltip=\"" + c.v + " = " + c.explain() + "\">" + (Math.round(c.v * scale * Math.pow(10, places)) / Math.pow(10, places)) + "</tooltip-element>";
+}

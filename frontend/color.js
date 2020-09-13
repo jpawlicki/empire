@@ -36,3 +36,29 @@ function getForegroundColor(kingdom) {
 	for (let i = 0; i < g_geo.kingdoms.length; i++) if (g_geo.kingdoms[i].name == kingdom) return g_palette[i].color_fg;
 	return "#ffffff";
 }
+
+/* Mixes colors a and b. If amount = 0, returns a. If amount = 1, returns b. Otherwise, returns a linear mix of a and b. */
+function mixColor(a, b, amount) {
+	function hexToRgb(hex) {
+		var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+		return result ? {
+			r: parseInt(result[1], 16),
+			g: parseInt(result[2], 16),
+			b: parseInt(result[3], 16)
+		} : null;
+	}
+	function rgbToHex(c) {
+		function componentToHex(c) {
+			var hex = parseInt(c).toString(16);
+			return hex.length == 1 ? "0" + hex : hex;
+		}
+		return "#" + componentToHex(c.r) + componentToHex(c.g) + componentToHex(c.b);
+	}
+	let av = hexToRgb(a);
+	let bv = hexToRgb(b);
+	return rgbToHex({
+		r: av.r * (1 - amount) + bv.r * amount,
+		g: av.g * (1 - amount) + bv.g * amount,
+		b: av.b * (1 - amount) + bv.b * amount,
+	});
+}

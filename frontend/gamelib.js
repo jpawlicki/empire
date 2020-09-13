@@ -155,7 +155,6 @@ class World {
 }
 
 // ============ REGION ============
-let g_pointCache = [];
 class Region {
 	constructor(id, constEntry, dataEntry, date) {
 		this.id =  id;
@@ -211,10 +210,10 @@ class Region {
 		if (extraMod != 0) mods.push({"v": extraMod, "unit": "%", "why": "Hypothetical"});
 
 		let flats = [];
-		for (let c of constructions) {
+		for (let c of this.constructions) {
 			if (c.type == "temple") {
-				if (c.religion == "Northern (Rjinku)") flats.push({"v": 100, "unit": " soldiers", "why": "Rjinku Temple"});
-				if (c.religion == "Iruhan (Sword of Truth)") flats.push({"v": 100, "unit": " soldiers", "why": "Sword of Truth Temple"});
+				if (c.religion == "Northern (Rjinku)") flats.push({"v": 40, "unit": " soldiers", "why": "Rjinku Temple"});
+				if (c.religion == "Iruhan (Sword of Truth)") flats.push({"v": 40, "unit": " soldiers", "why": "Sword of Truth Temple"});
 			}
 		}
 
@@ -263,12 +262,12 @@ class Region {
 		}
 		let flats = [];
 		let numForts = 0;
-		for (let c of constructions) if (c.type == "fortifications") numForts++;
-		for (let c of constructions) {
+		for (let c of this.constructions) if (c.type == "fortifications") numForts++;
+		for (let c of this.constructions) {
 			if (c.type == "temple") {
 				if (c.religion == "Northern (Syrjen)") flats.push({"v": 3, "unit": " gold", "why": "Syrjen Temple"});
 				if (c.religion == "Iruhan (Tapestry of People)") flats.push({"v": 3, "unit": " gold", "why": "Tapestry of People Temple"});
-				if (c.religion == "Northern (Alyrja)") flats.push(new Calc("*", [{"v": 1, "unit": " gold per fort", "why": "Tapestry of People Temple"}, {"v": numForts, "unit": " forts", "why": "Forts"}]);
+				if (c.religion == "Northern (Alyrja)") flats.push(new Calc("*", [{"v": 1, "unit": " gold per fort", "why": "Tapestry of People Temple"}, {"v": numForts, "unit": " forts", "why": "Forts"}]));
 				if (c.religion == "Iruhan (Chalice of Compassion)") flats.push({"v": -1, "unit": " gold", "why": "Chalice of Compassion Temple"});
 			}
 		}
@@ -713,7 +712,7 @@ class Character {
 	}
 
 	calcPlotStrengthMod() {
-		return calcLevel("spy") * 0.3;
+		return this.calcLevel("spy") * 0.3;
 	}
 }
 
@@ -905,7 +904,7 @@ function religionFromIdeology(ideo) {
 	return ideo;
 }
 
-// ============ CHURCH CONSTANTS ============
+// ============ CONSTANTS ============
 let doctrineDescriptions = {
 	"ANTIAPOSTASY": ["-10 opinion each turn for nations loyal to the Cult."],
 	"ANTIECUMENISM": ["-20 opinion for constructing a non-Iruhan temple.", "-5 opinion each turn for having a non-Iruhan, non-Company state ideology."],
@@ -919,16 +918,51 @@ let doctrineDescriptions = {
 	"WORKS_OF_IRUHAN": ["+10 opinion for constructing an Iruhan temple."]
 };
 
-// ============ SCORE CONSTANTS ============
 let g_scoreProfiles = {
-	"PROSPERITY": {"selectable": true,  "description": ["+1 point per million rations of food your population consumes.", "+1 point per million measures consumed due to rations above 100%.", "-1 point per 6000 civilians that starve to death in your historical regions.", "+1 point per 20 million measures of food and crops you control at the end of the game."]},
+	"PROSPERITY": {"selectable": true,  "description": ["+1 point per million rations of food your population consumes.", "+1 point per million measures consumed due to rations above 100%.", "-1 point per 6000 civilians that starve to death in your historical regions."]},
 	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
 	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 2000 gold.", "+1 point per turn you have more than 500 gold.", "-1 point per turn you have less than 300 gold."]},
-	"TERRITORY":  {"selectable": true,  "description": ["+4 points whenever you gain rulership of a region.", "-4 points whenever you lose rulership of a region."]},
-	"GLORY":      {"selectable": true,  "description": ["+1 point per turn in which you inflict or suffer more than 500 casualties.", "-1 point any turn you inflict or suffer less than 500 casualties total."]},
-	"RELIGION":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion.", "-2 points whenever a region is converted away from your state religion."]},
-	"SECURITY":   {"selectable": true,  "description": ["+1 point per turn no enemy or neutral army is within two regions of your historical regions.", "+1 point per turn no enemy army is adjacent to or occupying any of your historical regions.", "-1 point if neither of the above apply."]},
-	"CULTURE":    {"selectable": true,  "description": ["+2 points per turn the mean unrest of population of your culture is lower than the mean unrest of all other people.", "-2 points otherwise."]},
-	"IDEOLOGY":   {"selectable": true,  "description": ["+2 points whenever a region is converted to your state religion and ideology.", "-2 points whenever a region of your ideology is converted to another religion or ideology."]},
-	"CULTIST":    {"selectable": false, "description": ["+4 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region."]}
+	"TERRITORY":  {"selectable": true,  "description": ["+3 points whenever you gain rulership of a region.", "-3 points whenever you lose rulership of a region."]},
+	"GLORY":      {"selectable": true,  "description": ["+1 point per 1000 casualties you suffer or inflict.", "-1 point per turn."]},
+	"RELIGION":   {"selectable": true,  "description": ["+1 points whenever a region is converted to your state religion.", "-1 points whenever a region is converted away from your state religion.", "+2 points whenever a region is converted to your state ideology.", "-2 points whenever a region is converted away from your state ideology."]},
+	"CULTIST":    {"selectable": false, "description": ["+3 points whenever the Cult gains access to one of its objective regions.", "+1 point whenever the Cult gains access to a region."]}
+};
+		
+let culture_tooltips = {
+	"eolsung": "Eolsung are hearty northerners. Soldiers recruited in this region make skilled raiders, able to conceal their presence and attack enemy supply lines.",
+	"anpilayn": "Anpilayn are cultured southerners. Soldiers recruited in this region are well-equipped and extremely formidable in battle.",
+	"hansa": "Hansa are seafaring southerners. Soldiers recruited in this region make skilled sailors who can impress their enemies into service.",
+	"tavian": "Tavian are desert-dwelling mystics. Soldiers recruited in this region make excellent riders and offset their own cost while garrisoning a region.",
+	"tyrgaetan": "Tyrgaetan are nomadic hunters. Soldiers recruited in this region are immune to attrition due to climate and skilled at moving quickly through friendly territory."
+};
+
+let religion_tooltips = {
+	"Iruhan (Sword of Truth)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his cautions against the lure of idols and false gods. Consequently, this region experiences increased recruitment.",
+	"Iruhan (Vessel of Faith)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his message that a divine conscience is a part of each person. They reject the authority of the hierarchical Church of Iruhan, in favor of local ministers. Consequently, they do not suffer clerical unrest and are pleased whenever a temple following the Vessel of Faith ideology is constructed.",
+	"Iruhan (Tapestry of People)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his sermon that all people have an intrinsic value, regardless of their culture or creed, and that no single culture or creed has uncovered the divine truth. Consequently, they seek out new ideas differing viewpoints, and are more effective if neighboring a culturally, religiously, or ideologically diverse region.",
+	"Iruhan (Chalice of Compassion)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his conviction that all living beings must be treated with understanding and compassion. Consequently, they are more likely to sustainably treat their environments but generate less tax income.",
+	"Northern (Alyrja)": "This region's inhabitants primarily follow the eldritch deity known as Alyrja. Alyrja demands that her worshippers be constantly vigilant, guarding those that trust them against all danger, and rewards her faithful with magical powers to achieve this. Consequently, the inhabitants of this region destroy pirates and don't mind limited rations.",
+	"Northern (Rjinku)": "This region's inhabitants primarily follow the eldritch deity known as Rjinku. Rjinku demands that his worshippers show courage in all things, embrace conflict, and battle to prove their worth. Consequently, inhabitants of this region are more likely to become soldiers.",
+	"Northern (Syrjen)": "This region's inhabitants primarily follow the eldritch deity known as Syrjen. Syrjen demands that her worshippers work cooperatively with each other to build and create. Consequently, this region benefits from increased economic activity.",
+	"Northern (Lyskr)": "This region's inhabitants primarily follow the eldritch deity known as Lyskr. Lyskr demands that his worshippers guard their secrets closely. Consequently, foreigners find it more difficult to conduct intrigue here.",
+	"Tavian (Flame of Kith)": "This region's inhabitants primarily follow the antitheist Tavian religion, which teaches that the deities of the world are enemies of humanity. They react to this unpalatable truth by forging a social compact known as the Flame of Kith, under which individuals are welcomed into the community simply because they are human. Consequently, this region is more attractive to immigrants.",
+	"Tavian (River of Kuun)": "This region's inhabitants primarily follow the antitheist Tavian religion, which teaches that the deities of the world are enemies of humanity. They react to this unpalatable truth by forging a social compact known as the River of Kuun, under which the prosperity of the elite is forcibly shared among the community. Consequently, the feast is an important element of the region's culture and when plentifully rationed the region will have increased economic activity and patriotism."
+};
+
+let tagTooltips = {
+	"Steel": "+15% as strong.",
+	"Formations": "If the army would suffer between 45% and 90% casualties, it instead suffers 45% casualties.",
+	"Pillagers": "While this army is the largest army in an enemy or neutral region, it suppresses recruitment and hoards the region's taxes. When it enters a region controlled by the same ruler, that ruler will gain those taxes.",
+	"Raiders": "This army is hidden in friendly regions.",
+	"Seafaring": "+150% as strong in sea regions.",
+	"Impressment": "15% of casualties this army inflicts on enemies join this army instead of perishing.",
+	"Scheming": "The leader of this army gains 1 spy experience each week.",
+	"Crafts-soldiers": "This army costs 50% less gold on any turn it does not move.",
+	"Weathered": "This army ignores the effects of gothi spells.",
+	"Pathfinders": "This army never needs to spend extra weeks to cross a double or triple border.",
+	"Pillagers (Pirate)": "While this army is the largest army in a region, it suppresses recruitment and diverts that region's taxes to pirate threat.",
+	"Unpredictable": "This army moves randomly into a neighboring land region.",
+	"Unruly": "If larger than 2000 soldiers, this army divides into two equal forces. This army (and any divisions) move randomly into a neighboring land region.",
+	"Higher Power": "This army does not require payment and does not inflict casualties on other armies with Higher Power.",
+	"Undead": "50% of non-Undead soldiers who fall in battle with at least one Undead army rise from the dead and are distributed as soldiers evenly among participating Undead armies.",
 };

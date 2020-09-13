@@ -435,23 +435,12 @@ class Plot extends RulesObject {
 
 		String title = type.getTitle(targetId, w);
 		String details = type.getDetails(targetId, w);
-		String apparentChance = "\n\nIn the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chance of success, assuming no sabotage.";
+		String apparentChance = "In the end, the plot had a " + Math.round(100 * outcome.pretendSuccess / (outcome.pretendSuccess + outcome.pretendFailure + outcome.pretendCriticalFailure)) + "% chance of success, assuming no sabotage.";
 		if (roll <= outcome.success) {
 			type.onSuccess(targetId, w, conspirators);
-			w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has succeeded." + apparentChance);
+			w.notifyAllPlayers("Successful Plot", "A plot to " + details + " has succeeded." + apparentChance);
 		} else if (roll <= outcome.failure + outcome.success) {
-			// Reveal a random supporting spy ring to everyone.
-			List<SpyRing> supporters = new ArrayList<SpyRing>();
-			for (SpyRing ring : w.getSpyRings()) if (ring.getInvolvementIn(plotId).orElse(null) == SpyRing.InvolvementDisposition.SUPPORTING) supporters.add(ring);
-			supporters.removeIf(r -> w.regions.get(r.getLocation()).religion == Ideology.LYSKR && r.getNation().equals(w.regions.get(r.getLocation()).getKingdom()));
-			SpyRing unlucky = null;
-			if (!supporters.isEmpty()) {
-				unlucky = supporters.get((int) (Math.random() * supporters.size()));
-				unlucky.expose();
-				w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has failed. The involvement of " + unlucky.getNation() + " was proven and their spy ring in " + w.regions.get(unlucky.getLocation()).name + " exposed." + apparentChance);
-			} else {
-				for (String k : conspirators) w.notifyPlayer(k, "Plot: " + title, "A plot to " + details + " has failed, but no spy rings were exposed and the defender of the plot not notified." + apparentChance);
-			}
+			w.notifyAllPlayers("Failed Plot", "A plot to " + details + " has failed." + apparentChance);
 		} else {
 			// Build reveal set. - One random supporting ring, then all others have a 50% chance.
 			List<SpyRing> supporters = new ArrayList<SpyRing>();
@@ -473,9 +462,9 @@ class Plot extends RulesObject {
 				exposureLocations.add(w.regions.get(ring.getLocation()).name);
 			}
 			if (knownConspirators.isEmpty()) {
-				for (String k : conspirators) w.notifyPlayer(k, "Plot: " + title, "A plot to " + details + " has failed, but no spy rings were exposed and the defender of the plot not notified." + apparentChance);
+				for (String k : conspirators) w.notifyPlayer(k, "Failed Plot", "A plot to " + details + " has failed, but no spy rings were exposed and the defender of the plot not notified." + apparentChance);
 			} else {
-				w.notifyAllPlayers("Plot: " + title, "A plot to " + details + " has critically failed.  The involvement of " + StringUtil.and(knownConspirators) + " was proven. Spy rings were exposed in " + StringUtil.and(exposureLocations) + "." + apparentChance);
+				w.notifyAllPlayers("Failed Plot", "A plot to " + details + " has critically failed. The involvement of " + StringUtil.and(knownConspirators) + " was proven. Spy rings were exposed in " + StringUtil.and(exposureLocations) + "." + apparentChance);
 			}
 		}
 	}

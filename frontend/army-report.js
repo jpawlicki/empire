@@ -1,24 +1,6 @@
 class ArmyReport extends HTMLElement {
 	constructor() { super(); }
 	connectedCallback() {
-		let tagTooltips = {
-			"Steel": "+15% as strong.",
-			"Formations": "If the army would suffer between 45% and 90% casualties, it instead suffers 45% casualties.",
-			"Pillagers": "While this army is the largest army in an enemy or neutral region, it suppresses recruitment and hoards the region's taxes. When it enters a region controlled by the same ruler, that ruler will gain those taxes.",
-			"Raiders": "This army is hidden in friendly regions.",
-			"Seafaring": "+150% as strong in sea regions.",
-			"Impressment": "15% of casualties this army inflicts on enemies join this army instead of perishing.",
-			"Scheming": "The leader of this army gains 1 spy experience each week.",
-			"Crafts-soldiers": "This army costs 50% less gold on any turn it does not move.",
-			"Weathered": "This army ignores the effects of gothi spells.",
-			"Pathfinders": "This army never needs to spend extra weeks to cross a double or triple border.",
-			"Pillagers (Pirate)": "While this army is the largest army in a region, it suppresses recruitment and diverts that region's taxes to pirate threat.",
-			"Unpredictable": "This army moves randomly into a neighboring land region.",
-			"Unruly": "If larger than 2000 soldiers, this army divides into two equal forces. This army (and any divisions) move randomly into a neighboring land region.",
-			"Higher Power": "This army does not require payment and does not inflict casualties on other armies with Higher Power.",
-			"Undead": "50% of non-Undead soldiers who fall in battle with at least one Undead army rise from the dead and are distributed as soldiers evenly among participating Undead armies.",
-		};
-
 		let army = undefined;
 		let aid = parseInt(this.getAttribute("army"));
 		for (let a of g_data.armies) {
@@ -27,14 +9,14 @@ class ArmyReport extends HTMLElement {
 
 		let html = `
 			<div id="name">${army.type == "army" ? "Army" : "Navy"} ${army.id}</div>
-			<div id="kingdom"><report-link href="kingdom/${army.kingdom}">${army.kingdom}</report-link></div>
+			<kingdom-label kingdom="${army.kingdom}"></kingdom-label>
 			<div id="location">In <report-link href="region/${g_data.regions[army.location].name}">${g_data.regions[army.location].name}</report-link></div>
 			<div id="content">
 				<h1>Strength: ${num(army.calcStrength(), 2)}</h1>
 				<div>Size: ${Math.floor(army.size)}</div>
 				<div>Hoarding: ${Math.floor(army.gold)} gold</div>
 				<div>Upkeep: ${num(army.calcCost(true), 1)} gold</div>
-				<h1>Tags</h1>
+				<h1 id="tags_h1">Tags</h1>
 				<div id="tags">
 				</div>
 			</div>
@@ -94,6 +76,9 @@ class ArmyReport extends HTMLElement {
 		let content = document.createElement("div");
 		content.innerHTML = html;
 		shadow.appendChild(content);
+		if (army.tags.length == 0) {
+			shadow.getElementById("tags_h1").style.display="none";
+		}
 		for (let tag of army.tags) {
 			let r = document.createElement("tooltip-element");
 			r.innerHTML = tag;

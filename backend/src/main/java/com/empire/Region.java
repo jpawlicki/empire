@@ -90,7 +90,7 @@ class Region extends RulesObject {
 
 		double mods = 1;
 		double flat = 0;
-		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.RJINKU || c.religion == Ideology.SWORD_OF_TRUTH)).count() * 100;
+		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.RJINKU || c.religion == Ideology.SWORD_OF_TRUTH)).count() * 40;
 		mods += calcSigningBonusMod(signingBonus);
 
 		if (governor != null) mods += governor.calcGovernRecruitMod();
@@ -375,13 +375,13 @@ class Region extends RulesObject {
 			double dead = (0.75 - actualRations) * 0.1 * population;
 			population -= dead;
 			w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, -1 / 6000.0 * dead);
-			w.notifyPlayer(getKingdom(), "Starvation", dead + " have starved to death in " + name + ".");
+			w.notifyPlayer(getKingdom(), "Starvation", Math.round(dead) + " have starved to death in " + name + ".");
 		}
 	}
 
 	void plant(int date) {
 		if (religion == Ideology.CHALICE_OF_COMPASSION) crops += population * getRules().chaliceOfCompassionPlantPerCitizen;
-		crops += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count() * 10000;
+		crops += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count() * 7500;
 		double mod = 1;
 		if (hasNoble()) mod += noble.calcPlantMod();
 		if (Season.isHarvest(date)) {

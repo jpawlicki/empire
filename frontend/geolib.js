@@ -82,22 +82,3 @@ function getRegionShape(r) {
 function shapeToPath(shapes, close = true) {
 	return shapes.map(p => "M" + p.map(pp => pp.x + "," + pp.y).join("L") + (close ? "Z" : "")).join("");
 }
-function geoize(doBorder=true) {
-	for (let r of g_geo.regions) r.path = getRegionShape(r);
-	g_regions = g_geo.regions;
-	g_borders = g_geo.borders.filter(bo => bo.b != undefined).map(bo => { return {a: bo.a, b: bo.b, weight: bo.w, path: bo.path} });
-
-	let regionElement = document.getElementById("regions");
-	let seaRegionElement = document.getElementById("sea_regions");
-	let borderElement = document.getElementById("borders");
-	for (let i = 0; i < g_regions.length; i++) {
-		let region = g_regions[i];
-		let p = document.createElementNS("http://www.w3.org/2000/svg", "path");
-		p.setAttribute("id", "region_" + i);
-		p.setAttribute("d", shapeToPath(region.path));
-		p.setAttribute("fill-rule", "evenodd");
-		p.addEventListener("click", function () { regionClick(i); });
-		if (region.type == "land") regionElement.appendChild(p);
-		else seaRegionElement.appendChild(p);
-	}
-}

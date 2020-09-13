@@ -8,16 +8,20 @@ class CharacterReport extends HTMLElement {
 		}
 
 		let html = `
-			<div id="name">${c.name}</div>
-			<div id="kingdom">${c.tags.length == 0 ? "" : c.tags.join(" and ") + " of "}<report-link href="kingdom/${c.kingdom}">${c.kingdom}</report-link>${c.honorific != "" ? " (" + c.honorific + ")" : ""}</div>
-			<div id="location">In ${c.location == -1 ? "Hiding" : "<report-link href=\"region/" + g_data.regions[c.location].name + "\">" + g_data.regions[c.location].name + "</report-link>"}</div>
-			<div id="content">
-				<h1>Skills</h1>
-				<div>
-					<tooltip-element tooltip="Admirals make navies they lead more effective. They improve their skill by leading navies.">Admiral:</tooltip-element><div id="skill_admiral"></div>
-					<tooltip-element tooltip="Generals make armies they lead more effective. They improve their skill by leading armies.">General:</tooltip-element><div id="skill_general"></div>
-					<tooltip-element tooltip="Governors increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
-					<tooltip-element tooltip="Spies establish spy rings of greater power. They improve their skill by hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
+			<div id="portrait"></div>
+			<div>
+				<div id="name">${c.honorific} ${c.name}</div>
+				<kingdom-label kingdom="${c.kingdom}"></kingdom-label>
+				<div>${c.tags.length == 0 ? "" : c.tags.join(" and ")}</div>
+				<div id="location">In ${c.location == -1 ? "Hiding" : "<report-link href=\"region/" + g_data.regions[c.location].name + "\">" + g_data.regions[c.location].name + "</report-link>"}</div>
+				<div id="content">
+					<h1>Skills</h1>
+					<div>
+						<tooltip-element tooltip="Admirals make navies they lead more effective. They improve their skill by leading navies.">Admiral:</tooltip-element><div id="skill_admiral"></div>
+						<tooltip-element tooltip="Generals make armies they lead more effective. They improve their skill by leading armies.">General:</tooltip-element><div id="skill_general"></div>
+						<tooltip-element tooltip="Governors increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
+						<tooltip-element tooltip="Spies establish spy rings of greater power. They improve their skill by hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
+					</div>
 				</div>
 			</div>
 		`;
@@ -30,15 +34,21 @@ class CharacterReport extends HTMLElement {
 				box-shadow: 1em 0 1em rgba(0, 0, 50, .2);
 				background-color: #fff;
 				z-index: 1;
+				min-width: 20em;
+			}
+			#container {
+				display: grid;
+				grid-template-columns: 50% 50%;
+			}
+			#portrait {
+				background-size: 100%;
+				background-repeat: no-repeat;
+				min-height: 25em;
 			}
 			#name {
-				background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url("images/characters.png") no-repeat center center;
-				background-size: cover;
 				padding-top: .2em;
 				padding-bottom: .2em;
 				font-size: 150%;
-				color: #fff;
-				text-shadow: 0 0 6px #000, 0 0 0 #000, 0 0 3px #000, 1px 1px 3px #000, -1px -1px 3px #000;
 				text-align: center;
 			}
 			#content {
@@ -84,15 +94,11 @@ class CharacterReport extends HTMLElement {
 			ul {
 				list-style-type: none;
 			}
-			img {
-				margin-top: 1em;
-				width: 100%;
-				height: auto;
-			}
 			`;
 		let shadow = this.attachShadow({mode: "open"});
 		shadow.appendChild(style);
 		let content = document.createElement("div");
+		content.setAttribute("id", "container");
 		content.innerHTML = html;
 		shadow.appendChild(content);
 		// Add skills.
@@ -102,11 +108,8 @@ class CharacterReport extends HTMLElement {
 			t.setAttribute("tooltip", getEffect(c.calcLevel(skill), skill));
 			shadow.getElementById("skill_" + skill).appendChild(t);
 		}
-		// Portrait override.
 		if (c.portrait != undefined && c.portrait >= 0) {
-			let img = document.createElement("img");
-			img.setAttribute("src", "images/portraits/" + c.portrait + ".png");
-			content.appendChild(img);
+			shadow.getElementById("portrait").style.backgroundImage = "url(images/portraits/" + c.portrait + ".png";
 		}
 	}
 }

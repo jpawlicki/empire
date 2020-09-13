@@ -2,10 +2,7 @@ class InternationalReport extends HTMLElement {
 	constructor() { super(); }
 	connectedCallback() {
 		let html = `
-			<div id="abspos">
-				<div>International</div>
-				<svg id="graph" viewbox="0,0,1,1" xmlns="http://www.w3.org/2000/svg">
-				</svg>
+			<div id="floater">
 				<select id="chart_type">
 					<option value="overall">Friendships / Enmities / Tributaries</option>
 					<option value="refugees">Refugees</option>
@@ -16,6 +13,8 @@ class InternationalReport extends HTMLElement {
 				<div id="legend">
 				</div>
 			</div>
+			<svg id="graph" viewbox="0,0,1,1" xmlns="http://www.w3.org/2000/svg">
+			</svg>
 		`;
 		// CSS
 		let style = document.createElement("style");
@@ -25,22 +24,11 @@ class InternationalReport extends HTMLElement {
 				overflow: auto;
 				box-shadow: 1em 0 1em rgba(0, 0, 50, .2);
 				background-color: #fff;
-			}
-			#abspos {
 				position: relative;
 			}
-			#abspos > div:first-child {		
-				background: url(${"images/international.jpg"}) no-repeat center center;
-				background-size: cover;
-				padding-top: .2em;
-				padding-bottom: .2em;
-				font-size: 200%;
-				color: #fff;
-				text-shadow: 0 0 6px #000, 0 0 0 #000, 0 0 3px #000, 1px 1px 3px #000, -1px -1px 3px #000;
-				text-align: center;
-			}
 			#graph {
-				width: 100%;
+				max-width: 100%;
+				max-height: 85vh;
 			}
 			svg text {
 				font: 0.055px sans-serif;
@@ -54,9 +42,15 @@ class InternationalReport extends HTMLElement {
 				opacity: 1;
 				transition: opacity .2s;
 			}
+			#floater {
+				position: absolute;
+				top: 0;
+				left: 0;
+				background-color: rgba(255, 255, 255, 0.9);
+				border-radius: 0 1em 1em 0;
+			}
 			#legend svg {
-				width: 25%;
-				margin-right: 1em;
+				width: 3em;
 			}
 			.dotted {
 				stroke-dasharray: 0.02, 0.04;
@@ -76,9 +70,9 @@ class InternationalReport extends HTMLElement {
 		let values = {
 			"overall": {
 				"legend": {
-					"TRIBUTE": {"color": "#008800", "text": "Tribute"},
-					"ATTACK": {"color": "#ff0000", "text": "Attacking"},
-					"DEFEND": {"color": "#0000ff", "text": "Offering Friendship"}},
+					"TRIBUTE": {"color": "#008800", "text": "A pays B tribute", "requitedText": "A and B pay each other"},
+					"ATTACK": {"color": "#ff0000", "text": "A attacks B", "requitedText": "A and B are at war"},
+					"DEFEND": {"color": "#0000ff", "text": "A never attacks B", "requitedText": "A and B never fight"}},
 				"rel": function(a, b) {
 					if (g_data.kingdoms[a].relationships[b].tribute > 0) return "TRIBUTE";
 					return g_data.kingdoms[a].relationships[b].battle;
@@ -87,7 +81,7 @@ class InternationalReport extends HTMLElement {
 			},
 			"refugees": {
 				"legend": {
-					"ACCEPT": {"color": "#0000ff", "text": "Accepting Refugees"}},
+					"ACCEPT": {"color": "#0000ff", "text": "A accepts B's refugees", "requitedText": "A and B accept each other's refugees"}},
 				"rel": function(a, b) {
 					return g_data.kingdoms[a].relationships[b].refugees;
 				},
@@ -95,7 +89,7 @@ class InternationalReport extends HTMLElement {
 			},
 			"construction": {
 				"legend": {
-					"PERMIT": {"color": "#0000ff", "text": "Permits Construction"}},
+					"PERMIT": {"color": "#0000ff", "text": "A permits B to construct", "requitedText": "A and B permit each other to construct"}},
 				"rel": function(a, b) {
 					return g_data.kingdoms[a].relationships[b].construct;
 				},
@@ -103,7 +97,7 @@ class InternationalReport extends HTMLElement {
 			},
 			"cede": {
 				"legend": {
-					"ACCEPT": {"color": "#0000ff", "text": "Accepts Region Cedes"}},
+					"ACCEPT": {"color": "#0000ff", "text": "A accepts land from B", "requitedText": "A and B accept land from each other"}},
 				"rel": function(a, b) {
 					return g_data.kingdoms[a].relationships[b].cede;
 				},
@@ -111,7 +105,7 @@ class InternationalReport extends HTMLElement {
 			},
 			"fealty": {
 				"legend": {
-					"ACCEPT": {"color": "#0000ff", "text": "Accepts Army Transfers"}},
+					"ACCEPT": {"color": "#0000ff", "text": "A accepts B's armies", "requitedText": "A and B can transfer armies to each other"}},
 				"rel": function(a, b) {
 					return g_data.kingdoms[a].relationships[b].fealty;
 				},
@@ -147,6 +141,7 @@ class InternationalReport extends HTMLElement {
 					pointer-events: none;
 				}
 			</style>
+			<circle cx="0.5" cy="0.5" r="0.5" fill="#ffffff"/>
 			`;
 		let rel = t.rel;
 		let weights = t.weights;
@@ -265,15 +260,15 @@ class InternationalReport extends HTMLElement {
 			c.innerHTML = "<title>" + kingdoms[i] + "</title>";
 			let t = document.createElementNS("http://www.w3.org/2000/svg", "text");
 			t.setAttribute("x", pp[0]);
-			t.setAttribute("y", pp[1]);
+			t.setAttribute("y", pp[1] + 0.005);
 			t.appendChild(document.createTextNode(kingdoms[i].substr(0, 1)));
 			t.setAttribute("fill", getForegroundColor(kingdoms[i]));
 			svg.appendChild(t);
 		}
 		legendEle.innerHTML = "";
 		for (let l in legend) {
-			legendEle.innerHTML += "<div><svg viewbox=\"0,-.0125,.25,.025\"><path class=\"dotted\" stroke=\"" + legend[l].color + "\" d=\"M0,0L.25,0\"></path></svg>" + legend[l].text;
-			legendEle.innerHTML += "<div><svg viewbox=\"0,-.0125,.25,.025\"><path stroke=\"" + legend[l].color + "\" d=\"M0,0L.25,0\"></path></svg>" + legend[l].text + " (Reciprocated)";
+			legendEle.innerHTML += "<div>A<svg viewbox=\"0,-.0125,.1,.025\"><path class=\"dotted\" stroke=\"" + legend[l].color + "\" d=\"M0,0L.25,0\"></path></svg>B: " + legend[l].text;
+			legendEle.innerHTML += "<div>A<svg viewbox=\"0,-.0125,.1,.025\"><path stroke=\"" + legend[l].color + "\" d=\"M0,0L.25,0\"></path></svg>B: " + legend[l].requitedText;
 		}
 	}
 }

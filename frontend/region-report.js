@@ -9,33 +9,12 @@ class RegionReport extends HTMLElement {
 		let religion = r.religion;
 
 		let shadow = this.attachShadow({mode: "open"});
-		
-		let culture_tooltips = {
-			"eolsung": "Eolsung are hearty northerners. Soldiers recruited in this region make skilled raiders, able to conceal their presence and attack enemy supply lines.",
-			"anpilayn": "Anpilayn are cultured southerners. Soldiers recruited in this region are well-equipped and extremely formidable in battle.",
-			"hansa": "Hansa are seafaring southerners. Soldiers recruited in this region make skilled sailors who can impress their enemies into service.",
-			"tavian": "Tavian are desert-dwelling mystics. Soldiers recruited in this region make excellent riders and offset their own cost while garrisoning a region.",
-			"tyrgaetan": "Tyrgaetan are nomadic hunters. Soldiers recruited in this region are immune to attrition due to climate and skilled at moving quickly through friendly territory."
-		};
-
-		let religion_tooltips = {
-			"Iruhan (Sword of Truth)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his cautions against the lure of idols and false gods. Consequently, this region experiences increased recruitment.",
-			"Iruhan (Vessel of Faith)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his message that a divine conscience is a part of each person. They reject the authority of the hierarchical Church of Iruhan, in favor of local ministers. Consequently, they do not suffer clerical unrest and are pleased whenever a temple following the Vessel of Faith ideology is constructed.",
-			"Iruhan (Tapestry of People)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his sermon that all people have an intrinsic value, regardless of their culture or creed, and that no single culture or creed has uncovered the divine truth. Consequently, they seek out new ideas differing viewpoints, and are more effective if neighboring a culturally, religiously, or ideologically diverse region.",
-			"Iruhan (Chalice of Compassion)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his conviction that all living beings must be treated with understanding and compassion. Consequently, they are more likely to sustainably treat their environments but generate less tax income.",
-			"Northern (Alyrja)": "This region's inhabitants primarily follow the eldritch deity known as Alyrja. Alyrja demands that her worshippers be constantly vigilant, guarding those that trust them against all danger, and rewards her faithful with magical powers to achieve this. Consequently, the inhabitants of this region destroy pirates and don't mind limited rations.",
-			"Northern (Rjinku)": "This region's inhabitants primarily follow the eldritch deity known as Rjinku. Rjinku demands that his worshippers show courage in all things, embrace conflict, and battle to prove their worth. Consequently, inhabitants of this region are more likely to become soldiers.",
-			"Northern (Syrjen)": "This region's inhabitants primarily follow the eldritch deity known as Syrjen. Syrjen demands that her worshippers work cooperatively with each other to build and create. Consequently, this region benefits from increased economic activity.",
-			"Northern (Lyskr)": "This region's inhabitants primarily follow the eldritch deity known as Lyskr. Lyskr demands that his worshippers guard their secrets closely. Consequently, foreigners find it more difficult to conduct intrigue here.",
-			"Tavian (Flame of Kith)": "This region's inhabitants primarily follow the antitheist Tavian religion, which teaches that the deities of the world are enemies of humanity. They react to this unpalatable truth by forging a social compact known as the Flame of Kith, under which individuals are welcomed into the community simply because they are human. Consequently, this region is more attractive to immigrants.",
-			"Tavian (River of Kuun)": "This region's inhabitants primarily follow the antitheist Tavian religion, which teaches that the deities of the world are enemies of humanity. They react to this unpalatable truth by forging a social compact known as the River of Kuun, under which the prosperity of the elite is forcibly shared among the community. Consequently, the feast is an important element of the region's culture and when plentifully rationed the region will have increased economic activity and patriotism."
-		};
 
 		let html = "";
 		if (r.type == "land") {
 			html = `
 				<div id="name">${r.name}</div>
-				<div id="kingdom"><report-link href="kingdom/${r.kingdom}">${r.kingdom}</report-link></div>
+				<kingdom-label kingdom="${r.kingdom}"></kingdom-label>
 				<div id="cct"></div>
 				<div id="content">
 					<h1><tooltip-element tooltip="A region's population determines its tax production, recruitment, maximum harvest size, and food consumption. Population grows slowly, but regions can also attract refugees from neighboring regions that have battles or starvation.">Population</tooltip-element>: <tooltip-element tooltip="${r.population}">${Math.round(r.population / 1000)}k</tooltip-element></h1>
@@ -78,9 +57,9 @@ class RegionReport extends HTMLElement {
 		} else {
 			html = `
 				<div id="name">${r.name}</div>
-				<div id="kingdom">Sea Region</div>
 				<div id="cct"></div>
 				<div id="content">
+					<h1><tooltip-element tooltip="Sea regions produce 20 gold for the largest navy they contain, and 10 for the runner-up.">Sea Region</tooltip-element></h1>
 					<h1>Contents</h1>
 					<div id="objects"></div>
 				</div>
@@ -109,13 +88,6 @@ class RegionReport extends HTMLElement {
 			#content {
 				margin-left: 0.3em;
 				margin-right: 0.3em;
-			}
-			#kingdom {
-				text-align: center;
-				margin-top: 0.2em;
-				margin-bottom: 0.2em;
-				font-variant: small-caps;
-				font-size: 125%;
 			}
 			#cct tooltip-element::first-letter {
 				text-transform: capitalize;
@@ -244,10 +216,6 @@ let capitalize = function(s) {
 
 let capitalizeForce = function(s) {
 	return s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-}
-
-let num = function(c, places = 0, scale = 1) {
-	return "<tooltip-element tooltip=\"" + c.v + " = " + c.explain() + "\">" + (Math.round(c.v * scale * Math.pow(10, places)) / Math.pow(10, places)) + "</tooltip-element>";
 }
 
 let getNobleUnrestBlock = function(r) {

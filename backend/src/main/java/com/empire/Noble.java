@@ -258,24 +258,6 @@ final class Crisis {
 				return r.unrestPopular.get() > .5;
 			}
 		},
-		WEDDING("%NOBLENAME%'s daughter is being wed in %REGIONNAME% and they request your presence as ruler.", "The wedding of the daughter of %NOBLENAME% was a spectacular affair. It is rare for the nobility to find much joy in their political marriage, but in this case the couple's obvious love for one another warmed your heart to witness. %NOBLENAME% could not thank you enough for attending, and swore never to forget this day.", "The wedding %NOBLENAME% invited you to in %REGIONNAME% has taken place without you and %NOBLENAME% is very cross.") {
-			@Override
-			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {
-				for (Character c : w.characters) if (c.hasTag(Character.Tag.RULER) && c.kingdom.equals(r.getKingdom()) && c.location == w.regions.indexOf(r)) return true;
-				return false;
-			}
-
-			@Override
-			boolean isCreateable(World w, Region r, Rules rules, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {
-				Set<Integer> closeRegions = r.getCloseRegionIds(w, rules.nobleCrisisFrequency);
-				for (Character c : w.characters) {
-					if (c.kingdom.equals(r.getKingdom()) && c.hasTag(Character.Tag.RULER) && closeRegions.contains(c.location)) {
-						return true;
-					}
-				}
-				return false;
-			}
-		},
 		WORSHIP("%NOBLENAME% is concerned that the people of %REGIONNAME% do not have enough temples to attend. Make sure there are at least three temples in %REGIONNAME%.", "%NOBLENAME% is pleased that the people of %REGIONNAME% now have ample places to worship.", "%NOBLENAME% is upset that the people of %REGIONNAME% still are lacking in temples.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Map<Region, Character> governors, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {

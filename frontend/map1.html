@@ -30,11 +30,32 @@
 			g_data = {};
 			g_geo = undefined;
 			g_latest_date = 0;
+			let g_pointCache = [];
 			let whoami = getArg("k");
 			let password = "";
 			let gameId = parseInt(getArg("g"));
 			if (isNaN(gameId)) gameId = parseInt(getArg("gid")); // A bug in the server sent out mails with gid=X, so just accept either for now.
 			let currentTurn = parseInt(getArg("t"));
+
+			function geoize(doBorder=true) {
+			  for (let r of g_geo.regions) r.path = getRegionShape(r);
+			  g_regions = g_geo.regions;
+			  g_borders = g_geo.borders.filter(bo => bo.b != undefined).map(bo => { return {a: bo.a, b: bo.b, weight: bo.w, path: bo.path} });
+
+			  let regionElement = document.getElementById("regions");
+			  let seaRegionElement = document.getElementById("sea_regions");
+			  let borderElement = document.getElementById("borders");
+			  for (let i = 0; i < g_regions.length; i++) {
+			 		let region = g_regions[i];
+			 		let p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+			 		p.setAttribute("id", "region_" + i);
+			 		p.setAttribute("d", shapeToPath(region.path));
+			 		p.setAttribute("fill-rule", "evenodd");
+			 		p.addEventListener("click", function () { regionClick(i); });
+			 		if (region.type == "land") regionElement.appendChild(p);
+			 		else seaRegionElement.appendChild(p);
+			  }
+			}
 
 			// Fetch geography data right away.
 			{

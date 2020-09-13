@@ -17,11 +17,11 @@ function getHistoricalScore(turn, kingdom, points) {
 		let lessThan = 0;
 		let greaterThan = 0;
 		for (let v of collection) {
-			if (v <= value) lessThan++;
+			if (v < value) lessThan++;
 			else greaterThan++;
 		}
-		if (lessThan + greaterThan == 0) return 1;
-		return lessThan / (lessThan + greaterThan);
+		if (lessThan + (greaterThan - 1) <= 0) return 1;
+		return lessThan / (lessThan + (greaterThan - 1));
 	}
 
 	return {
