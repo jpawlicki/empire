@@ -296,6 +296,7 @@ class Region {
 			{"v": 9, "unit": " reaps / citizen", "why": "Global Havest Rate"}]);
 		let mods = [];
 		let unrest = this.calcUnrest().v;
+		if (unrest > .25) mods.push({"v": 0.25 - unrest, "unit": "%", "why": "Unrest"});
 		return Calc.moddedNum(base, mods);
 	}
 

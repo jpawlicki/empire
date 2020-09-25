@@ -136,6 +136,7 @@ class MapPanel extends HTMLElement {
 			#tableDiv table {
 				border-spacing: 0;
 				min-width: 100%;
+				margin-bottom: 5em;
 			}
 			#tableDiv td img {
 				height: 2.5em;
@@ -329,10 +330,14 @@ class MapPanel extends HTMLElement {
 		});
 
 		// Panning and zooming controls.
+		mapDiv.addEventListener("mousedown", (ev) => {
+			this.totalScrollDelta = 0;
+		});
+
 		mapDiv.addEventListener("mousemove", (ev) => {
 			if (ev.buttons & 0x1 == 0x1) {
 				mapDiv.scrollBy(-ev.movementX, -ev.movementY);
-				if (Math.abs(ev.movementX) + Math.abs(ev.movementY) > 4) this.popupSuppressed = true;
+				this.totalScrollDelta += Math.abs(ev.movementY) + Math.abs(ev.movementX);
 			} else {
 				let tt = shadow.getElementById("mapMouseTooltip");
 				tt.style.bottom = "auto";
@@ -340,10 +345,6 @@ class MapPanel extends HTMLElement {
 				tt.style.top = ev.clientY + 10;
 				tt.style.left = ev.clientX + 10;
 			}
-		});
-
-		mapDiv.addEventListener("mouseup", (ev) => {
-			this.popupSuppressed = false;
 		});
 
 		mapDiv.addEventListener("mouseout", (ev) => {
@@ -974,8 +975,7 @@ class MapPanel extends HTMLElement {
 	}
 
 	popup(href) {
-		if (this.popupSuppressed) {
-			this.popupSuppressed = false;
+		if (this.totalScrollDelta > 20) {
 			return;
 		}
 		let ele = href.split("/");

@@ -12,11 +12,14 @@ class RegionReport extends HTMLElement {
 
 		let html = "";
 		if (r.type == "land") {
+			let core = undefined;
+			for (let k in g_data.kingdoms) if (g_data.kingdoms[k].core_regions.includes(r.id)) core = k;
 			html = `
 				<div id="name">${r.name}</div>
 				<kingdom-label kingdom="${r.kingdom}"></kingdom-label>
 				<div id="cct"></div>
 				<div id="content">
+					<h1><tooltip-element tooltip="">Historically</tooltip-element>: <kingdom-label kingdom="${core}"></kingdom-label>
 					<h1><tooltip-element tooltip="A region's population determines its tax production, recruitment, maximum harvest size, and food consumption. Population grows slowly, but regions can also attract refugees from neighboring regions that have battles or starvation.">Population</tooltip-element>: <tooltip-element tooltip="${r.population}">${Math.round(r.population / 1000)}k</tooltip-element></h1>
 					<div>
 						<tooltip-element tooltip="A region's dominant religion and ideology is determined by which religion and ideology has the most temples in the region.">Religion:</tooltip-element><tooltip-element tooltip="${religion_tooltips[religion]}">${religion}</tooltip-element>
@@ -50,7 +53,7 @@ class RegionReport extends HTMLElement {
 					<div id="objects"></div>
 					<h1>Other</h1>
 					<div>
-						<tooltip-element tooltip="Pirate threat is the probability that pirates will appear in this region. It is decreased by lowered unrest or bribing pirates.">Pirate Threat:</tooltip-element><div>${num(r.calcPirateThreat(), 1, 100)}%</div>
+						<tooltip-element tooltip="Pirate threat is the probability that pirates will appear in this region. It is decreased by lowered unrest or bribing pirates.">Pirate Threat:</tooltip-element><div>${Number.isNaN(r.calcPirateThreat().v) ? 0 : num(r.calcPirateThreat(), 1, 100)}%</div>
 					</div>
 				</div>
 			`;
@@ -88,6 +91,11 @@ class RegionReport extends HTMLElement {
 			#content {
 				margin-left: 0.3em;
 				margin-right: 0.3em;
+			}
+			#content kingdom-label {
+				font-size: 50%;
+				vertical-align: bottom;
+				display: inline-block;
 			}
 			#cct tooltip-element::first-letter {
 				text-transform: capitalize;

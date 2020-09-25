@@ -346,6 +346,7 @@ class ArtificialIntelligence {
 
 		@Override
 		double valueOf(Army piece) {
+			if (neededSize == 0) return 0;
 			if (piece.type == Army.Type.NAVY) return 0;
 			if (piece.size < neededSize) return 0;
 			if (!ourRegions.contains(piece.location) && !neighborRegions.contains(piece.location)) return 0;
@@ -589,7 +590,7 @@ class ArtificialIntelligence {
 			// Higher-index armies cohabiting a region are very high value for merges.
 			for (Army a : world.armies) {
 				if (a == piece) break;
-				if (whoami.equals(a.kingdom) && a.type == piece.type && a.location == piece.location) return 1;
+				if (whoami.equals(a.kingdom) && a.type == piece.type && a.location == piece.location) return 100;
 			}
 			return 0.05;
 		}

@@ -10,7 +10,7 @@ class TooltipElement extends HTMLElement {
 	connectedCallback() {
 		var shadow = this.attachShadow({mode: "open"});
 		var style = `<style>
-				:host { cursor: help; }
+				:host { cursor: help; position: relative; }
 				#tooltip {
 					display: block;
 					visibility: hidden;

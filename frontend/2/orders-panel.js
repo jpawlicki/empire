@@ -490,6 +490,7 @@ class OrdersPanel extends HTMLElement {
 				let r = g_data.regions[rid];
 				if (r.kingdom == whoami) {
 					let food = r.food;
+					if (g_data.date % 4 == 0) food += r.calcHarvest().v;
 					for (let ti = 0; ti < op.economyRowCount; ti++) {
 						if (shadow.querySelector("[name=economy_from_" + ti + "]").value == r.name) food -= parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
 						if (shadow.querySelector("[name=economy_to_" + ti + "]").value.replace(/\(.*\) /, "") == r.name) food += parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
@@ -740,32 +741,6 @@ class OrdersPanel extends HTMLElement {
 		}
 
 		{ // Food Tab
-			let foodConsequences = shadow.getElementById("food_consequences");
-			let obj = this;
-			let computeFoodConsequences = function () {
-				if (op.syncDisabled) return;
-				let rationing = parseInt(eRation.value) / 100.0;
-				foodConsequences.innerHTML = "";
-				let expectedFood = {};
-				for (let rid = 0; rid < g_data.regions.length; rid++) {
-					let r = g_data.regions[rid];
-					if (r.kingdom == whoami) {
-						let food = r.food;
-						for (let ti = 0; ti < obj.economyRowCount; ti++) {
-							if (shadow.querySelector("[name=economy_from_" + ti + "]").value == r.name) food -= parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
-							if (shadow.querySelector("[name=economy_to_" + ti + "]").value.replace(/\(.*\) /, "") == r.name) food += parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
-						}
-						let actualRations = Math.min(food / r.population, rationing);
-						if (rationing < 0.75) {
-							foodConsequences.innerHTML += "<p>" + r.name + " will suffer " + Math.ceil((0.75 - actualRations) * 0.1 * r.population / 1000.0) + "k deaths due to strict rationing</p>";
-						} else if (actualRations < rationing && actualRations >= 0.75) {
-							foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * rationing - food) / 1000.0) + "k rations of food; no starvation will occur</p>";
-						} else if (actualRations < rationing) {
-							foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * rationing - food) / 1000.0) + "k rations of food; " + Math.ceil((0.75 - actualRations) * 0.1 * r.population / 1000.0) + "k will starve</p>";
-						}
-					}
-				}
-			}
 			shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow, computeFoodConsequences));
 		}
 
@@ -863,7 +838,8 @@ class OrdersPanel extends HTMLElement {
 				d.setAttribute("href", "kingdom/" + i.k);
 				odiv.appendChild(d);
 				d = document.createElement("div");
-				d.innerHTML = num(i.o, 1, 100) + "%";
+				if (Number.isNaN(i.o.v)) d.innerHTML = "0%";
+				else d.innerHTML = num(i.o, 1, 100) + "%";
 				odiv.appendChild(d);
 			}
 			// Add bribes.
@@ -1523,7 +1499,6 @@ class OrdersPanel extends HTMLElement {
 			textarea.value = rulers.join(", ") + (rulers.length == 0 ? "" : ",");
 		}
 		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
-			if (k == whoami) continue;
 			let label = document.createElement("label");
 			let box = document.createElement("input");
 			box.setAttribute("name", "letter_" + id + "_to_" + k);
