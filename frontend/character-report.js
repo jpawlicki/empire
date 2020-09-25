@@ -17,10 +17,10 @@ class CharacterReport extends HTMLElement {
 				<div id="content">
 					<h1>Skills</h1>
 					<div>
-						<tooltip-element tooltip="Admirals make navies they lead more effective. They improve their skill by leading navies.">Admiral:</tooltip-element><div id="skill_admiral"></div>
-						<tooltip-element tooltip="Generals make armies they lead more effective. They improve their skill by leading armies.">General:</tooltip-element><div id="skill_general"></div>
-						<tooltip-element tooltip="Governors increase tax and recruitment in a region more effectively when governing there. They improve their skill by governing.">Governor:</tooltip-element><div id="skill_governor"></div>
-						<tooltip-element tooltip="Spies establish spy rings of greater power. They improve their skill by hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
+						<tooltip-element tooltip="Admirals make navies they lead more effective and cause more local shipbuilding. They improve their skill by leading navies.">Admiral:</tooltip-element><div id="skill_admiral"></div>
+						<tooltip-element tooltip="Generals make armies they lead more effective and cause more local recruitment. They improve their skill by leading armies.">General:</tooltip-element><div id="skill_general"></div>
+						<tooltip-element tooltip="Governors can construct for less gold and cause more local tax income. They improve their skill by constructing and installing nobles.">Governor:</tooltip-element><div id="skill_governor"></div>
+						<tooltip-element tooltip="Spies provide leverage over the nations they occupy, and reduce enemy leverage over our nation when in friendly territory. They improve their skill by hiding or establishing spy rings.">Spy:</tooltip-element><div id="skill_spy"></div>
 					</div>
 				</div>
 			</div>
@@ -117,12 +117,12 @@ customElements.define("character-report", CharacterReport);
 
 let getEffect = function(level, skill) {
 	if (skill == "general") {
-		return "Armies led are +" + Math.round(level * 20) + "% as effective.";
+		return "Armies led are +" + Math.round(level * 20) + "% as effective. +" + Math.round(level * 25) + "% more local recruitment.";
 	} else if (skill == "admiral") {
-		return "Navies led are +" + Math.round(level * 20) + "% as effective.";
+		return "Navies led are +" + Math.round(level * 20) + "% as effective. +" + Math.round(level * 15) + "% more local shipbuilding.";
 	} else if (skill == "governor") {
-		return "The Govern action produces +" + Math.round(level * 50) + "% more taxation and recruitment.";
+		return "-" + Math.round(level * 15) + "% construction cost. +" + Math.round(level * 20) + "% more local tax income.";
 	} else if (skill == "spy") {
-		return "+" + Math.round(level * 10) + " newly established spy ring strength.";
+		return "-" + Math.round(level * 15) + "% spy ring establishment cost. +" + Math.round(level * 2) + " leverage over occupied nations.";
 	}
 }

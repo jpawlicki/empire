@@ -54,11 +54,11 @@ public class Nation {
 	public static final Nation UNRULED;
 	public static final Nation PIRATE;
 	static {
-		UNRULED = new Nation() {
+		UNRULED = new Nation(UNRULED_NAME) {
 			@Override
 			Relationship getRelationship(String who) { return Relationship.NPC_RELATION; }
 		};
-		PIRATE = new Nation() {
+		PIRATE = new Nation(PIRATE_NAME) {
 			@Override
 			Relationship getRelationship(String who) { return Relationship.NPC_RELATION; }
 		};
@@ -109,7 +109,7 @@ public class Nation {
 	}
 
 	// Instance members.
-
+	public String name;
 	public String email;
 
 	double gold;
@@ -135,9 +135,14 @@ public class Nation {
 	private Map<ScoreProfile, Double> score = new HashMap<>();
 	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
 	private Set<ScoreProfile> profiles = new HashSet<>();
+	private Map<String, Double> leverage = new HashMap<>();
 
 	transient double goldStolenLost = 0;
 	transient double goldStolenGained = 0;
+
+	public Nation(String name) {
+		this.name = name;
+	}
 
 	public String getEmail() {
 		return email;
@@ -154,6 +159,22 @@ public class Nation {
 
 	void setRelationship(String who, Relationship r) {
 		relationships.put(who, r);
+	}
+
+	double getLeverage(String who) {
+		return leverage.getOrDefault(who, 0.0);
+	}
+
+	void addLeverage(World w, String who, double amount, double mod) {
+		if (who.equals(name)) return;
+		if (amount > 0) {
+			if (w.tivar.veil != 0) mod += 1;
+			if (hasTag(Nation.Tag.SNEAKY)) mod += 0.25;
+			Relationship.War war = w.getNation(who).getRelationship(name).battle;
+			if (war == Relationship.War.ATTACK) mod -= 0.5;
+			else if (war == Relationship.War.DEFEND) mod += 0.5;
+		}
+		leverage.put(who, Math.max(0, leverage.getOrDefault(who, 0.0) + amount * Math.max(0, mod)));
 	}
 
 	boolean hasTag(Tag tag) {
@@ -220,6 +241,7 @@ public class Nation {
 			score = new HashMap<>();
 			shadowScore = new HashMap<>();
 			profiles = new HashSet<>();
+			leverage = new HashMap<>(); 
 		}
 	}
 }

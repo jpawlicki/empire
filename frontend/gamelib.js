@@ -180,7 +180,7 @@ class Region {
 		return Math.sqrt(this.noble.experience + 1);
 	}
 
-	calcRecruitment(extraMod=0, governor=null, rationing=1, nobleMod=0) {
+	calcRecruitment(extraMod=0, rationing=1) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 1 / 2000.0, "unit": " recruits / citizen", "why": "Recruitment Rate"}];
@@ -189,19 +189,26 @@ class Region {
 		let base = new Calc("*", baseAmount);
 
 		let mods = [];
-		if (governor != null) {
-			mods.push({"v": governor.calcLevel("governor") * 0.5 + 1, "unit": "%", "why": "Governor"});
+		for (let c of g_data.characters) {
+			if ("Unruled" != this.kingdom && c.location == this.id && g_data.kingdoms[c.kingdom].calcRelationship(g_data.kingdoms[this.kingdom]) == "friendly") {
+				mods.push({"v": .25 * c.calcLevel("general"), "unit": "%", "why": c.name + " general skill"});
+			}
 		}
+		if (this.culture == "anpilayn") mods.push({"v": -.25, "unit": "%", "why": "Anpilayn culture"});
+		if (this.culture == "eolsung") mods.push({"v": .25, "unit": "%", "why": "Eolsung culture"});
+		if (this.culture == "hansa") mods.push({"v": -.35, "unit": "%", "why": "Hansa culture"});
+		if (this.culture == "tavian") mods.push({"v": -.1, "unit": "%", "why": "Tavian culture"});
+		if (this.culture == "tyrgaetan") mods.push({"v": .35, "unit": "%", "why": "Tyrgaetan culture"});
 		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
-		if (this.nobleMod != 0) mods.push({"v": nobleMod, "unit": "%", "why": "Noble Action"});
 		if (unrest > .25) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
-		if (this.religion == "Northern (Rjinku)") mods.push({"v": 1, "unit": "%", "why": "Worships Rjinku"});
+		if (this.religion == "Northern (Rjinku)") mods.push({"v": 0.75, "unit": "%", "why": "Worships Rjinku"});
 		if (this.religion == "Iruhan (Sword of Truth)") mods.push({"v": 1, "unit": "%", "why": "Sword of Truth ideology"});
 		let effectiveRationing = Math.min(rationing, this.food / this.population);
 		if (this.religion == "Tavian (River of Kuun)" && effectiveRationing > 1) {
 			mods.push({"v": (effectiveRationing - 1) * 3, "unit": "%", "why": "Plentiful rations w/ River of Kuun"});
 		}
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Patriotic")) mods.push({"v": .15, "unit": "%", "why": "Patriotic rulers"});
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Patriotic")) mods.push({"v": .3, "unit": "%", "why": "Patriotic nation"});
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Disciplined")) mods.push({"v": .2, "unit": "%", "why": "Disciplined nation"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(getNation(this.kingdom).core_regions, i)) conquests++;
@@ -233,7 +240,7 @@ class Region {
 		return new Calc("max", unrests);
 	}
 
-	calcTaxation(taxRate=1, governor=null, rationing=1, nobleMod=0) {
+	calcTaxation(taxRate=1, rationing=1) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 			{"v": 1 / 10000.0, "unit": " gold / citizen", "why": "Base Taxation Rate"},
@@ -243,12 +250,16 @@ class Region {
 		let base = new Calc("*", baseAmount);
 
 		let mods = [];
-		if (governor != null) {
-			mods.push({"v": governor.calcLevel("governor") * 0.5 + 1, "unit": "%", "why": "Governor"});
+		for (let c of g_data.characters) {
+			if ("Unruled" != this.kingdom && c.location == this.id && g_data.kingdoms[c.kingdom].calcRelationship(g_data.kingdoms[this.kingdom]) == "friendly") {
+				mods.push({"v": .25 * c.calcLevel("governor"), "unit": "%", "why": c.name + " governor skill"});
+			}
 		}
+		if (this.culture == "anpilayn") mods.push({"v": .25, "unit": "%", "why": "Anpilayn culture"});
+		if (this.culture == "eolsung") mods.push({"v": -.25, "unit": "%", "why": "Eolsung culture"});
+		if (this.culture == "tyrgaetan") mods.push({"v": -.25, "unit": "%", "why": "Tyrgaetan culture"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Mercantile")) mods.push({"v": .15, "unit": "%", "why": "Mercantile rulers"});
 		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .1, "unit": "%", "why": "Noble"});
-		if (this.nobleMod != 0) mods.push({"v": nobleMod, "unit": "%", "why": "Noble Action"});
 		let effectiveRationing = Math.min(rationing, this.food / this.population);
 		if (this.religion == "Tavian (River of Kuun)" && effectiveRationing > 1) {
 			mods.push({"v": (effectiveRationing - 1) * 3, "unit": "%", "why": "Plentiful rations w/ River of Kuun"});
@@ -282,10 +293,9 @@ class Region {
 	calcHarvestCapacity() {
 		let base = new Calc("*", [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 25, "unit": " reaps / citizen", "why": "Global Havest Rate"}]);
+			{"v": 9, "unit": " reaps / citizen", "why": "Global Havest Rate"}]);
 		let mods = [];
 		let unrest = this.calcUnrest().v;
-		if (unrest > .25 && !contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": .25 - unrest, "unit": "%", "why": "Unrest"});
 		return Calc.moddedNum(base, mods);
 	}
 
@@ -294,12 +304,22 @@ class Region {
 	}
 
 	calcNextHarvest() {
+		let weeksUntilHarvest = 3 - (g_data.date - 1) % 4;
+		let date = (g_data.date + weeksUntilHarvest) % 48;
+		let plants = 2;
+		if (date >= 44) plants = 3;
+		else if (date >= 32) plants = 7;
+		else if (date >= 20) plants = 4;
+		else if (date >=  8) plants = 2;
+		else plants = 3;
 		let mods = [];
-		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .05, "unit": "%", "why": "Noble"});
+		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .03, "unit": "%", "why": "Noble"});
+		if (this.culture == "tavian") mods.push({"v": .15, "unit": "%", "why": "Tavian culture"});
+		if (this.culture == "tyrgaetan") mods.push({"v": -.15, "unit": "%", "why": "Tyrgaetan culture"});
 		let base = Calc.moddedNum(
 			new Calc("*", [
 				{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-				{"v": 13, "unit": " plants / citizen", "why": "Global Planting Rate"}]),
+				{"v": plants, "unit": " plants / citizen", "why": "Global Planting Rate"}]),
 			mods);
 		return new Calc("max", base, this.calcHarvestCapacity());
 	}
@@ -335,12 +355,12 @@ class Region {
 		if (forts == 0) {
 			return new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}]);
 		}
-		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .15, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 3.5, "unit": "%", "why": "Maximum Fortification"}]);
+		return new Calc("min", [new Calc("+", [{"v": 1, "unit": "%", "why": "Base Fortification"}, {"v": forts * .25, "unit": "%", "why": "Fortifications (x" + forts + ")"}]), {"v": 3.5, "unit": "%", "why": "Maximum Fortification"}]);
 	}
 
 	calcMinConquestSize() {
 		let mods = [];
-		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Stoic")) mods.push({"v": 1.5, "unit": "%", "why": "Stoic Nation"});
+		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "Disciplined")) mods.push({"v": 1.0, "unit": "%", "why": "Disciplined Nation"});
 		mods.push({"v": this.calcFortification().v - 1, "unit": "%", "why": "Fortification"});
 		// √(the population of the region) × the region’s fortification multiplier × (100% - the region’s unrest percentage) × 3
 		return Calc.moddedNum(
@@ -411,7 +431,6 @@ class Region {
 		if (this.religion == "Northern (Alyrja)") return {"v": 0, "unit": " shares", "why": "Follows Alyrja"};
 		let base = {"v": this.calcUnrest().v, "unit": " shares", "why": "Unrest"};
 		let mods = [];
-		if (this.noble.name != undefined) mods.push({"v": -0.5, "unit": "%", "why": "Noble"});
 		let bribe = g_data.pirates.bribes[this.kingdom];
 		if (bribe != undefined) {
 			mods.push({"v": Math.pow(2, bribe / 30) - 1, "unit": "%", "why": "Bribe (" + bribe + " Gold)"});
@@ -508,44 +527,44 @@ class Region {
 		return {x: 0,  y: 0};
 	}
 
-	calcCostToBuildTemple(builderNation, ideology) {
+	calcCostToBuildTemple(builderNation, ideology, builder) {
 		let base = {"v": 30, "unit": "gold", "why": "Base cost"};
 		let mods = [];
 		let nation = getNation(builderNation);
+		if (builder != null) mods.push(builder.calcConstructMod());
 		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
 		if (nation.tags.includes("Mystical")) mods.push({"v": -.5, "unit": "%", "why": "Mystical Nation"});
-		if (nation.tags.includes("Evangelical") && nation.calcStateReligion() != this.religion) mods.push({"v": -1, "unit": "%", "why": "Evangelical Nation"});
-		if (ideology.startsWith("Iruhan ") && !this.religion.startsWith("Iruhan ") && World.calcGlobalIdeology() == "Iruhan (Vessel of Faith)") mods.push({"v": -1, "unit": "%", "why": "Vessel of Faith global ideology"});
-		if (this.religion == "Iruhan (Tapestry of People)") {
-			let templeBonus = true;
-			for (let r of this.getNeighbors()) if (r.isLand() && (r.religion != this.religion || r.culture != this.culture)) templeBonus = false;
-			if (templeBonus) mods.push({"v": -1, "unit": "%", "why": "Tapestry of People temple bonus"});
-		}
+		if (nation.tags.includes("Evangelical") && nation.calcStateReligion() == ideology && nation.calcStateReligion() != this.religion) mods.push({"v": -0.5, "unit": "%", "why": "Evangelical Nation"});
+		if (ideology.startsWith("Iruhan ") && !this.religion.startsWith("Iruhan ") && World.calcGlobalIdeology() == "Iruhan (Vessel of Faith)") mods.push({"v": -0.6, "unit": "%", "why": "Vessel of Faith global ideology"});
+		if (this.religion == "Iruhan (Tapestry of People)") mods.push({"v": -0.6, "unit": "%", "why": "Tapestry of People temple bonus"});
 		return Calc.moddedNum(base, mods);
 	}
 
-	calcCostToEstablishSpyRing(builderNation) {
+	calcCostToEstablishSpyRing(builderNation, builder) {
 		let base = {"v": 50, "unit": "gold", "why": "Base cost"};
 		let mods = [];
-		if (getNation(builderNation).calcStateReligion() == "Northern (Lyskr)") mods.push({"v": -1, "unit": "%", "why": "Lyskr state ideology"});
+		if (builder != null) mods.push(builder.calcEstablishSpyRingMod());
+		if (getNation(builderNation).calcStateReligion() == "Northern (Lyskr)") mods.push({"v": -0.5, "unit": "%", "why": "Lyskr state ideology"});
 		return Calc.moddedNum(base, mods);
 	}
 
 
-	calcCostToBuildShipyard(builderNation) {
+	calcCostToBuildShipyard(builderNation, builder) {
 		let base = {"v": 80, "unit": "gold", "why": "Base cost"};
 		let mods = [];
 		let nation = getNation(builderNation);
+		if (builder != null) mods.push(builder.calcConstructMod());
 		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
 		return Calc.moddedNum(base, mods);
 	}
 
-	calcCostToBuildFortifications(builderNation) {
-		let base = {"v": 20, "unit": "gold", "why": "Base cost"};
+	calcCostToBuildFortifications(builderNation, builder) {
+		let base = {"v": 30, "unit": "gold", "why": "Base cost"};
 		let mods = [];
 		let nation = getNation(builderNation);
+		if (builder != null) mods.push(builder.calcConstructMod());
 		if (nation.tags.includes("Industrial")) mods.push({"v": -.25, "unit": "%", "why": "Industrial Nation"});
-		if (this.religion == "Tavian (Flame of Kith)") mods.push({"v": -1, "unit": "%", "why": "Flame of Kith"});
+		if (nation.tags.includes("Defensive")) mods.push({"v": -.5, "unit": "%", "why": "Defensive Nation"});
 		return Calc.moddedNum(base, mods);
 	}
 }
@@ -572,6 +591,7 @@ class Kingdom {
 		this.score = dataEntry.score;
 		this.profiles = dataEntry.profiles;
 		this.send_email = dataEntry.send_email;
+		this.leverage = dataEntry.leverage;
 	}
 
 	calcRecruitment() {
@@ -692,6 +712,10 @@ class Kingdom {
 
 // ============ CHARACTER ============
 class Character {
+	static byName(name) {
+		for (let c of g_data.characters) if (c.name == name) return c;
+	}
+
 	constructor(dataEntry) {
 		this.name = dataEntry.name;
 		this.honorific = dataEntry.honorific;
@@ -714,11 +738,23 @@ class Character {
 	calcPlotStrengthMod() {
 		return this.calcLevel("spy") * 0.3;
 	}
+
+	calcConstructMod() {
+		return {"v": -.15 * this.calcLevel("governor"), "unit": "%", "why": "Governor Experience"};
+	}
+
+	calcEstablishSpyRingMod() {
+		return {"v": -.15 * this.calcLevel("governor"), "unit": "%", "why": "Spy Experience"};
+	}
 }
 
 
 // ============ ARMY ============
 class Army {
+	static byId(id) {
+		for (let a of g_data.armies) if (a.id == id) return a;
+	}
+
 	constructor(dataEntry) {
 		this.id = dataEntry.id;
 		this.type = dataEntry.type;
@@ -748,6 +784,7 @@ class Army {
 				mods.push({"v": fort - 1, "unit": "%", "why": "Fortifications"});
 			}
 		}
+		if (this.kingdom == "Pirate" && g_data.regions[this.location].religion == "Northern (Alyrja)") mods.push({"v": -0.6, "unit": "%", "why": "Pirate in Alyrja region."});
 		if (k != undefined) {
 			let state = k.calcStateReligion();
 			if (state == "Iruhan (Sword of Truth)") mods.push({"v": .15, "unit": "%", "why": "Iruhan (Sword of Truth) state ideology"});
@@ -777,6 +814,10 @@ class Army {
 			if (k.tags.includes("Rebellious") && k.core_regions.includes(this.location)) mods.push({"v": -0.5, "unit": "%", "why": "Rebellious unit in core territory"});
 		}
 		return Calc.moddedNum(base, mods);
+	}
+
+	getEffectiveSize() {
+		return this.type == "army" ? this.size : this.size * 30;
 	}
 }
 
@@ -951,7 +992,7 @@ let religion_tooltips = {
 
 let tagTooltips = {
 	"Steel": "+15% as strong.",
-	"Formations": "If the army would suffer between 45% and 90% casualties, it instead suffers 45% casualties.",
+	"Formations": "If the army would suffer between 40% and 90% casualties, it instead suffers 40% casualties.",
 	"Pillagers": "While this army is the largest army in an enemy or neutral region, it suppresses recruitment and hoards the region's taxes. When it enters a region controlled by the same ruler, that ruler will gain those taxes.",
 	"Raiders": "This army is hidden in friendly regions.",
 	"Seafaring": "+150% as strong in sea regions.",

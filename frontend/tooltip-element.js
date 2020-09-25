@@ -12,7 +12,8 @@ class TooltipElement extends HTMLElement {
 		var style = `<style>
 				:host { cursor: help; }
 				#tooltip {
-					display: none;
+					display: block;
+					visibility: hidden;
 					background: #ddd;
 					color: #000;
 					font-size: 90%;
@@ -23,6 +24,9 @@ class TooltipElement extends HTMLElement {
 					max-width: 20em;
 					padding: 0.2em;
 					text-align: left;
+					font-size: small;
+					text-decoration: none;
+					font-weight: normal;
 				}
 				slot {
 					text-decoration: solid underline;
@@ -36,17 +40,17 @@ class TooltipElement extends HTMLElement {
 		shadow.appendChild(tooltipDiv);
 		this.addEventListener("click", function() {
 			this.expanded = !this.expanded;
-			shadow.querySelector("#tooltip").style.display = this.expanded ? "block" : "none";
+			shadow.querySelector("#tooltip").style.visibility = this.expanded ? "visible" : "hidden";
 			this.mouseovertime = 0;
 		});
 		this.addEventListener("mouseout", function() {
 			this.expanded = false;
-			shadow.querySelector("#tooltip").style.display = "none";
+			shadow.querySelector("#tooltip").style.visibility = "hidden";
 			this.mouseovertime = 0;
 		});
 		this.addEventListener("mouseover", function() {
 			this.mouseovertime = 1;
-			setTimeout(function(obj) { if (obj.mouseovertime == 1) { obj.expanded = true; shadow.querySelector("#tooltip").style.display = "block"; }}, 750, this);
+			setTimeout(function(obj) { if (obj.mouseovertime == 1) { obj.expanded = true; shadow.querySelector("#tooltip").style.visibility = "visible"; }}, 750, this);
 		});
 	}
 }

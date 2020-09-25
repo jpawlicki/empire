@@ -398,6 +398,9 @@ public class EntryServlet extends HttpServlet {
 			} catch (IOException e) {
 				log.log(Level.SEVERE, "Failed to read rule data.", e);
 				return null;
+			} catch (Exception e) {
+				log.log(Level.SEVERE, "Uncaught advancement exception:", e);
+				throw e;
 			}
 		}
 		return "";
@@ -639,7 +642,7 @@ public class EntryServlet extends HttpServlet {
 			msg.setText(body);
 			Transport.send(msg);
 		} catch (MessagingException | UnsupportedEncodingException | NoClassDefFoundError | OverQuotaException e) {
-			log.log(Level.SEVERE, "Failed to send mail", e);
+			log.log(Level.WARNING, "Failed to send mail", e);
 		}
 	}
 }

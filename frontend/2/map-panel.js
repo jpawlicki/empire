@@ -989,11 +989,9 @@ class MapPanel extends HTMLElement {
 		if (ele[0] == "region") {
 			ap = document.createElement("region-report");
 			ap.setAttribute("region", ele[1]);
-			popup.style.minWidth = "auto";
 		} else if (ele[0] == "army") {
 			ap = document.createElement("army-report");
 			ap.setAttribute("army", ele[1]);
-			popup.style.minWidth = "auto";
 		} else if (ele[0] == "character") {
 			ap = document.createElement("character-report");
 			ap.setAttribute("character", ele[1]);

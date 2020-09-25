@@ -55,20 +55,28 @@ public class Character extends RulesObject {
 		else return calcLevel(experience.admiral) * getRules().perLevelLeaderMod;
 	}
 
-	public double calcGovernRecruitMod() {
-		return calcLevel(experience.governor) * getRules().perLevelGovernRecruitMod + getRules().baseGovernRecruitMod;
+	public double calcRecruitMod() {
+		return calcLevel(experience.general) * 0.25;
 	}
 
-	public double calcGovernTaxMod() {
-		return calcLevel(experience.governor) * getRules().perLevelGovernTaxMod + getRules().baseGovernTaxMod;
+	public double calcShipyardMod() {
+		return calcLevel(experience.admiral) * 0.15;
 	}
 
-	public double calcSpyRingEstablishmentStrength() {
-		return calcLevel(experience.spy) * getRules().perLevelSpyRingEstablishmentStrength;
+	public double calcTaxMod() {
+		return calcLevel(experience.governor) * 0.2;
 	}
 
-	public double calcSpyRingStrengthBonus() {
-		return calcLevel(experience.spy) * 0.3;
+	public double calcConstructMod() {
+		return calcLevel(experience.governor) * -0.15;
+	}
+
+	public double calcSpyRingEstablishmentMod() {
+		return calcLevel(experience.spy) * -0.15;
+	}
+
+	public double getSpyLevel() {
+		return calcLevel(experience.spy);
 	}
 
 	public void addExperienceAll() {

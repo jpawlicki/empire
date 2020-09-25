@@ -5,6 +5,7 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +42,8 @@ class Army extends RulesObject {
 	List<Tag> tags = new ArrayList<>();
 	Map<String, Double> composition = new HashMap<>();
 	String orderhint = "";
+	Set<String> concealedFrom = new HashSet<>();
+	int hobbles;
 
 	public double calcStrength(World w, Character leader, int inspires) {
 		double strength = size * (isArmy() ? getRules().armyBaseStrength : getRules().navyBaseStrength);
@@ -48,6 +51,7 @@ class Army extends RulesObject {
 		double mods = 1.0;
 		Region r = w.regions.get(location);
 
+		if (Nation.PIRATE_NAME.equals(kingdom) && w.regions.get(location).religion == Ideology.ALYRJA) mods += -0.6;
 		if (hasTag(Tag.STEEL)) mods += getRules().steelMod;
 		if (hasTag(Tag.SEAFARING) && r.isSea()) mods += getRules().seafaringMod;
 		if (isArmy() && !getRules().pirateKingdom.equals(kingdom) && w.getNation(kingdom).hasTag(Nation.Tag.DISCIPLINED)) mods += getRules().disciplinedArmyStrengthMod;
@@ -59,8 +63,9 @@ class Army extends RulesObject {
 		if (leader != getRules().noLeader) {
 			mods += leader.calcLeadMod(type);
 		}
+		mods -= hobbles * 0.3;
 
-		return strength * mods;
+		return Math.max(0, strength * mods);
 	}
 
 	public double getEffectiveSize() {
@@ -77,6 +82,10 @@ class Army extends RulesObject {
 
 	public boolean isNavy() {
 		return type == Type.NAVY;
+	}
+
+	public String getName() {
+		return (type == Type.NAVY ? "Navy " : "Army ") + id;
 	}
 
 	double getCost(World w, String order) {
@@ -171,10 +180,11 @@ class Army extends RulesObject {
 			return;
 		}
 		if (target.equals(region.getKingdom())) return;
+		w.getNation(region.getKingdom()).addLeverage(w, kingdom, 10, 1); 
 		String nobleFate = "";
 		if (region.noble != null && (region.noble.unrest.get() < .5 || w.getNation(target).hasTag(Nation.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
-			if (!w.spyRings.stream().anyMatch(r -> r.getLocation() == location && r.getNation() == region.getKingdom())) w.spyRings.add(SpyRing.newSpyRing(getRules(), region.getKingdom(), region.noble.calcPosthumousSpyRingStrength(), location));
+			w.getNation(region.getKingdom()).addLeverage(w, kingdom, region.noble.calcLeverageMod(), 1); 
 			region.noble = null;
 		}
 		if (region.noble != null) {
@@ -183,7 +193,7 @@ class Army extends RulesObject {
 		}
 		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && excommunicatedNations.contains(region.getKingdom())) w.getNation(kingdom).goodwill += getRules().defendersOfFaithConquestOpinion;
 		region.constructions.removeIf(c -> c.type == Construction.Type.FORTIFICATIONS);
-		w.notifyAllPlayers(region.name + " Conquered", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
+		w.notifyAllPlayers("Conquest", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
 		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest.add(.20);
 		region.setKingdom(w, target);
 		conqueredRegions.add(region);

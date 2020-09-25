@@ -173,34 +173,21 @@ public class RegionTest {
 	}
 
 	@Test
-	public void calcMinConquestStrengthStoic(){
-		when(n1.hasTag(Nation.Tag.STOIC)).thenReturn(true);
-		assertEquals(5.25 * 2.5, r.calcMinConquestStrength(w), DELTA);
+	public void calcMinConquestStrengthDisciplined(){
+		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
+		assertEquals(5.25 * 2, r.calcMinConquestStrength(w), DELTA);
 	}
 
 	@Test
 	public void calcMinConquestStrengthFortified(){
 		r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
-		assertEquals(6.825, r.calcMinConquestStrength(w), DELTA);
-	}
-
-	@Test
-	public void calcMinPatrolStrength(){
-		r.unrestPopular.set(0.4);
-		assertEquals(3.3, r.calcMinPatrolStrength(w), DELTA);
-	}
-
-	@Test
-	public void calcMinPatrolStrengthDisciplined(){
-		r.unrestPopular.set(0.4);
-		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
-		assertEquals(1.8, r.calcMinPatrolStrength(w), DELTA);
+		assertEquals(7.875, r.calcMinConquestStrength(w), DELTA);
 	}
 
 	@Test
 	public void calcFortificationMod(){
 		r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
-		assertEquals(0.3, r.calcFortificationMod(), DELTA);
+		assertEquals(0.5, r.calcFortificationMod(), DELTA);
 	}
 
 	@Test
@@ -221,57 +208,39 @@ public class RegionTest {
 	@Test
 	public void calcPirateThreatBasic(){
 		r.unrestPopular.set(0.0);
-		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.0, r.calcPirateThreat(w), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatUnrest(){
-		assertEquals(0.25, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.25, r.calcPirateThreat(w), DELTA);
 	}
 
 	@Test
 	public void calcPirateThreatWaterZero(){
 		r.type = Region.Type.WATER;
-		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.0, r.calcPirateThreat(w), DELTA);
 	}
-
-	@Test
-	public void calcPirateThreatAlyrjaZero(){
-		r.religion = Ideology.ALYRJA;
-		assertEquals(0.0, r.calcPirateThreat(w, false), DELTA);
-	}
-
-	@Test
-	public void calcPirateThreatNoble(){
-		r.noble = Noble.newNoble(Culture.ANPILAYN, 1, Utils.rules);
-		assertEquals(0.125, r.calcPirateThreat(w, false), DELTA);
-	}
-
-	@Test
-	public void calcPirateThreatPatrolled(){
-		assertEquals(0.125, r.calcPirateThreat(w, true), DELTA);
-	}
-
 
 	@Test
 	public void calcPirateThreatBribe(){
 		w.pirate.bribes.put(k1, -90.0);
-		assertEquals(0.03125, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.03125, r.calcPirateThreat(w), DELTA);
 
 		w.pirate.bribes.put(k1, -60.0);
-		assertEquals(0.0625, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.0625, r.calcPirateThreat(w), DELTA);
 
 		w.pirate.bribes.put(k1, -30.0);
-		assertEquals(0.125, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.125, r.calcPirateThreat(w), DELTA);
 
 		w.pirate.bribes.put(k1, 30.0);
-		assertEquals(0.5, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(0.5, r.calcPirateThreat(w), DELTA);
 
 		w.pirate.bribes.put(k1, 60.0);
-		assertEquals(1.0, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(1.0, r.calcPirateThreat(w), DELTA);
 
 		w.pirate.bribes.put(k1, 90.0);
-		assertEquals(2.0, r.calcPirateThreat(w, false), DELTA);
+		assertEquals(2.0, r.calcPirateThreat(w), DELTA);
 	}
 
 	@Test
@@ -330,7 +299,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 0;
 		r.plant(4);
-		assertEquals(30000 * (1 + 0.05), r.crops, DELTA);
+		assertEquals(30000 * (1 + 0.03), r.crops, DELTA);
 	}
 
 	@Test
@@ -340,7 +309,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 0;
 		r.plant(4);
-		assertEquals(30000 * (1 + 0.25), r.crops, DELTA);
+		assertEquals(30000 * (1 + 0.15), r.crops, DELTA);
 	}
 
 	@Test
@@ -348,7 +317,7 @@ public class RegionTest {
 		r.population = 10000;
 		r.crops = 1000000;
 		r.food = 0;
-		r.harvest(new HashSet<>(), unused -> 0);
+		r.harvest(unused -> 0);
 		assertEquals(80000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
@@ -359,19 +328,8 @@ public class RegionTest {
 		r.crops = 1000000;
 		r.food = 0;
 		r.unrestPopular.set(.95);
-		r.harvest(new HashSet<>(), unused -> 0);
+		r.harvest(unused -> 0);
 		assertEquals(24000, r.food, DELTA);
-		assertEquals(0, r.crops, DELTA);
-	}
-
-	@Test
-	public void harvestUnrestStoic() {
-		r.population = 10000;
-		r.crops = 1000000;
-		r.food = 0;
-		r.unrestPopular.set(.95);
-		r.harvest(Collections.singleton("k1"), unused -> 0);
-		assertEquals(80000, r.food, DELTA);
 		assertEquals(0, r.crops, DELTA);
 	}
 }

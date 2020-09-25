@@ -84,7 +84,6 @@ public class Rules {
 
 	//Religion
 	double rjinkuRecruitmentMod;
-	double rjinkuCasualtyRecovery;
 	double syrjenTaxMod;
 	double swordOfTruthRecruitmentMod;
 	double chaliceOfCompassionTaxMod;
@@ -133,7 +132,7 @@ public class Rules {
 	double heroicExpMultiplier;
 
 	double disciplinedArmyStrengthMod;
-	double disciplinedPatrolStrengthMod;
+	double disciplinedConqStrengthMod;
 
 	double coastDwellingRecruitMod;
 	double coastDwellingTaxMod;
@@ -147,8 +146,6 @@ public class Rules {
 
 	double mercantileTaxMod;
 	double mercantileGoldShare;
-
-	double stoicConqStrengthMod;
 
 	// Regions
 	double recruitmentPerPop;

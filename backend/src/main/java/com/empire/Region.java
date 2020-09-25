@@ -83,7 +83,7 @@ class Region extends RulesObject {
 		return (1 - unrestPopular.get()) * mod;
 	}
 
-	public double calcRecruitment(World w, Character governor, double signingBonus, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, double signingBonus, double rationing, Army largestInRegion) {
 		double base = population * getRules().recruitmentPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - getRules().unrestRecruitmentEffectThresh);
@@ -93,16 +93,24 @@ class Region extends RulesObject {
 		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.RJINKU || c.religion == Ideology.SWORD_OF_TRUTH)).count() * 40;
 		mods += calcSigningBonusMod(signingBonus);
 
-		if (governor != null) mods += governor.calcGovernRecruitMod();
 		if (hasNoble()) mods += noble.calcRecruitMod();
+
+		for (Character c : w.characters) if (c.location == id && Nation.isFriendly(c.kingdom, kingdom, w)) mods += c.calcRecruitMod();
 
 		Nation wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(Nation.Tag.PATRIOTIC)) mods += getRules().patrioticMod;
+		if (wKingdom.hasTag(Nation.Tag.DISCIPLINED)) mods += 0.2;
 		if (wKingdom.hasTag(Nation.Tag.WARLIKE) && wKingdom.coreRegions.contains(w.regions.indexOf(this))) {
 			int conquests = 0;
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).kingdom) && !wKingdom.coreRegions.contains(i)) conquests++;
 			mods += conquests * getRules().perConquestWarlikeRecruitmentMod;
 		}
+
+		if (culture == Culture.ANPILAYN) mods -= .25;
+		else if (culture == Culture.EOLSUNG) mods += .25;
+		else if (culture == Culture.HANSA) mods -= .35;
+		else if (culture == Culture.TAVIAN) mods -= .1;
+		else if (culture == Culture.TYRGAETAN) mods += .35;
 
 		if (religion == Ideology.RJINKU) {
 			mods += getRules().rjinkuRecruitmentMod;
@@ -122,20 +130,23 @@ class Region extends RulesObject {
 		return signingBonus <= 0 ? signingBonus * 0.5 : (Math.log(signingBonus) / Math.log(2)) * 0.5 + 0.5;
 	}
 
-	public double calcTaxIncome(World w, Character governor, double taxRate, double rationing) {
+	public double calcTaxIncome(World w, double taxRate, double rationing) {
 		double base = population * getRules().taxPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestTaxEffectThresh) base *= 1.0 - (unrest - getRules().unrestTaxEffectThresh);
 
 		double mods = 1;
 		double flat = 0;
-		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.TAPESTRY_OF_PEOPLE || c.religion == Ideology.SYRJEN)).count() * 100;
+		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.TAPESTRY_OF_PEOPLE || c.religion == Ideology.SYRJEN)).count() * 3;
 		long numFortifications = constructions.stream().filter(c -> c.type == Construction.Type.FORTIFICATIONS).count();
-		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.ALYRJA).count() * numFortifications;
 		flat -= constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count();
 
-		if (governor != null) mods += governor.calcGovernTaxMod();
+		if (culture == Culture.ANPILAYN) mods += .25;
+		else if (culture == Culture.EOLSUNG) mods -= .25;
+		else if (culture == Culture.TYRGAETAN) mods -= .25;
+
 		if (hasNoble()) mods += noble.calcTaxMod();
+		for (Character c : w.characters) if (c.location == id && Nation.isFriendly(c.kingdom, kingdom, w)) mods += c.calcTaxMod();
 
 		Nation wKingdom = w.getNation(kingdom);
 		if (wKingdom.hasTag(Nation.Tag.MERCANTILE)) mods += getRules().mercantileTaxMod;
@@ -161,14 +172,11 @@ class Region extends RulesObject {
 		return population;
 	}
 
-	public double calcPirateThreat(World w, boolean wasPatrolled) {
+	public double calcPirateThreat(World w) {
 		if (isSea()) return 0;
-		if (religion == Ideology.ALYRJA) return 0;
 
 		double unrest = calcUnrest(w);
 		double mods = 1;
-		if (hasNoble()) mods += getRules().noblePirateThreatMod;
-		if (wasPatrolled) mods += getRules().patrolledPirateThreatMod;
 		mods += Math.pow(2, w.pirate.bribes.getOrDefault(kingdom, 0.0) / getRules().pirateThreatDoubleGold) - 1;
 		return Math.max(0, unrest * mods);
 	}
@@ -186,12 +194,6 @@ class Region extends RulesObject {
 			if (ideologies.get(r) > maxV) {
 				maxV = ideologies.get(r);
 				max = r;
-			}
-		}
-		if (Ideology.VESSEL_OF_FAITH == max && religion != max) {
-			for (String k : w.getNationNames()) {
-				if (Ideology.VESSEL_OF_FAITH != Nation.getStateReligion(k, w)) continue;
-				for (Region r : w.regions) if (k.equals(r.kingdom)) r.unrestPopular.add(getRules().vesselOfFaithSetRelUnrestMod);
 			}
 		}
 		if (max != religion) {
@@ -294,7 +296,7 @@ class Region extends RulesObject {
 	public double calcMinConquestStrength(World w) {
 		double base = calcBaseConquestStrength(w);
 		double mods = 1;
-		if (w.getNation(kingdom).hasTag(Nation.Tag.STOIC)) mods += getRules().stoicConqStrengthMod;
+		if (w.getNation(kingdom).hasTag(Nation.Tag.DISCIPLINED)) mods += getRules().disciplinedConqStrengthMod;
 		mods += calcFortificationMod();
 		return Math.max(0, base * mods);
 	}
@@ -302,14 +304,6 @@ class Region extends RulesObject {
 	// TODO: This is a game rule/equation
 	public double calcBaseConquestStrength(GoodwillProvider w) {
 		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
-	}
-
-	// TODO: This is a game rule/equation
-	public double calcMinPatrolStrength(World w) {
-		double mods = 1;
-		if (w.getNation(kingdom).hasTag(Nation.Tag.DISCIPLINED)) mods += getRules().disciplinedPatrolStrengthMod;
-		mods += (2 * calcUnrest(w) - 0.7);
-		return 0.03 * Math.sqrt(population) * mods;
 	}
 
 	public double calcFortificationPct() {
@@ -367,14 +361,20 @@ class Region extends RulesObject {
 		food -= actualEat;
 		double actualRations = actualEat / population;
 		w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, actualEat * getRules().foodFedPointFactor);
-		if (actualRations > 1) w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
-		if (religion != Ideology.ALYRJA || actualRations < 0.75 || actualRations > 1) {
-			unrestPopular.add(Math.min(0.35, 1.0 - actualRations));
-		}
-		if (actualRations < 0.75) {
+		if (actualRations > 1) {
+			w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
+			unrestPopular.add(1.0 - actualRations);
+		} else if (actualRations >= 0.75) {
+			if (Nation.getStateReligion(kingdom, w) == Ideology.ALYRJA) {
+				unrestPopular.add(1.0 - actualRations / 2);
+			} else {
+				unrestPopular.add(1.0 - actualRations);
+			}
+		} else {
 			double dead = (0.75 - actualRations) * 0.1 * population;
+			unrestPopular.add(Math.min(0.35, 1.0 - actualRations));
 			population -= dead;
-			w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, -1 / 6000.0 * dead);
+			w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, -1 / 8000.0 * dead);
 			w.notifyPlayer(getKingdom(), "Starvation", Math.round(dead) + " have starved to death in " + name + ".");
 		}
 	}
@@ -384,16 +384,18 @@ class Region extends RulesObject {
 		crops += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count() * 7500;
 		double mod = 1;
 		if (hasNoble()) mod += noble.calcPlantMod();
+		if (culture == Culture.TYRGAETAN) mod -= .15;
+		if (culture == Culture.TAVIAN) mod += .15;
 		if (Season.isHarvest(date)) {
 			crops += population * Season.get(date).getCrops() * mod;
 		}
 	}
 
-	void harvest(Set<String> stoicNations, GoodwillProvider goodwills) {
+	void harvest(GoodwillProvider goodwills) {
 		if (!isLand()) return;
 		double maxHarvest = population * getRules().harvestPerCitizen;
 		double unrest = calcUnrest(goodwills);
-		if (unrest > .25 && !stoicNations.contains(getKingdom())) maxHarvest *= 1.25 - unrest;
+		if (unrest > 0.25) maxHarvest *= 1.25 - unrest;
 		maxHarvest = Math.min(crops, maxHarvest);
 		food += maxHarvest;
 		crops = 0;

@@ -9,6 +9,7 @@ class OrdersPanel extends HTMLElement {
 		this.giftRowCount = 0;
 		this.letterCount = 0;
 		this.plotCount = 0;
+		this.plots = [];
 		this.currentlySubmitting = false;
 		this.submitQueued = false;
 		this.syncDisabled = true;
@@ -125,6 +126,9 @@ class OrdersPanel extends HTMLElement {
 				#plot_rings label {
 					display: block;
 				}
+				#plot_leverage kingdom-label {
+					font-size: 60%;
+				}
 				table {
 					width: 100%;
 				}
@@ -140,13 +144,13 @@ class OrdersPanel extends HTMLElement {
 					padding-bottom: 0.5em;
 					border-bottom: 2px solid black;
 				}
-				#nations_letters > div > div:first-child, #plot_newplots > div > div {
+				#nations_letters > div > div:first-child {
 					display: flex;
 					flex-direction: row;
 					flex-wrap: wrap;
 					justify-content: space-between;
 				}
-				#nations_letters label, #plot_newplots label, .conspirators label {
+				#nations_letters label, #plot_newplots label {
 					background-color: #fff;
 					border-radius: .5em;
 					margin-left: .3em;
@@ -157,36 +161,15 @@ class OrdersPanel extends HTMLElement {
 				#nations_letters label input[type=checkbox]:checked ~ span {
 					text-decoration: underline;
 				}
-				#plot_plots h2 {
-					font-size: 110%;
-					text-align: center;
-					border-top: 1px solid black;
-					margin-top: 1em;
-					background-color: #fee;
+				#plot_newplots > div {
+					margin-bottom: 1em;
+					border-bottom: 1px solid #444;
 				}
-				#plot_plots .objective {
-					font-weight: bold;
-					text-align: center;
+				#plot_newplots label select, #plot_newplots label input {
+					margin-left: 1em;
 				}
-				#plot_plots .trigger {
-					font-size: 120%;
-				}
-				#plot_plots .conspirators {
-					display: flex;
-					flex-direction: row;
-					flex-wrap: wrap;
-					justify-content: space-between;
-				}
-				#plot_plots .conspirators label {
-					background-color: #eee;
-					border-radius: .5em;
-					margin-left: .3em;
-					margin-right: .3em;
-					padding-left: .3em;
-					padding-right: .3em;
-				}
-				#plot_plots .conspirators label.selected {
-					font-weight: bold;
+				#plot_newplots label {
+					display: block;
 				}
 				textarea {
 					width: 100%;
@@ -224,6 +207,18 @@ class OrdersPanel extends HTMLElement {
 					font-size: 90%;
 				}
 				.striped > :nth-child(4n + 3), .striped > :nth-child(4n + 4) {
+					background: #ddd;
+				}
+				#t_plots table {
+					border-collapse: collapse;
+				}
+				#plot_leverage td {
+					padding: 0.2em;
+				}
+				#plot_leverage td:nth-child(n + 1), #t_plots th:nth-child(n + 1) {
+					text-align: right;
+				}
+				#plot_leverage > :nth-child(2n) {
 					background: #ddd;
 				}
 				#t_gothi .voting {
@@ -305,17 +300,15 @@ class OrdersPanel extends HTMLElement {
 						<zip-div id="old_letters" title="Older Letters"></zip-div>
 					</div>
 					<div id="t_plots">
-						<div id="plot_plots"></div>
 						<div id="plot_newplots"></div>
 						<div id="plot_newplot">Instigate New Plot</div>
 						<table>
 							<tr>
-								<th>Spy Ring</th>
-								<th>Action</th>
-								<th>Plot</th>
-								<th>Contribution</th>
+								<th></th>
+								<th>Leverage</th>
+								<th>Spending</th>
 							</tr>
-							<tbody id="plot_rings"></tbody>
+							<tbody id="plot_leverage"></tbody>
 						</table>
 					</div>
 					<div id="t_food">
@@ -445,18 +438,26 @@ class OrdersPanel extends HTMLElement {
 			let happiness = 0;
 			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
 			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
-			happiness += Math.min(35, 100 - parseInt(eRation.value));
+			if (rationing >= 1) {
+				happiness += 100 - parseInt(eRation.value);
+			} else if (rationing >= 0.75) {
+				let mods = 1;
+				if (g_data.kingdoms[whoami].calcStateReligion() == "Northern (Alyrja)") mods -= 0.5;
+				if (g_data.kingdoms[whoami].tags.includes("Stoic")) mods -= 0.5;
+				happiness += (100 - parseInt(eRation.value)) * mods;
+			} else {
+				let mods = 1;
+				if (g_data.kingdoms[whoami].tags.includes("Stoic")) mods -= 0.5;
+				happiness += Math.min(35, (100 - parseInt(eRation.value)) * mods);
+			}
 			economyConsequences.innerHTML = "";
 			let taxParts = [];
 			let recruitParts = [];
 			for (let rid = 0; rid < g_data.regions.length; rid++) {
 				let r = g_data.regions[rid];
 				if (r.kingdom == whoami) {
-					let governor = null;
-					let nobleTaxMod = 0;
-					let nobleRecruitMod = 0;
-					taxParts.push(r.calcTaxation(taxRate, governor, rationing, nobleTaxMod));
-					recruitParts.push(r.calcRecruitment(recruitRate, governor, rationing, nobleRecruitMod));
+					taxParts.push(r.calcTaxation(taxRate, rationing));
+					recruitParts.push(r.calcRecruitment(recruitRate, rationing));
 				}
 			}
 			let taxation = new Calc("+", taxParts).v;
@@ -714,64 +715,7 @@ class OrdersPanel extends HTMLElement {
 		}
 
 		{ // Intrigue Tab
-			let computePlotSuccessChances = () => {
-				if (op.syncDisabled) return;
-				for (let plot of g_data.plots) {
-					let support_mods = 0;
-					let sabotage_mods = 0;
-					let targetRegion = plot.getTargetRegion();
-					if (targetRegion != undefined) {
-						for (let ring of shadow.querySelectorAll("#plot_rings select")) {
-							if (ring.name.startsWith("spyring_type_")) continue;
-							let realRing = g_data.spy_rings.find(r => r.location == parseInt(ring.name.replace("spyring_", "")) && r.nation == whoami);
-							let strength = realRing.calcStrengthIn(targetRegion.id)
-							if (realRing.involved_in_plot_id == plot.plot_id) {
-								// Discount the strength of the ring from the apparent success strength. Add it back based on whether the ring is currently ordered to support or sabotage, etc.
-								support_mods -= strength;
-							}
-							if (parseInt(ring.value) != plot.plot_id) continue;
-							if (shadow.querySelector("[name=" + ring.name.replace("spyring_", "spyring_type_") + "]").value == "SUPPORTING") {
-								support_mods += strength;
-							} else {
-								sabotage_mods += strength * 2;
-							}
-						}
-					}
-					let minSuccess = Math.floor(100 * Math.max(0, (plot.power_hint * 0.9 + support_mods) / (plot.power_hint_total * 1.1 + sabotage_mods + support_mods)));
-					let maxSuccess = Math.ceil(100 * Math.min(1, (plot.power_hint * 1.1 + support_mods) / (plot.power_hint_total * 0.9 + sabotage_mods + support_mods)));
-					shadow.getElementById("power_" + plot.plot_id).innerHTML = minSuccess + "% to " + maxSuccess + "% chance of success." + (targetRegion == undefined ? " Because the target's location is unknown, it is not possible to update these numbers interactively." : "");
-				}
-			}
-			let plots = shadow.getElementById("plot_plots");
-			for (let plot of g_data.plots) {
-				let pr = document.createElement("div");
-				pr.innerHTML = `
-					<h2>Operation ${rainbowCode(plot.plot_id)}</h2>
-					<div class="objective">${plot.getObjective()}</div>
-					<div id="power_${plot.plot_id}"></div>
-					<label class="trigger"><input type="checkbox" name="plot_execute_${plot.plot_id}"></input>Trigger Operation!</label>
-					<div class="conspirators"></div>`
-				let cdiv = pr.querySelector(".conspirators");
-				let invitees = [];
-				for (let k in g_data.kingdoms) invitees.push(k);
-				invitees.sort();
-				for (let k of invitees) {
-					let l = document.createElement("label");
-					let i = document.createElement("input");
-					i.setAttribute("type", "checkbox");
-					i.setAttribute("name", "plot_invite_" + plot.plot_id + "_" + k);
-					l.appendChild(i);
-					l.appendChild(document.createTextNode(k));
-					if (plot.conspirators.includes(k)) {
-						i.setAttribute("disabled", "true");
-						i.setAttribute("checked", "true");
-						l.className = "selected";
-					}
-					cdiv.appendChild(l);
-				}
-				plots.appendChild(pr);
-			}
-			let rings = shadow.getElementById("plot_rings");
+			let leverage = shadow.getElementById("plot_leverage");
 			let addRow = function(eles) {
 				let r = document.createElement("tr");
 				for (let e of eles) {
@@ -779,36 +723,20 @@ class OrdersPanel extends HTMLElement {
 					t.appendChild(e);
 					r.appendChild(t);
 				}
-				rings.appendChild(r);
+				leverage.appendChild(r);
 			};
-			for (let r of g_data.spy_rings) if (whoami == r.nation) {
-				let link = document.createElement("report-link");
-				link.setAttribute("href", "region/" + g_data.regions[r.location].name);
-				link.appendChild(document.createTextNode(g_data.regions[r.location].name));
-				let s1 = this.selectPretty("spyring_type_" + r.location, [{"name": "Support", "value": "SUPPORTING"}, {"name": "Sabotage", "value": "SABOTAGING"}]);
-				s1.addEventListener("change", computePlotSuccessChances);
-				let plotOpts = [{"name": "[Nothing]", "value": -1}];
-				for (let p of g_data.plots) plotOpts.push({"name": "Operation " + rainbowCode(p.plot_id), "value": p.plot_id});
-				let s2 = this.selectPretty("spyring_" + r.location, plotOpts);
-				s2.addEventListener("change", computePlotSuccessChances);
-				let ef = document.createElement("span");
-				s2.addEventListener("change", () => {
-					if (s2.value == -1) {
-						ef.textContent = "";
-						return;
-					}
-					let targetRegion = undefined;
-					for (let p of g_data.plots) if (p.plot_id == parseInt(s2.value)) targetRegion = p.getTargetRegion();
-					if (targetRegion == undefined) {
-						ef.textContent = "?";
-						return;
-					}
-					ef.textContent = Math.round(r.calcStrengthIn(targetRegion.id));
-				});
-				addRow([link, s1, s2, ef]);
+			for (let k in g_data.kingdoms) {
+				if (k == whoami) continue;
+				let kl = document.createElement("kingdom-label");
+				kl.setAttribute("kingdom", k);
+				let l = g_data.kingdoms[whoami].leverage[k];
+				if (l == undefined) l = 0;
+				let spend = document.createElement("span");
+				spend.setAttribute("id", "plot_costs_" + k);
+				addRow([kl, document.createTextNode(Math.round(l)), spend]);
 			}
 			shadow.getElementById("plot_newplot").addEventListener("click", ()=>this.addPlot(shadow));
-			postLoadOps.push(computePlotSuccessChances);
+			postLoadOps.push(() => this.computePlotCosts());
 		}
 
 		{ // Food Tab
@@ -987,7 +915,7 @@ class OrdersPanel extends HTMLElement {
 			shadow.getElementById("cult_join").style.display = (g_data.kingdoms[whoami].loyal_to_cult || g_data.cult_triggered) ? "none" : "block";
 			let undeadCount = 0;
 			for (let c of g_data.cult_caches) {
-				if (c.eligible_nations.includes(whoami)) undeadCount += c.size;
+				if (c.eligible_nation == whoami) undeadCount += c.size;
 			}
 			shadow.getElementById("cult_profit").textContent = Math.floor(undeadCount);
 		}
@@ -1184,6 +1112,7 @@ class OrdersPanel extends HTMLElement {
 		});
 
 		{ // Load Orders
+			op.syncDisabled = true;
 			let req = new XMLHttpRequest();
 			req.open("get", g_server + "/entry/orders?gid=" + gameId + "&t=" + g_data.date, true);
 			addAuth(req, g_player, g_password);
@@ -1261,7 +1190,7 @@ class OrdersPanel extends HTMLElement {
 						op.addBribe(shadow);
 					} else if (p.startsWith("letter_") && p.endsWith("_sig")) {
 						op.addLetter(shadow, []);
-					} else if (p.startsWith("plot_new_type")) {
+					} else if (p.startsWith("plot_type")) {
 						op.addPlot(shadow);
 					} else if (p.startsWith("nations_gift_target_")) {
 						op.addGift(shadow);
@@ -1296,7 +1225,6 @@ class OrdersPanel extends HTMLElement {
 			};
 			req.send();
 		}
-		op.syncDisabled = false;
 	}
 
 	changeReport(href) {
@@ -1325,18 +1253,8 @@ class OrdersPanel extends HTMLElement {
 	getArmyOptions(unit) {
 		let r = g_data.regions[unit.location];
 		let opts = [];
+		opts.push("Stay in " + r.name);
 		if (unit.type == "army") {
-			if (r.type == "land") {
-				if (unit.calcStrength() > r.calcMinPatrolSize().v) {
-					opts.push("Patrol " + r.name);
-					opts.push("Stay in " + r.name);
-				} else {
-					opts.push("Stay in " + r.name);
-					opts.push("Patrol " + r.name);
-				}
-			} else {
-				opts.push("Stay in " + r.name);
-			}
 			if (r.type == "land" && r.kingdom != unit.kingdom) {
 				opts.push("Conquer");
 				for (let k in g_data.kingdoms) {
@@ -1363,7 +1281,6 @@ class OrdersPanel extends HTMLElement {
 			for (let neighbor of r.getNeighbors()) opts.push("Travel to " + neighbor.name);
 			if (r.population > 1) for (let neighbor of r.getNeighbors()) if (neighbor.type == "land") opts.push("Force civilians to " + neighbor.name);
 		} else {
-			opts.push("Stay in " + r.name);
 			let nopts = [];
 			for (let neighbor of r.getNeighbors()) if (r.type == "water" || neighbor.type == "water" || g_data.tivar.deluge > 0) nopts.push(neighbor.name);
 			for (let neighbor of nopts.sort()) {
@@ -1377,6 +1294,7 @@ class OrdersPanel extends HTMLElement {
 			if (!g_data.kingdoms.hasOwnProperty(k) || k == unit.kingdom) continue;
 			opts.push("Transfer " + unit.type + " to " + k);
 		}
+		opts.push("Disband");
 		return opts;
 	};
 
@@ -1524,6 +1442,21 @@ class OrdersPanel extends HTMLElement {
 		tbody.appendChild(tr);
 	}
 
+	computePlotCosts() {
+		if (this.syncDisabled) return;
+		let costs = {};
+		for (let k in g_data.kingdoms) costs[k] = 0;
+		for (let p of this.plots) {
+			let pcost = p.cost(p.args.map(a => a.value));
+			for (let ck in pcost) costs[ck] += pcost[ck];
+		}
+		for (let k in costs) {
+			if (k == whoami) continue;
+			this.shadow.querySelector("#plot_costs_" + k).textContent = Math.ceil(costs[k]);
+			this.shadow.querySelector("#plot_costs_" + k).className = costs[k] > g_data.kingdoms[whoami].leverage[k] ? "alert" : "";
+		}
+	}
+
 	addEconomyRowOrder(shadow, computeFoodConsequences) {
 		let regions = [];
 		let id = this.economyRowCount;
@@ -1622,68 +1555,224 @@ class OrdersPanel extends HTMLElement {
 	addPlot(shadow) {
 		let id = this.plotCount;
 		this.plotCount++;
-		if (this.plotCount >= 5) {
-			shadow.getElementById("plot_newplot").style.display = "none";
-		}
-		let d = document.createElement("div");
-		let targetProviderNone = () => [];
-		let targetProviderCharacter = () => g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
-		let targetProviderRegion = () => g_data.regions.filter(r => r.type == "land").map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
-		let targetProviderRegionShipyard = () => g_data.regions.filter(r => r.constructions.filter(c => c.type == "shipyard").length > 0).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
-		let targetProviderRegionFortifications = () => g_data.regions.filter(r => r.constructions.filter(c => c.type == "fortifications").length > 0).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
-		let targetProviderRegionNoble = () => g_data.regions.filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
-		let targetProviderNation = () => Object.keys(g_data.kingdoms).map(k => { return {"name": k, "value": k}});
+
+		let characterSelect = {
+			"name": "character",
+			"type": "select",
+			"label": "Who",
+			"f": function() {
+				return g_data.characters.map(c => { return {"name": "(" + c.kingdom + ") " + c.name, "value": c.name}});
+			}
+		};
+
+		let nationSelect = {
+			"name": "nation",
+			"type": "select",
+			"label": "Who",
+			"f": function(args) {
+				return Object.keys(g_data.kingdoms).filter(k => args.length == 0 || args[0] != k).map(k => { return {"name": k, "value": k}});
+			}
+		};
+
+		let armySelect = {
+			"name": "army",
+			"type": "select",
+			"label": "Who",
+			"f": function(args) {
+				return g_data.armies.filter(a => args.length == 0 || a.kingdom != args[0]).map(a => { return {"name": (a.type == "army" ? "Army " : "Navy ") + a.id, "value": a.id}});
+			}
+		};
+
+		let ideologySelect = {
+			"name": "ideology",
+			"type": "select",
+			"label": "To",
+			"f": function(args) {
+				let r = g_data.regions[args[0]];
+				let templeCount = {
+					"Iruhan (Vessel of Faith)": 0,
+					"Iruhan (Sword of Truth)": 0,
+					"Iruhan (Tapestry of People)": 0,
+					"Iruhan (Chalice of Compassion)": 0,
+					"Northern (Alyrja)": 0,
+					"Northern (Lyskr)": 0,
+					"Northern (Rjinku)": 0,
+					"Northern (Syrjen)": 0,
+					"Tavian (Flame of Kith)": 0,
+					"Tavian (River of Kuun)": 0
+				};
+				for (let c of r.constructions) {
+					if (c.type == "temple") templeCount[c.religion]++;
+				}
+				let possible = [];
+				for (let i in templeCount) {
+					if (i != r.religion && templeCount[i] == templeCount[r.religion]) possible.push(i);
+				}
+				return possible.map(i => { return {"name": i, "value": i}});
+			}
+		};
+
+		let regionSelect = {
+			"name": "region",
+			"type": "select",
+			"label": "Where",
+			"f": function() {
+				return g_data.regions.filter(r => r.type == "land").map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.id}});
+			}
+		};
+
+		let regionSelectConstruction = {
+			"name": "region",
+			"type": "select",
+			"label": "Where",
+			"f": function() {
+				return g_data.regions.filter(r => r.type == "land").filter(r => r.constructions.length > 0).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.id}});
+			}
+		};
+
+		let regionSelectNoble = {
+			"name": "region",
+			"type": "select",
+			"label": "Where",
+			"f": function() {
+				return g_data.regions.filter(r => r.type == "land").filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+			}
+		};
+
+		let constructionSelect = {
+			"name": "construction",
+			"type": "select",
+			"label": "What",
+			"f": function(args) {
+				let types = new Set();
+				for (let c of g_data.regions[args[0]].constructions) {
+					types.add(c.type == "temple" ? c.type + " " + c.religion : c.type);
+				}
+				let t = [];
+				for (let tt of types) t.push(tt);
+				t.sort();
+				return t.map(t => { return {"name": t, "value": t}});
+			}
+		};
+
+		let destinationSelect = {
+			"name": "destination",
+			"type": "select",
+			"label": "To",
+			"f": function(args) {
+				return g_data.regions[args[0]].getFoodTransferDestinations().map(r => { return {"name": r.name, "value": r.id}});
+			}
+		};
+
+		let amountSelect = {
+			"name": "amount",
+			"type": "number",
+			"label": "Amount",
+			"f": function() {
+				return Number.POSITIVE_INFINITY;
+			}
+		};
+
+		let amountCropsSelect = {
+			"name": "amount",
+			"type": "number",
+			"label": "Amount (k)",
+			"f": function(args) {
+				return g_data.regions[args[0]].crops;
+			}
+		};
+
+		let amountFoodSelect = {
+			"name": "amount",
+			"type": "number",
+			"label": "Amount (k)",
+			"f": function(args) {
+				return g_data.regions[args[0]].food;
+			}
+		};
+
 		let plotTypes = [
-			{"name": "", "value": "", "targetType": targetProviderNone},
-			{"name": "Assassinate", "value": "ASSASSINATE", "targetType": targetProviderCharacter},
-			{"name": "Burn a shipyard in", "value": "BURN_SHIPYARD", "targetType": targetProviderRegionShipyard},
-			{"name": "Sabotage fortifications in", "value": "SABOTAGE_FORTIFICATIONS", "targetType": targetProviderRegionFortifications},
-			{"name": "Spoil food in", "value": "SPOIL_FOOD", "targetType": targetProviderRegion},
-			{"name": "Spoil crops in", "value": "SPOIL_CROPS", "targetType": targetProviderRegion},
-			{"name": "Incite popular unrest in", "value": "INCITE_UNREST", "targetType": targetProviderRegion},
-			{"name": "Prevent food transfers in", "value": "PIN_FOOD", "targetType": targetProviderRegion},
-			{"name": "Murder the noble of", "value": "MURDER_NOBLE", "targetType": targetProviderRegionNoble},
-			{"name": "Poison noble relations in", "value": "POISON_RELATIONS", "targetType": targetProviderRegionNoble},
-			{"name": "Sing the praises of", "value": "PRAISE", "targetType": targetProviderNation},
-			{"name": "Denounce the deeds of", "value": "DENOUNCE", "targetType": targetProviderNation},
-			{"name": "Intercept communications of", "value": "INTERCEPT_COMMUNICATIONS", "targetType": targetProviderNation},
-			{"name": "Gather intelligence on", "value": "SURVEY_NATION", "targetType": targetProviderNation},
-			{"name": "Steal gold from", "value": "STEAL_GOLD", "targetType": targetProviderNation},
-		];
-		let sel = this.selectPretty("plot_new_type_" + id, plotTypes);
+			{"value": "", "name": "", "data": [], "cost": (args) => { return {}}},
+			{"value": "assassinate", "name": "Assassinate", "data": [characterSelect], "cost": (args) => { let r = {}; r[Character.byName(args[0]).kingdom] = 50; return r;}},
+			{"value": "conceal", "name": "Conceal an army", "data": [nationSelect, armySelect], "cost": (args) => { let r = {}; r[args[0]] = Army.byId(parseInt(args[1])).getEffectiveSize() / 100; return r;}},
+			{"value": "convert", "name": "Convert a region", "data": [regionSelect, ideologySelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 10; return r;}},
+			{"value": "denounce", "name": "Denounce", "data": [nationSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = 5; return r;}},
+			{"value": "destroy", "name": "Destroy", "data": [regionSelectConstruction, constructionSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 12; return r;}},
+			{"value": "hobble", "name": "Hobble", "data": [armySelect], "cost": (args) => { let r = {}; r[args[0]] = Army.byId(parseInt(args[1])).getEffectiveSize() / 100; return r;}},
+			{"value": "incite_popular", "name": "Incite popular unrest", "data": [regionSelect, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 3; return r; }},
+			{"value": "incite_noble", "name": "Incite noble unrest", "data": [regionSelectNoble, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 3; return r; }},
+			{"value": "intercept", "name": "Intercept letters", "data": [nationSelect], "cost": (args) => { let r = {}; r[args[0]] = 15; return r; }},
+			{"value": "praise", "name": "Praise", "data": [nationSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = 5; return r;}},
+			{"value": "ruin", "name": "Ruin crops", "data": [regionSelect, amountCropsSelect], "cost": (args) => {  let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 20; return r;}},
+			{"value": "smuggle", "name": "Smuggle food", "data": [regionSelect, destinationSelect, amountFoodSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[2]) / 10; return r; }},
+			{"value": "steal", "name": "Steal gold", "data": [nationSelect, amountSelect], "cost": (args) => { let r = {}; r[args[0]] = parseInt(args[1]) / 4; return r; }},
+			{"value": "rebel", "name": "Trigger rebellion for", "data": [regionSelect, nationSelect], "cost": (args) => {  let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 60 - g_data.regions[parseInt(args[0])].calcUnrest().v * 100 / 3; return r;}}];
+
+		let op = this;
+		let d = document.createElement("div");
+		let sel = this.selectPretty("plot_type_" + id, plotTypes);
 		d.appendChild(sel);
-		let targetSel = document.createElement("select");
-		targetSel.setAttribute("name", "plot_new_target_" + id);
-		d.appendChild(targetSel);
+		let details = document.createElement("div");
+		d.appendChild(details);
+		op.plots.push({"args": [], "cost": (args) => { return {}}});
 		sel.addEventListener("change", () => {
-			while (targetSel.firstChild) targetSel.removeChild(targetSel.firstChild);
+			while (details.firstChild) details.removeChild(details.firstChild);
 			let plotType = undefined;
 			for (let o of plotTypes) if (o.value == sel.value) plotType = o;
-			for (let o of plotType.targetType().sort((a, b) => a.name.localeCompare(b.name))) {
-				let opt = document.createElement("option");
-				opt.setAttribute("value", o.value);
-				opt.appendChild(document.createTextNode(o.name));
-				targetSel.appendChild(opt);
+			let args = [];
+			op.plots[id].args = args;
+			op.plots[id].cost = plotType.cost;
+			let num = 0;
+			for (let data of plotType.data) {
+				let did = num++;
+				let dbox = document.createElement("label");
+				dbox.appendChild(document.createTextNode(data.label));
+				if (data.type == "select") {
+					let sel = document.createElement("select");
+					sel.setAttribute("name", "plot_" + data.name + "_" + id);
+					for (let o of data.f(args.map(p => p.value)).sort((a, b) => a.name.localeCompare(b.name))) {
+						let opt = document.createElement("option");
+						opt.setAttribute("value", o.value);
+						opt.appendChild(document.createTextNode(o.name));
+						sel.appendChild(opt);
+					}
+					sel.addEventListener("change", () => {
+						// Recreate further data element options.
+						for (let i = did + 1; i < args.length; i++) {
+							let inp = args[i];
+							let subdata = plotType.data[i];
+							if (subdata.type == "number") {
+								inp.setAttribute("value", "0");
+								inp.setAttribute("max", subdata.f(args.map(p => p.value)));
+							} else if (subdata.type == "select") {
+								while (inp.firstChild) inp.removeChild(inp.firstChild);
+								for (let o of subdata.f(args.map(p => p.value)).sort((a, b) => a.name.localeCompare(b.name))) {
+									let opt = document.createElement("option");
+									opt.setAttribute("value", o.value);
+									opt.appendChild(document.createTextNode(o.name));
+									inp.appendChild(opt);
+								}
+							}
+						}
+						op.computePlotCosts();
+					});
+					dbox.append(sel);
+					args.push(sel);
+				} else if (data.type == "number") {
+					let inp = document.createElement("input");
+					inp.setAttribute("name", "plot_" + data.name + "_" + id);
+					inp.setAttribute("type", "number");
+					inp.setAttribute("min", "0");
+					inp.setAttribute("value", "0");
+					inp.setAttribute("max", data.f(args.map(p => p.value)));
+					inp.addEventListener("change", () => { op.computePlotCosts(); });
+					dbox.append(inp);
+					args.push(inp);
+				}
+				details.appendChild(dbox);
 			}
+			op.computePlotCosts();
 		});
-		let to = document.createElement("div");
-		to.appendChild(document.createTextNode("Conspirators: "));
-		let boxes = [];
-		for (let k in g_data.kingdoms) if (g_data.kingdoms.hasOwnProperty(k)) {
-			if (k == whoami) continue;
-			let label = document.createElement("label");
-			let box = document.createElement("input");
-			box.setAttribute("name", "plot_new_involve_" + k + "_" + id);
-			box.setAttribute("type", "checkbox");
-			boxes.push(box);
-			label.appendChild(box);
-			let sp = document.createElement("span");
-			sp.appendChild(document.createTextNode(k));
-			label.appendChild(sp);
-			to.appendChild(label);
-		}
-		d.appendChild(to);
-		d.appendChild(document.createElement("hr"));
 		shadow.getElementById("plot_newplots").appendChild(d);
 	}
 
@@ -1763,6 +1852,7 @@ class OrdersPanel extends HTMLElement {
 				if (c.kingdom == whoami) {
 					let cname = c.name.replace(/[ ']/g, "_");
 					capables.push({
+							"who": c,
 							"act": shadow.querySelector("select[name=action_" + cname + "]").value,
 							"loc": c.location,
 							"warn": shadow.getElementById("warning_character_" + cname)});
@@ -1771,6 +1861,7 @@ class OrdersPanel extends HTMLElement {
 			for (let q of shadow.querySelectorAll("select")) {
 				if (!q.name.startsWith("action_noble_")) continue;
 				capables.push({
+					"who": null,
 					"act": q.value,
 					"loc": parseInt(q.name.replace("action_noble_", "")),
 					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
@@ -1781,15 +1872,15 @@ class OrdersPanel extends HTMLElement {
 				if (!c.act.startsWith("Build ") && c.act != "Establish Spy Ring") continue;
 				fwarns.push(c.warn);
 				if (c.act == "Establish Spy Ring") {
-					projectedConstructionCost += g_data.regions[c.loc].calcCostToEstablishSpyRing(whoami).v;
+					projectedConstructionCost += g_data.regions[c.loc].calcCostToEstablishSpyRing(whoami, c.who).v;
 				} else {
 					if (c.act.includes("Shipyard")) {
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami).v;
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami, c.who).v;
 					} else if (c.act.includes("Fortifications")) {
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami).v;
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, c.who).v;
 					} else if (c.act.includes("Temple")) {
 						let type = religionFromIdeology(c.act.replace("Build Temple ", ""));
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, type).v;
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, type, c.who).v;
 					}
 				}
 			}

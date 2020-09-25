@@ -68,10 +68,10 @@
 						override.traits = chosenConfig.traits;
 						override.title = chosenConfig.title;
 						override.bonus = chosenConfig.bonus;
-						override.religion = chosenConfig.dominant_ideology;
+						override.religion = chosenConfig.religion;
 						override.regions = chosenConfig.region_names;
 						override.characters = chosenConfig.characters;
-						override.score = chosenConfig.profiles;
+						override.score = chosenConfig.score;
 						document.querySelector("img[name='" + chosenNation.toLowerCase() + "']").classList.add("mine");
 						for (let r of document.querySelectorAll("path." + chosenNation.toLowerCase())) {
 							r.setAttribute("class", r.getAttribute("class") + " mine");
@@ -91,7 +91,18 @@
 				document.getElementById("computed_styles").innerHTML = style;
 
 				// Geoize
-				geoize(false);
+				let regionElement = document.getElementById("regions");
+				let seaRegionElement = document.getElementById("sea_regions");
+				for (let i = 0; i < g_geo.regions.length; i++) {
+					let region = g_geo.regions[i];
+					region.path = getRegionShape(region);
+					let p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+					p.setAttribute("id", "region_" + i);
+					p.setAttribute("d", shapeToPath(region.path));
+					p.setAttribute("fill-rule", "evenodd");
+					if (region.type == "land") regionElement.appendChild(p);
+					else seaRegionElement.appendChild(p);
+				}
 				let cores = {};
 				for (let k of g_geo.kingdoms) cores[k.name] = [];
 				{
@@ -498,7 +509,7 @@
 						</div>
 						<div>
 							<h2>Religion</h2>
-							<select id="dominant_ideology" name="dominant_ideology"></select>
+							<select id="religion" name="religion"></select>
 							<div id="ideology_consequences"></div>
 						</div>
 						<div>
@@ -799,7 +810,7 @@
 				let warnings = [];
 				let trait1 = document.getElementById("trait1").value;
 				let trait2 = document.getElementById("trait2").value;
-				let di = document.getElementById("dominant_ideology").value;
+				let di = document.getElementById("religion").value;
 				document.getElementById("trait1_consequences").innerHTML = traitConsequences[trait1];
 				document.getElementById("trait2_consequences").innerHTML = traitConsequences[trait2];
 				document.getElementById("ideology_consequences").innerHTML = ideologyDescriptions[di];
@@ -874,12 +885,12 @@
 						document.getElementById("char" + i).style.background = "no-repeat url(images/portraits/" + c.portrait + ".png) top / 100%, #000";
 						document.getElementById("ability_" + i).value = c.skill;
 					}
-					document.getElementById("dominant_ideology").innerHTML = "";
+					document.getElementById("religion").innerHTML = "";
 					for (let r of nations[nation].hasOwnProperty("legalIdeologiesOverride") ? nations[nation].legalIdeologiesOverride : legalIdeologies[nations[nation].culture]) {
 						let o = document.createElement("option");
 						o.innerHTML = r;
-						document.getElementById("dominant_ideology").appendChild(o);
-						if (r.includes(nations[nation].religion)) document.getElementById("dominant_ideology").value = r;
+						document.getElementById("religion").appendChild(o);
+						if (r.includes(nations[nation].religion)) document.getElementById("religion").value = r;
 					}
 					for (let s of document.querySelectorAll("input[type=checkbox]")) s.checked = false;
 					for (let s of nations[nation].score) {
@@ -993,7 +1004,7 @@
 				return JSON.stringify({
 					"name": capitalize(selected),
 					"title": val("title"),
-					"dominant_ideology": val("dominant_ideology"),
+					"religion": val("religion"),
 					"traits": [
 						val("trait1"),
 						val("trait2")
@@ -1011,7 +1022,7 @@
 						val("region8"),
 						val("region9"),
 					],
-					"profiles": profiles()
+					"score": profiles()
 				});
 			}
 

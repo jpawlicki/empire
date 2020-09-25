@@ -42,7 +42,7 @@ class RegionReport extends HTMLElement {
 					<div>
 						<tooltip-element tooltip="The total crops in this region.">Crops:</tooltip-element><div>${num(r.calcCrops(), 0, 1 / 1000)}k</div>
 						<tooltip-element tooltip="The maximum amount of crops the region currently has labor available to harvest.">Harvest Capacity:</tooltip-element><div>${num(r.calcHarvestCapacity(), 0, 1 / 1000)}k</div>
-						<div>Time Until Harvest:</div><div>${3 - g_data.date % 4} Weeks</div>
+						<div>Weeks Until Harvest:</div><div>${3 - (g_data.date - 1) % 4}</div>
 					</div>
 					<h1><tooltip-element tooltip="Taxation output of the region, when taxed at 100%. Tax is primarily determined by population and unrest, though several religious ideologies also affect taxation output.">Tax:</tooltip-element> +${num(r.calcTaxation())} gold</h1>
 					<h1><tooltip-element tooltip="Recuit output of the region. Recuritment is primarily determined by population and unrest, though several religious ideologies also affect recruitment output.">Recruits:</tooltip-element> +${num(r.calcRecruitment())} recruits</h1>
@@ -50,7 +50,7 @@ class RegionReport extends HTMLElement {
 					<div id="objects"></div>
 					<h1>Other</h1>
 					<div>
-						<tooltip-element tooltip="Pirate threat is the probability that pirates will appear in this region during the resolution of the current turn, assuming no further pirate bribes. It is decreased by lowered unrest, by paying off the pirates to avoid the nation (or paying them to prefer another nation), by followers of the Northern (Alyrja) ideology, and by the use of nobles.">Pirate Threat:</tooltip-element><div>${num(r.calcPirateThreat(), 1, 100)}%</div>
+						<tooltip-element tooltip="Pirate threat is the probability that pirates will appear in this region. It is decreased by lowered unrest or bribing pirates.">Pirate Threat:</tooltip-element><div>${num(r.calcPirateThreat(), 1, 100)}%</div>
 					</div>
 				</div>
 			`;
@@ -263,7 +263,7 @@ let getNobleBlock = function(r) {
 			crisisDescription += "\nGoal: An army of " + r.kingdom + " at least " + Math.ceil(10 * r.calcMinPatrolSize().v) / 10 + " strength must end the turn in the region.";
 		} else if (r.noble.crisis.type == "RECESSION") {
 			crisisDescription = r.noble.name + " is concerned with a future economic condition.";
-			crisisDescription += "\nGoal: " + r.kingdom + " has a national treasury of at least 200 gold.";
+			crisisDescription += "\nGoal: " + r.kingdom + " has a national treasury of at least 300 gold.";
 		} else if (r.noble.crisis.type == "SPY") {
 			crisisDescription = r.noble.name + " is concerned with intrigue.";
 			crisisDescription += "\nGoal: " + r.kingdom + " has a spy ring in " + r.name + ".";
@@ -283,7 +283,7 @@ let getNobleBlock = function(r) {
 	let levelDetail = "Nobles gain an experience point each turn, and have a level equal to the square root of one plus their experience. This noble's level gives the region:";
 	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.1 * 100) + "% regional tax";
 	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.1 * 100) + "% regional recruitment";
-	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.05 * 100) + "% crops planted after each harvest";
+	levelDetail += "\n +" + Math.round(r.calcNobleLevel() * 0.03 * 100) + "% crops planted after each harvest";
 	return `
 		<h1>Noble: ${r.noble.name}</h1>
 		<div>Level: <tooltip-element tooltip="${levelDetail}">${Math.round(r.calcNobleLevel() * 100) / 100}</tooltip-element></div>

@@ -7,26 +7,45 @@
 		<title>Empire</title>
 		<link href="https://fonts.googleapis.com/css2?family=Flamenco&display=swap" rel="stylesheet">
 		<style>
-			body {
-				display: grid;
+			html, body {
+				height: 100%;
+				width: 100%;
+				max-height: 100%;
+				background: #000;
+				padding: 0;
 				margin: 0;
 				font-family: sans-serif;
+				color: #fff;
 			}
-			#login, #logged_in {
+			#background {
+				background: url("images/empire_dawn_hd.jpg");
+				background-size: cover;
+				position: fixed;
+				top: 0;
+				left: 0;
+				bottom: 0;
+				right: 0;
+				opacity: 0.2;
+				z-index: -1;
+			}
+			#body {
+				position: absolute;
+				background: #000;
+				z-index: 0;
+			}
+			#content {
+				display: flex;
+				flex-direction: row;
+				justify-content: space-between;
 				padding: 0.2em;
 				margin-left: auto;
 				margin-right: auto;
+				z-index: 1;
 			}
-			#logged_in > div {
+			#content > div {
 				margin: 2em;
 				flex-basis: 10em;
 				flex-grow: 1;
-			}
-			#login {
-				max-width: 23em;
-			}
-			#welcome, #login {
-				padding: 1em;
 			}
 			label {
 				display: flex;
@@ -35,19 +54,32 @@
 			}
 			#menu {
 				padding: 0.2em;
-				background: url("images/empire_dawn_strip.jpg");
-				background-size: cover;
-				background-position: center;
-				text-shadow: 0px 0px 4px #000, 0px 0px 4px #000, 0px 0px 7px #000;
+				background: #000;
 				color: #fff;
-				font-size: 120%;
+				display: flex;
+				width: min-content;
+				align-items: center;
+				background: rgba(0, 0, 0, 1);
+				border-bottom-right-radius: 2em;
+				white-space: nowrap;
 			}
-			#menu a, #menu a:visited {
+			#menu > h1 {
+				margin-top: 0;
+				margin-bottom: 0;
+				margin-left: 0.2em;
+				margin-right: 1.5em;
+			}
+			#menu > h1, #menu > a {
+				margin-left: 1.5em;
+				margin-right: 1.5em;
+			}
+			a, a:visited {
 				color: #ccf;
 				font-weight: bold;
 				transition: color 0.3s;
+				text-decoration: none;
 			}
-			#menu a:hover {
+			a:hover {
 				color: #fff;
 				text-decoration: underline;
 			}
@@ -56,12 +88,13 @@
 				padding-left: 1em;
 				padding-right: 1em;
 			}
-			#logged_in {
+			#active_games, #lobbies {
 				display: none;
-				width: 100%;
-				justify-content: space-between;
 			}
-			#logged_in table {
+			#active_games > div {
+				margin-top: 2em;
+			}
+			table {
 				width: 100%;
 			}
 			.flex {
@@ -106,13 +139,6 @@
 				flex-wrap: wrap;
 				align-items: center;
 			}
-			a {
-				transition: color 0.3s;	
-				text-decoration: none;
-			}
-			a:hover {
-				color: #a00;
-			}
 			#password_change {
 				visibility: hidden;
 				max-width: 20em;
@@ -130,57 +156,13 @@
 				width: 1.3em;
 				height: 1.3em;
 				border-radius: 3em;
+				background-color: #ccf;
+				border: 2px solid #fff;
+				cursor: pointer;
+				transition: background-color 0.3s;
 			}
-			@media (orientation: landscape) {
-				body {
-					grid-template-rows: min-content max-content 10em;
-					grid-template-columns: 25% 75%;
-				}
-				#menu {
-					grid-column: 1/3;
-					grid-row: 1;
-				}
-				#login {
-					grid-column: 2;
-					grid-row: 2;
-				}
-				#logged_in {
-					grid-column: 1/3;
-					grid-row: 2;
-				}
-				#welcome {
-					grid-column: 1;
-					grid-row: 2;
-				}
-				#stats {
-					grid-column: 1/3;
-					grid-row: 3;
-				}
-			}
-			@media (orientation: portrait) {
-				body {
-					grid-template-rows: min-content min-content min-content min-content min-content;
-					grid-template-columns: 100%;
-				}
-				#menu {
-					grid-column: 1;
-					grid-row: 2;
-				}
-				#welcome {
-					grid-column: 1;
-					grid-row: 3;
-				}
-				#login, #logged_in {
-					grid-column: 1;
-					grid-row: 4;
-				}
-				#logged_in {
-					flex-direction: column;
-				}
-				#stats {
-					grid-column: 1;
-					grid-row: 5;
-				}
+			#lobby_add:hover {
+				background-color: #fff;
 			}
 		</style>
 		<script>
@@ -198,391 +180,396 @@
 		</script>
 	</head>
 	<body>
-		<ul id="menu">
-			<li><h1>Empire</h1></li>
-			<li><a href="https://docs.google.com/document/d/1BCjssbKPYEegfva2PqUVy1cD96FTgMtJr3SjUKEsQLw/edit?usp=sharing">Rules</a></li>
-			<li><a href="https://groups.google.com/forum/#!forum/empire-playtesters">Forum</a></li>
-			<li><a href="https://github.com/jpawlicki/empire/issues/new/choose">Report Bug</a></li>
-		</ul>
-		<div id="welcome">
-			<p>Empire is a browser-based multiplayer-only grand strategy game with asynchronous turn-based play. Each of the 26 players rules a nation and tries to achieve the goals they select. Game turns advance every few days, and players can set up their orders at any time between those advances.</p>
-			<p>Whether the game is cooperative or competitive is up to the players. Players are trying to beat national high scores from past games.</p>
-			<p>This is just a fun personal project for me, so it's not supported by any professional team and you shouldn't take it too seriously. The game is free and I don't run ads. If running the server gets too expensive I'll ask for donations or something.</p>
-			<p>If you need to contact me for whatever reason, reach out via the <a href="https://groups.google.com/forum/#!forum/empire-playtesters">forum</a>.</p>
-		</div>
-		<div id="login">
-			<h3>Log in to start or join a game lobby.</h3>
-			<label>Email Address: <input type="email" id="email" placeholder="example@example.com"></input></label>
-			<label>Password: <input type="password" id="password"></input></label>
-			<label>Remember me on this device: <input type="checkbox" id="login_rememberme"></input></label>
-			<div class="flex">
-				<button id="loginbutton">Log In</button>
-				<button id="createaccountbutton">Create Account</button>
-				<button id="resetbutton">Reset Password</button>
+		<div id="body">
+			<div id="background"></div>
+			<div id="menu">
+				<h1>Empire</h1>
+				<a href="https://docs.google.com/document/d/1Pa8rcAGnEBV_9BGtqNfXhAhXmQNoAUFAcTV80WoY6Nc/edit?usp=sharing">Rules</a>
+				<a href="https://groups.google.com/forum/#!forum/empire-playtesters">Forum</a>
+				<a href="https://github.com/jpawlicki/empire/issues/new/choose">Report Bug</a>
 			</div>
-			<div id="login_outcome"></div>
-			<script>
-				function enterPassword(noisyFailure = true) {
-					whoami = document.getElementById("email").value;
-					password = document.getElementById("password").value;
-					if (whoami == "" || password == "") {
-						document.getElementById("login_outcome").innerHTML = "Specify an e-mail address and password.";
-						return;
-					}
-					// Attempt to log in.
-					document.getElementById("loginbutton").disabled = true;
-					document.getElementById("createaccountbutton").disabled = true;
-					document.getElementById("resetbutton").disabled = true;
-					// Get lobby data.
-					let req = new XMLHttpRequest();
-					req.open("GET", g_server + "/entry/index", true);
-					addAuth(req, whoami, password);
-					req.onerror = function (e) {
-						document.getElementById("login_outcome").innerHTML = "Error logging in: " + e;
-						document.getElementById("createaccountbutton").disabled = false;
-						document.getElementById("loginbutton").disabled = false;
-						document.getElementById("resetbutton").disabled = false;
-					};
-					req.onload = function (ev) {
-						if (req.status != 200) {
-							if (noisyFailure) {
-								if (req.status == 403) {
-									document.getElementById("password").value = "";
-									document.getElementById("login_outcome").innerHTML = "Incorrect account / password.";
-									clearLogin();
-									req.onerror("Incorrect account / password.");
-								} else {
-									req.onerror("Error logging in: HTTP " + req.status);
-								}
-							}
-							document.getElementById("createaccountbutton").disabled = false;
-							document.getElementById("loginbutton").disabled = false;
-							document.getElementById("resetbutton").disabled = false;
-						} else {
-							document.getElementById("login").style.display = "none";
-							document.getElementById("welcome").style.display = "none";
-							document.getElementById("loggedin_whoami").appendChild(document.createTextNode(whoami));
-							document.getElementById("logged_in").style.display = "flex";
-							// If remember-me is checked, write login data to disk.
-							let storage = document.getElementById("login_rememberme").checked ? localStorage : sessionStorage;
-							try {
-								storage.setItem("g_player", whoami);
-								storage.setItem("g_password", password);
-							} catch (e) {
-								console.log("Will not save login data to local disk: " + e);
-							}
-							loadIndexData(JSON.parse(req.response));
-							let d = JSON.parse(req.response);
-						}
-					};
-					req.send();
-				}
-				function newAccount() {
-					// Attempt to log in.
-					whoami = document.getElementById("email").value;
-					password = document.getElementById("password").value;
-					if (whoami == "" || password == "") {
-						document.getElementById("login_outcome").innerHTML = "Specify an e-mail address and password.";
-						return;
-					}
-					document.getElementById("loginbutton").disabled = true;
-					document.getElementById("createaccountbutton").disabled = true;
-					document.getElementById("resetbutton").disabled = true;
-					let req = new XMLHttpRequest();
-					req.open("POST", g_server + "/entry/newplayer", true);
-					addAuth(req, whoami, password);
-					req.onerror = function (e) {
-						document.getElementById("login_outcome").innerHTML = "Error creating account: " + req.status;
-						document.getElementById("createaccountbutton").disabled = false;
-						document.getElementById("loginbutton").disabled = false;
-						document.getElementById("resetbutton").disabled = false;
-					};
-					req.onload = function (ev) {
-						if (req.status != 204) {
-							req.onerror("Account already exists");
-							document.getElementById("login_outcome").innerHTML = "Error creating account: Account already exists.";
-						} else {
-							enterPassword(true);
-						}
-					};
-					req.send();
-				}
-				function resetPassword() {
-					document.getElementById("resetbutton").disabled = true;
-					let req = new XMLHttpRequest();
-					req.open("POST", g_server + "/entry/resetpassword", true);
-					addAuth(req, document.getElementById("email").value, "_");
-					req.onerror = function (e) {
-						document.getElementById("login_outcome").innerHTML = "Error: " + e;
-						document.getElementById("resetbutton").disabled = false;
-					};
-					req.onload = function (ev) {
-						if (req.status != 204) {
-							req.onerror(req.status);
-						} else {
-							document.getElementById("login_outcome").innerHTML = "Password reset mail sent.";
-						}
-					};
-					req.send();
-				}
-				document.getElementById("loginbutton").addEventListener("click", enterPassword);
-				document.getElementById("createaccountbutton").addEventListener("click", newAccount);
-				document.getElementById("resetbutton").addEventListener("click", resetPassword);
-				if (g_player != null) {
-					document.getElementById("email").value = g_player;
-					document.getElementById("password").value = g_password;
-					enterPassword(false);
-				}
-			</script>
-		</div>
-		<div id="logged_in">
-			<div>
-				Logged in as <span id="loggedin_whoami"></span> <button id="logout">Log Out</button>
-				<div><button id="password_change_open">Change Password</button></div>
-				<div id="password_change">
-					<label>New password: <input id="new_password" type="password"></input></label>
-					<button id="commit_password_change">Commit Change</button>
-					<div id="password_change_outcome"></div>
+			<div id="content">
+				<div id="welcome">
+					<p>Empire is a browser-based multiplayer-only grand strategy game with asynchronous turn-based play. Each of the 26 players rules a nation and tries to achieve the goals they select. Game turns advance every few days, and players can set up their orders at any time between those advances.</p>
+					<p>Whether the game is cooperative or competitive is up to the players. Players are trying to beat national high scores from past games.</p>
+					<p>This is just a fun personal project for me, so it's not supported by any professional team and you shouldn't take it too seriously. The game is free and I don't run ads. If running the server gets too expensive I'll ask for donations or something.</p>
+					<p>If you need to contact me for whatever reason, reach out via the <a href="https://groups.google.com/forum/#!forum/empire-playtesters">forum</a>.</p>
 				</div>
-			</div>
-			<div id="active_games">
-				<h3>Your Games</h3>
-				<table>
-					<tr>
-						<th>ID</th>
-						<th>Status</th>
-					</tr>
-					<tbody id="games_table">
-					</tbody>
-				</table>
-			</div>
-			<div id="lobbies">
-				<h3>Lobbies</h3>
-				<table>
-					<tr>
-						<th>ID</th>
-						<th>Players</th>
-						<th>Pace</th>
-						<th>Deadline</th>
-					</tr>
-					<tbody id="lobbies_table">
-					</tbody>
-				</table>
-				<button id="lobby_add">+</button>
-				<div id="new_lobby">
-					<form onsubmit="return postFormStartLobby();">
-						<h4>Players:</h4>
-						<label>Min: <input id="newlobby_minplayers" type="number" min="1" max="26" value="22"></input></label>
-						<label>Max: <input id="newlobby_maxplayers" type="number" min="1" max="26" value="26"></input></label>
-						<h4>Turns Advance:</h4>
-						<label>Every: <select id="newlobby_daysOfWeek" size="7" multiple required>
-							<option value="MONDAY">Monday</option>
-							<option value="TUESDAY">Tuesday</option>
-							<option value="WEDNESDAY">Wednesday</option>
-							<option value="THURSDAY">Thursday</option>
-							<option value="FRIDAY">Friday</option>
-							<option value="SATURDAY">Saturday</option>
-							<option value="SUNDAY">Sunday</option>
-						</select></label>
-						<label>at (America/Los_Angeles time) <select id="newlobby_times" multiple required></select></label>
-						<h4>Notes</h4>
-						<p>If the lobby does not reach the minimum player count within 3 turn-advance periods, it will be deleted.</p>
-						<p>Consider posting on the forum advertising the new game.</p>
-						<button id="newlobby">Create Lobby</button>
-						<div id="newlobby_outcome"></div>
-					</form>
+				<div id="login">
+					<h3>Log in to start or join a game lobby.</h3>
+					<label>Email Address: <input type="email" id="email" placeholder="example@example.com"></input></label>
+					<label>Password: <input type="password" id="password"></input></label>
+					<label>Remember me on this device: <input type="checkbox" id="login_rememberme"></input></label>
+					<div class="flex">
+						<button id="loginbutton">Log In</button>
+						<button id="createaccountbutton">Create Account</button>
+						<button id="resetbutton">Reset Password</button>
+					</div>
+					<div id="login_outcome"></div>
 					<script>
-						document.getElementById("logout").addEventListener("click", () => {
-							clearLogin();
-							window.location.reload();
-						});
-						document.getElementById("lobby_add").addEventListener("click", () => {
-							document.getElementById("lobby_add").style.display = "none";
-							document.getElementById("new_lobby").style.visibility = "visible";
-						});
-						document.getElementById("password_change_open").addEventListener("click", () => {
-							document.getElementById("password_change_open").style.display = "none";
-							document.getElementById("password_change").style.visibility = "visible";
-						});
-						document.getElementById("commit_password_change").addEventListener("click", () => {
-							let newPassword = document.getElementById("new_password").value;
-							if (newPassword.length == 0) {
-								document.getElementById("password_change_outcome").innerHTML = "Error: You must specify a new password.";
+						function enterPassword(noisyFailure = true) {
+							whoami = document.getElementById("email").value;
+							password = document.getElementById("password").value;
+							if (whoami == "" || password == "") {
+								document.getElementById("login_outcome").innerHTML = "Specify an e-mail address and password.";
 								return;
 							}
-							document.getElementById("commit_password_change").disabled = true;
+							// Attempt to log in.
+							document.getElementById("loginbutton").disabled = true;
+							document.getElementById("createaccountbutton").disabled = true;
+							document.getElementById("resetbutton").disabled = true;
+							// Get lobby data.
 							let req = new XMLHttpRequest();
-							req.open("POST", g_server + "/entry/changepassword", true);
+							req.open("GET", g_server + "/entry/index", true);
 							addAuth(req, whoami, password);
 							req.onerror = function (e) {
-								document.getElementById("password_change_outcome").innerHTML = "Error: " + e;
-								document.getElementById("commit_password_change").disabled = false;
+								document.getElementById("login_outcome").innerHTML = "Error logging in: " + e;
+								document.getElementById("createaccountbutton").disabled = false;
+								document.getElementById("loginbutton").disabled = false;
+								document.getElementById("resetbutton").disabled = false;
+							};
+							req.onload = function (ev) {
+								if (req.status != 200) {
+									if (noisyFailure) {
+										if (req.status == 403) {
+											document.getElementById("password").value = "";
+											document.getElementById("login_outcome").innerHTML = "Incorrect account / password.";
+											clearLogin();
+											req.onerror("Incorrect account / password.");
+										} else {
+											req.onerror("Error logging in: HTTP " + req.status);
+										}
+									}
+									document.getElementById("createaccountbutton").disabled = false;
+									document.getElementById("loginbutton").disabled = false;
+									document.getElementById("resetbutton").disabled = false;
+								} else {
+									document.getElementById("login").style.display = "none";
+									document.getElementById("welcome").style.display = "none";
+									document.getElementById("loggedin_whoami").appendChild(document.createTextNode(whoami));
+									document.getElementById("active_games").style.display = "block";
+									document.getElementById("lobbies").style.display = "block";
+									// If remember-me is checked, write login data to disk.
+									let storage = document.getElementById("login_rememberme").checked ? localStorage : sessionStorage;
+									try {
+										storage.setItem("g_player", whoami);
+										storage.setItem("g_password", password);
+									} catch (e) {
+										console.log("Will not save login data to local disk: " + e);
+									}
+									loadIndexData(JSON.parse(req.response));
+									let d = JSON.parse(req.response);
+								}
+							};
+							req.send();
+						}
+						function newAccount() {
+							// Attempt to log in.
+							whoami = document.getElementById("email").value;
+							password = document.getElementById("password").value;
+							if (whoami == "" || password == "") {
+								document.getElementById("login_outcome").innerHTML = "Specify an e-mail address and password.";
+								return;
+							}
+							document.getElementById("loginbutton").disabled = true;
+							document.getElementById("createaccountbutton").disabled = true;
+							document.getElementById("resetbutton").disabled = true;
+							let req = new XMLHttpRequest();
+							req.open("POST", g_server + "/entry/newplayer", true);
+							addAuth(req, whoami, password);
+							req.onerror = function (e) {
+								document.getElementById("login_outcome").innerHTML = "Error creating account: " + req.status;
+								document.getElementById("createaccountbutton").disabled = false;
+								document.getElementById("loginbutton").disabled = false;
+								document.getElementById("resetbutton").disabled = false;
+							};
+							req.onload = function (ev) {
+								if (req.status != 204) {
+									req.onerror("Account already exists");
+									document.getElementById("login_outcome").innerHTML = "Error creating account: Account already exists.";
+								} else {
+									enterPassword(true);
+								}
+							};
+							req.send();
+						}
+						function resetPassword() {
+							document.getElementById("resetbutton").disabled = true;
+							let req = new XMLHttpRequest();
+							req.open("POST", g_server + "/entry/resetpassword", true);
+							addAuth(req, document.getElementById("email").value, "_");
+							req.onerror = function (e) {
+								document.getElementById("login_outcome").innerHTML = "Error: " + e;
+								document.getElementById("resetbutton").disabled = false;
 							};
 							req.onload = function (ev) {
 								if (req.status != 204) {
 									req.onerror(req.status);
 								} else {
-									clearLogin();
-									window.alert("Password changed. Reloading page to log in again.");
-									window.location.reload();
+									document.getElementById("login_outcome").innerHTML = "Password reset mail sent.";
 								}
 							};
-							req.send(newPassword);
-						});
-						for (let i = 0; i < 60 / 5 * 24; i++) {
-							let o = document.createElement("option");
-							o.setAttribute("value", i * 5);
-							o.appendChild(document.createTextNode(Math.floor(i * 5 / 60).toString().padStart(2, "0") + ":" + ((i * 5) % 60).toString().padStart(2, "0")));
-							document.getElementById("newlobby_times").appendChild(o);
+							req.send();
 						}
-						function postFormStartLobby() {
-							document.getElementById("newlobby").disabled = true;
-							let req = new XMLHttpRequest();
-							req.open("post", g_server + "/entry/startlobby", true);
-							req.onerror = function (e) {
-								document.getElementById("newlobby_outcome").innerHTML = "Lobby creation failed.";
-							};
-							req.onload = function (ev) {
-								if (req.status != 204) {
-									req.onerror();
-								} else {
-									enterPassword(false);
-									document.getElementById("new_lobby").style.visibility = "hidden";
-								}
-							};
-							req.send(JSON.stringify({
-								"players": parseInt(document.getElementById("newlobby_maxplayers").value),
-								"min_players": parseInt(document.getElementById("newlobby_minplayers").value),
-								"schedule": {
-									"times": Array.from(document.getElementById("newlobby_times").selectedOptions).map(e => parseInt(e.value)),
-									"days": Array.from(document.getElementById("newlobby_daysOfWeek").selectedOptions).map(e => e.value),
-									"locale": "America/Los_Angeles"
-								},
-								"start_at_millis": -1
-							}));
-							return false;
-						}
-						function loadIndexData(data) {
-							console.log(data);
-							document.getElementById("lobbies_table").innerHTML = "";
-							document.getElementById("games_table").innerHTML = "";
-							function createRow(es) {
-								let tr = document.createElement("tr");
-								for (let e of es) {
-									let td = document.createElement("td");
-									td.appendChild(e);
-									tr.appendChild(td);
-								}
-								return tr;
-							}
-							for (let l of data.lobbies) {
-								let scheduleE = document.createElement("span");
-								scheduleE.setAttribute("title", JSON.stringify(l.schedule));
-								scheduleE.appendChild(
-									document.createTextNode(
-											"Every "
-											+ l.schedule.days.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(" & ")
-											+ (l.schedule.times.length == 1 ? "" : ", " + l.schedule.times.length + " times per day")));
-								let a = document.createElement("a");
-								a.setAttribute("href", "setup.html?g=" + l.id);
-								a.appendChild(document.createTextNode(l.id));
-								let msRemaining = l.deadline - Date.now();
-								let timeRemaining = "";
-								for (let t of [
-										{amt: 1000 * 60 * 60 * 24, unit: "days"},
-										{amt: 1000 * 60 * 60, unit: "hours"},
-										{amt: 1000 * 60, unit: "minutes"},
-										{amt: 1000, unit: "seconds"}]) {
-									if (msRemaining > t.amt * 2) {
-										timeRemaining = Math.floor(msRemaining / t.amt) + " " + t.unit;
-										break;
-									}
-								}
-								document.getElementById("lobbies_table").appendChild(createRow([
-									a,
-									document.createTextNode(l.players + " / " + l.capacity),
-									scheduleE,
-									document.createTextNode(timeRemaining)]));
-							}
-							let lobbySet = new Set();
-							for (let l of data.lobbies) lobbySet.add(l.id);
-							for (let g of data.games) {
-								let lobby = lobbySet.has(g.id);
-								let active = g.active;
-								let a = document.createElement("a");
-								a.setAttribute("href", (lobby ? "setup.html" : "map1.html") + "?g=" + g.id);
-								a.appendChild(document.createTextNode(g.id));
-								document.getElementById("games_table").appendChild(createRow([
-									a,
-									document.createTextNode(lobby ? "Waiting for Players" : active ? "Active" : "Game Over")]));
-							}
+						document.getElementById("loginbutton").addEventListener("click", enterPassword);
+						document.getElementById("createaccountbutton").addEventListener("click", newAccount);
+						document.getElementById("resetbutton").addEventListener("click", resetPassword);
+						if (g_player != null) {
+							document.getElementById("email").value = g_player;
+							document.getElementById("password").value = g_password;
+							enterPassword(false);
 						}
 					</script>
 				</div>
-			</div>
-		</div>
-		<div id="stats">
-			<h3>Historical Score Distributions</h3>
-			<label>Nation: <select id="scores_who"><option>(Overall)</option></select></label>
-			<score-chart id="scores"></score-chart>
-			<script>
-				let req = new XMLHttpRequest();
-				req.open("get", g_server + "/entry/scores", true);
-				req.onerror = function (e) {
-					console.log(e);
-				};
-				req.onload = function (ev) {
-					if (req.status != 200) {
-						req.onerror(req.status);
-					} else {
-						let scoreData = JSON.parse(req.response).scores;
-						let nationScoreData = {};
-						let maxes = [];
-						let mins = [];
-						for (let i = 1; i < Math.min(28, scoreData.length); i++) {
-							maxes[i - 1] = 0;
-							mins[i - 1] = 0;
-							for (let k in scoreData[i]) {
-								if (!nationScoreData.hasOwnProperty(k)) nationScoreData[k] = [];
-								nationScoreData[k].push(scoreData[i][k]);
-								for (let s of scoreData[i][k]) {
-									if (s < mins[i - 1]) mins[i - 1] = s;
-									if (s > maxes[i - 1]) maxes[i - 1] = s;
+				<div id="active_games">
+					<h3>Your Games</h3>
+					<table>
+						<tr>
+							<th>ID</th>
+							<th>Status</th>
+						</tr>
+						<tbody id="games_table">
+						</tbody>
+					</table>
+					<div>
+						Logged in as <span id="loggedin_whoami"></span>
+						<div><button id="logout">Log Out</button></div>
+						<div><button id="password_change_open">Change Password</button></div>
+						<div id="password_change">
+							<label>New password: <input id="new_password" type="password"></input></label>
+							<button id="commit_password_change">Commit Change</button>
+							<div id="password_change_outcome"></div>
+						</div>
+					</div>
+				</div>
+				<div id="lobbies">
+					<h3>Lobbies</h3>
+					<table>
+						<tr>
+							<th>ID</th>
+							<th>Players</th>
+							<th>Pace</th>
+							<th>Deadline</th>
+						</tr>
+						<tbody id="lobbies_table">
+						</tbody>
+					</table>
+					<button id="lobby_add">+</button>
+					<div id="new_lobby">
+						<form onsubmit="return postFormStartLobby();">
+							<h4>Players:</h4>
+							<label>Min: <input id="newlobby_minplayers" type="number" min="1" max="26" value="22"></input></label>
+							<label>Max: <input id="newlobby_maxplayers" type="number" min="1" max="26" value="26"></input></label>
+							<h4>Turns Advance:</h4>
+							<label>Every: <select id="newlobby_daysOfWeek" size="7" multiple required>
+								<option value="MONDAY">Monday</option>
+								<option value="TUESDAY">Tuesday</option>
+								<option value="WEDNESDAY">Wednesday</option>
+								<option value="THURSDAY">Thursday</option>
+								<option value="FRIDAY">Friday</option>
+								<option value="SATURDAY">Saturday</option>
+								<option value="SUNDAY">Sunday</option>
+							</select></label>
+							<label>at (America/Los_Angeles time) <select id="newlobby_times" multiple required></select></label>
+							<h4>Notes</h4>
+							<p>If the lobby does not reach the minimum player count within 3 turn-advance periods, it will be deleted.</p>
+							<p>Consider posting on the forum advertising the new game.</p>
+							<button id="newlobby">Create Lobby</button>
+							<div id="newlobby_outcome"></div>
+						</form>
+						<script>
+							document.getElementById("logout").addEventListener("click", () => {
+								clearLogin();
+								window.location.reload();
+							});
+							document.getElementById("lobby_add").addEventListener("click", () => {
+								document.getElementById("lobby_add").style.display = "none";
+								document.getElementById("new_lobby").style.visibility = "visible";
+							});
+							document.getElementById("password_change_open").addEventListener("click", () => {
+								document.getElementById("password_change_open").style.display = "none";
+								document.getElementById("password_change").style.visibility = "visible";
+							});
+							document.getElementById("commit_password_change").addEventListener("click", () => {
+								let newPassword = document.getElementById("new_password").value;
+								if (newPassword.length == 0) {
+									document.getElementById("password_change_outcome").innerHTML = "Error: You must specify a new password.";
+									return;
+								}
+								document.getElementById("commit_password_change").disabled = true;
+								let req = new XMLHttpRequest();
+								req.open("POST", g_server + "/entry/changepassword", true);
+								addAuth(req, whoami, password);
+								req.onerror = function (e) {
+									document.getElementById("password_change_outcome").innerHTML = "Error: " + e;
+									document.getElementById("commit_password_change").disabled = false;
+								};
+								req.onload = function (ev) {
+									if (req.status != 204) {
+										req.onerror(req.status);
+									} else {
+										clearLogin();
+										window.alert("Password changed. Reloading page to log in again.");
+										window.location.reload();
+									}
+								};
+								req.send(newPassword);
+							});
+							for (let i = 0; i < 60 / 5 * 24; i++) {
+								let o = document.createElement("option");
+								o.setAttribute("value", i * 5);
+								o.appendChild(document.createTextNode(Math.floor(i * 5 / 60).toString().padStart(2, "0") + ":" + ((i * 5) % 60).toString().padStart(2, "0")));
+								document.getElementById("newlobby_times").appendChild(o);
+							}
+							function postFormStartLobby() {
+								document.getElementById("newlobby").disabled = true;
+								let req = new XMLHttpRequest();
+								req.open("post", g_server + "/entry/startlobby", true);
+								req.onerror = function (e) {
+									document.getElementById("newlobby_outcome").innerHTML = "Lobby creation failed.";
+								};
+								req.onload = function (ev) {
+									if (req.status != 204) {
+										req.onerror();
+									} else {
+										enterPassword(false);
+										document.getElementById("new_lobby").style.visibility = "hidden";
+									}
+								};
+								req.send(JSON.stringify({
+									"players": parseInt(document.getElementById("newlobby_maxplayers").value),
+									"min_players": parseInt(document.getElementById("newlobby_minplayers").value),
+									"schedule": {
+										"times": Array.from(document.getElementById("newlobby_times").selectedOptions).map(e => parseInt(e.value)),
+										"days": Array.from(document.getElementById("newlobby_daysOfWeek").selectedOptions).map(e => e.value),
+										"locale": "America/Los_Angeles"
+									},
+									"start_at_millis": -1
+								}));
+								return false;
+							}
+							function loadIndexData(data) {
+								console.log(data);
+								document.getElementById("lobbies_table").innerHTML = "";
+								document.getElementById("games_table").innerHTML = "";
+								function createRow(es) {
+									let tr = document.createElement("tr");
+									for (let e of es) {
+										let td = document.createElement("td");
+										td.appendChild(e);
+										tr.appendChild(td);
+									}
+									return tr;
+								}
+								for (let l of data.lobbies) {
+									let scheduleE = document.createElement("span");
+									scheduleE.setAttribute("title", JSON.stringify(l.schedule));
+									scheduleE.appendChild(
+										document.createTextNode(
+												"Every "
+												+ l.schedule.days.map(s => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(" & ")
+												+ (l.schedule.times.length == 1 ? "" : ", " + l.schedule.times.length + " times per day")));
+									let a = document.createElement("a");
+									a.setAttribute("href", "setup.html?g=" + l.id);
+									a.appendChild(document.createTextNode(l.id));
+									let msRemaining = l.deadline - Date.now();
+									let timeRemaining = "";
+									for (let t of [
+											{amt: 1000 * 60 * 60 * 24, unit: "days"},
+											{amt: 1000 * 60 * 60, unit: "hours"},
+											{amt: 1000 * 60, unit: "minutes"},
+											{amt: 1000, unit: "seconds"}]) {
+										if (msRemaining > t.amt * 2) {
+											timeRemaining = Math.floor(msRemaining / t.amt) + " " + t.unit;
+											break;
+										}
+									}
+									document.getElementById("lobbies_table").appendChild(createRow([
+										a,
+										document.createTextNode(l.players + " / " + l.capacity),
+										scheduleE,
+										document.createTextNode(timeRemaining)]));
+								}
+								let lobbySet = new Set();
+								for (let l of data.lobbies) lobbySet.add(l.id);
+								for (let g of data.games) {
+									let lobby = lobbySet.has(g.id);
+									let active = g.active;
+									let a = document.createElement("a");
+									a.setAttribute("href", (lobby ? "setup.html" : "map2.html") + "?g=" + g.id);
+									a.appendChild(document.createTextNode(g.id));
+									document.getElementById("games_table").appendChild(createRow([
+										a,
+										document.createTextNode(lobby ? "Waiting for Players" : active ? "Active" : "Game Over")]));
 								}
 							}
-						}
-						let sw = document.getElementById("scores_who");
-						function appendOption(opt) {
-							let o = document.createElement("option");
-							o.appendChild(document.createTextNode(opt));
-							sw.appendChild(o);
-						}
-						function update() {
-							if (sw.value == "(Overall)") {
-								let merge = [];
-								for (let k in nationScoreData) {
-									for (let i = 0; i < nationScoreData[k].length; i++) {
-										if (merge.length <= i) merge[i] = [];
-										for (let v of nationScoreData[k][i]) merge[i].push(v);
+						</script>
+					</div>
+				</div>
+				<div id="stats">
+					<h3>Historical Score Distributions</h3>
+					<label>Nation: <select id="scores_who"><option>(Overall)</option></select></label>
+					<score-chart id="scores"></score-chart>
+					<script>
+						let req = new XMLHttpRequest();
+						req.open("get", g_server + "/entry/scores", true);
+						req.onerror = function (e) {
+							console.log(e);
+						};
+						req.onload = function (ev) {
+							if (req.status != 200) {
+								req.onerror(req.status);
+							} else {
+								let scoreData = JSON.parse(req.response).scores;
+								let nationScoreData = {};
+								let maxes = [];
+								let mins = [];
+								for (let i = 1; i < Math.min(28, scoreData.length); i++) {
+									maxes[i - 1] = 0;
+									mins[i - 1] = 0;
+									for (let k in scoreData[i]) {
+										if (!nationScoreData.hasOwnProperty(k)) nationScoreData[k] = [];
+										nationScoreData[k].push(scoreData[i][k]);
+										for (let s of scoreData[i][k]) {
+											if (s < mins[i - 1]) mins[i - 1] = s;
+											if (s > maxes[i - 1]) maxes[i - 1] = s;
+										}
 									}
 								}
-								document.getElementById("scores").setData(merge, mins, maxes);
-							} else {
-								document.getElementById("scores").setData(nationScoreData[sw.value], mins, maxes);
+								let sw = document.getElementById("scores_who");
+								function appendOption(opt) {
+									let o = document.createElement("option");
+									o.appendChild(document.createTextNode(opt));
+									sw.appendChild(o);
+								}
+								function update() {
+									if (sw.value == "(Overall)") {
+										let merge = [];
+										for (let k in nationScoreData) {
+											for (let i = 0; i < nationScoreData[k].length; i++) {
+												if (merge.length <= i) merge[i] = [];
+												for (let v of nationScoreData[k][i]) merge[i].push(v);
+											}
+										}
+										document.getElementById("scores").setData(merge, mins, maxes);
+									} else {
+										document.getElementById("scores").setData(nationScoreData[sw.value], mins, maxes);
+									}
+								}
+								sw.addEventListener("change", update);
+								let nationSorted = [];
+								for (let k in nationScoreData) nationSorted.push(k);
+								nationSorted.sort();
+								for (let k of nationSorted) appendOption(k);
+								if (nationSorted.length > 0) {
+									update();
+								}
 							}
-						}
-						sw.addEventListener("change", update);
-						let nationSorted = [];
-						for (let k in nationScoreData) nationSorted.push(k);
-						nationSorted.sort();
-						for (let k of nationSorted) appendOption(k);
-						if (nationSorted.length > 0) {
-							update();
-						}
-					}
-				};
-				req.send();
-			</script>
+						};
+						req.send();
+					</script>
+				</div>
+			</div>
 		</div>
 	</body>
 </html>
