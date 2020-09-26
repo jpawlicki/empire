@@ -1424,7 +1424,6 @@ class OrdersPanel extends HTMLElement {
 			for (let ck in pcost) costs[ck] += pcost[ck];
 		}
 		for (let k in costs) {
-			if (k == whoami) continue;
 			this.shadow.querySelector("#plot_costs_" + k).textContent = Math.ceil(costs[k]);
 			this.shadow.querySelector("#plot_costs_" + k).className = costs[k] > g_data.kingdoms[whoami].leverage[k] ? "alert" : "";
 		}
