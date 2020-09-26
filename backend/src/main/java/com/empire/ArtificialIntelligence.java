@@ -651,9 +651,13 @@ class ArtificialIntelligence {
 			for (Army a : leftovers) {
 				int bestOption = -1;
 				for (Integer rid : world.regions.get(a.location).getNeighborsIds(world)) {
-					if (bestOption == -1 || regionScores.get(rid) > regionScores.get(bestOption) && (a.type != Army.Type.NAVY || world.regions.get(rid).type != Region.Type.LAND)) bestOption = rid;
+					if ((bestOption == -1 || regionScores.get(rid) > regionScores.get(bestOption)) && (a.type != Army.Type.NAVY || world.regions.get(rid).type != Region.Type.LAND)) bestOption = rid;
 				}
-				orders.put("action_army_" + a.id, (a.location == bestOption ? "Stay in " : "Travel to ") + world.regions.get(bestOption).name);
+				if (bestOption == -1) {
+					orders.put("action_army_" + a.id, "Stay in " + world.regions.get(a.location).name);
+				} else {
+					orders.put("action_army_" + a.id, (a.location == bestOption ? "Stay in " : "Travel to ") + world.regions.get(bestOption).name);
+				}
 			}
 			return orders;
 		}

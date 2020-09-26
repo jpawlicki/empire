@@ -205,7 +205,7 @@ class RegionReport extends HTMLElement {
 		localRings.sort((a, b) => b.strength - a.strength);
 		for (let ring of localRings) {
 			let d = document.createElement("div");
-			d.innerHTML = "Spy Ring (" + ring.nation + ", Strength " + Math.round(ring.strength) + ", " + (ring.hidden ? "Hidden)" : "Exposed)");
+			d.innerHTML = "Spy Ring (" + ring.nation + ")");
 			ctn.appendChild(d);
 		}
 		if (g_data.regions[g_geo.holycity] == r) {

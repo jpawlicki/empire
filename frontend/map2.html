@@ -176,21 +176,14 @@
 						}
 						g_turndata[d.date] = d;
 						if (g_latest_date < d.date) {
-							try {
-								if (d.date == 1 && localStorage.getItem("g_" + gameId + "_showedtutorial") == undefined) {
-									localStorage.setItem("g_" + gameId + "_showedtutorial", "true");
-									localStorage.setItem("g_" + gameId + "_laststate", JSON.stringify(d));
-									localStorage.setItem("g_" + gameId + "_whoami", whoami);
-									showTutorialPopup();
-								}
-							} catch (err) {
-								console.log(err);
-							}
 							g_latest_date = d.date;
 							startTurnReloadTimer(10000);
 						}
 						setGlobalData(d.date);
 						if (date != -1) document.querySelector("orders-panel").changeReport("timeline/main");
+						if (g_latest_date == 1) {
+							showTutorialPopup();
+						}
 						callback();
 					}
 				};

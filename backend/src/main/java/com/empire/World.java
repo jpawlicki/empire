@@ -2100,8 +2100,10 @@ public class World extends RulesObject implements GoodwillProvider {
 				void apply() {
 					addPopulation(source, -population);
 					addPopulation(destination, population);
-					getNation(source.getKingdom()).addLeverage(World.this, destination.getKingdom(), population / 2000, 1);
-					getNation(destination.getKingdom()).addLeverage(World.this, source.getKingdom(), population / 2000, 1);
+					if (!source.getKingdom().equals(destination.getKingdom())) {
+						getNation(source.getKingdom()).addLeverage(World.this, destination.getKingdom(), population / 2000, 1);
+						getNation(destination.getKingdom()).addLeverage(World.this, source.getKingdom(), population / 2000, 1);
+					}
 				}
 			}
 			List<Emigration> emigrations = new ArrayList<>();
@@ -2143,7 +2145,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					double localTotal = 0;
 					for (Emigration ee : e.getValue()) {
 						double delta = ee.population * (ee.source == e.getKey() ? -1 : 1);
-						explain += "\n&nbsp&nbsp&nbsp&nbsp(" + (delta > 0 ? "+" : "") + Math.round(delta) + " from " + (ee.source == e.getKey() ? ee.destination.name : ee.source.name) + ")";
+						explain += "\n    (" + (delta > 0 ? "+" : "") + Math.round(delta) + " from " + (ee.source == e.getKey() ? ee.destination.name : ee.source.name) + ")";
 						popChange += delta;
 						localTotal += delta;
 						absPopChange += ee.population;
@@ -2354,7 +2356,6 @@ public class World extends RulesObject implements GoodwillProvider {
 				Region region = regions.get(r.getLocation());
 				if (region.getKingdom().equals(r.getNation()) && region.religion == Ideology.LYSKR) mod += 0.5;
 				for (String k : getNationNames()) {
-					if (k.equals(r.getNation())) continue;
 					getNation(k).addLeverage(World.this, r.getNation(), -3, mod);
 				}
 			}
@@ -2364,7 +2365,6 @@ public class World extends RulesObject implements GoodwillProvider {
 				double mod = 1;
 				if (r.getKingdom().equals(c.kingdom) && r.religion == Ideology.LYSKR) mod += 0.5;
 				for (String k : getNationNames()) {
-					if (k.equals(c.kingdom)) continue;
 					getNation(k).addLeverage(World.this, c.kingdom, c.getSpyLevel() * -2, mod);
 				}
 			}

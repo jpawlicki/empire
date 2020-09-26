@@ -166,11 +166,11 @@ public class Nation {
 	}
 
 	void addLeverage(World w, String who, double amount, double mod) {
-		if (who.equals(name)) return;
 		if (amount > 0) {
 			if (w.tivar.veil != 0) mod += 1;
 			if (hasTag(Nation.Tag.SNEAKY)) mod += 0.25;
-			Relationship.War war = w.getNation(who).getRelationship(name).battle;
+			Relationship.War war =
+					who.equals(name) ? Relationship.War.DEFEND : w.getNation(who).getRelationship(name).battle;
 			if (war == Relationship.War.ATTACK) mod -= 0.5;
 			else if (war == Relationship.War.DEFEND) mod += 0.5;
 		}

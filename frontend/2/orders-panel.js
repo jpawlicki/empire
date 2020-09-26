@@ -727,7 +727,6 @@ class OrdersPanel extends HTMLElement {
 				leverage.appendChild(r);
 			};
 			for (let k in g_data.kingdoms) {
-				if (k == whoami) continue;
 				let kl = document.createElement("kingdom-label");
 				kl.setAttribute("kingdom", k);
 				let l = g_data.kingdoms[whoami].leverage[k];
@@ -1213,8 +1212,6 @@ class OrdersPanel extends HTMLElement {
 			this.changeTab("pirates");
 		} else if (ele[0] == "gothi") {
 			this.changeTab("gothi");
-		} else if (ele[0] == "kingdom" && ele[1] == whoami) {
-			this.changeTab("home");
 		} else if (ele[0] == "international") {
 			this.changeTab("relationships");
 		} else if (ele[0] == "timeline") {
