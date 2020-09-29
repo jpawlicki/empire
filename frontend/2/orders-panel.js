@@ -62,7 +62,7 @@ class OrdersPanel extends HTMLElement {
 					border-bottom: 1px solid #666;
 				}
 				#tabpanel {
-					height: calc(100% - 2em);
+					height: calc(100% - 2em - 1px);
 					padding-top: 1em;
 					padding-left: 5px;
 					padding-right: 5px;
@@ -93,7 +93,7 @@ class OrdersPanel extends HTMLElement {
 					filter: grayscale(100%) drop-shadow(0 0 5px #fff);
 					margin-right: 0.2em;
 				}
-				#t_home label {
+				#t_food label {
 					width: 100%;
 					display: flex;
 					justify-content: space-between;
@@ -103,10 +103,10 @@ class OrdersPanel extends HTMLElement {
 				/* UNSORTED */
 				form {
 					margin: 0;
-					height: calc(100% - 2em);
+					height: calc(100% - 2em - 1px);
 				}
 				#tabpanel > div {
-					max-height: 100%;
+					height: 100%;
 					overflow: auto;
 				}
 				input[type=text], input[type=number] {
@@ -131,9 +131,19 @@ class OrdersPanel extends HTMLElement {
 				}
 				table {
 					width: 100%;
+					margin-bottom: 1em;
 				}
 				table tr td:last-child {
 					text-align: right;
+				}
+				#t_food_regional tr :nth-child(n + 2) {
+					text-align: right;
+				}
+				#t_food_regional {
+					margin-bottom: 1em;
+				}
+				#t_food_transferheader {
+					display: none;
 				}
 				#doctrine_switches ul {
 					margin-top: 0;
@@ -209,6 +219,26 @@ class OrdersPanel extends HTMLElement {
 				.striped > :nth-child(4n + 3), .striped > :nth-child(4n + 4) {
 					background: #ddd;
 				}
+				#economy_consequences {
+					display: flex;
+					flex-direction: row;
+					justify-content: space-between;
+					margin-bottom: 1em;
+					margin-top: 1em;
+				}
+				#economy_consequences table {
+					width: 40%;
+				}
+				#economy_consequences_budget td {
+					text-align: right;
+				}
+				#economy_consequences_items td {
+					text-align: left;
+				}
+				.negative {
+					font-weight: bold;
+					color: #a00;
+				}
 				#t_plots table {
 					border-collapse: collapse;
 				}
@@ -274,13 +304,8 @@ class OrdersPanel extends HTMLElement {
 			<form>
 				<div id="tabpanel">
 					<div id="t_home">
-						<h1></h1>
-						<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
-						<label>Shipbuilding: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="1" value="5"/></label>
-						<label>Rationing: <input id="economy_ration" name="economy_ration" type="range" min="0" max="200" step="1" value="100"/></label>
-						<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
-						<div id="economy_consequences">
-						</div>
+						<h1 id="whoami"></h1>
+						<div id="home_notifications"></div>
 					</div>
 					<div id="t_units">
 						<table>
@@ -312,15 +337,33 @@ class OrdersPanel extends HTMLElement {
 						</table>
 					</div>
 					<div id="t_food">
+						<label>Taxation: <input id="economy_tax" name="economy_tax" type="range" min="0" max="200" step="25" value="100"/></label>
+						<label>Shipbuilding: <input id="economy_ship" name="economy_ship" type="range" min="0" max="5" step="1" value="5"/></label>
+						<label>Soldier Bonus Pay: <input id="economy_recruit_bonus" name="economy_recruit_bonus" type="range" min="-2" max="16" step="1" value="0"/></label>
+						<label>Target Rations: <input id="economy_ration" name="economy_ration" type="range" min="0" max="200" step="1" value="100"/></label>
+						<div id="economy_consequences">
+							<table>
+								<tbody id="economy_consequences_items">
+								</tbody>
+							</table>
+							<table>
+								<tr><th>Gold Source</th><th>+/-</th></th><th>Amount</th></tr>
+								<tbody id="economy_consequences_budget">
+								</tbody>
+							</table>
+						</div>
+						<table id="t_food_regional">
+							<tr><th>Region</th><th>Food</th><th>Rations</th><th><tooltip-element tooltip="Projected unrest as a result of these changes.">Unrest</tooltip-element></th><th>Death</th><th><tooltip-element tooltip="The duration until this region runs totally out of food, projecting based on current food and crops and upcoming harvests / planting.">Empty</tooltip-element></th></tr>
+							<tbody id="food_regions">
+							</tbody>
+						</table>
 						<table>
-							<tr><th>From</th><th>To</th><th>Amount (Measures)</th><th>Cost (Gold)</th></tr>
+							<tr id="t_food_transferheader"><th>From</th><th>To</th><th>Amount</th><th>Cost (Gold)</th></tr>
 							<tbody id="economy_transfers">
 							</tbody>
 							<tr><td colspan="4" id="economy_newtransfer">Add a Food Transfer</td></tr>
 						</table>
-						<div id="food_consequences">
-					</div>
-					<expandable-snippet text="Food transfers are evaluated in order from top to bottom, after taxation income but before armies and civilians eat. If there are insufficient funds for a transfer, as much food as possible will be transferred with the funds available."></expandable-snippet>
+						<expandable-snippet text="Food transfers are evaluated in order from top to bottom, after taxation income but before armies and civilians eat. If there are insufficient funds for a transfer, as much food as possible will be transferred with the funds available."></expandable-snippet>
 					</div>
 					<div id="t_kingdoms">
 						<table>
@@ -336,6 +379,7 @@ class OrdersPanel extends HTMLElement {
 							<tr><td colspan="2" id="nations_newgift">Send Gold</td></tr>
 						</table>
 						<zip-div id="nations_cede" title="Cede Regions"></zip-div>
+						<div id="t_kingdoms_warnings" class="warning"></div>
 					</div>
 					<div id="t_pirates">
 						<div>
@@ -428,29 +472,13 @@ class OrdersPanel extends HTMLElement {
 			let eShip = shadow.getElementById("economy_ship");
 			let eRation = shadow.getElementById("economy_ration");
 			let eBonus = shadow.getElementById("economy_recruit_bonus");
-			let economyConsequences = shadow.getElementById("economy_consequences");
 			let taxRate = parseInt(eTax.value) / 100.0;
 			let recruitRate = 0;
 			if (parseInt(eBonus.value) == -1) recruitRate = -.5;
 			else if (parseInt(eBonus.value) == -2) recruitRate = -1;
 			else if (parseInt(eBonus.value) > 0) recruitRate = Math.log2(parseInt(eBonus.value)) * .5 + .5;
 			let rationing = parseInt(eRation.value) / 100.0;
-			let happiness = 0;
-			if (parseInt(eTax.value) <= 100) happiness = (parseInt(eTax.value) - 125) / 25 * 4;
-			else happiness = ((parseInt(eTax.value) - 100) / 25) * ((parseInt(eTax.value) - 100) / 25 + 1) * 2;
-			if (rationing >= 1) {
-				happiness += 100 - parseInt(eRation.value);
-			} else if (rationing >= 0.75) {
-				let mods = 1;
-				if (g_data.kingdoms[whoami].calcStateReligion() == "Northern (Alyrja)") mods -= 0.5;
-				if (g_data.kingdoms[whoami].tags.includes("Stoic")) mods -= 0.5;
-				happiness += (100 - parseInt(eRation.value)) * mods;
-			} else {
-				let mods = 1;
-				if (g_data.kingdoms[whoami].tags.includes("Stoic")) mods -= 0.5;
-				happiness += Math.min(35, (100 - parseInt(eRation.value)) * mods);
-			}
-			economyConsequences.innerHTML = "";
+			let happiness = Region.getUnrestMod(parseInt(eTax.value), parseInt(eRation.value), whoami);
 			let taxParts = [];
 			let recruitParts = [];
 			for (let rid = 0; rid < g_data.regions.length; rid++) {
@@ -471,20 +499,86 @@ class OrdersPanel extends HTMLElement {
 				if (!contains(army.tags, "Higher Power")) soldiers += army.size;
 				armyCost += army.calcCost(shadow.querySelector("[name=action_army_" + army.id + "]").value.startsWith("Travel")).v;
 			}
-			economyConsequences.innerHTML += "<p>" + Math.floor(g_data.kingdoms[whoami].gold) + " gold (treasured)</p>";
-			economyConsequences.innerHTML += "<p>-" + Math.round(parseInt(eBonus.value) * (recruitment + soldiers) / 100 + armyCost) + " gold (soldier pay)</p>";
-			economyConsequences.innerHTML += "<p>+" + Math.round(taxation) + " gold (tax)</p>";
-			if (shipyardCount > 0) economyConsequences.innerHTML += "<p>" + (shipyardCount * parseInt(eShip.value)) + " new warships and +" + (shipyardCount * (5 - parseInt(eShip.value))) + " gold.</p>";
-			economyConsequences.innerHTML += "<p>+" + Math.round(recruitment) + " soldiers</p>";
-			if (happiness != 0) economyConsequences.innerHTML += "<p>Popular unrest " + (happiness < 0 ? "decreases " + (-happiness) : "increases " + happiness) + " percentage points in our regions.</p>";
-			if (consumptionRate != 0) economyConsequences.innerHTML += "<p>Regions consume " + (consumptionRate > 0 ? "+" : "") + consumptionRate + "% food.</p>";
-		};
-		let computeFoodConsequences = function () {
-			if (op.syncDisabled) return;
-			let foodConsequences = shadow.getElementById("food_consequences");
-			let eRation = shadow.getElementById("economy_ration");
-			let rationing = parseInt(eRation.value) / 100.0;
-			foodConsequences.innerHTML = "";
+
+			let items = [];
+			if (shipyardCount > 0) items.push("+" + Math.round(shipyardCount * parseInt(eShip.value)) + " new warships");
+			items.push("+" + Math.round(recruitment) + " soldiers");
+
+			let itemsEle = shadow.getElementById("economy_consequences_items");
+			itemsEle.innerHTML = "";
+			for (let item of items) {
+				let tr = document.createElement("tr");
+				let td = document.createElement("td");
+				td.appendChild(document.createTextNode(item));
+				tr.appendChild(td);
+				itemsEle.appendChild(tr);
+			}
+
+			let budgetEle = shadow.getElementById("economy_consequences_budget");
+			budgetEle.innerHTML = "";
+			let goldTotal = g_data.kingdoms[whoami].gold;
+			{ // Treasured Row
+				let tr = document.createElement("tr");
+				{
+					let td = document.createElement("td");
+					td.appendChild(document.createTextNode("Treasury"));
+					tr.appendChild(td);
+				}
+				tr.appendChild(document.createElement("td"));
+				{
+					let td = document.createElement("td");
+					td.appendChild(document.createTextNode(Math.round(goldTotal)));
+					tr.appendChild(td);
+				}
+				budgetEle.appendChild(tr);
+			}
+			let addRow = function(source, amount) {
+				let tr = document.createElement("tr");
+				{
+					let td = document.createElement("td");
+					td.appendChild(document.createTextNode(source));
+					tr.appendChild(td);
+				}
+				{
+					let td = document.createElement("td");
+					let amt = Math.round(amount);
+					td.appendChild(document.createTextNode(amt > 0 ? "+" + amt : amt));
+					if (goldTotal + amount < 0) td.className = "negative";
+					tr.appendChild(td);
+				}
+				{
+					let td = document.createElement("td");
+					goldTotal = Math.max(0, goldTotal + amount);
+					td.appendChild(document.createTextNode(Math.round(goldTotal)));
+					tr.appendChild(td);
+				}
+				budgetEle.appendChild(tr);
+			}
+			addRow("Army/Navy Pay", -(parseInt(eBonus.value) * (recruitment + soldiers) / 100 + armyCost));
+			addRow("Tax Income", taxation);
+			if (shipyardCount > 0) addRow("Shipyards", (shipyardCount * (5 - parseInt(eShip.value))));
+			{ // Mystery Row
+				let tr = document.createElement("tr");
+				{
+					let td = document.createElement("td");
+					let tt = document.createElement("tooltip-element");
+					tt.setAttribute("tooltip", "Other sources of gold are unpredictable and include plots, gold gifts, church donations, sea trade, and tribute.");
+					tt.appendChild(document.createTextNode("Other"));
+					td.appendChild(tt);
+					tr.appendChild(td);
+				}
+				{
+					let td = document.createElement("td");
+					td.appendChild(document.createTextNode("+/- ?"));
+					tr.appendChild(td);
+				}
+				{
+					let td = document.createElement("td");
+					tr.appendChild(td);
+				}
+				budgetEle.appendChild(tr);
+			}
+
 			let expectedFood = {};
 			for (let rid = 0; rid < g_data.regions.length; rid++) {
 				let r = g_data.regions[rid];
@@ -496,41 +590,61 @@ class OrdersPanel extends HTMLElement {
 						if (shadow.querySelector("[name=economy_to_" + ti + "]").value.replace(/\(.*\) /, "") == r.name) food += parseInt(shadow.querySelector("[name=economy_amount_" + ti + "]").value) * 1000;
 					}
 					let actualRations = Math.min(food / r.population, rationing);
-					if (rationing < 0.75) {
-						foodConsequences.innerHTML += "<p>" + r.name + " will suffer " + Math.ceil((0.75 - actualRations) * 0.1 * r.population / 1000.0) + "k deaths due to strict rationing</p>";
-					} else if (actualRations < rationing && actualRations >= 0.75) {
-						foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * rationing - food) / 1000.0) + "k rations of food; no starvation will occur</p>";
-					} else if (actualRations < rationing) {
-						foodConsequences.innerHTML += "<p>" + r.name + " is short " + Math.ceil((r.population * rationing - food) / 1000.0) + "k rations of food; " + Math.ceil((0.75 - actualRations) * 0.1 * r.population / 1000.0) + "k will starve</p>";
+
+					shadow.getElementById("food_amt_r" + r.id).textContent = Math.floor(food / 1000) + "k";
+
+					let unrest = Math.min(100, Math.max(0, r.unrest_popular * 100 + Math.round(Region.getUnrestMod(parseInt(eTax.value), actualRations * 100, whoami))));
+					if (r.noble.unrest != undefined && unrest < r.noble.unrest * 100) unrest = r.noble.unrest * 100;
+					if (r.religion == "Iruhan (Sword of Truth)" || r.religion == "Iruhan (Chalice of Compassion)" || r.religion == "Iruhan (Tapestry of People)") {
+						let wrath = 100 * Math.min(1, Math.max(0, -getNation(whoami).goodwill / 100.0));
+						if (unrest < wrath) unrest = wrath;
 					}
+					shadow.getElementById("food_unrest_r" + r.id).textContent = Math.round(unrest) + "%";
+					shadow.getElementById("food_death_r" + r.id).textContent = Math.max(0, Math.ceil((0.75 - actualRations) * 0.1 * 100)) + "%";
+
+					shadow.getElementById("food_rations_r" + r.id).textContent = Math.floor(actualRations * 100) + "%";
+
+					let weeks = 0;
+					let foodProjection = r.food;
+					let cropsProjection = r.crops;
+					let harvestCap = r.calcHarvestCapacity().v;
+					let consumption = r.calcConsumption(parseInt(eRation.value)).v;
+					while (weeks < 48) {
+						if (((g_data.date + weeks) % 4) == 0) {
+							foodProjection += Math.min(cropsProjection, harvestCap);
+							cropsProjection = r.calcPlanting(g_data.date + weeks).v;
+						}
+						foodProjection -= consumption;
+						if (foodProjection <= 0) break;
+						weeks++;
+					}
+					shadow.getElementById("food_starv_r" + r.id).textContent = weeks == 48 ? "> 1 year" : (weeks + " weeks");
 				}
 			}
 		};
 
 		{ // Home Tab
-			let tab = this.shadow.querySelector("#t_home");
-			let h1 = tab.querySelector("h1");
+			let h1 = shadow.querySelector("#whoami");
 			let kl = document.createElement("kingdom-label");
 			kl.setAttribute("kingdom", whoami);
 			h1.appendChild(kl);
-			let eTax = this.shadow.getElementById("economy_tax");
-			let eShip = this.shadow.getElementById("economy_ship");
-			let eRation = this.shadow.getElementById("economy_ration");
-			let eBonus = this.shadow.getElementById("economy_recruit_bonus");
-			let economyConsequences = this.shadow.getElementById("economy_consequences");
-			eTax.addEventListener("input", computeEconomyConsequences);	
-			eShip.addEventListener("input", computeEconomyConsequences);	
-			eRation.addEventListener("input", computeEconomyConsequences);
-			eRation.addEventListener("input", computeFoodConsequences);
-			eBonus.addEventListener("input", computeEconomyConsequences);
-			postLoadOps.push(computeEconomyConsequences);
-			postLoadOps.push(computeFoodConsequences);
+			let notifications = this.shadow.querySelector("#home_notifications");
+			for (let n of g_data.notifications) {
+				let h2 = document.createElement("h2");
+				h2.appendChild(document.createTextNode(n.title));
+				notifications.appendChild(h2);
+				let ex = document.createElement("expandable-snippet");
+				ex.setAttribute("text", n.text);
+				ex.setAttribute("max-length", 128);
+				notifications.appendChild(ex);
+			}
 		}
 
 		{ // Units Tab
 			let getCharacterOptions = function(unit) {
 				let opts = [];
 				let r = g_data.regions[unit.location];
+				opts.push("Stay in " + r.name);
 				if (contains(unit.tags, "Cardinal") && g_data.regions[unit.location].name == "Sancta Civitate") opts.push("Inspire the Faithful");
 				if (r.kingdom == unit.kingdom) {
 					if (r.noble.name == undefined && !g_data.kingdoms[unit.kingdom].tags.includes("Republican")) {
@@ -547,7 +661,6 @@ class OrdersPanel extends HTMLElement {
 					for (let i of ["Alyrja", "Lyskr", "Rjinku", "Syrjen"]) opts.push("Build Temple (" + i + ")");
 					for (let i of ["Flame of Kith", "River of Kuun"]) opts.push("Build Temple (" + i + ")");
 				}
-				opts.push("Stay in " + r.name);
 				for (let a of g_data.armies) if (a.kingdom == unit.kingdom && a.location == unit.location) {
 					opts.push("Lead " + a.type + " " + a.id);
 				}
@@ -740,7 +853,60 @@ class OrdersPanel extends HTMLElement {
 		}
 
 		{ // Food Tab
-			shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow, computeFoodConsequences));
+			let eTax = this.shadow.getElementById("economy_tax");
+			let eShip = this.shadow.getElementById("economy_ship");
+			let eRation = this.shadow.getElementById("economy_ration");
+			let eBonus = this.shadow.getElementById("economy_recruit_bonus");
+			eTax.addEventListener("input", computeEconomyConsequences);	
+			eShip.addEventListener("input", computeEconomyConsequences);	
+			eRation.addEventListener("input", computeEconomyConsequences);
+			eBonus.addEventListener("input", computeEconomyConsequences);
+			postLoadOps.push(computeEconomyConsequences);
+
+			let food = shadow.getElementById("food_regions");
+			let rvals = [];
+			for (let r of g_data.regions) {
+				if (r.kingdom != whoami) continue;
+				rvals.push(r);
+			}
+			rvals.sort((a, b) =>
+					g_data.kingdoms[whoami].core_regions.includes(a.id)
+							? g_data.kingdoms[whoami].core_regions.includes(b.id) ? a.name.localeCompare(b.name) : -1
+							: g_data.kingdoms[whoami].core_regions.includes(b.id) ? 1 : a.name.localeCompare(b.name));
+			for (let r of rvals) {
+				let tr = document.createElement("tr");
+				let td = document.createElement("td");
+				let rl = document.createElement("report-link");
+				rl.setAttribute("href", "region/" + r.name);
+				rl.appendChild(document.createTextNode(r.name));
+				if (g_data.kingdoms[whoami].profiles.includes("PROSPERITY") && g_data.kingdoms[whoami].core_regions.includes(r.id)) {
+					let tt = document.createElement("tooltip-element");
+					tt.setAttribute("tooltip", r.name + " is one of your historical regions. You gain points for feeding the people here, and lose points if they starve.");
+					tt.appendChild(rl);
+					td.appendChild(tt);
+				} else {
+					td.appendChild(rl);
+				}
+				tr.appendChild(td);
+
+				td = document.createElement("td");
+				td.setAttribute("id", "food_amt_r" + r.id);
+				tr.appendChild(td);
+				td = document.createElement("td");
+				td.setAttribute("id", "food_rations_r" + r.id);
+				tr.appendChild(td);
+				td = document.createElement("td");
+				td.setAttribute("id", "food_unrest_r" + r.id);
+				tr.appendChild(td);
+				td = document.createElement("td");
+				td.setAttribute("id", "food_death_r" + r.id);
+				tr.appendChild(td);
+				td = document.createElement("td");
+				td.setAttribute("id", "food_starv_r" + r.id);
+				tr.appendChild(td);
+				food.appendChild(tr);
+			}
+			shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow, computeEconomyConsequences));
 		}
 
 		{ // Relations Tab
@@ -1108,6 +1274,11 @@ class OrdersPanel extends HTMLElement {
 						if (c.kingdom != whoami) continue;
 						shadow.querySelector("[name=action_army_" + c.id + "]").value = c.orderhint;
 					}
+					for (let r of g_data.regions) {
+						if (r.noble == undefined || r.noble.orderhint == "" || r.noble.orderhint == undefined) continue;
+						if (r.kingdom != whoami) continue;
+						shadow.querySelector("[name=action_noble_" + r.id + "]").value = r.noble.orderhint;
+					}
 					if (g_data.kingdoms[whoami].send_email != undefined) shadow.querySelector("[name=send_email]").checked = g_data.kingdoms[whoami].send_email;
 					if (g_data.kingdoms[whoami].taxratehint != undefined) shadow.querySelector("[name=economy_tax]").value = g_data.kingdoms[whoami].taxratehint;
 					if (g_data.kingdoms[whoami].shipratehint != undefined) shadow.querySelector("[name=economy_ship]").value = g_data.kingdoms[whoami].shipratehint;
@@ -1116,8 +1287,7 @@ class OrdersPanel extends HTMLElement {
 					shadow.querySelector("[name=economy_recruit_bonus]").dispatchEvent(new CustomEvent("input"));
 					for (let k in g_data.kingdoms) {
 						if (k == whoami) continue;
-						shadow.querySelector("[name=rel_" + k + "_attack]").value = g_data.kingdoms[whoami].relationships[k].battle;
-						shadow.querySelector("[name=rel_" + k + "_refugees]").value = g_data.kingdoms[whoami].relationships[k].refugees;
+						shadow.querySelector("[name=rel_" + k + "_attack]").value = g_data.kingdoms[whoami].relationships[k].battle; shadow.querySelector("[name=rel_" + k + "_refugees]").value = g_data.kingdoms[whoami].relationships[k].refugees;
 						shadow.querySelector("[name=rel_" + k + "_construct]").value = g_data.kingdoms[whoami].relationships[k].construct;
 						shadow.querySelector("[name=rel_" + k + "_tribute]").value = g_data.kingdoms[whoami].relationships[k].tribute;
 						shadow.querySelector("[name=rel_" + k + "_cede]").value = g_data.kingdoms[whoami].relationships[k].cede;
@@ -1160,7 +1330,7 @@ class OrdersPanel extends HTMLElement {
 						op.getDivisionFunc(shadow, e, chi, dpid, shadow.getElementById("form"), false)();
 						if (op.divisions < dpid + 1) op.divisions = dpid + 1;
 					} else if (p.startsWith("economy_amount_")) {
-						op.addEconomyRowOrder(shadow, computeFoodConsequences);
+						op.addEconomyRowOrder(shadow, computeEconomyConsequences);
 					} else if (p.startsWith("economy_bribe_amount_")) {
 						op.addBribe(shadow);
 					} else if (p.startsWith("letter_") && p.endsWith("_sig")) {
@@ -1429,7 +1599,8 @@ class OrdersPanel extends HTMLElement {
 		}
 	}
 
-	addEconomyRowOrder(shadow, computeFoodConsequences) {
+	addEconomyRowOrder(shadow, computeEconomyConsequences) {
+		this.shadow.getElementById("t_food_transferheader").style.display = "table-row";
 		let regions = [];
 		let id = this.economyRowCount;
 		this.economyRowCount++;
@@ -1449,11 +1620,11 @@ class OrdersPanel extends HTMLElement {
 			dests.sort();
 			td2.innerHTML = "";
 			let d = o.select("economy_to_" + id, dests);
-			d.addEventListener("change", computeFoodConsequences);
+			d.addEventListener("change", computeEconomyConsequences);
 			td2.appendChild(d);
 		});
 		sel.dispatchEvent(new Event("change"));
-		sel.addEventListener("change", computeFoodConsequences);
+		sel.addEventListener("change", computeEconomyConsequences);
 		td.appendChild(sel);
 		tr.appendChild(td);
 		tr.appendChild(td2);
@@ -1469,7 +1640,7 @@ class OrdersPanel extends HTMLElement {
 			if (getNation(whoami).calcStateReligion() == "Iruhan (Chalice of Compassion)") cost = 0;
 			td4.innerHTML = cost;
 		});
-		amount.addEventListener("change", computeFoodConsequences);
+		amount.addEventListener("change", computeEconomyConsequences);
 		td.appendChild(amount);
 		td.appendChild(document.createTextNode("k"));
 		td4.innerHTML = "0";
@@ -1667,13 +1838,13 @@ class OrdersPanel extends HTMLElement {
 			{"value": "assassinate", "name": "Assassinate", "data": [characterSelect], "cost": (args) => { let r = {}; r[Character.byName(args[0]).kingdom] = 50; return r;}},
 			{"value": "conceal", "name": "Conceal an army", "data": [nationSelect, armySelect], "cost": (args) => { let r = {}; r[args[0]] = Army.byId(parseInt(args[1])).getEffectiveSize() / 100; return r;}},
 			{"value": "convert", "name": "Convert a region", "data": [regionSelect, ideologySelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 10; return r;}},
-			{"value": "denounce", "name": "Denounce", "data": [nationSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = 5; return r;}},
+			{"value": "denounce", "name": "Denounce", "data": [nationSelect, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = args[1] / 3; return r;}},
 			{"value": "destroy", "name": "Destroy", "data": [regionSelectConstruction, constructionSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 12; return r;}},
 			{"value": "hobble", "name": "Hobble", "data": [armySelect], "cost": (args) => { let r = {}; r[args[0]] = Army.byId(parseInt(args[1])).getEffectiveSize() / 100; return r;}},
 			{"value": "incite_popular", "name": "Incite popular unrest", "data": [regionSelect, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 3; return r; }},
 			{"value": "incite_noble", "name": "Incite noble unrest", "data": [regionSelectNoble, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 3; return r; }},
 			{"value": "intercept", "name": "Intercept letters", "data": [nationSelect], "cost": (args) => { let r = {}; r[args[0]] = 15; return r; }},
-			{"value": "praise", "name": "Praise", "data": [nationSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = 5; return r;}},
+			{"value": "praise", "name": "Praise", "data": [nationSelect, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = args[1] / 5; return r;}},
 			{"value": "ruin", "name": "Ruin crops", "data": [regionSelect, amountCropsSelect], "cost": (args) => {  let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 20; return r;}},
 			{"value": "smuggle", "name": "Smuggle food", "data": [regionSelect, destinationSelect, amountFoodSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[2]) / 10; return r; }},
 			{"value": "steal", "name": "Steal gold", "data": [nationSelect, amountSelect], "cost": (args) => { let r = {}; r[args[0]] = parseInt(args[1]) / 4; return r; }},
@@ -1786,13 +1957,6 @@ class OrdersPanel extends HTMLElement {
 				let ot = undefined;
 				for (let aa of g_data.armies) if (aa.id == parseInt(o.replace("Merge into army ", ""))) ot = aa;
 				if (ot.tags[0] != a.tags[0] || ot.tags[1] != a.tags[1]) warn = "(67% of the army will merge, 33% will turn to piracy)";
-			} else if (o.startsWith("Patrol")) {
-				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
-					warn += " (army may be too small to patrol)";
-				}
-				if (getNation(a.kingdom).calcRelationship(getNation(g_data.regions[a.location].kingdom)) != "friendly") {
-					warn += " (armies can only patrol friendly regions)";
-				}
 			} else if (o.startsWith("Oust")) {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinPatrolSize().v) {
 					warn = " (army may be too small to oust)";
@@ -1801,7 +1965,7 @@ class OrdersPanel extends HTMLElement {
 				if (a.calcStrength().v < g_data.regions[a.location].calcMinConquestSize().v) {
 					warn = " (army may be too small to conquer)";
 				}
-				if (g_data.regions[a.location].kingdom != "Unruled" && g_data.kingdoms[whoami].relationships[g_data.regions[a.location].kingdom].battle != "ATTACK") {
+				if (g_data.regions[a.location].kingdom != "Unruled" && shadow.querySelector("[name=rel_" + g_data.regions[a.location].kingdom + "_attack]").value != "ATTACK") {
 					warn += " (conquest requires being ordered to attack " + g_data.regions[a.location].kingdom + " armies/navies)";
 				}
 			} else if (o.startsWith("Raze")) {
@@ -1851,7 +2015,7 @@ class OrdersPanel extends HTMLElement {
 						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, c.who).v;
 					} else if (c.act.includes("Temple")) {
 						let type = religionFromIdeology(c.act.replace("Build Temple ", ""));
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, type, c.who).v;
+						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildTemple(whoami, type, c.who).v;
 					}
 				}
 			}
@@ -1861,21 +2025,20 @@ class OrdersPanel extends HTMLElement {
 				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost + projectedSalaries) + " of " + Math.round(getNation(whoami).gold) + " gold on actions and troop salaries)";
 			}
 		}
-		{	// Warn about early harvests.
-			let capables = [];
-			for (let c of g_data.characters) {
-				if (c.kingdom == whoami) {
-					let cname = c.name.replace(/[ ']/g, "_");
-					capables.push({
-							"act": shadow.querySelector("select[name=action_" + cname + "]").value,
-							"warn": shadow.getElementById("warning_character_" + cname)});
-				}
+		{ // Warn about attacking nations paying tribute.
+			let hasNoble = false;
+			for (let r of g_data.regions) if (r.kingdom == whoami && r.noble.name != undefined) {
+				hasNoble = true;
+				break;
 			}
-			for (let q of shadow.querySelectorAll("select")) {
-				if (!q.name.startsWith("action_noble_")) continue;
-				capables.push({
-					"act": q.value,
-					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
+			if (hasNoble) {
+				let w = shadow.getElementById("t_kingdoms_warnings");
+				for (let k in g_data.kingdoms) {
+					if (k == whoami) continue;
+					if (g_data.kingdoms[k].relationships[whoami].tribute > 0 && shadow.querySelector("[name=rel_" + k + "_attack]").value == "ATTACK") {
+						w.innerHTML += "<p>Attacking " + k + " while they pay us tribute will cause noble unrest.</p>"
+					}
+				}
 			}
 		}
 	}

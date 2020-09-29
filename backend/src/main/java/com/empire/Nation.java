@@ -114,7 +114,6 @@ public class Nation {
 
 	double gold;
 	Map<Gothi, Boolean> gothi = new HashMap<>();
-	double goodwill;
 	boolean loyalToCult;
 	String colorFg;
 	String colorBg;
@@ -128,9 +127,8 @@ public class Nation {
 	int idleStrikes = 0;
 	boolean sendEmail = true;
 
+	private double goodwill;
 	private List<Tag> tags = new ArrayList<>();
-	private boolean scoreProfilesLocked;
-	private boolean tookFinalAction;
 	private Map<String, Relationship> relationships = new HashMap<>();
 	private Map<ScoreProfile, Double> score = new HashMap<>();
 	private Map<ScoreProfile, Double> shadowScore = new HashMap<>(); // shadowScore tracks points the ruler would have scored, if they cared for the profile.
@@ -169,12 +167,21 @@ public class Nation {
 		if (amount > 0) {
 			if (w.tivar.veil != 0) mod += 1;
 			if (hasTag(Nation.Tag.SNEAKY)) mod += 0.25;
-			Relationship.War war =
-					who.equals(name) ? Relationship.War.DEFEND : w.getNation(who).getRelationship(name).battle;
-			if (war == Relationship.War.ATTACK) mod -= 0.5;
-			else if (war == Relationship.War.DEFEND) mod += 0.5;
+			if (who.equals(name)) {
+				mod += 0.1;
+			} else {
+				Relationship.War war = w.getNation(who).getRelationship(name).battle;
+				if (war == Relationship.War.ATTACK) mod -= 0.5;
+				else if (war == Relationship.War.DEFEND) mod += 0.5;
+			}
 		}
 		leverage.put(who, Math.max(0, leverage.getOrDefault(who, 0.0) + amount * Math.max(0, mod)));
+	}
+
+	void decayLeverage() {
+		for (String k : leverage.keySet()) {
+			leverage.put(k, leverage.get(k) * 0.85);
+		}
 	}
 
 	boolean hasTag(Tag tag) {
@@ -206,20 +213,13 @@ public class Nation {
 		profiles.remove(p);
 	}
 
-	void lockScoreProfiles() {
-		scoreProfilesLocked = true;
+	void addGoodwill(double amount) {
+		if (hasTag(Tag.HOLY) && amount > 0) amount *= 2;
+		goodwill += amount;
 	}
 
-	boolean scoreProfilesLocked() {
-		return scoreProfilesLocked;
-	}
-
-	void takeFinalAction() {
-		tookFinalAction = true;
-	}
-
-	boolean tookFinalAction() {
-		return tookFinalAction;
+	double getGoodwill() {
+		return goodwill;
 	}
 
 	void score(ScoreProfile p, double amount) {

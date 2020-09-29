@@ -304,25 +304,19 @@ class Region {
 		return new Calc("min", [this.calcCrops(), this.calcHarvestCapacity()]);
 	}
 
-	calcNextHarvest() {
-		let weeksUntilHarvest = 3 - (g_data.date - 1) % 4;
-		let date = (g_data.date + weeksUntilHarvest) % 48;
-		let plants = 2;
-		if (date >= 44) plants = 3;
-		else if (date >= 32) plants = 7;
-		else if (date >= 20) plants = 4;
-		else if (date >=  8) plants = 2;
-		else plants = 3;
+	calcPlanting(date) {
+		if (date == undefined) date = g_data.date;
+		let weeksUntilHarvest = 3 - (date - 1) % 4;
+		let plants = plantingSizes[(date + weeksUntilHarvest) % 48];
 		let mods = [];
 		if (this.calcNobleLevel() > 0) mods.push({"v": this.calcNobleLevel() * .03, "unit": "%", "why": "Noble"});
 		if (this.culture == "tavian") mods.push({"v": .15, "unit": "%", "why": "Tavian culture"});
 		if (this.culture == "tyrgaetan") mods.push({"v": -.15, "unit": "%", "why": "Tyrgaetan culture"});
-		let base = Calc.moddedNum(
+		return Calc.moddedNum(
 			new Calc("*", [
 				{"v": this.population, "unit": " citizens", "why": "Regional Population"},
 				{"v": plants, "unit": " plants / citizen", "why": "Global Planting Rate"}]),
 			mods);
-		return new Calc("max", base, this.calcHarvestCapacity());
 	}
 
 	calcHarvestWeeks() {
@@ -331,16 +325,10 @@ class Region {
 			this.calcConsumption()]);
 	}
 
-	calcNextHarvestWeeks() {
-		return new Calc("/", [
-			this.calcNextHarvest(),
-			this.calcConsumption()]);
-	}
-
-	calcConsumption() {
+	calcConsumption(rations = 100) {
 		return Calc.moddedNum(
 			new Calc("*", [{"v": this.population, "unit": " citizens", "why": "Regional Population"},
-			{"v": 1, "unit": " measures / citizen", "why": "Base Consumption Rate"}]),
+			{"v": rations / 100, "unit": " measures / citizen", "why": "Rationing Rate"}]),
 			[]);
 	}
 
@@ -367,7 +355,7 @@ class Region {
 		return Calc.moddedNum(
 			new Calc("*", [
 				new Calc("sqrt", [{"v": this.population, "unit": " citizens", "why": "Regional Population"}]),
-				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, new Calc("*", [this.calcUnrest(), {"v": 0.5, "unit": "%", "why": "Unrest Importance"}])]),
+				new Calc("-", [{"v": 1, "unit": "%", "why": "Base Opposition"}, new Calc("*", [this.calcUnrest(), {"v": 0.75, "unit": "%", "why": "Unrest Importance"}])]),
 				{"v": 6 / 100, "unit": "%", "why": "Base Conquest Factor"}
 			]),
 			mods);
@@ -425,6 +413,25 @@ class Region {
 			}
 		}
 		return n;
+	}
+
+	static getUnrestMod(taxRate, rationRate, nation) {
+		let unrest = 0;
+		if (taxRate <= 100) unrest = (taxRate - 125) / 25 * 4;
+		else unrest = ((taxRate - 100) / 25) * ((taxRate - 100) / 25 + 1) * 2;
+		if (rationRate >= 100) {
+			unrest += 100 - rationRate;
+		} else if (rationRate >= 75) {
+			let mods = 1;
+			if (g_data.kingdoms[nation].calcStateReligion() == "Northern (Alyrja)") mods -= 0.5;
+			if (g_data.kingdoms[nation].tags.includes("Stoic")) mods -= 0.5;
+			unrest += (100 - rationRate) * mods;
+		} else {
+			let mods = 1;
+			if (g_data.kingdoms[nation].tags.includes("Stoic")) mods -= 0.5;
+			unrest += Math.min(35, (100 - rationRate) * mods);
+		}
+		return unrest;
 	}
 
 	calcPirateWeight() {
@@ -866,78 +873,6 @@ class SpyRing {
 	}
 }
 
-// ============ PLOT ============
-class Plot {
-	constructor(dataEntry) {
-		this.plot_id = dataEntry.plot_id;
-		this.power_hint = dataEntry.power_hint;
-		this.power_hint_total = dataEntry.power_hint_total;
-		this.target_id = dataEntry.target_id;
-		this.type = dataEntry.type;
-		this.conspirators = dataEntry.conspirators;
-	}
-
-	getTargetRegion() {
-		let getTargetRegionCharacter = () => {
-			let character = g_data.characters.find(c => c.name == this.target_id);
-			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
-		}
-		let getTargetRegionRegion = () => g_data.regions.find(r => r.name == this.target_id);
-		let getTargetRegionChurch = () => g_data.regions[g_geo.holycity];
-		let getTargetRegionNation = () => {
-			if (g_data.kingdoms[this.target_id] == undefined) return undefined;
-			let character = g_data.kingdoms[this.target_id].getRuler();
-			return (character == undefined || character.location == -1) ? undefined : g_data.regions[character.location];
-		}
-		if (this.type == "ASSASSINATE") return getTargetRegionCharacter();
-		if (this.type == "BURN_SHIPYARD" || this.type == "SABOTAGE_FORTIFICATIONS" || this.type == "SPOIL_FOOD" || this.type == "SPOIL_CROPS" || this.type == "INCITE_UNREST" || this.type == "PIN_FOOD" || this.type == "MURDER_NOBLE" || this.type == "POISON_RELATIONS") return getTargetRegionRegion();
-		if (this.type == "PRAISE" || this.type == "DENOUNCE") return getTargetRegionChurch();
-		if (this.type == "INTERCEPT_COMMUNICATIONS" || this.type == "SURVEY_NATION" || this.type == "STEAL_GOLD") return getTargetRegionNation();
-	}
-
-	getDefender() {
-		let characterPlots = ["ASSASSINATE"];
-		let regionPlots = ["BURN_SHIPYARD", "SABOTAGE_FORTIFICATIONS", "SPOIL_FOOD", "SPOIL_CROPS", "INCITE_UNREST", "PIN_FOOD", "MURDER_NOBLE", "POISON_RELATIONS"];
-		let nationPlots = ["DENOUNCE", "INTERCEPT_COMMUNICATIONS", "SURVEY_NATION", "STEAL_GOLD"];
-		let goodwillPlots = ["PRAISE"];
-		if (characterPlots.includes(this.type)) {
-			let c = g_data.characters.find(c => c.name == this.target_id);
-			if (c == undefined) return undefined;
-			return c.kingdom;
-		}
-		if (regionPlots.includes(this.type)) return g_data.regions.find(c => c.name == this.target_id).kingdom;
-		if (nationPlots.includes(this.type)) return this.target_id;
-		if (goodwillPlots.includes(this.type)) {
-			let nations = [];
-			for (let k in g_data.kingdoms) nations.push(k);
-			nations.sort((a, b) => g_data.kingdoms[b].goodwill - g_data.kingdoms[a].goodwill);
-			let index = nations.findIndex(a => a == this.target_id);
-			return nations[index == nations.size - 1 ? index - 1 : index + 1];
-		}
-		return undefined;
-	}
-
-	getObjective() {
-		let desc = "";
-		if (this.type == "ASSASSINATE") desc = "Assassinate";
-		else if (this.type == "BURN_SHIPYARD") desc = "Burn a shipyard in";
-		else if (this.type == "SABOTAGE_FORTIFICATIONS") desc = "Sabotage a fortifications in";
-		else if (this.type == "SPOIL_FOOD") desc = "Spoil food in";
-		else if (this.type == "SPOIL_CROPS") desc = "Spoil crops in";
-		else if (this.type == "INCITE_UNREST") desc = "Incite unrest in";
-		else if (this.type == "PIN_FOOD") desc = "Pin food in";
-		else if (this.type == "MURDER_NOBLE") desc = "Murder the noble of";
-		else if (this.type == "POISON_RELATIONS") desc = "Poison noble/ruler relations in";
-		else if (this.type == "PRAISE") desc = "Praise the deeds of";
-		else if (this.type == "DENOUNCE") desc = "Denounce the deeds of";
-		else if (this.type == "INTERCEPT_COMMUNICATIONS") desc = "Intercept communications of";
-		else if (this.type == "SURVEY_NATION") desc = "Survey";
-		else if (this.type == "STEAL_GOLD") desc = "Steal gold from";
-		return desc + " " + this.target_id + " (vs " + this.getDefender() + ")";
-		return undefined;
-	}
-}
-
 function religionFromIdeology(ideo) {
 	ideo = ideo.replace(/[()]/g, "");
 	if (ideo == "Vessel of Faith" || ideo == "Chalice of Compassion" || ideo == "Sword of Truth" || ideo == "Tapestry of People") return "Iruhan (" + ideo + ")";
@@ -947,6 +882,21 @@ function religionFromIdeology(ideo) {
 }
 
 // ============ CONSTANTS ============
+let plantingSizes = [
+	3, 0, 0, 0,
+	3, 0, 0, 0,
+	3, 0, 0, 0,
+	2, 0, 0, 0,
+	2, 0, 0, 0,
+	2, 0, 0, 0,
+	4, 0, 0, 0,
+	4, 0, 0, 0,
+	4, 0, 0, 0,
+	7, 0, 0, 0,
+	7, 0, 0, 0,
+	7, 0, 0, 0,
+];
+
 let doctrineDescriptions = {
 	"ANTIAPOSTASY": ["-10 opinion each turn for nations loyal to the Cult."],
 	"ANTIECUMENISM": ["-20 opinion for constructing a non-Iruhan temple.", "-5 opinion each turn for having a non-Iruhan, non-Company state ideology."],
@@ -1007,4 +957,26 @@ let tagTooltips = {
 	"Unruly": "If larger than 2000 soldiers, this army divides into two equal forces. This army (and any divisions) move randomly into a neighboring land region.",
 	"Higher Power": "This army does not require payment and does not inflict casualties on other armies with Higher Power.",
 	"Undead": "50% of non-Undead soldiers who fall in battle with at least one Undead army rise from the dead and are distributed as soldiers evenly among participating Undead armies.",
+};
+
+let traitTooltips = {
+	"Aristocratic": "All regions start with a noble. Nobles gain +50% experience when training.",
+	"Defensive": "All regions start with a fortification. Fortifications cost -50% to construct.",
+	"Disciplined": "+10% army strength. +20% recruitment. +150% regional minimum conquest size.",
+	"Evangelical": "Temples matching the state religion cost -50% to construct in regions not matching the state religion.",
+	"Heroic": "Start with two additional characters.",
+	"Holy": "+100% positive contributions to church opinion.",
+	"Imperialistic": "-3 percentage points of popular and noble unrest in each region controlled by a nation paying this nation tribute. +20% recruitment for this nation per nation paying tribute.",
+	"Industrial": "-35% construction costs.",
+	"Mercantile": "Start with extra gold. +15% taxation.",
+	"Mystical": "All regions start with a temple.",
+	"Patriotic": "Start with extra armies. +30% recruitment. Nobles never rebel.",
+	"Rebellious": "Start with extra gold and armies. -50% upkeep cost for armies and navies in core territories.",
+	"Republican": "Start with an additional character. Cannot use nobles. Gain 1 influence over each nation per noble in that nation.",
+	"Seafaring": "Start with extra navy. Gain +45% income from sea regions.",
+	"Ship-Building": "Start with extra shipyards. +20% shipyard production.",
+	"Sneaky": "Start with extra spy rings. +25% leverage from all sources.",
+	"Stoic": "-50% unrest from limited / insufficient rations. -75% emigration from all regions.",
+	"War-like": "Start with extra armies. Historical regions produce +7% tax and recruits per non-historical region controlled.",
+	"Welcoming": "Start with extra population. +100% immigration attraction.",
 };

@@ -158,6 +158,15 @@ class MapPanel extends HTMLElement {
 				padding: 0;
 				list-style-type: none;
 			}
+			#tableDivTableRegions kingdom-label {
+				font-size: 50%;
+			}
+			#tableDivTableRegions td:nth-child(4), #tableDivTableRegions td:nth-child(n + 7) {
+				text-align: right;
+			}
+			#tableDivTableRegions td:nth-child(5) {
+				text-transform: capitalize;
+			}
 
 			/* Score Panel */
 			#scoreDiv {
@@ -344,6 +353,10 @@ class MapPanel extends HTMLElement {
 				tt.style.right = "auto";
 				tt.style.top = ev.clientY + 10;
 				tt.style.left = ev.clientX + 10;
+				if (tt.getBoundingClientRect().bottom > window.innerHeight) {
+					tt.style.top = "auto";
+					tt.style.bottom = 10;
+				}
 			}
 		});
 
@@ -380,6 +393,24 @@ class MapPanel extends HTMLElement {
 					<th colspan="2">Ruler</th>
 				</tr>
 				<tbody id="tableDivTableTbody">
+				</tbody>
+			</table>
+			<h1>Regions</h1>
+			<table id="tableDivTableRegions">
+				<tr>
+					<th></th>
+					<th>Contoller</th>
+					<th>Historic Controller</th>
+					<th>Population</th>
+					<th>Culture</th>
+					<th>Religion</th>
+					<th>Tax</th>
+					<th>Recruits</th>
+					<th>Food</th>
+					<th>Crops</th>
+					<th>Unrest</th>
+				</tr>
+				<tbody id="tableDivTableTbodyRegions">
 				</tbody>
 			</table>
 		`;
@@ -432,8 +463,8 @@ class MapPanel extends HTMLElement {
 			p.setAttribute("id", "region_" + i);
 			p.setAttribute("d", shapeToPath(region.path));
 			p.setAttribute("fill-rule", "evenodd");
-			p.addEventListener("click", function () { changeReport("region/" + region.name); });
-			p.addEventListener("mouseover", () => { shadow.getElementById("mapMouseTooltip").textContent = region.name; });
+			p.addEventListener("click", function () { changeReport("region/" + g_data.regions[i].name); });
+			p.addEventListener("mouseover", () => { shadow.getElementById("mapMouseTooltip").textContent = g_data.regions[i].name; });
 			if (region.type == "land") regionElement.appendChild(p);
 			else seaRegionElement.appendChild(p);
 		}
@@ -878,7 +909,10 @@ class MapPanel extends HTMLElement {
 			let ul = document.createElement("ul");
 			for (let t of g_data.kingdoms[k].tags) {
 				let li = document.createElement("li");
-				li.appendChild(document.createTextNode(t));
+				let tt = document.createElement("tooltip-element");
+				tt.setAttribute("tooltip", traitTooltips[t]);
+				tt.appendChild(document.createTextNode(t));
+				li.appendChild(tt);
 				ul.appendChild(li);
 			}
 			document.createElement("li");
@@ -932,6 +966,69 @@ class MapPanel extends HTMLElement {
 			portrait.style.backgroundSize = "cover";
 			portrait.style.backgroundPosition = "center top";
 			addCell(document.createTextNode(ruler.honorific + "\n" + ruler.name)).style.whiteSpace = "pre-line";
+			tableDiv.appendChild(tr);
+		}
+
+
+		tableDiv = this.shadow.getElementById("tableDivTableTbodyRegions");
+		tableDiv.innerHTML = "";
+		let regions = [];
+		let lastRuler = "";
+		for (let r of g_data.regions) {
+			if (r.type == "water") continue;
+			let core = "ZZZ";
+			for (let k in g_data.kingdoms) if (g_data.kingdoms[k].core_regions.includes(r.id)) {
+				core = k;
+				break;
+			}
+			regions.push({"r": r, "core": core});
+		}
+		regions.sort((a, b) => {
+			let kcomp = a.r.kingdom.localeCompare(b.r.kingdom);
+			if (kcomp != 0) return kcomp;
+			return a.r.name.localeCompare(b.r.name);
+		});
+		for (let rboxed of regions) {
+			let r = rboxed.r;
+			let tr = document.createElement("tr");
+			let border = r.kingdom != lastRuler ? "2px solid " + getColor(r.kingdom) : "";
+			lastRuler = r.kingdom;
+			tr.style.backgroundColor = mixColor(getColor(r.kingdom), "#ffffff", 0.9);
+			function addCell(e) {
+				let td = document.createElement("td");
+				td.appendChild(e);
+				td.style.borderTop = border;
+				tr.appendChild(td);
+				return td;
+			}
+			function addCellHTML(html) {
+				let td = document.createElement("td");
+				td.innerHTML = html;
+				td.style.borderTop = border;
+				tr.appendChild(td);
+				return td;
+			}
+			function createTooltip(tip, contents) {
+				let tt = document.createElement("tooltip-element");
+				tt.setAttribute("tooltip", tip);
+				tt.appendChild(document.createTextNode(contents));
+				return tt;
+			}
+			addCell(document.createTextNode(r.name));
+			let kl = document.createElement("kingdom-label");
+			kl.setAttribute("kingdom", r.kingdom);
+			addCell(kl);
+			kl = document.createElement("kingdom-label");
+			kl.setAttribute("kingdom", rboxed.core);
+			addCell(kl);
+			addCell(document.createTextNode(Math.round(r.population / 1000) + "k"));
+			addCell(createTooltip(culture_tooltips[r.culture], r.culture));
+			addCell(createTooltip(religion_tooltips[r.religion], r.religion));
+			addCellHTML(num(r.calcTaxation()));
+			addCellHTML(num(r.calcRecruitment()));
+			addCell(document.createTextNode(Math.round(r.food / 1000) + "k"));
+			addCell(document.createTextNode(Math.round(r.crops / 1000) + "k"));
+			addCellHTML(num(r.calcUnrest(), 0, 100) + "%");
 			tableDiv.appendChild(tr);
 		}
 	}

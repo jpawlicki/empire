@@ -169,19 +169,19 @@ public class RegionTest {
 	@Test
 	public void calcBaseConquestStrength(){
 		r.noble = null;
-		assertEquals(5.25, r.calcBaseConquestStrength(w), DELTA);
+		assertEquals(4.875, r.calcBaseConquestStrength(w), DELTA);
 	}
 
 	@Test
 	public void calcMinConquestStrengthDisciplined(){
 		when(n1.hasTag(Nation.Tag.DISCIPLINED)).thenReturn(true);
-		assertEquals(5.25 * 2, r.calcMinConquestStrength(w), DELTA);
+		assertEquals(4.875 * 2, r.calcMinConquestStrength(w), DELTA);
 	}
 
 	@Test
 	public void calcMinConquestStrengthFortified(){
 		r.constructions = Arrays.asList(Construction.makeFortifications(0), Construction.makeFortifications(0));
-		assertEquals(7.875, r.calcMinConquestStrength(w), DELTA);
+		assertEquals(4.875 * 1.5, r.calcMinConquestStrength(w), DELTA);
 	}
 
 	@Test

@@ -83,7 +83,7 @@ class Region extends RulesObject {
 		return (1 - unrestPopular.get()) * mod;
 	}
 
-	public double calcRecruitment(World w, double signingBonus, double rationing, Army largestInRegion) {
+	public double calcRecruitment(World w, double signingBonus, double rationing, Army largestInRegion, Map<String, List<String>> tributes) {
 		double base = population * getRules().recruitmentPerPop;
 		double unrest = calcUnrest(w);
 		if (unrest > getRules().unrestRecruitmentEffectThresh) base *= 1.0 - (unrest - getRules().unrestRecruitmentEffectThresh);
@@ -92,6 +92,10 @@ class Region extends RulesObject {
 		double flat = 0;
 		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.RJINKU || c.religion == Ideology.SWORD_OF_TRUTH)).count() * 40;
 		mods += calcSigningBonusMod(signingBonus);
+
+		if (w.getNation(getKingdom()).hasTag(Nation.Tag.IMPERIALISTIC)) {
+			for (String k : tributes.keySet()) if (tributes.get(k).contains(getKingdom())) mods += 0.2;
+		}
 
 		if (hasNoble()) mods += noble.calcRecruitMod();
 
@@ -303,7 +307,7 @@ class Region extends RulesObject {
 
 	// TODO: This is a game rule/equation
 	public double calcBaseConquestStrength(GoodwillProvider w) {
-		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) / 2);
+		return Math.sqrt(population) * 6 / 100 * (1 - calcUnrest(w) * 0.75);
 	}
 
 	public double calcFortificationPct() {
@@ -361,8 +365,10 @@ class Region extends RulesObject {
 		food -= actualEat;
 		double actualRations = actualEat / population;
 		w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, actualEat * getRules().foodFedPointFactor);
+		if (!coreRegionOf.equals(getKingdom())) w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, actualEat * getRules().foodFedPointFactor);
 		if (actualRations > 1) {
 			w.score(getKingdom(), Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
+			if (!coreRegionOf.equals(getKingdom())) w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
 			unrestPopular.add(1.0 - actualRations);
 		} else if (actualRations >= 0.75) {
 			if (Nation.getStateReligion(kingdom, w) == Ideology.ALYRJA) {

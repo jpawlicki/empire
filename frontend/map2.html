@@ -28,7 +28,6 @@
 		<script src="color.js"></script>
 		<script src="2/map-panel.js"></script>
 		<script src="2/orders-panel.js"></script>
-		<script src="2/notifications-panel.js"></script>
 		<script src="2/makebutton.js"></script>
 		<script src="2/kingdom-label.js"></script>
 		<script src="2/tutorial-panel.js"></script>
@@ -43,19 +42,14 @@
 			body {
 				display: grid;
 				grid-template-columns: 65% 35%;
-				grid-template-rows: calc(100vh - 10em) 10em;
+				grid-template-rows: 100vh;
 			}
 			map-panel {
 				grid-row-start: 1;
-				grid-row-end: 3;
 				grid-column-start: 1;
 			}
 			orders-panel {
 				grid-row-start: 1;
-				grid-column-start: 2;
-			}
-			notifications-panel {
-				grid-row-start: 2;
 				grid-column-start: 2;
 			}
 			#splashScreen {
@@ -112,7 +106,6 @@
 		</div>
 		<map-panel></map-panel>
 		<orders-panel></orders-panel>
-		<notifications-panel></notifications-panel>
 		<tutorial-panel></tutorial-panel>
 		</div>
 		<script>
@@ -235,7 +228,6 @@
 				g_data.harvests = g_turndata[date].harvests;
 				g_data.inspires_hint = g_turndata[date].hasOwnProperty("inspires_hint") ? g_turndata[date].inspires_hint : 0;
 				document.querySelector("map-panel").repaintMap();
-				document.querySelector("notifications-panel").setNotifications(g_data.notifications);
 				{
 					let ordersPanel = document.querySelector("orders-panel");
 					ordersPanel.parentNode.replaceChild(document.createElement("orders-panel"), ordersPanel);

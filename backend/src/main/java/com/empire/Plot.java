@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 
 abstract class Plot {
-	public static void plot(World w, String perpetrator, Map<String, String> plotParameters) {
+	public static void plot(World w, String perpetrator, Map<String, String> plotParameters, Map<String, World.Budget> incomeSources) {
 		Plot p = getPlot(w, new Parameters(w, plotParameters, perpetrator));
 		if (p == null) return;
 		if (p.isValid()) {
@@ -22,7 +22,7 @@ abstract class Plot {
 			if (canPay) {
 				for (String kingdom : w.getNationNames()) perp.addLeverage(w, kingdom, -p.getCost(kingdom), 1);
 				w.notifyPlayer(perpetrator, "Plot", "Our plot to " + p.getDescription() + " was successful.");
-				p.actualize(w);
+				p.actualize(w, incomeSources);
 			} else {
 				w.notifyPlayer(perpetrator, "Plot", "We lacked sufficient leverage to enact a plot to " + p.getDescription());
 			}
@@ -115,7 +115,7 @@ abstract class Plot {
 	protected abstract boolean isValid();
 	protected abstract double getCost(String kingdom);
 	protected abstract String getDescription();
-	protected abstract void actualize(World w);
+	protected abstract void actualize(World w, Map<String, World.Budget> budgets);
 
 	private Plot(Parameters parameters) {
 		this.parameters = parameters;
@@ -141,7 +141,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			Character target = parameters.character.get();
 			w.characters.remove(target);
 			w.makeNewCharacter(target.kingdom);
@@ -168,7 +168,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			parameters.army.get().concealedFrom.add(parameters.nation.get().name);
 		}
 	}
@@ -195,7 +195,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			parameters.region.get().setReligion(parameters.ideology.get(), w);
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 		}
@@ -211,12 +211,12 @@ abstract class Plot {
 
 		@Override
 		protected boolean isValid() {
-			return parameters.nation.isPresent();
+			return parameters.nation.isPresent() && parameters.amount.isPresent();
 		}
 
 		@Override
 		protected double getCost(String kingdom) {
-			return kingdom.equals(holyCityController) ? 5 : 0;
+			return kingdom.equals(holyCityController) ? parameters.amount.get() / 3 : 0;
 		}
 
 		@Override
@@ -225,8 +225,8 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
-			parameters.nation.get().goodwill -= 30;
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
+			parameters.nation.get().addGoodwill(-parameters.amount.get());
 			HashSet<String> notifiers = new HashSet<>();
 			notifiers.add(parameters.nation.get().name);
 			notifiers.add(holyCityController);
@@ -252,7 +252,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			Optional<Construction> destroyed = parameters.region.get().constructions.stream().filter(parameters.construction.get()).max(Comparator.comparing(c -> c.originalCost));
 			parameters.region.get().constructions.remove(destroyed.get());
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to destroy a " + destroyed.get().type.toString().toLowerCase() + " in " + parameters.region.get().name + " was successful.");
@@ -278,7 +278,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			parameters.army.get().hobbles++;
 			w.notifyPlayer(parameters.army.get().kingdom, "Plot", "A plot to " + getDescription() + " was successful.");
 		}
@@ -303,7 +303,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			parameters.region.get().unrestPopular.add(parameters.amount.get());
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 		}
@@ -328,7 +328,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			parameters.region.get().noble.unrest.add(parameters.amount.get());
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 		}
@@ -353,7 +353,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			w.communications
 				.stream()
 				.filter(c -> c.postDate == w.date)
@@ -372,12 +372,12 @@ abstract class Plot {
 
 		@Override
 		protected boolean isValid() {
-			return parameters.nation.isPresent();
+			return parameters.nation.isPresent() && parameters.amount.isPresent();
 		}
 
 		@Override
 		protected double getCost(String kingdom) {
-			return kingdom.equals(holyCityController) ? 5 : 0;
+			return kingdom.equals(holyCityController) ? parameters.amount.get() / 5 : 0;
 		}
 
 		@Override
@@ -386,8 +386,8 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
-			parameters.nation.get().goodwill += 30;
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
+			parameters.nation.get().addGoodwill(parameters.amount.get());
 			HashSet<String> notifiers = new HashSet<>();
 			notifiers.add(parameters.nation.get().name);
 			notifiers.add(holyCityController);
@@ -414,7 +414,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			parameters.region.get().crops = Math.max(0, parameters.region.get().crops - parameters.amount.get() * 1000);
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 		}
@@ -439,7 +439,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			if (!parameters.region.get().canFoodTransferTo(w, parameters.destination.get())) return;
 			double amount = Math.min(parameters.region.get().food, parameters.amount.get() * 1000);
 			parameters.region.get().food -= amount;
@@ -452,7 +452,16 @@ abstract class Plot {
 	}
 
 	private static class Steal extends Plot {
-		Steal(Parameters p) { super(p); }
+		final double actualTheft;
+
+		Steal(Parameters p) {
+			super(p);
+			if (!isValid()) {
+				actualTheft = 0;
+			} else {
+				actualTheft = Math.min(parameters.amount.get(), parameters.nation.get().gold);
+			}
+		}
 
 		@Override
 		protected boolean isValid() {
@@ -461,20 +470,21 @@ abstract class Plot {
 
 		@Override
 		protected double getCost(String kingdom) {
-			return kingdom.equals(parameters.nation.get().name) ? parameters.amount.get() / 4 : 0;
+			return kingdom.equals(parameters.nation.get().name) ? actualTheft / 4 : 0;
 		}
 
 		@Override
 		protected String getDescription() {
-			return "steal " + Math.round(parameters.amount.get()) / 4 + " gold from " + parameters.nation.get().name;
+			return "steal " + Math.round(actualTheft) + " gold from " + parameters.nation.get().name;
 		}
 
 		@Override
-		protected void actualize(World w) {
-			double amount = Math.min(parameters.nation.get().gold, parameters.amount.get());
-			parameters.nation.get().gold -= amount;
-			w.getNation(parameters.perpetrator).gold += amount;
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
+			parameters.nation.get().gold -= actualTheft;
+			w.getNation(parameters.perpetrator).gold += actualTheft;
 			w.notifyPlayer(parameters.nation.get().name, "Plot", "A plot to " + getDescription() + " was successful.");
+			budgets.get(parameters.perpetrator).incomeIntrigue += actualTheft;
+			budgets.get(parameters.nation.get().name).spentIntrigue += actualTheft;
 		}
 	}
 
@@ -502,7 +512,7 @@ abstract class Plot {
 		}
 
 		@Override
-		protected void actualize(World w) {
+		protected void actualize(World w, Map<String, World.Budget> budgets) {
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 			parameters.region.get().setKingdom(w, parameters.nation.get().name);
 		}

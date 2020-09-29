@@ -11,6 +11,7 @@ class Noble extends RulesObject {
 	Crisis crisis;
 	Percentage unrest;
 	private double experience;
+	String orderhint;
 
 	static Noble newNoble(Rules rules) {
 		return new Noble(rules);

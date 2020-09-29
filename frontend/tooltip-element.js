@@ -27,6 +27,7 @@ class TooltipElement extends HTMLElement {
 					font-size: small;
 					text-decoration: none;
 					font-weight: normal;
+					text-transform: none;
 				}
 				slot {
 					text-decoration: solid underline;

@@ -180,7 +180,7 @@ class Army extends RulesObject {
 			return;
 		}
 		if (target.equals(region.getKingdom())) return;
-		w.getNation(region.getKingdom()).addLeverage(w, kingdom, 10, 1); 
+		w.getNation(region.getKingdom()).addLeverage(w, kingdom, 18, 1); 
 		String nobleFate = "";
 		if (region.noble != null && (region.noble.unrest.get() < .5 || w.getNation(target).hasTag(Nation.Tag.REPUBLICAN))) {
 			nobleFate = " " + region.noble.name + " and their family fought courageously in defense of the region but were slain.";
@@ -191,7 +191,7 @@ class Army extends RulesObject {
 			nobleFate = " " + region.noble.name + " swore fealty to their new rulers.";
 			region.noble.unrest.set(.15);
 		}
-		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && excommunicatedNations.contains(region.getKingdom())) w.getNation(kingdom).goodwill += getRules().defendersOfFaithConquestOpinion;
+		if (w.church.hasDoctrine(Church.Doctrine.DEFENDERS_OF_FAITH) && excommunicatedNations.contains(region.getKingdom())) w.getNation(kingdom).addGoodwill(getRules().defendersOfFaithConquestOpinion);
 		region.constructions.removeIf(c -> c.type == Construction.Type.FORTIFICATIONS);
 		w.notifyAllPlayers("Conquest", "An army of " + kingdom + " has conquered " + region.name + " (a region of " + region.getKingdom() + ") and installed a government loyal to " + target + "." + nobleFate);
 		for (Region r : w.regions) if (r.noble != null && r.getKingdom().equals(kingdom)) if (tributes.getOrDefault(region.getKingdom(), new ArrayList<>()).contains(kingdom) && w.getNation(region.getKingdom()).previousTributes.contains(r.getKingdom())) r.noble.unrest.add(.20);
