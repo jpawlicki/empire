@@ -180,6 +180,25 @@ class Region {
 		return Math.sqrt(this.noble.experience + 1);
 	}
 
+	calcShipbuilding() {
+		let shipyards = 0;
+		for (let c of this.constructions) if (c.type == "shipyard") shipyards++;
+		let base = new Calc("*", [
+			{"v": shipyards, "unit": " shipyards", "why": "Constructions"},
+			{"v": 5, "unit": " warships / shipyard", "why": "Productivity"}]);
+
+		let mods = [];
+		for (let c of g_data.characters) {
+			if ("Unruled" != this.kingdom && c.location == this.id && g_data.kingdoms[c.kingdom].calcRelationship(g_data.kingdoms[this.kingdom]) == "friendly") {
+				mods.push({"v": .15 * c.calcLevel("admiral"), "unit": "%", "why": c.name + " admiral skill"});
+			}
+		}
+		if (g_data.kingdoms[this.kingdom].tags.includes("Ship-Building")) mods.push({"v": .2, "unit": "%", "why": "Ship-Building nation"});
+		if (this.culture == "hansa") mods.push({"v": 0.2, "unit": "%", "why": "Hansa culture"});
+
+		return Calc.moddedNum(base, mods, []);
+	}
+
 	calcRecruitment(extraMod=0, rationing=1) {
 		let baseAmount = [
 			{"v": this.population, "unit": " citizens", "why": "Regional Population"},

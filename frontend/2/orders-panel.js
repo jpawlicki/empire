@@ -494,14 +494,14 @@ class OrdersPanel extends HTMLElement {
 			let armyCost = 0;
 			let consumptionRate = parseInt(eRation.value) - 100;
 			let shipyardCount = 0;
-			for (let region of g_data.regions) if (region.kingdom == whoami) for (let c of region.constructions) if (c.type == "shipyard") shipyardCount++;
+			for (let region of g_data.regions) if (region.kingdom == whoami) shipyardCount += region.calcShipbuilding().v;
 			for (let army of g_data.armies) if (army.kingdom == whoami) {
 				if (!contains(army.tags, "Higher Power")) soldiers += army.size;
 				armyCost += army.calcCost(shadow.querySelector("[name=action_army_" + army.id + "]").value.startsWith("Travel")).v;
 			}
 
 			let items = [];
-			if (shipyardCount > 0) items.push("+" + Math.round(shipyardCount * parseInt(eShip.value)) + " new warships");
+			if (shipyardCount > 0) items.push("+" + Math.round(shipyardCount * (parseInt(eShip.value) / 5.0)) + " new warships");
 			items.push("+" + Math.round(recruitment) + " soldiers");
 
 			let itemsEle = shadow.getElementById("economy_consequences_items");
@@ -556,7 +556,7 @@ class OrdersPanel extends HTMLElement {
 			}
 			addRow("Army/Navy Pay", -(parseInt(eBonus.value) * (recruitment + soldiers) / 100 + armyCost));
 			addRow("Tax Income", taxation);
-			if (shipyardCount > 0) addRow("Shipyards", (shipyardCount * (5 - parseInt(eShip.value))));
+			if (shipyardCount > 0) addRow("Shipyards", (shipyardCount * (5 - parseInt(eShip.value)) / 5.0));
 			{ // Mystery Row
 				let tr = document.createElement("tr");
 				{
