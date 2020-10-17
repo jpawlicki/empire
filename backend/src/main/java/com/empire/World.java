@@ -2433,7 +2433,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					// Game ends. Early return.
 					gameover = true;
 					HashMap<String, String> emails = new HashMap<>();
-					for (String kingdom : kingdoms.keySet()) emails.put(getNation(kingdom).email, "The curtain has closed on this stage of history. Your decisions, and those of your fellow rulers, good and bad, have set the course for the known world and its inhabitants.\n\nTo review the final state of the game, as well as any letters you received from the final turn, you can view https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\n\nThank you for playing and we hope to see you again soon!");
+					for (String kingdom : kingdoms.keySet()) emails.put(getNation(kingdom).email, "The curtain has closed on this stage of history. Your decisions, and those of your fellow rulers, good and bad, have set the course for the known world and its inhabitants.\n\nTo review the final state of the game, as well as any letters you received from the final turn, you can view https://pawlicki.kaelri.com/empire/map2.html?g=%GAMEID%.\n\nThank you for playing and we hope to see you again soon!");
 					return emails;
 				}
 			}
@@ -2457,7 +2457,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						email += "\n " + m.signed.replace("Signed, ", "");
 					}
 				}
-				email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map1.html?g=%GAMEID%.\nYou can silence these notifications by logging in and unchecking the \"Send Email\" box in the game settings.";
+				email += "\n\nYou can issue your orders at https://pawlicki.kaelri.com/empire/map2.html?g=%GAMEID%.\nYou can silence these notifications by logging in and unchecking the \"Send Email\" box in the game settings.";
 				emails.put(getNation(kingdom).email, email);
 			}
 			return emails;
