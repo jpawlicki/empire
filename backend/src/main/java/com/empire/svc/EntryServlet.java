@@ -493,9 +493,9 @@ public class EntryServlet extends HttpServlet {
 			}
 			if (!gameOk) return false;
 			if (startLobby.players <= 1 || startLobby.players > 26) return false;
-			if (startLobby.minPlayers <= 1 || startLobby.minPlayers > startLobby.players) return false;
+			if (startLobby.minPlayers < 1 || startLobby.minPlayers > startLobby.players) return false;
 			if (startLobby.startAtMillis == -1) {
-				startLobby.startAtMillis = startLobby.schedule.getNextPeriod(4);
+				startLobby.startAtMillis = startLobby.schedule.getNextPeriod(3);
 			}
 			dataSource.save(Lobby.newLobby(gameId, Rules.LATEST, startLobby.players, startLobby.schedule, startLobby.minPlayers, startLobby.startAtMillis));
 			dataSource.commit();

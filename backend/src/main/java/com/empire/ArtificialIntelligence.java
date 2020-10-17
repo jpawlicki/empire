@@ -91,17 +91,20 @@ class ArtificialIntelligence {
 
 	private List<Intent> getPossibleIntents() {
 		ArrayList<Intent> ret = new ArrayList<>();
+		ret.add(new StealGold());
 		ret.add(new Defense());
-		//ret.add(new Attack());
+		ret.add(new Attack());
 		ret.add(new Happiness());
 		ret.add(new PayTroops());
 		ret.add(new BuildMilitary());
+		ret.add(new EstablishNobles());
 		ret.add(new TrainNoblePieces());
 		ret.add(new RelaxNoblePieces());
 		ret.add(new BuildForts());
 		ret.add(new BuildSpies());
 		ret.add(new TreasureGoldPiece());
 		ret.add(new FeedPeople());
+		ret.add(new DefaultRelations());
 		return ret;
 	}
 
@@ -431,17 +434,7 @@ class ArtificialIntelligence {
 
 	/** An intent to conquer a region. */
 	private class Attack extends Intent {
-		class AttackTarget {
-			public int region = -1;
-			public double score = 0;
-			public double neededForce = 0;
-			public final String who;
-			public AttackTarget(String who) {
-				this.who = who;
-			}
-		}
-
-		private final AttackTarget idealTarget;
+		private final Region idealTarget;
 		private final Army idealArmy;
 
 		public Attack() {
@@ -452,32 +445,108 @@ class ArtificialIntelligence {
 				idealArmy = null;
 			} else {
 				Map<Region, Integer> regionDistances = world.regions.get(bestArmy.location).getRegionsByDistance(world);
+				double bestScore = 0;
+				Region bestRegion = null;
 				for (Region r : world.regions) {
-					double rScore = 0;
+					double rScore = 1;
+					if (r.isSea()) continue;
+					if (whoami.equals(r.getKingdom())) continue;
+					Relationship rel = world.getNation(whoami).getRelationship(r.getKingdom());
+					if (rel.battle == Relationship.War.DEFEND) continue;
+					if (r.calcMinConquestStrength(world) > bestArmy.calcStrength(world, null, 0)) continue;
+					if (regionDistances.get(r) > 1) continue;
+					if (world.getNation(whoami).coreRegions.contains(r.id)) rScore *= 4;
+					if (rScore > bestScore) {
+						bestScore = rScore;
+						bestRegion = r;
+					}
 				}
-				idealTarget = null; // TODO
+				idealTarget = bestRegion;
 				idealArmy = bestArmy;
 			}
 		}
 
 		@Override
 		boolean feasible() {
-			return idealArmy != null && allocatedPieces.armies.contains(idealArmy);
+			return
+					!allocatedPieces.relationships.isEmpty()
+					&& idealArmy != null
+					&& idealTarget != null
+					&& allocatedPieces.armies.contains(idealArmy);
 		}
 
 		@Override
-		double importance() {
+		double valueOf(Army a) {
+			return a == idealArmy ? 1 : 0;
+		}
+
+		@Override
+		double valueOf(RelationshipPiece piece) {
+			if (idealTarget != null && idealTarget.getKingdom() == piece.who) return 1;
 			return 0;
 		}
 
 		@Override
+		double importance() {
+			return 1.6;
+		}
+
+		@Override
 		Map<String, String> generateOrders() {
-			return new HashMap<>();
+			HashMap<String, String> orders = new HashMap<>();
+			for (RelationshipPiece r : allocatedPieces.relationships) {
+				orders.put("rel_" + r.who + "_attack", "ATTACK");
+				orders.put("rel_" + r.who + "_tribute", "0");
+			}
+			for (Army a : allocatedPieces.armies) {
+				if (a.location == idealTarget.id) {
+					orders.put("action_army_" + a.id, "Conquer");
+				} else {
+					orders.put("action_army_" + a.id, "Travel to " + idealTarget.name);
+				}
+			}
+			return orders;
 		}
 	}
 
 	// TODO: an intent to convert off non-VoF Iruhan religions if church opinion is negative.
 	// TODO: an intent to deal with pirates.
+
+	/** An intent to keep popular unrest down. */
+	private class EstablishNobles extends Intent {
+		public EstablishNobles() {
+		}
+
+		@Override
+		boolean feasible() {
+			return !world.getNation(whoami).hasTag(Nation.Tag.REPUBLICAN);
+		}
+
+		@Override
+		double valueOf(Character c) {
+			Region r = world.regions.get(c.location);
+			if (whoami.equals(r.getKingdom()) && !r.hasNoble()) {
+				for (Character cc : allocatedPieces.characters) if (cc.location == c.location) return 0;
+				return 1;
+			}
+			return 0;
+		}
+
+		@Override
+		double importance() {
+			return 0.3;
+		}
+
+		@Override
+		Map<String, String> generateOrders() {
+			HashMap<String, String> orders = new HashMap<>();
+			for (Character c : allocatedPieces.characters) {
+				orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Establish Noble");
+			}
+			return orders;
+		}
+	}
+
 
 	/** An intent to keep popular unrest down. */
 	private class Happiness extends Intent {
@@ -532,6 +601,38 @@ class ArtificialIntelligence {
 				else if (targetUnrestDrop - projection > 0.12) tax = 0.50;
 				else if (targetUnrestDrop - projection > 0.08) tax = 0.75;
 				orders.put("economy_tax", Double.toString(100 * tax));
+			}
+			return orders;
+		}
+	}
+
+	/** An intent to steal gold whenever possible. */
+	private class StealGold extends Intent {
+		public StealGold() {
+		}
+
+		@Override
+		boolean feasible() {
+			return true; // However much we can steal is good.
+		}
+
+		@Override
+		double importance() {
+			return 0.1;
+		}
+
+		@Override
+		Map<String, String> generateOrders() {
+			HashMap<String, String> orders = new HashMap<>();
+			int plots = 0;
+			for (String k : world.getNationNames()) {
+				if (whoami.equals(k)) continue;
+				double leverage = world.getNation(whoami).getLeverage(k);
+				if (leverage <= 0) continue;
+				orders.put("plot_type_" + plots, "steal");
+				orders.put("plot_nation_" + plots, k);
+				orders.put("plot_amount_" + plots, Double.toString(Math.floor(leverage * 4)));
+				plots++;
 			}
 			return orders;
 		}
@@ -802,7 +903,7 @@ class ArtificialIntelligence {
 
 		@Override
 		double importance() {
-			return 0.4 / numSpyRings;
+			return 0.6;
 		}
 
 		@Override
@@ -911,6 +1012,52 @@ class ArtificialIntelligence {
 		@Override
 		Map<String, String> generateOrders() {
 			return new HashMap<>(); // For now, just hoard food assigned here.
+		}
+	}
+
+	/** An intent to just normalize relations. */
+	private class DefaultRelations extends Intent {
+		public DefaultRelations() {
+		}
+
+		@Override
+		boolean feasible() {
+			return true;
+		}
+
+		@Override
+		double valueOf(RelationshipPiece piece) {
+			return 1;
+		}
+
+		@Override
+		double importance() {
+			return 0.005;
+		}
+
+		@Override
+		Map<String, String> generateOrders() {
+			HashMap<String, String> orders = new HashMap<>();
+			HashSet<Integer> myArmyLocs = new HashSet<>();
+			for (Army c : world.armies) if (whoami.equals(c.kingdom)) myArmyLocs.add(c.location);
+			for (RelationshipPiece r : allocatedPieces.relationships) {
+				boolean sharesArea = false;
+				for (Army c : world.armies) {
+					if (r.who.equals(c.kingdom) && myArmyLocs.contains(c.location)) {
+						sharesArea = true;
+						break;
+					}
+				}
+				if (sharesArea) {
+					orders.put("rel_" + r.who + "_attack", "NEUTRAL");
+					orders.put("rel_" + r.who + "_tribute", "0");
+				} else {
+					// An attack disposition is diplomatically risky, but cuts enemy leverage gains.
+					orders.put("rel_" + r.who + "_attack", "ATTACK");
+					orders.put("rel_" + r.who + "_tribute", "0");
+				}
+			}
+			return orders;
 		}
 	}
 }
