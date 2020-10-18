@@ -203,7 +203,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (NationSetup.Bonus.FOOD.equals(setup.bonus)) totalSharesFood += 0.5;
 			else if (NationSetup.Bonus.ARMIES.equals(setup.bonus)) totalSharesArmy += 0.5;
 			else if (NationSetup.Bonus.NAVIES.equals(setup.bonus)) totalSharesNavy += 0.5;
-			else if (NationSetup.Bonus.GOLD.equals(setup.bonus)) totalSharesGold += 1.5;
+			else if (NationSetup.Bonus.GOLD.equals(setup.bonus)) totalSharesGold += 1.0;
 		}
 		HashSet<String> regionNames = new HashSet<>();
 		for (Region r : w.regions) regionNames.add(r.name);
@@ -248,7 +248,7 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(Nation.Tag.REBELLIOUS)) sharesGold += 5;
 			if (setup.hasTag(Nation.Tag.WELCOMING)) sharesPopulation += 0.1;
 			if (NationSetup.Bonus.FOOD.equals(setup.bonus)) sharesFood += 0.5;
-			else if (NationSetup.Bonus.GOLD.equals(setup.bonus)) sharesGold += 1.5;
+			else if (NationSetup.Bonus.GOLD.equals(setup.bonus)) sharesGold += 1.0;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
 			double food = totalFood * sharesFood / totalSharesFood;
 			nation.gold = totalGold * sharesGold / totalSharesGold;
