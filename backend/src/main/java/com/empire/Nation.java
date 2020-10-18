@@ -179,9 +179,7 @@ public class Nation {
 	}
 
 	void decayLeverage() {
-		for (String k : leverage.keySet()) {
-			leverage.put(k, leverage.get(k) * 0.85);
-		}
+		leverage.replaceAll((k, v) -> v * 0.85);
 	}
 
 	boolean hasTag(Tag tag) {

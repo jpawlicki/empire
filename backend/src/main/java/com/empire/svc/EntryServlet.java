@@ -109,7 +109,7 @@ public class EntryServlet extends HttpServlet {
 			} else if (req.getRequestURI().equals("/entry/index")) {
 				json = getIndex(r);
 			} else if (req.getRequestURI().equals("/entry/scores")) {
-				json = getScores(r);
+				json = getScores();
 			} else {
 				resp.sendError(404, "No such path.");
 				return;
@@ -315,7 +315,7 @@ public class EntryServlet extends HttpServlet {
 		}
 	}
 
-	private String getScores(Request r) {
+	private String getScores() {
 		try (DataSource dataSource = DataSource.nontransactional()) {
 			return getGson().toJson(dataSource.loadHighScores());
 		}
@@ -363,10 +363,8 @@ public class EntryServlet extends HttpServlet {
 				int date = dataSource.loadCurrentDate(gameId);
 				World	w = dataSource.loadWorld(gameId, date);
 				if (w.getNextTurn() < Instant.now().toEpochMilli()) {
-					HashSet<String> kingdoms = new HashSet<>();
 					HashMap<String, Map<String, String>> orders = new HashMap<>();
 					for (String kingdom : w.getNationNames()) {
-						kingdoms.add(kingdom);
 						try {
 							orders.put(kingdom, dataSource.loadOrder(gameId, w.getNation(kingdom).email, w.getDate()).getOrders());
 						} catch (EntityNotFoundException e) {
@@ -427,7 +425,6 @@ public class EntryServlet extends HttpServlet {
 	private boolean postAdvanceWorld(Request r) throws PasswordException {
 		if (!Player.passesGmPassword(r.password)) throw new PasswordException("Password fails GM ACL.");
 		try (DataSource dataSource = DataSource.transactional()) {
-			HashSet<String> kingdoms = new HashSet<>();
 			World	w = dataSource.loadWorld(r.gameId, r.turn);
 			w.setNextTurn(0);
 			dataSource.saveCurrentDate(r.turn, r.gameId);
@@ -482,13 +479,17 @@ public class EntryServlet extends HttpServlet {
 			for (int i = 0; i < 15; i++) {
 				gameId = (long) (Math.random() * 10000000L);
 				try {
-					Lobby exists = dataSource.loadLobby(r.gameId);
+					dataSource.loadLobby(r.gameId);
 					continue;
-				} catch (EntityNotFoundException expected) {}
+				} catch (EntityNotFoundException expected) {
+					// This is expected, we are testing to see if gameId conflicts with an existing lobby.
+				}
 				try {
-					World exists = dataSource.loadWorld(r.gameId, 1);
+					dataSource.loadWorld(r.gameId, 1);
 					continue;
-				} catch (EntityNotFoundException expected) {}
+				} catch (EntityNotFoundException expected) {
+					// This is expected, we are testing to see if gameId conflicts with an existing lobby.
+				}
 				gameOk = true;
 			}
 			if (!gameOk) return false;
@@ -529,6 +530,7 @@ public class EntryServlet extends HttpServlet {
 				dataSource.loadPlayer(r.player);
 				return false;
 			} catch (EntityNotFoundException expected) {
+				// This is expected, we are testing to see if the account already exists.
 			}
 			dataSource.save(new Player(r.player, r.password));
 			dataSource.commit();
@@ -578,7 +580,6 @@ public class EntryServlet extends HttpServlet {
 
 	// TODO: remove
 	private boolean migrate(Request rr) {
-		final long gameId = 9;
 		if (!Player.passesGmPassword(rr.password)) return false;
 		try (DataSource dataSource = DataSource.nontransactional()) {
 			World w = dataSource.loadWorld(9293657, 1);

@@ -195,7 +195,7 @@ final class Crisis {
 		NOBILITY("%NOBLENAME% of %REGIONNAME% has many friends who they believe ought to be raised to the nobility. Install nobles in all regions under your control.", "%NOBLENAME% is pleased that you have installed their friends as nobles.", "%NOBLENAME% is upset that you have failed to install additional nobles in your lands.") {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {
-				return w.regions.stream().filter(rr -> rr.getKingdom() == r.getKingdom() && !rr.hasNoble()).count() == 0;
+				return w.regions.stream().filter(rr -> r.isLand() && rr.getKingdom().equals(r.getKingdom()) && !rr.hasNoble()).count() == 0;
 			}
 
 			@Override
@@ -244,7 +244,7 @@ final class Crisis {
 			@Override
 			boolean isSolved(World w, Region r, Map<Army, Character> leaders, Set<Region> builds, Set<Region> templeBuilds, Map<String, Double> rationing, int inspires) {
 				int rid = w.regions.indexOf(r);
-				return w.spyRings.stream().filter(s -> s.getLocation() == rid && s.getNation() == r.getKingdom()).count() > 0;
+				return w.spyRings.stream().filter(s -> s.getLocation() == rid && s.getNation().equals(r.getKingdom())).count() > 0;
 			}
 
 			@Override

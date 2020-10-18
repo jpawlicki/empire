@@ -56,6 +56,7 @@ class DataSource implements AutoCloseable {
 		if (txn != null) txn.commit();
 	}
 
+	@Override
 	public void close() {
 		if (txn != null && txn.isActive()) txn.rollback();
 	}

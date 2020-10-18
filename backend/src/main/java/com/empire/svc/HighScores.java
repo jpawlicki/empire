@@ -24,6 +24,7 @@ class HighScores {
 		turnScores.get(kingdom).add(score);
 	}
 
+	@Override
 	public String toString() {
 		return getGson().toJson(this);
 	}

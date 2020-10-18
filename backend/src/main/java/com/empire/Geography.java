@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,10 +52,10 @@ public class Geography {
 	}
 
 	private static Geography readGeography(int ruleSetId, int numPlayers) throws IOException {
-		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/maps/" + numPlayers + ".json")) {
+		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/maps/" + numPlayers + ".json", StandardCharsets.UTF_8)) {
 			return new GsonBuilder().create().fromJson(r, Geography.class);
 		} catch (FileNotFoundException e) {
-			try (InputStreamReader r = new InputStreamReader(Geography.class.getResourceAsStream("/rules/" + ruleSetId + "/maps/" + numPlayers + ".json"))) {
+			try (InputStreamReader r = new InputStreamReader(Geography.class.getResourceAsStream("/rules/" + ruleSetId + "/maps/" + numPlayers + ".json"), StandardCharsets.UTF_8)) {
 				return new GsonBuilder().create().fromJson(r, Geography.class);
 			}
 		}

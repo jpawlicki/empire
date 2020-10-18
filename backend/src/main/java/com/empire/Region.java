@@ -9,7 +9,6 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -142,7 +141,6 @@ class Region extends RulesObject {
 		double mods = 1;
 		double flat = 0;
 		flat += constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && (c.religion == Ideology.TAPESTRY_OF_PEOPLE || c.religion == Ideology.SYRJEN)).count() * 3;
-		long numFortifications = constructions.stream().filter(c -> c.type == Construction.Type.FORTIFICATIONS).count();
 		flat -= constructions.stream().filter(c -> c.type == Construction.Type.TEMPLE && c.religion == Ideology.CHALICE_OF_COMPASSION).count();
 
 		if (culture == Culture.ANPILAYN) mods += .25;
@@ -160,7 +158,6 @@ class Region extends RulesObject {
 			mods += conquests * getRules().perConquestWarlikeTaxMod;
 		}
 
-		boolean neighborKuun = false;
 		if (religion == Ideology.SYRJEN) {
 			mods += getRules().syrjenTaxMod;
 		} else if (religion == Ideology.RIVER_OF_KUUN && rationing > 1) {
@@ -259,7 +256,7 @@ class Region extends RulesObject {
 		}
 
 		HashMap<Region, Integer> ret = new HashMap<>();
-		LinkedList<Node> queue = new LinkedList<>();
+		ArrayDeque<Node> queue = new ArrayDeque<>();
 		queue.add(new Node(this, 0));
 		while (!queue.isEmpty()) {
 			Node n = queue.poll();

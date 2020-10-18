@@ -244,7 +244,7 @@ class ArtificialIntelligence {
 		}
 	}
 
-	private abstract class Intent {
+	private static abstract class Intent {
 		protected PieceSet allocatedPieces = new PieceSet();
 		void allocate(Army piece) { allocatedPieces.add(piece); }
 		void allocate(Character piece) { allocatedPieces.add(piece); }
@@ -321,9 +321,7 @@ class ArtificialIntelligence {
 				if (ourRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100 * 0.6);
 				else if (neighborRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100);
 			}
-			for (String k : threats.keySet()) {
-				if (world.getNation(k).getRelationship(whoami).battle == Relationship.War.ATTACK) threats.put(k, threats.get(k) * 2);
-			}
+			threats.replaceAll((k, v) -> v * (world.getNation(k).getRelationship(whoami).battle == Relationship.War.ATTACK ? 2 : 1));
 			this.threats = new ArrayList<Threat>();
 			for (Map.Entry<String, Double> threat : threats.entrySet()) this.threats.add(new Threat(threat.getKey(), threat.getValue()));
 			Collections.sort(this.threats, Comparator.comparingDouble((Threat t) -> t.threatValue).reversed());
@@ -482,7 +480,7 @@ class ArtificialIntelligence {
 
 		@Override
 		double valueOf(RelationshipPiece piece) {
-			if (idealTarget != null && idealTarget.getKingdom() == piece.who) return 1;
+			if (idealTarget != null && idealTarget.getKingdom().equals(piece.who)) return 1;
 			return 0;
 		}
 
@@ -765,7 +763,7 @@ class ArtificialIntelligence {
 	}
 
 	/** An intent to train nobles. */
-	private class TrainNoblePieces extends Intent {
+	private static class TrainNoblePieces extends Intent {
 		@Override
 		boolean feasible() {
 			return true; // Can use any valued pieces.
@@ -819,7 +817,7 @@ class ArtificialIntelligence {
 	}
 
 	/** An intent to fortify. */
-	private class BuildForts extends Intent {
+	private static class BuildForts extends Intent {
 		// TODO: break into regional sub-intents.
 		@Override
 		boolean feasible() {
@@ -979,7 +977,7 @@ class ArtificialIntelligence {
 				totalStocks += r.food;
 				totalDemand += r.population;
 			}
-			foodShort = totalStocks < totalDemand;
+			foodShort = totalStocks < totalDemand * turnsUntilHarvest;
 		}
 
 		@Override

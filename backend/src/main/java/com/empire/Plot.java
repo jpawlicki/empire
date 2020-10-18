@@ -344,7 +344,7 @@ abstract class Plot {
 
 		@Override
 		protected double getCost(String kingdom) {
-			return kingdom.equals(parameters.nation.get()) ? 15 : 0;
+			return kingdom.equals(parameters.nation.get().name) ? 15 : 0;
 		}
 
 		@Override
@@ -357,7 +357,7 @@ abstract class Plot {
 			w.communications
 				.stream()
 				.filter(c -> c.postDate == w.date)
-				.filter(c -> c.from.equals(parameters.nation.get()) || c.to.contains(parameters.nation.get()))
+				.filter(c -> c.from.equals(parameters.nation.get().name) || c.to.contains(parameters.nation.get().name))
 				.forEach(c -> c.intercepted.add(parameters.perpetrator));
 		}
 	}

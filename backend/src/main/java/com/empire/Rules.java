@@ -1,10 +1,11 @@
 package com.empire;
 
 import com.google.gson.GsonBuilder;
-import java.io.FileReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +28,10 @@ public class Rules {
 	}
 
 	private static Rules readRules(int ruleSetId) throws IOException {
-		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/rules.json")) {
+		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/rules.json", StandardCharsets.UTF_8)) {
 			return new GsonBuilder().create().fromJson(r, Rules.class);
 		} catch (FileNotFoundException e) {
-			try (InputStreamReader r = new InputStreamReader(Rules.class.getResourceAsStream("/rules/" + ruleSetId + "/rules.json"))) {
+			try (InputStreamReader r = new InputStreamReader(Rules.class.getResourceAsStream("/rules/" + ruleSetId + "/rules.json"), StandardCharsets.UTF_8)) {
 				return new GsonBuilder().create().fromJson(r, Rules.class);
 			}
 		}

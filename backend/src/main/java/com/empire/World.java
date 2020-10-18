@@ -200,10 +200,10 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(Nation.Tag.SEAFARING)) totalSharesNavy += 0.15;
 			if (setup.hasTag(Nation.Tag.WARLIKE)) totalSharesArmy += 0.15;
 			if (setup.hasTag(Nation.Tag.WELCOMING)) totalSharesPopulation += 0.1;
-			if ("food".equals(setup.bonus)) totalSharesFood += 0.5;
-			else if ("armies".equals(setup.bonus)) totalSharesArmy += 0.5;
-			else if ("navies".equals(setup.bonus)) totalSharesNavy += 0.5;
-			else if ("gold".equals(setup.bonus)) totalSharesGold += 1.5;
+			if (NationSetup.Bonus.FOOD.equals(setup.bonus)) totalSharesFood += 0.5;
+			else if (NationSetup.Bonus.ARMIES.equals(setup.bonus)) totalSharesArmy += 0.5;
+			else if (NationSetup.Bonus.NAVIES.equals(setup.bonus)) totalSharesNavy += 0.5;
+			else if (NationSetup.Bonus.GOLD.equals(setup.bonus)) totalSharesGold += 1.5;
 		}
 		HashSet<String> regionNames = new HashSet<>();
 		for (Region r : w.regions) regionNames.add(r.name);
@@ -247,8 +247,8 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(Nation.Tag.MERCANTILE)) sharesGold += 0.5;
 			if (setup.hasTag(Nation.Tag.REBELLIOUS)) sharesGold += 5;
 			if (setup.hasTag(Nation.Tag.WELCOMING)) sharesPopulation += 0.1;
-			if ("food".equals(setup.bonus)) sharesFood += 0.5;
-			else if ("gold".equals(setup.bonus)) sharesGold += 0.5;
+			if (NationSetup.Bonus.FOOD.equals(setup.bonus)) sharesFood += 0.5;
+			else if (NationSetup.Bonus.GOLD.equals(setup.bonus)) sharesGold += 1.5;
 			double population = totalPopulation * sharesPopulation / totalSharesPopulation;
 			double food = totalFood * sharesFood / totalSharesFood;
 			nation.gold = totalGold * sharesGold / totalSharesGold;
@@ -332,7 +332,6 @@ public class World extends RulesObject implements GoodwillProvider {
 			NationSetup setup = nationSetup.get(kingdom);
 			ArrayList<Integer> regions = new ArrayList<>();
 			for (int i = 0; i < w.regions.size(); i++) if (kingdom.equals(w.regions.get(i).getKingdom())) regions.add(i);
-			ArrayList<Character> characters = new ArrayList<>();
 			int numCharacters = 4;
 			boolean cardinal = false;
 			if (setup.religion.religion == Religion.IRUHAN && setup.religion != Ideology.VESSEL_OF_FAITH) {
@@ -447,8 +446,8 @@ public class World extends RulesObject implements GoodwillProvider {
 			if (setup.hasTag(Nation.Tag.REBELLIOUS)) sharesArmy += 0.5;
 			if (setup.hasTag(Nation.Tag.SEAFARING)) sharesNavy += 0.15;
 			if (setup.hasTag(Nation.Tag.WARLIKE)) sharesArmy += 0.15;
-			if ("armies".equals(setup.bonus)) sharesArmy += 0.5;
-			else if ("navies".equals(setup.bonus)) sharesNavy += 0.5;
+			if (NationSetup.Bonus.ARMIES.equals(setup.bonus)) sharesArmy += 0.5;
+			else if (NationSetup.Bonus.NAVIES.equals(setup.bonus)) sharesNavy += 0.5;
 			double armies = totalArmy * sharesArmy / totalSharesArmy;
 			double navies = totalNavy * sharesNavy / totalSharesNavy;
 			int numRegions = 0;
@@ -917,9 +916,9 @@ public class World extends RulesObject implements GoodwillProvider {
 						nu.composition = new HashMap<>();
 						double reduction = size / (size + a.size);
 						for (String c : a.composition.keySet()) {
-							a.composition.put(c, a.composition.get(c) * (1 - reduction));
 							nu.composition.put(c, a.composition.get(c) * reduction);
 						}
+						a.composition.replaceAll((key, v) -> v * (1 - reduction));
 						for (Preparation p : a.preparation) {
 							nu.preparation.add(new Preparation(p));
 						}
@@ -937,7 +936,6 @@ public class World extends RulesObject implements GoodwillProvider {
 		void markLeaders() {
 			for (Character c : characters) {
 				String action = orders.getOrDefault(c.kingdom, new HashMap<String, String>()).getOrDefault("action_" + c.name.replace(" ", "_").replace("'", "_"), "");
-				Region region = regions.get(c.location);
 				if (action.startsWith("Lead ")) {
 					c.orderhint = action;
 					int targetId = Integer.parseInt(action.substring(action.lastIndexOf(" ") + 1, action.length()));
@@ -1010,12 +1008,12 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (Army a : leaders.keySet()) {
 				Character l = leaders.get(a);
 				if (a.isArmy()) {
-					leaders.get(a).addExperienceGeneral();
-					if (a.hasTag(Army.Tag.SCHEMING)) leaders.get(a).addExperienceSpy();
+					l.addExperienceGeneral();
+					if (a.hasTag(Army.Tag.SCHEMING)) l.addExperienceSpy();
 				} else {
-					leaders.get(a).addExperienceAdmiral();
+					l.addExperienceAdmiral();
 				}
-				leaders.get(a).leadingArmy = a.id;
+				l.leadingArmy = a.id;
 			}
 		}
 
@@ -1195,7 +1193,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					double populationMoved = Math.min(region.population - 1, army.size * 10);
 					if (!target.getKingdom().equals(army.kingdom)) notifyPlayer(target.getKingdom(), "Refugees from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + ".");
 					if (!region.getKingdom().equals(army.kingdom) && !region.getKingdom().equals(target.getKingdom())) notifyPlayer(target.getKingdom(), "Forced Relocation from " + region.name, "An army of " + army.kingdom + " has forced " + Math.round(populationMoved) + " civilians from " + region.name + " to move to " + target.name + ".");
-					sendRefugees(region, target, populationMoved, false, false);
+					sendRefugees(region, target, populationMoved);
 				} else if (action.startsWith("Transfer ")) {
 					String target = action.substring("Transfer army to ".length(), action.length());
 					if (!kingdoms.containsKey(target)) throw new RuntimeException("Unknown kingdom \"" + target + "\".");
@@ -1441,7 +1439,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				}
 			}
 			pirate.threat *= .75;
-			for (String bribe : pirate.bribes.keySet()) pirate.bribes.put(bribe, pirate.bribes.get(bribe) * .75);
+			pirate.bribes.replaceAll((k, v) -> v * 0.75);
 			notifyAllPlayers("Piracy", (int) Math.ceil(piratesSpawned) + " total pirates have appeared in " + StringUtil.and(pirateNotes) + ".");
 		}
 
@@ -1473,7 +1471,7 @@ public class World extends RulesObject implements GoodwillProvider {
 					double cf = enemyStrength / totalArmyStrength;
 					if (a.hasTag(Army.Tag.FORMATIONS) && cf > .40 && cf < .9) cf = .40;
 					if (region.getKingdom() != null && Nation.isFriendly(region.getKingdom(), a.kingdom, World.this)) {
-						cf *= Math.max(0, Math.min(1, 1 - (region.calcFortificationMod())));
+						cf *= Math.max(0, Math.min(1, 1 - region.calcFortificationMod()));
 					}
 					if (cf >= .9) cf = 1;
 					if (cf != 0) casualties.put(a, cf);
@@ -1499,9 +1497,7 @@ public class World extends RulesObject implements GoodwillProvider {
 						c.size -= c.size * cf;
 						c.gold -= c.gold * cf;
 					}
-					for (String s : c.composition.keySet()) {
-						c.composition.put(s, c.composition.get(s) * (1 - cf));
-					}
+					c.composition.replaceAll((k, v) -> v * (1 - cf));
 				}
 				for (Army h : hansaImpressment.keySet()) {
 					h.size += hansaImpressment.get(h);
@@ -1639,7 +1635,6 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (int i = 0; i < regions.size(); i++) {
 				Region r = regions.get(i);
 				if (r.isLand()) {
-					String whoTaxes = r.getKingdom();
 					double income = r.calcTaxIncome(World.this, taxationRates.getOrDefault(r.getKingdom(), 1.0), rationing.getOrDefault(r.getKingdom(), 1.0));
 					Army max = getMaxArmyInRegion(i, leaders, inspires);
 					if (max != null && !Nation.isFriendly(max.kingdom, r.getKingdom(), World.this) && max.hasTag(Army.Tag.PILLAGERS)) {
@@ -1756,7 +1751,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				iruhanNations
 						.stream()
 						.filter(k ->
-								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && k.equals(c.kingdom) && regions.get(c.location).name != "Sancta Civitate"))
+								characters.stream().anyMatch(c -> c.hasTag(Character.Tag.CARDINAL) && k.equals(c.kingdom) && regions.get(c.location).id == getGeography().holycity))
 						.map(World.this::getNation)
 						.forEach(n -> n.addGoodwill(getRules().mandatoryMinistryOpinion));
 			}
@@ -1792,11 +1787,10 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 
 		void gainChurchIncome() {
-			double churchIncome = getRules().churchIncomePerPlayer * numPlayers + inspires * 20;
 			double mods = 1;
 			if (Ideology.TAPESTRY_OF_PEOPLE == getDominantIruhanIdeology()) mods += 1;
 			mods += inspires * .2;
-
+			double churchIncome = getRules().churchIncomePerPlayer * numPlayers * mods;
 			HashMap<String, Double> foodBalance = new HashMap<>();
 			for (Region r : regions) {
 				if (r.isSea()) continue;
@@ -1808,8 +1802,6 @@ public class World extends RulesObject implements GoodwillProvider {
 			for (String k : foodBalance.keySet()) if (foodBalance.get(k) > 0) totalMeasuresDeficit += foodBalance.get(k);
 			HashMap<String, Double> shares = new HashMap<>();
 			for (String k : foodBalance.keySet()) if (foodBalance.get(k) > 0) shares.put(k, shares.getOrDefault(k, 0.0) + foodBalance.get(k) / totalMeasuresDeficit);
-			double totalGoodwill = 0;
-			for (String k : kingdoms.keySet()) if (getNation(k).getGoodwill() > 0) totalGoodwill += getNation(k).getGoodwill();
 			for (String k : kingdoms.keySet()) if (getNation(k).getGoodwill() > 0) shares.put(k, shares.getOrDefault(k, 0.0) + getNation(k).getGoodwill());
 			double totalShares = 0;
 			for (String k : shares.keySet()) totalShares += shares.get(k);
@@ -1967,7 +1959,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				Region r = regions.get(i);
 				if (r.isSea()) continue;
 				if (Nation.UNRULED_NAME.equals(r.getKingdom())) continue;
-				int shipyards = 0;
+				double shipyards = 0;
 				for (Construction c: r.constructions) {
 					if (c.type == Construction.Type.SHIPYARD) shipyards++;
 				}
@@ -2533,26 +2525,12 @@ public class World extends RulesObject implements GoodwillProvider {
 		return max;
 	}
 
-	private void sendRefugees(Region from, Region to, double amount, boolean notify, boolean foodOnly) {
-		ArrayList<Region> destinations = new ArrayList<>();
+	private void sendRefugees(Region from, Region to, double amount) {
 		amount = Math.min(amount, from.population - 1);
 		if (amount <= 0) return;
-		if (to == null) {
-			for (Region r : from.getNeighbors(this)) if (r.isLand() && (r.food > 0 || !foodOnly) && (r.getKingdom().equals(from.getKingdom()) || getNation(r.getKingdom()).getRelationship(from.getKingdom()).refugees == Relationship.Refugees.ACCEPT)) destinations.add(r);
-		} else {
-			destinations.add(to);
-		}
-		for (Region target : destinations) {
-			double targetUnrestFactor = 1;
-			double fromUnrestFactor = 1;
-			if (Ideology.CHALICE_OF_COMPASSION == getDominantIruhanIdeology()) {
-				if (target.religion.religion == Religion.IRUHAN) targetUnrestFactor = 0;
-				if (from.religion.religion == Religion.IRUHAN) fromUnrestFactor = 0;
-			}
-			addPopulation(target, amount / destinations.size());
-			addPopulation(from, -amount / destinations.size());
-			if (notify) notifyPlayer(target.getKingdom(), "Refugees Arrive in " + target.name, "Refugees from " + from.name + " have arrived in " + target.name + "." + (targetUnrestFactor > 0 ? " They are distraught and upset, causing increased popular unrest." : ""));
-		}
+		if (!to.isLand()) return;
+		addPopulation(to, amount);
+		addPopulation(from, -amount);
 	}
 
 	Geography getGeography() {
@@ -2651,7 +2629,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		}
 		for (Communication c : removeComm) communications.remove(c);
 		for (Communication c : communications) c.from = "";
-		for (Communication c : communications) if (c.signed == "Anonymous" && !c.intercepted.contains(kingdom)) {
+		for (Communication c : communications) if ("Anonymous".equals(c.signed) && !c.intercepted.contains(kingdom)) {
 			c.to.clear();
 			c.to.add(kingdom);
 		}

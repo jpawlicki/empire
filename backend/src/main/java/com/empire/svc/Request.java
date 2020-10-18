@@ -37,7 +37,7 @@ final class Request {
 			{
 				String val = req.getHeader("Authorization");
 				if (val != null && val.startsWith("Basic ")) {
-					String[] vals = new String(Base64.getDecoder().decode(val.substring("Basic ".length(), val.length())), StandardCharsets.UTF_8).split(":");
+					String[] vals = new String(Base64.getDecoder().decode(val.substring("Basic ".length(), val.length())), StandardCharsets.UTF_8).split(":", -1);
 					if (vals.length == 2) {
 						player = vals[0].toLowerCase();
 						password = vals[1];
@@ -67,7 +67,7 @@ final class Request {
 
 	private static String extract(String key, String query, String def) {
 		if (query == null) return def;
-		for (String param : query.split("&")) {
+		for (String param : query.split("&", -1)) {
 			if (param.startsWith(key + "=")) {
 				try {
 					return URLDecoder.decode(param.substring(key.length() + 1), "UTF-8");
