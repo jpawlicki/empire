@@ -39,7 +39,7 @@ public class NationSetup {
 	}
 
 	public static Defaults loadDefaults(int ruleSetId) throws IOException {
-		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/defaultnations.json", StandardCharsets.UTF_8)) {
+		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/defaultnations.json")) {
 			return new GsonBuilder().create().fromJson(r, Defaults.class);
 		} catch (FileNotFoundException e) {
 			try (InputStreamReader r = new InputStreamReader(NationSetup.class.getResourceAsStream("/rules/" + ruleSetId + "/defaultnations.json"), StandardCharsets.UTF_8)) {

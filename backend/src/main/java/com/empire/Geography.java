@@ -52,7 +52,7 @@ public class Geography {
 	}
 
 	private static Geography readGeography(int ruleSetId, int numPlayers) throws IOException {
-		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/maps/" + numPlayers + ".json", StandardCharsets.UTF_8)) {
+		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/maps/" + numPlayers + ".json")) {
 			return new GsonBuilder().create().fromJson(r, Geography.class);
 		} catch (FileNotFoundException e) {
 			try (InputStreamReader r = new InputStreamReader(Geography.class.getResourceAsStream("/rules/" + ruleSetId + "/maps/" + numPlayers + ".json"), StandardCharsets.UTF_8)) {

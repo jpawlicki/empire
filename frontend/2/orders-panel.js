@@ -491,13 +491,13 @@ class OrdersPanel extends HTMLElement {
 			let taxation = new Calc("+", taxParts).v;
 			let recruitment = new Calc("+", recruitParts).v;
 			let soldiers = 0;
-			let armyCost = 0;
 			let consumptionRate = parseInt(eRation.value) - 100;
 			let shipyardCount = 0;
 			for (let region of g_data.regions) if (region.kingdom == whoami) shipyardCount += region.calcShipbuilding().v;
+			let predictCosts = op.predictBudget(shadow);
+			let armyCost = predictCosts.salary;
 			for (let army of g_data.armies) if (army.kingdom == whoami) {
 				if (!contains(army.tags, "Higher Power")) soldiers += army.size;
-				armyCost += army.calcCost(shadow.querySelector("[name=action_army_" + army.id + "]").value.startsWith("Travel")).v;
 			}
 
 			let items = [];
@@ -533,6 +533,7 @@ class OrdersPanel extends HTMLElement {
 				budgetEle.appendChild(tr);
 			}
 			let addRow = function(source, amount) {
+				if (amount == 0) return;
 				let tr = document.createElement("tr");
 				{
 					let td = document.createElement("td");
@@ -554,6 +555,7 @@ class OrdersPanel extends HTMLElement {
 				}
 				budgetEle.appendChild(tr);
 			}
+			addRow("Actions", -predictCosts.actions);
 			addRow("Army/Navy Pay", -(parseInt(eBonus.value) * (recruitment + soldiers) / 100 + armyCost));
 			addRow("Tax Income", taxation);
 			if (shipyardCount > 0) addRow("Shipyards", (shipyardCount * (5 - parseInt(eShip.value)) / 5.0));
@@ -605,7 +607,7 @@ class OrdersPanel extends HTMLElement {
 					shadow.getElementById("food_rations_r" + r.id).textContent = Math.floor(actualRations * 100) + "%";
 
 					let weeks = 0;
-					let foodProjection = r.food;
+					let foodProjection = food;
 					let cropsProjection = r.crops;
 					let harvestCap = r.calcHarvestCapacity().v;
 					let consumption = r.calcConsumption(parseInt(eRation.value)).v;
@@ -778,7 +780,6 @@ class OrdersPanel extends HTMLElement {
 			if (armyCount == 0) shadow.getElementById("table_armies").style.display = "none";
 			if (navyCount == 0) shadow.getElementById("table_navies").style.display = "none";
 			if (nobleCount == 0) shadow.getElementById("table_nobles").style.display = "none";
-			for (let s of shadow.querySelectorAll("#units select")) s.addEventListener("input", computeEconomyConsequences);
 		}
 
 		{ // Letters Tab
@@ -857,10 +858,6 @@ class OrdersPanel extends HTMLElement {
 			let eShip = this.shadow.getElementById("economy_ship");
 			let eRation = this.shadow.getElementById("economy_ration");
 			let eBonus = this.shadow.getElementById("economy_recruit_bonus");
-			eTax.addEventListener("input", computeEconomyConsequences);	
-			eShip.addEventListener("input", computeEconomyConsequences);	
-			eRation.addEventListener("input", computeEconomyConsequences);
-			eBonus.addEventListener("input", computeEconomyConsequences);
 			postLoadOps.push(computeEconomyConsequences);
 
 			let food = shadow.getElementById("food_regions");
@@ -906,7 +903,7 @@ class OrdersPanel extends HTMLElement {
 				tr.appendChild(td);
 				food.appendChild(tr);
 			}
-			shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow, computeEconomyConsequences));
+			shadow.getElementById("economy_newtransfer").addEventListener("click", ()=>op.addEconomyRowOrder(shadow));
 		}
 
 		{ // Relations Tab
@@ -1202,6 +1199,7 @@ class OrdersPanel extends HTMLElement {
 			if (e.srcElement.type != "textarea") {
 				op.checkWarnings(shadow);
 				op.plannedMotions(shadow);
+				computeEconomyConsequences();
 			}
 			lastTime = Date.now();
 			setTimeout(function() {
@@ -1330,7 +1328,7 @@ class OrdersPanel extends HTMLElement {
 						op.getDivisionFunc(shadow, e, chi, dpid, shadow.getElementById("form"), false)();
 						if (op.divisions < dpid + 1) op.divisions = dpid + 1;
 					} else if (p.startsWith("economy_amount_")) {
-						op.addEconomyRowOrder(shadow, computeEconomyConsequences);
+						op.addEconomyRowOrder(shadow);
 					} else if (p.startsWith("economy_bribe_amount_")) {
 						op.addBribe(shadow);
 					} else if (p.startsWith("letter_") && p.endsWith("_sig")) {
@@ -1599,7 +1597,7 @@ class OrdersPanel extends HTMLElement {
 		}
 	}
 
-	addEconomyRowOrder(shadow, computeEconomyConsequences) {
+	addEconomyRowOrder(shadow) {
 		this.shadow.getElementById("t_food_transferheader").style.display = "table-row";
 		let regions = [];
 		let id = this.economyRowCount;
@@ -1620,11 +1618,9 @@ class OrdersPanel extends HTMLElement {
 			dests.sort();
 			td2.innerHTML = "";
 			let d = o.select("economy_to_" + id, dests);
-			d.addEventListener("change", computeEconomyConsequences);
 			td2.appendChild(d);
 		});
 		sel.dispatchEvent(new Event("change"));
-		sel.addEventListener("change", computeEconomyConsequences);
 		td.appendChild(sel);
 		tr.appendChild(td);
 		tr.appendChild(td2);
@@ -1640,7 +1636,6 @@ class OrdersPanel extends HTMLElement {
 			if (getNation(whoami).calcStateReligion() == "Iruhan (Chalice of Compassion)") cost = 0;
 			td4.innerHTML = cost;
 		});
-		amount.addEventListener("change", computeEconomyConsequences);
 		td.appendChild(amount);
 		td.appendChild(document.createTextNode("k"));
 		td4.innerHTML = "0";
@@ -1918,6 +1913,56 @@ class OrdersPanel extends HTMLElement {
 		shadow.getElementById("plot_newplots").appendChild(d);
 	}
 
+	predictBudget(shadow) {
+		let projectedConstructionCost = 0;
+		let projectedSalaries = 0;
+		for (let army of g_data.armies) if (army.kingdom == whoami) {
+			let travelling = shadow.querySelector("[name=action_army_" + army.id + "]").value.startsWith("Travel");
+			projectedSalaries += army.calcCost(travelling).v;
+		}
+		let capables = [];
+		for (let c of g_data.characters) {
+			if (c.kingdom == whoami) {
+				let cname = c.name.replace(/[ ']/g, "_");
+				capables.push({
+						"who": c,
+						"act": shadow.querySelector("select[name=action_" + cname + "]").value,
+						"loc": c.location,
+						"warn": shadow.getElementById("warning_character_" + cname)});
+			}
+		}
+		for (let q of shadow.querySelectorAll("select")) {
+			if (!q.name.startsWith("action_noble_")) continue;
+			capables.push({
+				"who": null,
+				"act": q.value,
+				"loc": parseInt(q.name.replace("action_noble_", "")),
+				"warn": shadow.getElementById(q.name.replace("action", "warning"))});
+		}
+		for (let c of capables) c.warn.innerHTML = "";
+		let fwarns = [];
+		for (let c of capables) {
+			if (!c.act.startsWith("Build ") && c.act != "Establish Spy Ring") continue;
+			fwarns.push(c.warn);
+			if (c.act == "Establish Spy Ring") {
+				projectedConstructionCost += g_data.regions[c.loc].calcCostToEstablishSpyRing(whoami, c.who).v;
+			} else {
+				if (c.act.includes("Shipyard")) {
+					projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami, c.who).v;
+				} else if (c.act.includes("Fortifications")) {
+					projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, c.who).v;
+				} else if (c.act.includes("Temple")) {
+					let type = religionFromIdeology(c.act.replace("Build Temple ", ""));
+					projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildTemple(whoami, type, c.who).v;
+				}
+			}
+		}
+		return {
+			"salary": projectedSalaries,
+			"actions": projectedConstructionCost,
+		};
+	}
+
 	checkWarnings(shadow) {
 		let warmies = [];
 		for (let a of g_data.armies) {
@@ -1976,52 +2021,10 @@ class OrdersPanel extends HTMLElement {
 			entry.w.innerHTML = warn;
 		}
 		{ // Warn about construction cost overruns.
-			let projectedConstructionCost = 0;
-			let projectedSalaries = 0;
-			for (let army of g_data.armies) if (army.kingdom == whoami) {
-				let travelling = shadow.querySelector("[name=action_army_" + army.id + "]").value.startsWith("Travel");
-				projectedSalaries += army.calcCost(travelling).v;
-			}
-			let capables = [];
-			for (let c of g_data.characters) {
-				if (c.kingdom == whoami) {
-					let cname = c.name.replace(/[ ']/g, "_");
-					capables.push({
-							"who": c,
-							"act": shadow.querySelector("select[name=action_" + cname + "]").value,
-							"loc": c.location,
-							"warn": shadow.getElementById("warning_character_" + cname)});
-				}
-			}
-			for (let q of shadow.querySelectorAll("select")) {
-				if (!q.name.startsWith("action_noble_")) continue;
-				capables.push({
-					"who": null,
-					"act": q.value,
-					"loc": parseInt(q.name.replace("action_noble_", "")),
-					"warn": shadow.getElementById(q.name.replace("action", "warning"))});
-			}
-			for (let c of capables) c.warn.innerHTML = "";
-			let fwarns = [];
-			for (let c of capables) {
-				if (!c.act.startsWith("Build ") && c.act != "Establish Spy Ring") continue;
-				fwarns.push(c.warn);
-				if (c.act == "Establish Spy Ring") {
-					projectedConstructionCost += g_data.regions[c.loc].calcCostToEstablishSpyRing(whoami, c.who).v;
-				} else {
-					if (c.act.includes("Shipyard")) {
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildShipyard(whoami, c.who).v;
-					} else if (c.act.includes("Fortifications")) {
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildFortifications(whoami, c.who).v;
-					} else if (c.act.includes("Temple")) {
-						let type = religionFromIdeology(c.act.replace("Build Temple ", ""));
-						projectedConstructionCost += g_data.regions[c.loc].calcCostToBuildTemple(whoami, type, c.who).v;
-					}
-				}
-			}
-			if (projectedConstructionCost > getNation(whoami).gold) {
+			let spending = this.predictBudget(shadow);
+			if (spending.actions > getNation(whoami).gold) {
 				for (let w of fwarns) w.innerHTML += " (insufficient gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold on actions)";
-			} else if (projectedConstructionCost + projectedSalaries > getNation(whoami).gold) {
+			} else if (spending.actions + spending.salaries > getNation(whoami).gold) {
 				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost + projectedSalaries) + " of " + Math.round(getNation(whoami).gold) + " gold on actions and troop salaries)";
 			}
 		}

@@ -28,7 +28,7 @@ public class Rules {
 	}
 
 	private static Rules readRules(int ruleSetId) throws IOException {
-		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/rules.json", StandardCharsets.UTF_8)) {
+		try (FileReader r = new FileReader("resources/rules/" + ruleSetId + "/rules.json")) {
 			return new GsonBuilder().create().fromJson(r, Rules.class);
 		} catch (FileNotFoundException e) {
 			try (InputStreamReader r = new InputStreamReader(Rules.class.getResourceAsStream("/rules/" + ruleSetId + "/rules.json"), StandardCharsets.UTF_8)) {
