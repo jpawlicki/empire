@@ -603,9 +603,9 @@ public class World extends RulesObject implements GoodwillProvider {
 			doctrineChanges();
 			orderOverrides();
 			armyActionsNonTravel();
+			characterActions();
 			armyActionsTravel();
 			nobleActions();
-			characterActions();
 			spawnCultists();
 			bribePirates();
 			spawnPirates();
