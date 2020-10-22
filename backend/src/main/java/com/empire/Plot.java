@@ -324,7 +324,7 @@ abstract class Plot {
 
 		@Override
 		protected String getDescription() {
-			return "incite popular unrest in " + parameters.region.get().name;
+			return "incite noble unrest in " + parameters.region.get().name;
 		}
 
 		@Override
@@ -435,7 +435,7 @@ abstract class Plot {
 
 		@Override
 		protected String getDescription() {
-			return "smuggle " + Math.round(parameters.amount.get()) + "k measures of food from " + parameters.region.get().name + " to " + parameters.destination.get().name;
+			return "smuggle " + Math.round(parameters.amount.get()) + "k measures of food from " + parameters.region.get().name;
 		}
 
 		@Override
