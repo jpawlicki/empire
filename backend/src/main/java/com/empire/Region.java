@@ -368,14 +368,16 @@ class Region extends RulesObject {
 			if (!coreRegionOf.equals(getKingdom())) w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, (actualEat - population) * getRules().foodFedPlentifulPointFactor);
 			unrestPopular.add(1.0 - actualRations);
 		} else if (actualRations >= 0.75) {
-			if (Nation.getStateReligion(kingdom, w) == Ideology.ALYRJA) {
-				unrestPopular.add(1.0 - actualRations / 2);
-			} else {
-				unrestPopular.add(1.0 - actualRations);
-			}
+			double mod = 1;
+			if (Nation.getStateReligion(kingdom, w) == Ideology.ALYRJA) mod -= 0.5;
+			if (w.getNation(getKingdom()).hasTag(Nation.Tag.STOIC)) mod -= 0.5;
+			unrestPopular.add((1.0 - actualRations) * mod);
 		} else {
+			double mod = 1;
+			if (Nation.getStateReligion(kingdom, w) == Ideology.ALYRJA) mod -= 0.5;
+			if (w.getNation(getKingdom()).hasTag(Nation.Tag.STOIC)) mod -= 0.5;
 			double dead = (0.75 - actualRations) * 0.1 * population;
-			unrestPopular.add(Math.min(0.35, 1.0 - actualRations));
+			unrestPopular.add(Math.min(0.35, (1.0 - actualRations) * mod));
 			population -= dead;
 			w.score(coreRegionOf, Nation.ScoreProfile.PROSPERITY, -1 / 8000.0 * dead);
 			w.notifyPlayer(getKingdom(), "Starvation", Math.round(dead) + " have starved to death in " + name + ".");

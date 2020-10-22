@@ -556,7 +556,7 @@ class OrdersPanel extends HTMLElement {
 				budgetEle.appendChild(tr);
 			}
 			addRow("Actions", -predictCosts.actions);
-			addRow("Army/Navy Pay", -(parseInt(eBonus.value) * (recruitment + soldiers) / 100 + armyCost));
+			addRow("Army/Navy Pay", -(Math.max(0, parseInt(eBonus.value) * (recruitment + soldiers) / 100) + armyCost));
 			addRow("Tax Income", taxation);
 			if (shipyardCount > 0) addRow("Shipyards", (shipyardCount * (5 - parseInt(eShip.value)) / 5.0));
 			{ // Mystery Row
@@ -808,14 +808,15 @@ class OrdersPanel extends HTMLElement {
 					last_date = l.post_date;
 				}
 				let lt = document.createElement("div");
-				let fromClause = from == whoami ? "" : " from <kingdom-label kingdom=\"" + from + "\">";
+				let fromClause = from == whoami ? "" : " from <kingdom-label kingdom=\"" + from + "\"></kingdom-label>";
 				let toClause = "";
 				if (l.to.length != 1 || l.to[0] != whoami) {
+					l.to.sort();
 					let comma = false;
 					for (let to of l.to) {
 						if (comma) toClause += ",";
 						else toClause += " to";
-						toClause += " <kingdom-label kingdom=\"" + to + "\">";
+						toClause += " <kingdom-label kingdom=\"" + to + "\"></kingdom-label>";
 						comma = true;
 					}
 				}
@@ -937,8 +938,8 @@ class OrdersPanel extends HTMLElement {
 						<option value="REFUSE">No</option>
 					</select>`,
 					`<select name="rel_${k}_construct">
-						<option value="FORBID">Yes</option>
-						<option value="PERMIT">No</option>
+						<option value="PERMIT">Yes</option>
+						<option value="FORBID">No</option>
 					</select>`,
 					`<select name="rel_${k}_fealty">
 						<option value="ACCEPT">Yes</option>

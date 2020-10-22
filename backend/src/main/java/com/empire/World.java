@@ -2630,8 +2630,7 @@ public class World extends RulesObject implements GoodwillProvider {
 		for (Communication c : removeComm) communications.remove(c);
 		for (Communication c : communications) c.from = "";
 		for (Communication c : communications) if ("Anonymous".equals(c.signed) && !c.intercepted.contains(kingdom)) {
-			c.to.clear();
-			c.to.add(kingdom);
+			c.to = Arrays.asList(kingdom);
 		}
 		// Filter hidden characters, except with Alyrja.
 		for (Character c : characters) {
