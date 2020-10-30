@@ -89,6 +89,12 @@ class ArtificialIntelligence {
 		return ret;
 	}
 
+	private int getNobleCount(String who) {
+		int nobleCount = 0;
+		for (Region rr : world.regions) if (who.equals(rr.getKingdom()) && rr.noble != null) nobleCount++;
+		return nobleCount;
+	}
+
 	private List<Intent> getPossibleIntents() {
 		ArrayList<Intent> ret = new ArrayList<>();
 		ret.add(new StealGold());
@@ -381,10 +387,8 @@ class ArtificialIntelligence {
 			HashMap<String, String> orders = new HashMap<>();
 			// Tribute top threats.
 			for (RelationshipPiece r : allocatedPieces.relationships) {
-				int nobleCount = 0;
 				double ourNavy = 0;
 				double theirNavy = 0;
-				for (Region rr : world.regions) if (r.who.equals(rr.getKingdom()) && rr.noble != null) nobleCount++;
 				for (Army a : world.armies) {
 					if (a.type != Army.Type.NAVY) continue;
 					if (whoami.equals(a.kingdom)) {
@@ -393,7 +397,7 @@ class ArtificialIntelligence {
 						theirNavy += a.size;
 					}
 				}
-				if (nobleCount >= 2) {
+				if (getNobleCount(r.who) >= 2) {
 					orders.put("rel_" + r.who + "_attack", "DEFEND");
 					orders.put("rel_" + r.who + "_tribute", "0.25");
 				} else if (ourNavy < theirNavy * 1.2) {
@@ -453,6 +457,7 @@ class ArtificialIntelligence {
 					if (rel.battle == Relationship.War.DEFEND) continue;
 					if (r.calcMinConquestStrength(world) > bestArmy.calcStrength(world, null, 0)) continue;
 					if (regionDistances.get(r) > 1) continue;
+					if (world.getNation(r.getKingdom()).getRelationship(whoami).tribute >= 0.25 && getNobleCount(whoami) > 0) continue;
 					if (world.getNation(whoami).coreRegions.contains(r.id)) rScore *= 4;
 					if (rScore > bestScore) {
 						bestScore = rScore;
@@ -517,7 +522,8 @@ class ArtificialIntelligence {
 
 		@Override
 		boolean feasible() {
-			return !world.getNation(whoami).hasTag(Nation.Tag.REPUBLICAN);
+			// Republicans can never have nobles, but also don't start having nobles if previously avoided.
+			return !world.getNation(whoami).hasTag(Nation.Tag.REPUBLICAN) && getNobleCount(whoami) != 0;
 		}
 
 		@Override
@@ -1046,7 +1052,7 @@ class ArtificialIntelligence {
 						break;
 					}
 				}
-				if (sharesArea) {
+				if (sharesArea || (world.getNation(r.who).getRelationship(whoami).tribute >= 0.25 && getNobleCount(whoami) > 0)) {
 					orders.put("rel_" + r.who + "_attack", "NEUTRAL");
 					orders.put("rel_" + r.who + "_tribute", "0");
 				} else {
