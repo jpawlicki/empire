@@ -22,16 +22,16 @@ class KingdomReport extends HTMLElement {
 		let stateReligionTooltip = "State religion is the most popular religion and ideology among the regions ruled by a nation. " + kingdom.name + " rules: " + stateReligionSharesText.join(", ") + ". ";
 		stateReligionTooltip += {
 			"Iruhan (Sword of Truth)": "As a consequence of their widespread devotion to the Sword of Truth ideology, the armies and navies of " + kingdom.name + " are stronger.",
-			"Iruhan (Vessel of Faith)": "As a consequence of their widespread devotion to the Vessel of Faith ideology, the people of " + kingdom.name + " are made happy whenever any region anywhere converts to the Vessel of Faith ideology.",
+			"Iruhan (Vessel of Faith)": "As a consequence of their widespread devotion to the Vessel of Faith ideology, the people of " + kingdom.name + " can oversee construction in regions that would normally be forbidden.",
 			"Iruhan (Chalice of Compassion)": "As a consequence of their widespread devotion to the Chalice of Compassion ideology, the people of " + kingdom.name + " are willing to subsidize the transfers of food.",
-			"Iruhan (Tapestry of People)": "As a consequence of their widespread devotion to the Tapestry of Peoples ideology, the soldiers of " + kingdom.name + " are stronger for every unique ideology in the nation.",
-			"Northern (Alyrja)": "As a consequence of their widespread devotion to Alyrja, the people of " + kingdom.name + " have eyes and ears in all ruled and adjacent regions who detect all hidden units.",
+			"Iruhan (Tapestry of People)": "As a consequence of their widespread devotion to the Tapestry of Peoples ideology, the soldiers of " + kingdom.name + " are stronger for every unique temple in the nation.",
+			"Northern (Alyrja)": "As a consequence of their widespread devotion to Alyrja, the people of " + kingdom.name + " are more accepting of limited rations.",
 			"Northern (Rjinku)": "As a consequence of their widespread devotion to Rjinku, the people of " + kingdom.name + " make excellent generals.",
-			"Northern (Lyskr)": "As a consequence of their widespread devotion to Lyskr, the people of " + kingdom.name + " are more skilled at plotting.",
+			"Northern (Lyskr)": "As a consequence of their widespread devotion to Lyskr, the people of " + kingdom.name + " can establish spy rings more easily.",
 			"Northern (Syrjen)": "As a consequence of their widespread devotion to Syrjen, the people of " + kingdom.name + " are skilled traders and profit more from dominance in sea regions.",
 			"Tavian (Flame of Kith)": "As a consequence of their widespread adoption of the Flame of Kith, the people of " + kingdom.name + " make excellent governors.",
 			"Tavian (River of Kuun)": "As a consequence of their widespread adoption of the River of Kuun, the people of " + kingdom.name + " generate wealth by trade and tribute.",
-			"Company": "This nation does not rule any territory, and focuses on efficiency, making their plots more effective and lowering the cost of their armies and navies.",
+			"Company": "This nation does not rule any territory, and focuses on efficiency, lowering the cost of their armies and navies.",
 		}[stateReligion];
 		let html = `
 			<div id="abspos">

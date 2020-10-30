@@ -930,7 +930,7 @@ let doctrineDescriptions = {
 };
 
 let g_scoreProfiles = {
-	"PROSPERITY": {"selectable": true,  "description": ["+1 point per million rations of food your population consumes.", "+1 point per million measures consumed due to rations above 100%.", "-1 point per 6000 civilians that starve to death in your historical regions."]},
+	"PROSPERITY": {"selectable": true,  "description": ["+1 point per million rations of food your population consumes.", "+1 point per million measures consumed due to rations above 100%.", "-1 point per 8000 civilians that starve to death in your historical regions."]},
 	"HAPPINESS":  {"selectable": true,  "description": ["+1 point per turn all your population is below 25% unrest.", "+1 point per turn 90% of your population is below 35% unrest.", "-1 point per turn 25% of your population is above 25% unrest.", "-2 points per turn 33% of your population is above 50% unrest."]},
 	"RICHES":     {"selectable": true,  "description": ["+2 points per turn you have more than 2000 gold.", "+1 point per turn you have more than 500 gold.", "-1 point per turn you have less than 300 gold."]},
 	"TERRITORY":  {"selectable": true,  "description": ["+3 points whenever you gain rulership of a region.", "-3 points whenever you lose rulership of a region."]},
@@ -940,19 +940,19 @@ let g_scoreProfiles = {
 };
 		
 let culture_tooltips = {
-	"eolsung": "Eolsung are hearty northerners. Soldiers recruited in this region make skilled raiders, able to conceal their presence and attack enemy supply lines.",
-	"anpilayn": "Anpilayn are cultured southerners. Soldiers recruited in this region are well-equipped and extremely formidable in battle.",
-	"hansa": "Hansa are seafaring southerners. Soldiers recruited in this region make skilled sailors who can impress their enemies into service.",
-	"tavian": "Tavian are desert-dwelling mystics. Soldiers recruited in this region make excellent riders and offset their own cost while garrisoning a region.",
-	"tyrgaetan": "Tyrgaetan are nomadic hunters. Soldiers recruited in this region are immune to attrition due to climate and skilled at moving quickly through friendly territory."
+	"eolsung": "Eolsung are hearty northerners. This region generates more recruits, but has reduced tax income. Soldiers recruited in this region make skilled raiders, able to conceal their presence and attack enemy supply lines.",
+	"anpilayn": "Anpilayn are cultured southerners. This region generates fewer recruits, but has more tax income. Soldiers recruited in this region are well-equipped and extremely formidable in battle.",
+	"hansa": "Hansa are seafaring southerners. This region generates very few recruits, but shipyards are more productive. Soldiers recruited in this region make skilled sailors who can impress their enemies into service.",
+	"tavian": "Tavian are desert-dwelling mystics. This region generates fewer recruits, but plants more crops. Soldiers recruited in this region make excellent riders and offset their own cost while garrisoning a region.",
+	"tyrgaetan": "Tyrgaetan are nomadic hunters. This region generates much more recruits, but has reduced tax income and plants fewer crops. Soldiers recruited in this region are immune to attrition due to climate and skilled at moving quickly through friendly territory."
 };
 
 let religion_tooltips = {
 	"Iruhan (Sword of Truth)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his cautions against the lure of idols and false gods. Consequently, this region experiences increased recruitment.",
 	"Iruhan (Vessel of Faith)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his message that a divine conscience is a part of each person. They reject the authority of the hierarchical Church of Iruhan, in favor of local ministers. Consequently, they do not suffer clerical unrest and are pleased whenever a temple following the Vessel of Faith ideology is constructed.",
-	"Iruhan (Tapestry of People)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his sermon that all people have an intrinsic value, regardless of their culture or creed, and that no single culture or creed has uncovered the divine truth. Consequently, they seek out new ideas differing viewpoints, and are more effective if neighboring a culturally, religiously, or ideologically diverse region.",
+	"Iruhan (Tapestry of People)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his sermon that all people have an intrinsic value, regardless of their culture or creed, and that no single culture or creed has uncovered the divine truth. Consequently, they seek out new ideas differing viewpoints, and receive a discount when constructing temples of any faith and ideology.",
 	"Iruhan (Chalice of Compassion)": "This region's inhabitants primarily follow the teachings of Iruhan, a philanthropist and miracle-worker. They pay particular attention to his conviction that all living beings must be treated with understanding and compassion. Consequently, they are more likely to sustainably treat their environments but generate less tax income.",
-	"Northern (Alyrja)": "This region's inhabitants primarily follow the eldritch deity known as Alyrja. Alyrja demands that her worshippers be constantly vigilant, guarding those that trust them against all danger, and rewards her faithful with magical powers to achieve this. Consequently, the inhabitants of this region destroy pirates and don't mind limited rations.",
+	"Northern (Alyrja)": "This region's inhabitants primarily follow the eldritch deity known as Alyrja. Alyrja demands that her worshippers be constantly vigilant, guarding those that trust them against all danger, and rewards her faithful with magical powers to achieve this. Consequently, they detect all hidden armies, navies, and characters in this and adjacent regions. Pirates are weaker in this region.",
 	"Northern (Rjinku)": "This region's inhabitants primarily follow the eldritch deity known as Rjinku. Rjinku demands that his worshippers show courage in all things, embrace conflict, and battle to prove their worth. Consequently, inhabitants of this region are more likely to become soldiers.",
 	"Northern (Syrjen)": "This region's inhabitants primarily follow the eldritch deity known as Syrjen. Syrjen demands that her worshippers work cooperatively with each other to build and create. Consequently, this region benefits from increased economic activity.",
 	"Northern (Lyskr)": "This region's inhabitants primarily follow the eldritch deity known as Lyskr. Lyskr demands that his worshippers guard their secrets closely. Consequently, foreigners find it more difficult to conduct intrigue here.",
