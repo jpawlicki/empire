@@ -1773,7 +1773,7 @@ class OrdersPanel extends HTMLElement {
 			"type": "select",
 			"label": "Where",
 			"f": function() {
-				return g_data.regions.filter(r => r.type == "land").filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.name}});
+				return g_data.regions.filter(r => r.type == "land").filter(r => r.noble.name != undefined).map(r => { return {"name": "(" + r.kingdom + ") " + r.name, "value": r.id}});
 			}
 		};
 
