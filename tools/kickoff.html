@@ -40,8 +40,10 @@
 				return false;
 			}
 
-			function postFormAdvance(gid, turn) {
+			function postFormAdvance(turn) {
 				let req = new XMLHttpRequest();
+			    let gid = parseInt(document.getElementById("adv_gid").value);
+
 				req.open("post", g_server + "/entry/advanceworld?gid=" + gid + "&t=" + turn, true);
 				addAuth(req, "gm", document.getElementById("gm_adv_password").value);
 				req.onerror = function (e) {
@@ -90,14 +92,14 @@
 		<h1>Advance Game</h1>
 		<div id="advances">
 			<label>GM Password: <input id="gm_adv_password" type="password"></input></label>
+			<label>Game Id: <input id="adv_gid" type="number" value="5614884"></input></label>
 		</div>
 		<script>
-			let game = 5614884;
 			let f = document.getElementById("advances");
 			for (let i = 1; i < 30; i++) {
 				let b = document.createElement("button");
-				b.appendChild(document.createTextNode("Advance game " + game + " turn " + i));
-				b.addEventListener("click", ()=>postFormAdvance(game, i));
+				b.appendChild(document.createTextNode("Advance turn " + i));
+				b.addEventListener("click", ()=>postFormAdvance(i));
 				f.appendChild(b);
 			}
 			for (let i = 0; i < 60 / 5 * 24; i++) {

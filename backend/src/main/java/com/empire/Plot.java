@@ -304,7 +304,7 @@ abstract class Plot {
 
 		@Override
 		protected void actualize(World w, Map<String, World.Budget> budgets) {
-			parameters.region.get().unrestPopular.add(parameters.amount.get());
+			parameters.region.get().unrestPopular.add(parameters.amount.get() / 100);
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 		}
 	}
@@ -324,12 +324,12 @@ abstract class Plot {
 
 		@Override
 		protected String getDescription() {
-			return "incite popular unrest in " + parameters.region.get().name;
+			return "incite noble unrest in " + parameters.region.get().name;
 		}
 
 		@Override
 		protected void actualize(World w, Map<String, World.Budget> budgets) {
-			parameters.region.get().noble.unrest.add(parameters.amount.get());
+			parameters.region.get().noble.unrest.add(parameters.amount.get() / 100);
 			w.notifyPlayer(parameters.region.get().getKingdom(), "Plot", "A plot to " + getDescription() + " was successful.");
 		}
 	}
