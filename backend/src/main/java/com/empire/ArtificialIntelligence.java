@@ -575,7 +575,7 @@ class ArtificialIntelligence {
 
 		@Override
 		double valueOf(TaxPolicyPiece piece) {
-			return 1;
+			return 0.75;
 		}
 
 		// TODO: consider temple construction?
@@ -972,7 +972,7 @@ class ArtificialIntelligence {
 
 	/** An intent to feed ruled citizens. */
 	private class FeedPeople extends Intent {
-		private final boolean foodShort;
+		private final double foodProjection;
 
 		FeedPeople() {
 			int turnsUntilHarvest = 4 - world.date % 4;
@@ -983,7 +983,7 @@ class ArtificialIntelligence {
 				totalStocks += r.food;
 				totalDemand += r.population;
 			}
-			foodShort = totalStocks < totalDemand * turnsUntilHarvest;
+			foodProjection = turnsUntilHarvest == 0 ? 1.0 : totalStocks / (totalDemand * turnsUntilHarvest);
 		}
 
 		@Override
@@ -995,14 +995,21 @@ class ArtificialIntelligence {
 		@Override
 		double valueOf(FoodPiece piece) {
 			// Food pieces are critical if food is short, otherwise merely important.
-			return foodShort ? 1 : 0.75;
+			return foodProjection < 1.0 ? 1 : 0.75;
 		}
 
 		@Override
 		double valueOf(RationPolicyPiece piece) {
 			// If rationing is critical to feed people, owning the ration policy is important.
 			// Otherwise, the rationing policy can be given to other intents if they are important.
-			return foodShort ? 1 : 0.2;
+			return foodProjection < 1.0 ? 1 : 0.2;
+		}
+
+		@Override
+		double valueOf(TaxPolicyPiece piece) {
+			// If rationing is below a given point, owning the tax policy is also important.
+			// Otherwise, the tax policy can be given to other intents if they are important.
+			return foodProjection < 0.92 ? 1 : 0.2;
 		}
 
 		@Override
@@ -1015,7 +1022,23 @@ class ArtificialIntelligence {
 
 		@Override
 		Map<String, String> generateOrders() {
-			return new HashMap<>(); // For now, just hoard food assigned here.
+			HashMap<String, String> orders = new HashMap<>();
+			boolean hasTax = !allocatedPieces.taxPolicy.isEmpty();
+			boolean hasRation = !allocatedPieces.rationPolicy.isEmpty();
+			if (hasRation) {
+				// Never set out to starve or eat plentifully.
+				double rationPlan = Math.max(Math.min(foodProjection, 1.0), 0.75);
+				orders.put("economy_ration", Double.toString(Math.floor(rationPlan * 100)));
+			}
+			if (hasTax) {
+				double tax = 1.0;
+				if (foodProjection < 0.8) tax = 0.0;
+				else if (foodProjection < 0.84) tax = 0.25;
+				else if (foodProjection < 0.88) tax = 0.50;
+				else if (foodProjection < 0.92) tax = 0.75;
+				orders.put("economy_tax", Double.toString(100 * tax));
+			}
+			return orders;
 		}
 	}
 
