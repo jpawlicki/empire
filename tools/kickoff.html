@@ -40,6 +40,22 @@
 				return false;
 			}
 
+			function postFormForceStart() {
+				let req = new XMLHttpRequest();
+				let gid = parseInt(document.getElementById("adv_gid").value);
+
+				req.open("post", g_server + "/entry/forcestart?gid=" + gid, true);
+				addAuth(req, "gm", document.getElementById("gm_adv_password").value);
+				req.onerror = function (e) {
+					window.alert(req.status);
+				};
+				req.onload = function (ev) {
+					window.alert(req.status);
+				};
+				req.send();
+				return false;
+			}
+
 			function postFormAdvance(turn) {
 				let req = new XMLHttpRequest();
 			    let gid = parseInt(document.getElementById("adv_gid").value);
@@ -93,6 +109,9 @@
 		<div id="advances">
 			<label>GM Password: <input id="gm_adv_password" type="password"></input></label>
 			<label>Game Id: <input id="adv_gid" type="number" value="5614884"></input></label>
+			<form onsubmit="return postFormForceStart();">
+				<button>Force Start</button>
+			</form>
 		</div>
 		<script>
 			let f = document.getElementById("advances");

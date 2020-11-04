@@ -71,6 +71,8 @@ POST /entry/setup?gid=1234&k=Aefoss&t=0&password=foobar
 	Set customization info for the kingdom, if unset.
 POST /entry/advanceworld?gid=1234
 	Check cadence and possibly advance world to next step, mail players.
+POST /entry/forcestart?gid=1234
+	Start a game regardless of whether minimum players are present or deadline met.
 POST /entry/startlobby?gid=1234
 	Start a new lobby.
 POST /entry/newplayer
@@ -146,6 +148,10 @@ public class EntryServlet extends HttpServlet {
 				}
 			} else if (req.getRequestURI().equals("/entry/advanceworld")) {
 				if (!postAdvanceWorld(r)) {
+					err = "Failure.";
+				}
+			} else if (req.getRequestURI().equals("/entry/forcestart")) {
+				if (!postForceStart(r)) {
 					err = "Failure.";
 				}
 			} else if (req.getRequestURI().equals("/entry/startlobby")) {
@@ -420,6 +426,20 @@ public class EntryServlet extends HttpServlet {
 			dataSource.commit();
 		}
 		return "";
+	}
+
+	private boolean postForceStart(Request r) throws PasswordException {
+		if (!Player.passesGmPassword(r.password)) throw new PasswordException("Password fails GM ACL.");
+		try (DataSource dataSource = DataSource.transactional()) {
+			startWorld(dataSource.loadLobby(r.gameId), dataSource);
+			dataSource.commit();
+		} catch (EntityNotFoundException e) {
+			return false;
+		} catch (IOException e) {
+			log.log(Level.SEVERE, "Failed to read rule data.", e);
+			return false;
+		}
+		return true;
 	}
 
 	private boolean postAdvanceWorld(Request r) throws PasswordException {
