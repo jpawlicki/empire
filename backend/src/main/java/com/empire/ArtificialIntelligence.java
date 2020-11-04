@@ -1066,16 +1066,33 @@ class ArtificialIntelligence {
 		Map<String, String> generateOrders() {
 			HashMap<String, String> orders = new HashMap<>();
 			HashSet<Integer> myArmyLocs = new HashSet<>();
-			for (Army c : world.armies) if (whoami.equals(c.kingdom)) myArmyLocs.add(c.location);
-			for (RelationshipPiece r : allocatedPieces.relationships) {
-				boolean sharesArea = false;
-				for (Army c : world.armies) {
-					if (r.who.equals(c.kingdom) && myArmyLocs.contains(c.location)) {
-						sharesArea = true;
-						break;
+			HashSet<Integer> adjacentSeaLocs = new HashSet<>();
+			for (Army c : world.armies) {
+				if (whoami.equals(c.kingdom)) {
+					myArmyLocs.add(c.location);
+					if (c.type == Army.Type.NAVY) {
+						for (Region r : world.regions.get(c.location).getNeighbors(world)) {
+							if (r.isSea()) adjacentSeaLocs.add(r.id);
+						}
 					}
 				}
-				if (sharesArea || (world.getNation(r.who).getRelationship(whoami).tribute >= 0.25 && getNobleCount(whoami) > 0)) {
+			}
+			for (RelationshipPiece r : allocatedPieces.relationships) {
+				boolean sharesArea = false;
+				boolean inAdjacentSea = false;
+				for (Army c : world.armies) {
+					if (r.who.equals(c.kingdom)) {
+						if (myArmyLocs.contains(c.location)) {
+							sharesArea = true;
+							break;
+						} else if (adjacentSeaLocs.contains(c.location)) {
+							inAdjacentSea = true;
+						}
+					}
+				}
+				if (sharesArea
+					|| (inAdjacentSea && !world.getNation(r.who).hasTag(Nation.Tag.SNEAKY) && (Nation.getStateReligion(r.who, world) != Ideology.LYSKR))
+					|| (world.getNation(r.who).getRelationship(whoami).tribute >= 0.25 && getNobleCount(whoami) > 0)) {
 					orders.put("rel_" + r.who + "_attack", "NEUTRAL");
 					orders.put("rel_" + r.who + "_tribute", "0");
 				} else {
