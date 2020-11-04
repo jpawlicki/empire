@@ -42,7 +42,7 @@
 
 			function postFormForceStart() {
 				let req = new XMLHttpRequest();
-			    let gid = parseInt(document.getElementById("adv_gid").value);
+				let gid = parseInt(document.getElementById("adv_gid").value);
 
 				req.open("post", g_server + "/entry/forcestart?gid=" + gid, true);
 				addAuth(req, "gm", document.getElementById("gm_adv_password").value);

@@ -643,7 +643,7 @@ class ArtificialIntelligence {
 		}
 	}
 
-	/** An intent for Cardinals to travel to the holy city and inspire. */
+	/** An intent for Cardinals to hide-travel to the holy city and inspire. */
 	private class CardinalInspire extends Intent {
 		public CardinalInspire() {
 		}
@@ -676,7 +676,7 @@ class ArtificialIntelligence {
 					int destination = -1;
 					for (Region r : world.regions) {
 						if (regionDistances.get(r) == currentDistance - 1 && r.getNeighborsIds(world).contains(c.location)) {
-							orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Travel to " + r.name);
+							orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Hide in " + r.name);
 							break;
 						}
 					}
