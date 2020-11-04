@@ -98,6 +98,7 @@ class ArtificialIntelligence {
 	private List<Intent> getPossibleIntents() {
 		ArrayList<Intent> ret = new ArrayList<>();
 		ret.add(new StealGold());
+		ret.add(new CardinalInspire());
 		ret.add(new Defense());
 		ret.add(new Attack());
 		ret.add(new Happiness());
@@ -637,6 +638,49 @@ class ArtificialIntelligence {
 				orders.put("plot_nation_" + plots, k);
 				orders.put("plot_amount_" + plots, Double.toString(Math.floor(leverage * 4)));
 				plots++;
+			}
+			return orders;
+		}
+	}
+
+	/** An intent for Cardinals to travel to the holy city and inspire. */
+	private class CardinalInspire extends Intent {
+		public CardinalInspire() {
+		}
+
+		@Override
+		boolean feasible() {
+			Ideology r = Nation.getStateReligion(whoami, world);
+			return (r.religion == Religion.IRUHAN && r != Ideology.VESSEL_OF_FAITH);
+		}
+
+		@Override
+		double importance() {
+			return 1;
+		}
+
+		double valueOf(Character piece) {
+			return piece.hasTag(Character.Tag.CARDINAL) ? 1.0 : 0;
+		}
+
+		@Override
+		Map<String, String> generateOrders() {
+			HashMap<String, String> orders = new HashMap<>();
+			final int holycityId = world.getGeography().holycity;
+			for (Character c : allocatedPieces.characters) {
+				if (c.location == holycityId) {
+					orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Inspire the Faithful");
+				} else {
+					Map<Region, Integer> regionDistances = world.regions.get(holycityId).getRegionsByDistance(world);
+					int currentDistance = regionDistances.get(world.regions.get(c.location));
+					int destination = -1;
+					for (Region r : world.regions) {
+						if (regionDistances.get(r) == currentDistance - 1 && r.getNeighborsIds(world).contains(c.location)) {
+							orders.put("action_" + c.name.replace(" ", "_").replace("'", "_"), "Travel to " + r.name);
+							break;
+						}
+					}
+				}
 			}
 			return orders;
 		}
