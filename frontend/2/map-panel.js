@@ -273,6 +273,9 @@ class MapPanel extends HTMLElement {
 					<circle cx="12" cy="12" r="14" fill="inherit" stroke="inherit" stroke-width="1"></circle>
 					<path pointer-events="none" fill="currentColor" d="M12,2A3,3 0 0,0 9,5C9,6.27 9.8,7.4 11,7.83V10H8V12H11V18.92C9.16,18.63 7.53,17.57 6.53,16H8V14H3V19H5V17.3C6.58,19.61 9.2,21 12,21C14.8,21 17.42,19.61 19,17.31V19H21V14H16V16H17.46C16.46,17.56 14.83,18.63 13,18.92V12H16V10H13V7.82C14.2,7.4 15,6.27 15,5A3,3 0 0,0 12,2M12,4A1,1 0 0,1 13,5A1,1 0 0,1 12,6A1,1 0 0,1 11,5A1,1 0 0,1 12,4Z" />
 				</symbol>
+				<symbol id="spyring" viewBox="-1 -1 26 26">
+					<path d="M12,9A3,3 0 0,0 9,12A3,3 0 0,0 12,15A3,3 0 0,0 15,12A3,3 0 0,0 12,9M12,17A5,5 0 0,1 7,12A5,5 0 0,1 12,7A5,5 0 0,1 17,12A5,5 0 0,1 12,17M12,4.5C7,4.5 2.73,7.61 1,12C2.73,16.39 7,19.5 12,19.5C17,19.5 21.27,16.39 23,12C21.27,7.61 17,4.5 12,4.5Z" />
+				</symbol>
 				<symbol id="crosshair_symbol" viewBox="0 0 20 20">
 					<path fill="transparent" stroke="#fff" stroke-width="2" d="M0,10L20,10 M10,0L10,20" />
 					<path fill="transparent" stroke="#000" stroke-width="1" d="M0,10L20,10 M10,0L10,20" />
@@ -607,6 +610,7 @@ class MapPanel extends HTMLElement {
 			ARMY: 2,
 			NAVY: 3,
 			CHARACTER: 4,
+			SPYRING: 5,
 		};
 
 		let unownedRegionContentElements = {};
@@ -636,6 +640,7 @@ class MapPanel extends HTMLElement {
 				type == ContentType.HOLYCITY ? "icon_holycity" :
 				type == ContentType.ARMY ? "icon_army_" + obj.id :
 				type == ContentType.CHARACTER ? "icon_character_" + hash(obj.name) :
+				type == ContentType.SPYRING ? "icon_spyring_" + whoami + "_" + where :
 				"_";
 			let e = regionContentsEle.querySelector("#" + id);
 			if (e != undefined) {
@@ -651,6 +656,7 @@ class MapPanel extends HTMLElement {
 					obj.mapPoint = {x: parseFloat(e.getAttribute("data-map-point-x")), y: parseFloat(e.getAttribute("data-map-point-y"))};
 				}
 				if (obj.hasOwnProperty("kingdom")) e.setAttribute("class", obj.kingdom.toLowerCase());
+				if (obj.hasOwnProperty("nation")) e.setAttribute("class", obj.nation.toLowerCase());
 			} else {
 				// Get point.
 				let p = getPoint(where);
@@ -680,6 +686,11 @@ class MapPanel extends HTMLElement {
 					pe.setAttribute("href", "#holycity");
 					g.addEventListener('click', function() { changeReport("church/main"); });
 					g.addEventListener("mouseover", () => { shadow.getElementById("mapMouseTooltip").textContent = "Holy City"; });
+				} else if (type == ContentType.SPYRING) {
+					g.setAttribute("class", obj.nation.toLowerCase());
+					pe.setAttribute("href", "#spyring");
+					g.addEventListener('click', function() { changeReport("intrigue/main"); });
+					g.addEventListener("mouseover", () => { shadow.getElementById("mapMouseTooltip").textContent = "Spy Ring"; });
 				}
 				g.appendChild(pe);
 				regionContentsEle.appendChild(g);
@@ -720,6 +731,7 @@ class MapPanel extends HTMLElement {
 		for (let c of g_data.armies) addRegionContents(c.location, ContentType.ARMY, c);
 		addRegionContents(g_geo.holycity, ContentType.HOLYCITY, {});
 		for (let c of g_data.characters) if (c.location != -1) addRegionContents(c.location, ContentType.CHARACTER, c);
+		for (let c of g_data.spy_rings) addRegionContents(c.location, ContentType.SPYRING, c);
 
 		for (let id in unownedRegionContentElements) {
 			// TODO: This leaks the event listeners.

@@ -613,7 +613,8 @@ class OrdersPanel extends HTMLElement {
 					let consumption = r.calcConsumption(parseInt(eRation.value)).v;
 					while (weeks < 48) {
 						if (((g_data.date + weeks) % 4) == 0) {
-							foodProjection += Math.min(cropsProjection, harvestCap);
+							// The current harvest is acounted for above.
+							if (weeks != 0) foodProjection += Math.min(cropsProjection, harvestCap);
 							cropsProjection = r.calcPlanting(g_data.date + weeks).v;
 						}
 						foodProjection -= consumption;
@@ -1383,6 +1384,8 @@ class OrdersPanel extends HTMLElement {
 			this.changeTab("gothi");
 		} else if (ele[0] == "international") {
 			this.changeTab("relationships");
+		} else if (ele[0] == "intrigue") {
+			this.changeTab("plots");
 		} else if (ele[0] == "timeline") {
 			this.changeTab("settings");
 		}
