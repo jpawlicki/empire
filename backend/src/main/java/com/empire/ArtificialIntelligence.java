@@ -1025,9 +1025,10 @@ class ArtificialIntelligence {
 			for (Region r : world.regions) {
 				if (!whoami.equals(r.getKingdom())) continue;
 				totalStocks += r.food;
+				if (world.date % 4 == 0) totalStocks += r.crops;
 				totalDemand += r.population;
 			}
-			foodProjection = turnsUntilHarvest == 0 ? 1.0 : totalStocks / (totalDemand * turnsUntilHarvest);
+			foodProjection = totalDemand == 0 ? Double.POSITIVE_INFINITY : totalStocks / (totalDemand * turnsUntilHarvest);
 		}
 
 		@Override
