@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 class ArtificialIntelligence {
@@ -112,6 +113,7 @@ class ArtificialIntelligence {
 		ret.add(new TreasureGoldPiece());
 		ret.add(new FeedPeople());
 		ret.add(new DefaultRelations());
+		ret.add(new TurnCultist());
 		return ret;
 	}
 
@@ -294,6 +296,32 @@ class ArtificialIntelligence {
 		}
 	}
 
+	/** An intent to turn to cultism in dire circumstances. */
+	private class TurnCultist extends Intent {
+		@Override
+		boolean feasible() {
+			if (world.getNation(whoami).loyalToCult || world.cultTriggered) return false;
+
+			// Turn cultist if doing so would triple current armies.
+			double currentArmies = world.armies.stream().filter(a -> whoami.equals(a.kingdom) && a.type == Army.Type.ARMY).map(a -> a.size).reduce(0.0, (a, b) -> a + b);
+			double cultArmies = world.cultCaches.stream().filter(c -> c.isEligible(whoami)).map(CultCache::getSize).reduce(0.0, (a, b) -> a + b);
+			return cultArmies > currentArmies * 2;
+		}
+
+		@Override
+		double importance() {
+			return 1.0;
+		}
+
+		@Override
+		Map<String, String> generateOrders() {
+			HashMap<String, String> orders = new HashMap<>();
+			// 50% chance not to do it anyways. This makes the cult turn point for a conquered AI a bit harder to predict.
+			if (Math.random() < 0.5) orders.put("plot_cult", "checked");
+			return orders;
+		}
+	}
+
 	/** An intent to defend owned regions from attack. */
 	private class Defense extends Intent {
 		private class Threat {
@@ -325,7 +353,7 @@ class ArtificialIntelligence {
 			for (String k : world.getNationNames()) if (!whoami.equals(k)) threats.put(k, 0.0);
 			for (Army a : world.armies) {
 				if (!threats.containsKey(a.kingdom)) continue;
-				if (ourRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100 * 0.6);
+				if (ourRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100 * 2);
 				else if (neighborRegions.contains(a.location)) threats.put(a.kingdom, threats.get(a.kingdom) + a.size / 100);
 			}
 			threats.replaceAll((k, v) -> v * (world.getNation(k).getRelationship(whoami).battle == Relationship.War.ATTACK ? 2 : 1));
@@ -358,6 +386,7 @@ class ArtificialIntelligence {
 			if (piece.type == Army.Type.NAVY) return 0;
 			if (piece.size < neededSize) return 0;
 			if (!ourRegions.contains(piece.location) && !neighborRegions.contains(piece.location)) return 0;
+			if (piece.location != primaryResponseRegion && !world.regions.get(piece.location).getNeighbors(world).stream().anyMatch(r -> r.id == primaryResponseRegion)) return 0;
 			return piece.size / neededSize;
 		}
 
@@ -370,17 +399,17 @@ class ArtificialIntelligence {
 
 		@Override
 		double valueOf(RelationshipPiece piece) {
-			// Relationships for the top four threats are valuable, if threat is above 25.
-			if (threats.size() > 0 && threats.get(0).kingdom.equals(piece.who) && threats.get(0).threatValue > 40) return 1.00;
+			// Relationships for the top four threats are valuable, if threat is above 30.
+			if (threats.size() > 0 && threats.get(0).kingdom.equals(piece.who) && threats.get(0).threatValue > 30) return 1.00;
 			if (threats.size() > 1 && threats.get(1).kingdom.equals(piece.who) && threats.get(1).threatValue > 60) return 0.75;
 			if (threats.size() > 2 && threats.get(2).kingdom.equals(piece.who) && threats.get(2).threatValue > 100) return 0.50;
-			if (threats.size() > 3 && threats.get(3).kingdom.equals(piece.who) && threats.get(3).threatValue > 160) return 0.25;
+			if (threats.size() > 3 && threats.get(3).kingdom.equals(piece.who) && threats.get(3).threatValue > 150) return 0.25;
 			return 0;
 		}
 
 		@Override
 		double importance() {
-			return threats.stream().map(t -> t.threatValue / 40).reduce((a, b) -> a + b).orElse(0.0);
+			return Math.min(6, threats.stream().map(t -> t.threatValue / 30).reduce(0.0, (a, b) -> a + b));
 		}
 
 		@Override
@@ -417,7 +446,7 @@ class ArtificialIntelligence {
 				} else if (world.regions.get(a.location).getNeighbors(world).stream().anyMatch(r -> r.name.equals(primaryResponseRegionName))) {
 					orders.put("action_army_" + a.id, "Travel to " + primaryResponseRegionName);
 				} else {
-					// Otherwise wander randomly in our territory.
+					// Otherwise wander randomly in our territory. This can only happen due to a programming bug.
 					ArrayList<Region> neighbors = new ArrayList<>(world.regions.get(a.location).getNeighbors(world));
 					neighbors.removeIf(r -> !whoami.equals(r.getKingdom()));
 					if (!neighbors.isEmpty()) orders.put("action_army_" + a.id, "Travel to " + neighbors.get((int)(Math.random() * neighbors.size())).name);
@@ -438,16 +467,14 @@ class ArtificialIntelligence {
 	/** An intent to conquer a region. */
 	private class Attack extends Intent {
 		private final Region idealTarget;
-		private final Army idealArmy;
+		private final Optional<Army> idealArmy;
 
 		public Attack() {
-			Army bestArmy = null;
-			for (Army a : world.armies) if (whoami.equals(a.kingdom) && a.type == Army.Type.ARMY && (bestArmy == null || bestArmy.size < a.size)) bestArmy = a;
-			if (bestArmy == null) {
+			idealArmy = world.armies.stream().filter(a -> whoami.equals(a.kingdom) && a.type == Army.Type.ARMY).reduce((a, b) -> a.size > b.size ? a : b);
+			if (!idealArmy.isPresent()) {
 				idealTarget = null;
-				idealArmy = null;
 			} else {
-				Map<Region, Integer> regionDistances = world.regions.get(bestArmy.location).getRegionsByDistance(world);
+				Map<Region, Integer> regionDistances = world.regions.get(idealArmy.get().location).getRegionsByDistance(world);
 				double bestScore = 0;
 				Region bestRegion = null;
 				for (Region r : world.regions) {
@@ -456,17 +483,17 @@ class ArtificialIntelligence {
 					if (whoami.equals(r.getKingdom())) continue;
 					Relationship rel = world.getNation(whoami).getRelationship(r.getKingdom());
 					if (rel.battle == Relationship.War.DEFEND) continue;
-					if (r.calcMinConquestStrength(world) > bestArmy.calcStrength(world, null, 0)) continue;
-					if (regionDistances.get(r) > 1) continue;
+					if (r.calcMinConquestStrength(world) > idealArmy.get().calcStrength(world, null, 0)) continue;
 					if (world.getNation(r.getKingdom()).getRelationship(whoami).tribute >= 0.25 && getNobleCount(whoami) > 0) continue;
-					if (world.getNation(whoami).coreRegions.contains(r.id)) rScore *= 4;
+					if (world.getNation(whoami).coreRegions.contains(r.id)) rScore *= 8;
+					rScore *= 1 + 0.2 * world.getNationNames().stream().filter(n -> !n.equals(r.getKingdom()) && world.getNation(n).getRelationship(r.getKingdom()).battle == Relationship.War.ATTACK).count();
+					rScore /= 0.5 + regionDistances.get(r);
 					if (rScore > bestScore) {
 						bestScore = rScore;
 						bestRegion = r;
 					}
 				}
 				idealTarget = bestRegion;
-				idealArmy = bestArmy;
 			}
 		}
 
@@ -474,14 +501,14 @@ class ArtificialIntelligence {
 		boolean feasible() {
 			return
 					!allocatedPieces.relationships.isEmpty()
-					&& idealArmy != null
+					&& idealArmy.isPresent()
 					&& idealTarget != null
-					&& allocatedPieces.armies.contains(idealArmy);
+					&& allocatedPieces.armies.contains(idealArmy.get());
 		}
 
 		@Override
 		double valueOf(Army a) {
-			return a == idealArmy ? 1 : 0;
+			return idealArmy.isPresent() && a == idealArmy.get() ? 1 : 0;
 		}
 
 		@Override
@@ -492,7 +519,7 @@ class ArtificialIntelligence {
 
 		@Override
 		double importance() {
-			return 1.6;
+			return 5.0;
 		}
 
 		@Override
@@ -506,7 +533,15 @@ class ArtificialIntelligence {
 				if (a.location == idealTarget.id) {
 					orders.put("action_army_" + a.id, "Conquer");
 				} else {
-					orders.put("action_army_" + a.id, "Travel to " + idealTarget.name);
+					Map<Region, Integer> regionDistances = idealTarget.getRegionsByDistance(world);
+					int currentDistance = regionDistances.get(world.regions.get(a.location));
+					int destination = -1;
+					for (Region r : world.regions) {
+						if (regionDistances.get(r) == currentDistance - 1 && r.getNeighborsIds(world).contains(a.location)) {
+							orders.put("action_army_" + a.id, "Travel to " + r.name);
+							break;
+						}
+					}
 				}
 			}
 			return orders;
@@ -645,9 +680,6 @@ class ArtificialIntelligence {
 
 	/** An intent for Cardinals to hide-travel to the holy city and inspire. */
 	private class CardinalInspire extends Intent {
-		public CardinalInspire() {
-		}
-
 		@Override
 		boolean feasible() {
 			Ideology r = Nation.getStateReligion(whoami, world);
@@ -784,7 +816,7 @@ class ArtificialIntelligence {
 			// Leftover armies should try to travel to regions where they can merge up.
 			HashMap<Integer, Double> regionScores = new HashMap<>();
 			for (Army a : leftovers) {
-				regionScores.put(a.location, regionScores.getOrDefault(a.location, 0.0) + a.size);
+				regionScores.put(a.location, regionScores.getOrDefault(a.location, 0.0) + a.size * 1.1);
 				for (Integer rid : world.regions.get(a.location).getNeighborsIds(world)) {
 					regionScores.put(rid, regionScores.getOrDefault(rid, 0.0) + a.size);
 				}
@@ -887,7 +919,7 @@ class ArtificialIntelligence {
 		@Override
 		double importance() {
 			// TODO: increase importance when being invaded or when neighbors have large neutral armies.
-			return 0.3;
+			return 0.5;
 		}
 
 		@Override

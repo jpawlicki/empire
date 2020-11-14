@@ -2033,6 +2033,7 @@ class OrdersPanel extends HTMLElement {
 			}
 		}
 		{ // Warn about attacking nations paying tribute.
+			shadow.getElementById("t_kingdoms_warnings").innerHTML = "";
 			let hasNoble = false;
 			for (let r of g_data.regions) if (r.kingdom == whoami && r.noble.name != undefined) {
 				hasNoble = true;

@@ -284,7 +284,7 @@ class Region {
 			mods.push({"v": (effectiveRationing - 1) * 3, "unit": "%", "why": "Plentiful rations w/ River of Kuun"});
 		}
 		if (this.religion == "Northern (Syrjen)") mods.push({"v": 0.75, "unit": "%", "why": "Worships Syrjen"});
-		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.3, "unit": "%", "why": "Chalice of Compassion ideology"});
+		if (this.religion == "Iruhan (Chalice of Compassion)") mods.push({"v": -.4, "unit": "%", "why": "Chalice of Compassion ideology"});
 		if ("Unruled" != this.kingdom && contains(getNation(this.kingdom).tags, "War-like") && contains(getNation(this.kingdom).core_regions, this.id)) {
 			let conquests = 0;
 			for (let i = 0; i < g_data.regions.length; i++) if (this.kingdom == g_data.regions[i].kingdom && !contains(getNation(this.kingdom).core_regions, i)) conquests++;
