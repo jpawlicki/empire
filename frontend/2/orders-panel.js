@@ -1839,7 +1839,7 @@ class OrdersPanel extends HTMLElement {
 			{"value": "convert", "name": "Convert a region", "data": [regionSelect, ideologySelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 10; return r;}},
 			{"value": "denounce", "name": "Denounce", "data": [nationSelect, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[g_geo.holycity].kingdom] = args[1] / 3; return r;}},
 			{"value": "destroy", "name": "Destroy", "data": [regionSelectConstruction, constructionSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = 12; return r;}},
-			{"value": "hobble", "name": "Hobble", "data": [armySelect], "cost": (args) => { let r = {}; r[args[0]] = Army.byId(parseInt(args[1])).getEffectiveSize() / 100; return r;}},
+			{"value": "hobble", "name": "Hobble", "data": [armySelect], "cost": (args) => { let r = {}; let a = Army.byId(parseInt(args[0])); r[a.kingdom] = a.getEffectiveSize() / 100; return r;}},
 			{"value": "incite_popular", "name": "Incite popular unrest", "data": [regionSelect, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 3; return r; }},
 			{"value": "incite_noble", "name": "Incite noble unrest", "data": [regionSelectNoble, amountSelect], "cost": (args) => { let r = {}; r[g_data.regions[parseInt(args[0])].kingdom] = parseInt(args[1]) / 3; return r; }},
 			{"value": "intercept", "name": "Intercept letters", "data": [nationSelect], "cost": (args) => { let r = {}; r[args[0]] = 15; return r; }},
