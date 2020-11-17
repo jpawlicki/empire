@@ -755,7 +755,7 @@ class OrdersPanel extends HTMLElement {
 				}
 			}
 			for (let r of g_data.regions) {
-				if (r.kingdom == whoami && r.noble.name != undefined && r.noble.unrest <= 0.5) {
+				if (r.kingdom == whoami && r.noble.name != undefined) {
 					let tr = document.createElement("tr");
 					let addCell = function(c) {
 						let td = document.createElement("td");

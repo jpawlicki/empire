@@ -1137,6 +1137,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				} else if (action.equals("Relax")) {
 					r.noble.unrest.add(getRules().nobleActionRelaxUnrest);
 				} else if (action.equals("Establish Spy Ring")) {
+					r.noble.orderhint = "Train";
 					String kingdom = r.getKingdom();
 					final int ridf = rid;
 					if (kingdom == null || spyRings.stream().filter(rr -> rr.getNation().equals(r.getKingdom()) && rr.getLocation() == ridf).count() != 0) continue;
@@ -1149,7 +1150,6 @@ public class World extends RulesObject implements GoodwillProvider {
 					getNation(kingdom).gold -= cost;
 					incomeSources.get(kingdom).spentSpyEstablishments += cost;
 					spyRings.add(SpyRing.newSpyRing(kingdom, rid));
-					r.noble.orderhint = "Train";
 				}
 			}
 		}
