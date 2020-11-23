@@ -349,7 +349,7 @@ abstract class Plot {
 
 		@Override
 		protected String getDescription() {
-			return "intercept the communications of " + parameters.nation.get();
+			return "intercept the communications of " + parameters.nation.get().name;
 		}
 
 		@Override

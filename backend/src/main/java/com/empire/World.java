@@ -2643,6 +2643,8 @@ public class World extends RulesObject implements GoodwillProvider {
 		// Filter orderhints.
 		for (Army a : armies) if (!a.kingdom.equals(kingdom)) a.orderhint = "";
 		for (Character a : characters) if (!a.kingdom.equals(kingdom)) a.orderhint = "";
+		// Filter cult caches.
+		cultCaches.removeIf(c -> !c.isEligible(kingdom));
 	}
 
 	@Override
