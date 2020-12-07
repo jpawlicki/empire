@@ -1964,6 +1964,7 @@ class OrdersPanel extends HTMLElement {
 		return {
 			"salary": projectedSalaries,
 			"actions": projectedConstructionCost,
+			"fwarns": fwarns,
 		};
 	}
 
@@ -2027,9 +2028,9 @@ class OrdersPanel extends HTMLElement {
 		{ // Warn about construction cost overruns.
 			let spending = this.predictBudget(shadow);
 			if (spending.actions > getNation(whoami).gold) {
-				for (let w of fwarns) w.innerHTML += " (insufficient gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold on actions)";
+				for (let w of spending.fwarns) w.innerHTML += " (insufficient gold - spending " + Math.round(projectedConstructionCost) + " of " + Math.round(getNation(whoami).gold) + " gold on actions)";
 			} else if (spending.actions + spending.salaries > getNation(whoami).gold) {
-				for (let w of fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost + projectedSalaries) + " of " + Math.round(getNation(whoami).gold) + " gold on actions and troop salaries)";
+				for (let w of spending.fwarns) w.innerHTML += " (low gold - spending " + Math.round(projectedConstructionCost + projectedSalaries) + " of " + Math.round(getNation(whoami).gold) + " gold on actions and troop salaries)";
 			}
 		}
 		{ // Warn about attacking nations paying tribute.
