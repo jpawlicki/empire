@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public final class Player {
-	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("DFEC33349F0EE2E0BC2085D761553BDDF1753698DDAD94491664F14EA58EA072");
+	private static byte[] GM_PASSWORD_HASH = BaseEncoding.base16().decode("5D0A016F07CCD76CF79F5E048930465C259677338D2FCAB334A4EA6656A423B5");
 	
 	public String email;
 	public String passHash;

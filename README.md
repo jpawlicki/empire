@@ -50,13 +50,13 @@ page.
 
 Open the frontend and the kickoff tool using
 ```bash
-google-chrome frontend/setup.html frontend/map1.html tools/kickoff.html
+google-chrome frontend/setup.html frontend/map2.html tools/kickoff.html
 ```
 
 Modify the URL of both frontend tabs, appending `?g=0` to access game ID 0.
 
 Set up the game as you see fit in the setup.html tab, start it using
-kickoff.html, and then manipulate it using map1.html and kickoff.html to the
+kickoff.html, and then manipulate it using map2.html and kickoff.html to the
 effect you desire.
 
 When you are done, stop the backend (CTRL-C in the terminal running it). The

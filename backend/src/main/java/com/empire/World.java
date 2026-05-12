@@ -124,6 +124,7 @@ public class World extends RulesObject implements GoodwillProvider {
 				.registerTypeAdapter(Army.class, ica)
 				.registerTypeAdapter(Noble.class, icn)
 				.registerTypeAdapter(Percentage.class, new Percentage.TypeAdapter())
+				.registerTypeAdapter(Optional.class, new OptionalAdapter())
 				.create();
 	}
 

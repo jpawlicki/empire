@@ -14,7 +14,6 @@
 // [START gradle]
 buildscript {    // Configuration for building
   repositories {
-    jcenter()    // Bintray's repository - a fast Maven Central mirror & more
     mavenCentral()
   }
   dependencies {
@@ -39,7 +38,6 @@ repositories {   // repositories for Jar's you access in your code
     url 'https://oss.sonatype.org/content/repositories/snapshots' // SNAPSHOT repository (if needed)
   }
   mavenCentral()
-  jcenter()
 }
 
 apply plugin: 'java'                              // standard Java tasks
@@ -48,26 +46,26 @@ apply plugin: 'com.google.cloud.tools.appengine'  // App Engine tasks
 // apply plugin: 'net.ltgt.errorprone'
 
 dependencies {
-  compile 'com.google.appengine:appengine-api-1.0-sdk:+'  // Latest App Engine Api's
+  implementation 'com.google.appengine:appengine-api-1.0-sdk:+'  // Latest App Engine Api's
   providedCompile 'javax.servlet:javax.servlet-api:3.1.0'
 
-  compile 'jstl:jstl:1.2'
+  implementation 'jstl:jstl:1.2'
 
 // Add your dependencies here.
-//  compile 'com.google.cloud:google-cloud:+'   // Latest Cloud API's http://googlecloudplatform.github.io/google-cloud-java
+//  implementation 'com.google.cloud:google-cloud:+'   // Latest Cloud API's http://googlecloudplatform.github.io/google-cloud-java
 //	errorprone 'com.google.errorprone:error_prone_core:2.4.1-SNAPSHOT'
 //	errorproneJavac 'com.google.errorprone:javac:9+181-r4173-1'
 
-	compile 'com.google.code.gson:gson:2.8.2'
-	compile 'com.google.guava:guava:23.5-jre'
+	implementation 'com.google.code.gson:gson:2.8.2'
+	implementation 'com.google.guava:guava:23.5-jre'
 
-  testCompile 'junit:junit:4.12'
-  testCompile 'com.google.truth:truth:0.33'
-  testCompile 'org.mockito:mockito-all:1.10.19'
+  testImplementation 'junit:junit:4.12'
+  testImplementation 'com.google.truth:truth:0.33'
+  testImplementation 'org.mockito:mockito-all:1.10.19'
 
-  testCompile 'com.google.appengine:appengine-testing:+'
-  testCompile 'com.google.appengine:appengine-api-stubs:+'
-  testCompile 'com.google.appengine:appengine-tools-sdk:+'
+  testImplementation 'com.google.appengine:appengine-testing:+'
+  testImplementation 'com.google.appengine:appengine-api-stubs:+'
+  testImplementation 'com.google.appengine:appengine-tools-sdk:+'
 }
 
 // Certain errorprone checks are disabled.
@@ -104,8 +102,8 @@ test {
 group   = "com.example.appenginej8"        // Generated output GroupId
 version = "1.0-SNAPSHOT"       // Version in generated output
 
-sourceCompatibility = 1.8     // App Engine Flexible uses Java 8
-targetCompatibility = 1.8     // App Engine Flexible uses Java 8
+sourceCompatibility = 21
+targetCompatibility = 21
 appengine.deploy.projectId = 'empire-189013'
 appengine.deploy.version = '1'
 // [END gradle]
